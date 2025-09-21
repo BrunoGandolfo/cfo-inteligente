@@ -1,8 +1,7 @@
 from sqlalchemy.orm import Session
-from app.models import Operacion, TipoOperacion, Moneda, Localidad, DistribucionDetalle, Area
+from app.models import Operacion, TipoOperacion, Moneda, Localidad, DistribucionDetalle, Area, Socio
 from app.schemas.operacion import IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
 from decimal import Decimal
-import uuid
 
 def calcular_montos(monto_original: Decimal, moneda_original: str, tipo_cambio: Decimal):
     if moneda_original == "UYU":
@@ -55,24 +54,21 @@ def crear_gasto(db: Session, data: GastoCreate):
     return operacion
 
 def crear_retiro(db: Session, data: RetiroCreate):
-    # Retiro de efectivo de la empresa
-    # Obtener área "Gastos Generales" para retiros
+    # Retiro de efectivo - registro simple
     area_gastos = db.query(Area).filter(Area.nombre == "Gastos Generales").first()
-    if not area_gastos:
-        raise ValueError("No se encontró el área Gastos Generales")
     
-    # Determinar montos y moneda principal
+    # Determinar montos
     if data.monto_uyu and data.monto_usd:
         monto_uyu = data.monto_uyu
         monto_usd = data.monto_usd
-        monto_original = data.monto_uyu  # Por defecto usamos UYU como referencia
+        monto_original = data.monto_uyu
         moneda_original = Moneda.UYU
     elif data.monto_uyu:
         monto_uyu = data.monto_uyu
         monto_usd = data.monto_uyu / data.tipo_cambio
         monto_original = data.monto_uyu
         moneda_original = Moneda.UYU
-    else:  # solo USD
+    else:
         monto_usd = data.monto_usd
         monto_uyu = data.monto_usd * data.tipo_cambio
         monto_original = data.monto_usd
@@ -88,7 +84,7 @@ def crear_retiro(db: Session, data: RetiroCreate):
         monto_usd=monto_usd,
         area_id=area_gastos.id,
         localidad=Localidad[data.localidad.upper().replace(" ", "_")],
-        descripcion=data.concepto or "Retiro de efectivo"
+        descripcion=data.descripcion
     )
     
     db.add(operacion)
@@ -97,16 +93,26 @@ def crear_retiro(db: Session, data: RetiroCreate):
     return operacion
 
 def crear_distribucion(db: Session, data: DistribucionCreate):
-    # Distribución de utilidades entre socios
+    # Distribución de utilidades - registrar por socio
     area_gastos = db.query(Area).filter(Area.nombre == "Gastos Generales").first()
-    if not area_gastos:
-        raise ValueError("No se encontró el área Gastos Generales")
     
-    # Calcular totales
-    total_uyu = sum(d.get("monto_uyu", 0) or 0 for d in data.distribuciones)
-    total_usd = sum(d.get("monto_usd", 0) or 0 for d in data.distribuciones)
+    # Calcular totales sumando todos los montos de los 5 socios
+    total_uyu = (
+        (data.agustina_uyu or 0) +
+        (data.viviana_uyu or 0) +
+        (data.gonzalo_uyu or 0) +
+        (data.pancho_uyu or 0) +
+        (data.bruno_uyu or 0)
+    )
     
-    # Determinar monto y moneda principal
+    total_usd = (
+        (data.agustina_usd or 0) +
+        (data.viviana_usd or 0) +
+        (data.gonzalo_usd or 0) +
+        (data.pancho_usd or 0) +
+        (data.bruno_usd or 0)
+    )
+    
     if total_uyu > 0:
         monto_original = total_uyu
         moneda_original = Moneda.UYU
@@ -124,22 +130,32 @@ def crear_distribucion(db: Session, data: DistribucionCreate):
         monto_usd=total_usd,
         area_id=area_gastos.id,
         localidad=Localidad[data.localidad.upper().replace(" ", "_")],
-        descripcion=data.descripcion or "Distribución de utilidades"
+        descripcion="Distribución de utilidades"
     )
     
     db.add(operacion)
     db.flush()
     
-    # Crear detalles por socio
-    for dist in data.distribuciones:
-        detalle = DistribucionDetalle(
-            operacion_id=operacion.id,
-            socio_id=dist["socio_id"],
-            monto_uyu=dist.get("monto_uyu", 0) or 0,
-            monto_usd=dist.get("monto_usd", 0) or 0,
-            porcentaje=dist.get("porcentaje", 20.0)
-        )
-        db.add(detalle)
+    # Crear detalle para cada socio
+    socios_montos = [
+        ("Agustina", data.agustina_uyu, data.agustina_usd),
+        ("Viviana", data.viviana_uyu, data.viviana_usd),
+        ("Gonzalo", data.gonzalo_uyu, data.gonzalo_usd),
+        ("Pancho", data.pancho_uyu, data.pancho_usd),
+        ("Bruno", data.bruno_uyu, data.bruno_usd)
+    ]
+    
+    for nombre, monto_uyu, monto_usd in socios_montos:
+        socio = db.query(Socio).filter(Socio.nombre == nombre).first()
+        if socio and (monto_uyu or monto_usd):
+            detalle = DistribucionDetalle(
+                operacion_id=operacion.id,
+                socio_id=socio.id,
+                monto_uyu=monto_uyu or 0,
+                monto_usd=monto_usd or 0,
+                porcentaje=20.0
+            )
+            db.add(detalle)
     
     db.commit()
     db.refresh(operacion)

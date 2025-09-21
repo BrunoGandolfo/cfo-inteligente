@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.schemas.operacion import IngresoCreate, GastoCreate
-from app.services.operacion_service import crear_ingreso, crear_gasto
+from app.schemas.operacion import IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
+from app.services.operacion_service import crear_ingreso, crear_gasto, crear_retiro, crear_distribucion
 
 router = APIRouter()
 
@@ -22,10 +22,26 @@ def registrar_gasto(data: GastoCreate, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/retiro")
+def registrar_retiro(data: RetiroCreate, db: Session = Depends(get_db)):
+    try:
+        operacion = crear_retiro(db, data)
+        return {"message": "Retiro registrado", "id": str(operacion.id)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/distribucion")
+def registrar_distribucion(data: DistribucionCreate, db: Session = Depends(get_db)):
+    try:
+        operacion = crear_distribucion(db, data)
+        return {"message": "Distribución registrada", "id": str(operacion.id)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.get("/")
 def listar_operaciones(db: Session = Depends(get_db)):
     from app.models import Operacion
-    operaciones = db.query(Operacion).filter(Operacion.deleted_at == None).limit(20).all()
+    operaciones = db.query(Operacion).filter(Operacion.deleted_at == None).order_by(Operacion.fecha.desc()).limit(50).all()
     return [
         {
             "id": str(op.id),
@@ -33,7 +49,9 @@ def listar_operaciones(db: Session = Depends(get_db)):
             "fecha": op.fecha,
             "monto_uyu": float(op.monto_uyu),
             "monto_usd": float(op.monto_usd),
-            "descripcion": op.descripcion
+            "descripcion": op.descripcion,
+            "cliente": op.cliente,
+            "proveedor": op.proveedor
         }
         for op in operaciones
     ]
