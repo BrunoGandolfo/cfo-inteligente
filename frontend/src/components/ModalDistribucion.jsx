@@ -95,7 +95,7 @@ function ModalDistribucion({ isOpen, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-2">
-      <div className="bg-white rounded-lg w-full max-w-md max-h-[85vh] flex flex-col">
+      <div className="bg-white rounded-lg w-full max-w-md max-h-[70vh] flex flex-col">
         {/* Header compacto */}
         <div className="flex justify-between items-center p-3 pb-2 border-b">
           <h2 className="text-md font-bold text-purple-600">Distribución</h2>

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Layout from './components/layout/Layout';
 
 function App() {
   const isAuthenticated = localStorage.getItem('token');
@@ -18,7 +19,11 @@ function App() {
         />
         <Route 
           path="/dashboard" 
-          element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} 
+          element={isAuthenticated ? (
+            <Layout>
+              <Dashboard />
+            </Layout>
+          ) : <Navigate to="/login" />} 
         />
       </Routes>
     </Router>
