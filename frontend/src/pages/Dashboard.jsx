@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ModalIngreso from '../components/ModalIngreso';
+import ModalGasto from '../components/ModalGasto';
 
 function Dashboard() {
   const [resumenMensual, setResumenMensual] = useState(null);
   const [rentabilidad, setRentabilidad] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modalIngreso, setModalIngreso] = useState(false);
+  const [modalGasto, setModalGasto] = useState(false);
   const userName = localStorage.getItem('userName');
 
   useEffect(() => {
@@ -34,11 +36,9 @@ function Dashboard() {
     window.location.href = '/login';
   };
 
-  const handleIngresoSuccess = () => {
-    // Recargar datos después de guardar
+  const handleOperacionSuccess = () => {
     cargarDatos();
-    // Mostrar mensaje de éxito (opcional)
-    alert('Ingreso registrado exitosamente');
+    alert('Operación registrada exitosamente');
   };
 
   if (loading) {
@@ -123,7 +123,10 @@ function Dashboard() {
             >
               + Registrar Ingreso
             </button>
-            <button className="bg-red-600 text-white p-4 rounded-lg hover:bg-red-700">
+            <button 
+              onClick={() => setModalGasto(true)}
+              className="bg-red-600 text-white p-4 rounded-lg hover:bg-red-700"
+            >
               - Registrar Gasto
             </button>
             <button className="bg-yellow-600 text-white p-4 rounded-lg hover:bg-yellow-700">
@@ -140,7 +143,14 @@ function Dashboard() {
       <ModalIngreso
         isOpen={modalIngreso}
         onClose={() => setModalIngreso(false)}
-        onSuccess={handleIngresoSuccess}
+        onSuccess={handleOperacionSuccess}
+      />
+      
+      {/* Modal de Gasto */}
+      <ModalGasto
+        isOpen={modalGasto}
+        onClose={() => setModalGasto(false)}
+        onSuccess={handleOperacionSuccess}
       />
     </div>
   );
