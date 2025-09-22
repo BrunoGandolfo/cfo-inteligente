@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ModalIngreso from '../components/ModalIngreso';
 import ModalGasto from '../components/ModalGasto';
+import ModalRetiro from '../components/ModalRetiro';
+import ModalDistribucion from '../components/ModalDistribucion';
 
 function Dashboard() {
   const [resumenMensual, setResumenMensual] = useState(null);
@@ -9,6 +11,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [modalIngreso, setModalIngreso] = useState(false);
   const [modalGasto, setModalGasto] = useState(false);
+  const [modalRetiro, setModalRetiro] = useState(false);
+  const [modalDistribucion, setModalDistribucion] = useState(false);
   const userName = localStorage.getItem('userName');
 
   useEffect(() => {
@@ -129,10 +133,16 @@ function Dashboard() {
             >
               - Registrar Gasto
             </button>
-            <button className="bg-yellow-600 text-white p-4 rounded-lg hover:bg-yellow-700">
+            <button 
+              onClick={() => setModalRetiro(true)}
+              className="bg-yellow-600 text-white p-4 rounded-lg hover:bg-yellow-700"
+            >
               ↓ Registrar Retiro
             </button>
-            <button className="bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700">
+            <button 
+              onClick={() => setModalDistribucion(true)}
+              className="bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700"
+            >
               ÷ Registrar Distribución
             </button>
           </div>
@@ -150,6 +160,20 @@ function Dashboard() {
       <ModalGasto
         isOpen={modalGasto}
         onClose={() => setModalGasto(false)}
+        onSuccess={handleOperacionSuccess}
+      />
+      
+      {/* Modal de Retiro */}
+      <ModalRetiro
+        isOpen={modalRetiro}
+        onClose={() => setModalRetiro(false)}
+        onSuccess={handleOperacionSuccess}
+      />
+      
+      {/* Modal de Distribución */}
+      <ModalDistribucion
+        isOpen={modalDistribucion}
+        onClose={() => setModalDistribucion(false)}
         onSuccess={handleOperacionSuccess}
       />
     </div>
