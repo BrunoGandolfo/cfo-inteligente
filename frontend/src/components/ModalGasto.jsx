@@ -60,12 +60,8 @@ function ModalGasto({ isOpen, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-
     try {
-      const tipoCambioParaEnviar = formData.moneda_original === 'UYU' 
-        ? 1 
-        : parseFloat(formData.tipo_cambio) || 40.50;
+      const tipoCambioParaEnviar = parseFloat(formData.tipo_cambio) || 40.50;
 
       const dataToSend = {
         fecha: formData.fecha,
