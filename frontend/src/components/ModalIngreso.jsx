@@ -48,10 +48,7 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
     setError('');
 
     try {
-      const tipoCambioParaEnviar = formData.moneda_original === 'UYU' 
-        ? 1 
-        : parseFloat(formData.tipo_cambio) || 40.50;
-
+      // SIEMPRE usar el tipo de cambio del campo, nunca hardcodear 1
       const dataToSend = {
         fecha: formData.fecha,
         cliente: formData.cliente || null,
@@ -60,7 +57,7 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
         localidad: formData.localidad,
         monto_original: parseFloat(formData.monto_original),
         moneda_original: formData.moneda_original,
-        tipo_cambio: tipoCambioParaEnviar,
+        tipo_cambio: parseFloat(formData.tipo_cambio) || 40.50,
         descripcion: formData.descripcion || null
       };
 
@@ -93,7 +90,6 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-2">
       <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
-        {/* Header más compacto */}
         <div className="flex justify-between items-center p-4 pb-2 border-b">
           <h2 className="text-lg font-bold">Registrar Ingreso</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">
@@ -101,7 +97,6 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
           </button>
         </div>
 
-        {/* Contenido con menos padding */}
         <div className="flex-1 overflow-y-auto p-4">
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded mb-2 text-xs">
@@ -110,7 +105,6 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
           )}
 
           <form id="formIngreso" onSubmit={handleSubmit}>
-            {/* Primera fila: Fecha, Área, Localidad */}
             <div className="grid grid-cols-3 gap-2 mb-2">
               <div>
                 <label className="block text-xs font-medium text-gray-700">Fecha</label>
@@ -150,7 +144,6 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
               </div>
             </div>
 
-            {/* Segunda fila: Cliente */}
             <div className="mb-2">
               <label className="block text-xs font-medium text-gray-700">Cliente</label>
               <input
@@ -162,7 +155,6 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
               />
             </div>
 
-            {/* Tercera fila: Moneda, Monto, Tipo Cambio */}
             <div className="grid grid-cols-3 gap-2 mb-2">
               <div>
                 <label className="block text-xs font-medium text-gray-700">Moneda</label>
@@ -202,7 +194,6 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
               </div>
             </div>
 
-            {/* Descripción más pequeña */}
             <div className="mb-2">
               <label className="block text-xs font-medium text-gray-700">Descripción</label>
               <textarea
@@ -216,7 +207,6 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
           </form>
         </div>
 
-        {/* Footer más compacto */}
         <div className="flex justify-end gap-2 p-3 border-t">
           <button
             type="button"
