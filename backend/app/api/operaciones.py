@@ -55,3 +55,43 @@ def listar_operaciones(db: Session = Depends(get_db)):
         }
         for op in operaciones
     ]
+
+@router.get("/clientes/buscar")
+def buscar_clientes(q: str = "", db: Session = Depends(get_db)):
+    """Buscar clientes por nombre para autocomplete"""
+    from app.models import Cliente
+    
+    if len(q) < 2:
+        return []
+    
+    clientes = db.query(Cliente)\
+        .filter(Cliente.nombre.ilike(f"%{q}%"))\
+        .filter(Cliente.activo == True)\
+        .order_by(Cliente.nombre)\
+        .limit(10)\
+        .all()
+    
+    return [
+        {"id": str(cliente.id), "nombre": cliente.nombre}
+        for cliente in clientes
+    ]
+
+@router.get("/proveedores/buscar")
+def buscar_proveedores(q: str = "", db: Session = Depends(get_db)):
+    """Buscar proveedores por nombre para autocomplete"""
+    from app.models import Proveedor
+    
+    if len(q) < 2:
+        return []
+    
+    proveedores = db.query(Proveedor)\
+        .filter(Proveedor.nombre.ilike(f"%{q}%"))\
+        .filter(Proveedor.activo == True)\
+        .order_by(Proveedor.nombre)\
+        .limit(10)\
+        .all()
+    
+    return [
+        {"id": str(proveedor.id), "nombre": proveedor.nombre}
+        for proveedor in proveedores
+    ]
