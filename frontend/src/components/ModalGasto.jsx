@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
-function ModalGasto({ isOpen, onClose, onSuccess }) {
+function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     proveedor: '',
@@ -23,7 +24,7 @@ function ModalGasto({ isOpen, onClose, onSuccess }) {
     { id: '651dfb5c-15d8-41e2-8339-785b137f44f2', nombre: 'Otros' }
   ]);
   
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState('');
   const [proveedorSuggestions, setProveedorSuggestions] = useState([]);
 
@@ -59,7 +60,8 @@ function ModalGasto({ isOpen, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setLocalLoading(true);
+    if (setLoading) setLoading(true);
     try {
       const tipoCambioParaEnviar = parseFloat(formData.tipo_cambio) || 40.50;
 
@@ -76,6 +78,7 @@ function ModalGasto({ isOpen, onClose, onSuccess }) {
       };
 
       await axios.post('http://localhost:8000/api/operaciones/gasto', dataToSend);
+      toast.success('Operación registrada exitosamente');
       
       onSuccess();
       onClose();
@@ -94,9 +97,11 @@ function ModalGasto({ isOpen, onClose, onSuccess }) {
       setProveedorSuggestions([]);
     } catch (error) {
       console.error('Error completo:', error);
+      toast.error('Error al registrar operación');
       setError(error.response?.data?.detail || 'Error al registrar el gasto');
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
+      if (setLoading) setLoading(false);
     }
   };
 
@@ -259,10 +264,10 @@ function ModalGasto({ isOpen, onClose, onSuccess }) {
           <button
             type="submit"
             form="formGasto"
-            disabled={loading}
+            disabled={localLoading}
             className="px-3 py-1.5 text-xs text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
           >
-            {loading ? 'Guardando...' : 'Guardar'}
+            {localLoading ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
       </div>

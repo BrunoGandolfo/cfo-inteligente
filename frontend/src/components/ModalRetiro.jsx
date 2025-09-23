@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
-function ModalRetiro({ isOpen, onClose, onSuccess }) {
+function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     monto_uyu: '',
@@ -11,7 +12,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess }) {
     descripcion: ''
   });
   
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -39,7 +40,8 @@ function ModalRetiro({ isOpen, onClose, onSuccess }) {
       return;
     }
     
-    setLoading(true);
+    setLocalLoading(true);
+    if (setLoading) setLoading(true);
     setError('');
 
     try {
@@ -53,6 +55,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess }) {
       };
 
       await axios.post('http://localhost:8000/api/operaciones/retiro', dataToSend);
+      toast.success('Operación registrada exitosamente');
       
       onSuccess();
       onClose();
@@ -68,9 +71,11 @@ function ModalRetiro({ isOpen, onClose, onSuccess }) {
       });
     } catch (error) {
       console.error('Error completo:', error);
+      toast.error('Error al registrar operación');
       setError(error.response?.data?.detail || 'Error al registrar el retiro');
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
+      if (setLoading) setLoading(false);
     }
   };
 
@@ -191,10 +196,10 @@ function ModalRetiro({ isOpen, onClose, onSuccess }) {
           <button
             type="submit"
             form="formRetiro"
-            disabled={loading}
+            disabled={localLoading}
             className="px-4 py-2 text-sm text-white bg-yellow-600 rounded hover:bg-yellow-700 disabled:opacity-50"
           >
-            {loading ? 'Guardando...' : 'Guardar Retiro'}
+            {localLoading ? 'Guardando...' : 'Guardar Retiro'}
           </button>
         </div>
       </div>

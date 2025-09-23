@@ -1,32 +1,57 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Layout from './components/layout/Layout';
+import Home from './pages/Home';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
-  const isAuthenticated = localStorage.getItem('token');
+  const [currentPage, setCurrentPage] = useState('home');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && (currentPage === 'home' || currentPage === 'login')) {
+      setCurrentPage('dashboard');
+    } else if (!token && currentPage === 'dashboard') {
+      setCurrentPage('home');
+    }
+  }, [currentPage]);
+
+  if (currentPage === 'home') {
+    return (
+      <>
+        <Home />
+        <Toaster position="top-right" />
+      </>
+    );
+  }
+
+  if (currentPage === 'login') {
+    return (
+      <>
+        <Login onLoginSuccess={() => setCurrentPage('dashboard')} />
+        <Toaster position="top-right" />
+      </>
+    );
+  }
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return (
+      <>
+        <Home />
+        <Toaster position="top-right" />
+      </>
+    );
+  }
 
   return (
-    <Router>
-      <Routes>
-        <Route 
-          path="/" 
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} 
-        />
-        <Route 
-          path="/login" 
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} 
-        />
-        <Route 
-          path="/dashboard" 
-          element={isAuthenticated ? (
-            <Layout>
-              <Dashboard />
-            </Layout>
-          ) : <Navigate to="/login" />} 
-        />
-      </Routes>
-    </Router>
+    <>
+      <Layout>
+        <Dashboard />
+      </Layout>
+      <Toaster position="top-right" />
+    </>
   );
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -20,9 +21,11 @@ function Login() {
       localStorage.setItem('esSocio', response.data.es_socio);
       
       // Redirigir a dashboard
+      toast.success('Bienvenido al sistema');
       window.location.href = '/dashboard';
     } catch (err) {
       setError('Email o contraseña incorrectos');
+      toast.error('Credenciales incorrectas');
     }
   };
 

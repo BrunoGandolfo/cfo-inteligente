@@ -9,15 +9,23 @@ import ModalDistribucion from '../components/ModalDistribucion';
 import { useMetrics } from '../hooks/useMetrics';
 import { formatMoney } from '../utils/formatters';
 import Button from '../components/ui/Button';
+import ChartsSection from '../components/charts/ChartsSection';
+import { useOperations } from '../hooks/useOperations';
+import ActiveFilters from '../components/filters/ActiveFilters';
 
 function Dashboard() {
   const [showIngreso, setShowIngreso] = useState(false);
   const [showGasto, setShowGasto] = useState(false);
   const [showRetiro, setShowRetiro] = useState(false);
   const [showDistrib, setShowDistrib] = useState(false);
+  const [loadingIngreso, setLoadingIngreso] = useState(false);
+  const [loadingGasto, setLoadingGasto] = useState(false);
+  const [loadingRetiro, setLoadingRetiro] = useState(false);
+  const [loadingDistrib, setLoadingDistrib] = useState(false);
   const [detailOp, setDetailOp] = useState(null);
 
   const { loading, metricas, filtros, refreshKey } = useMetrics();
+  const { operacionesAll } = useOperations(refreshKey);
 
   if (loading) {
     return <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center text-gray-600 dark:text-slate-200">Cargando...</div>;
@@ -38,14 +46,26 @@ function Dashboard() {
         areaLider={areaLider}
       />
 
+      <ActiveFilters />
+
+      <ChartsSection operaciones={operacionesAll || []} />
+
       <section className="px-6 mb-8">
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg shadow-sm p-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Acciones</h2>
           <div className="flex flex-wrap gap-4">
-            <Button variant="success" onClick={() => setShowIngreso(true)}>Registrar Ingreso</Button>
-            <Button variant="danger" onClick={() => setShowGasto(true)}>Registrar Gasto</Button>
-            <Button variant="primary" onClick={() => setShowRetiro(true)}>Registrar Retiro</Button>
-            <Button variant="primary" onClick={() => setShowDistrib(true)}>Registrar Distribución</Button>
+            <Button variant="success" onClick={() => setShowIngreso(true)} disabled={loadingIngreso}>
+              {loadingIngreso ? 'Procesando...' : 'Registrar Ingreso'}
+            </Button>
+            <Button variant="danger" onClick={() => setShowGasto(true)} disabled={loadingGasto}>
+              {loadingGasto ? 'Procesando...' : 'Registrar Gasto'}
+            </Button>
+            <Button variant="primary" onClick={() => setShowRetiro(true)} disabled={loadingRetiro}>
+              {loadingRetiro ? 'Procesando...' : 'Registrar Retiro'}
+            </Button>
+            <Button variant="primary" onClick={() => setShowDistrib(true)} disabled={loadingDistrib}>
+              {loadingDistrib ? 'Procesando...' : 'Registrar Distribución'}
+            </Button>
           </div>
         </div>
       </section>
@@ -55,16 +75,36 @@ function Dashboard() {
       <OperationDetails open={!!detailOp} onClose={() => setDetailOp(null)} op={detailOp} />
 
       {showIngreso && (
-        <ModalIngreso isOpen={showIngreso} onClose={() => setShowIngreso(false)} onSuccess={() => setShowIngreso(false)} />
+        <ModalIngreso 
+          isOpen={showIngreso} 
+          onClose={() => setShowIngreso(false)} 
+          onSuccess={() => { setShowIngreso(false); setLoadingIngreso(false); }}
+          setLoading={setLoadingIngreso}
+        />
       )}
       {showGasto && (
-        <ModalGasto isOpen={showGasto} onClose={() => setShowGasto(false)} onSuccess={() => setShowGasto(false)} />
+        <ModalGasto 
+          isOpen={showGasto} 
+          onClose={() => setShowGasto(false)} 
+          onSuccess={() => { setShowGasto(false); setLoadingGasto(false); }}
+          setLoading={setLoadingGasto}
+        />
       )}
       {showRetiro && (
-        <ModalRetiro isOpen={showRetiro} onClose={() => setShowRetiro(false)} onSuccess={() => setShowRetiro(false)} />
+        <ModalRetiro 
+          isOpen={showRetiro} 
+          onClose={() => setShowRetiro(false)} 
+          onSuccess={() => { setShowRetiro(false); setLoadingRetiro(false); }}
+          setLoading={setLoadingRetiro}
+        />
       )}
       {showDistrib && (
-        <ModalDistribucion isOpen={showDistrib} onClose={() => setShowDistrib(false)} onSuccess={() => setShowDistrib(false)} />
+        <ModalDistribucion 
+          isOpen={showDistrib} 
+          onClose={() => setShowDistrib(false)} 
+          onSuccess={() => { setShowDistrib(false); setLoadingDistrib(false); }}
+          setLoading={setLoadingDistrib}
+        />
       )}
     </>
   );

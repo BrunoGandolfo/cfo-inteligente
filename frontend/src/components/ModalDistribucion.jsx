@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
-function ModalDistribucion({ isOpen, onClose, onSuccess }) {
+function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     tipo_cambio: '',
@@ -14,7 +15,7 @@ function ModalDistribucion({ isOpen, onClose, onSuccess }) {
     bruno_uyu: '', bruno_usd: ''
   });
   
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState('');
 
   const socios = ['Agustina', 'Viviana', 'Gonzalo', 'Pancho', 'Bruno'];
@@ -47,7 +48,8 @@ function ModalDistribucion({ isOpen, onClose, onSuccess }) {
       return;
     }
     
-    setLoading(true);
+    setLocalLoading(true);
+    if (setLoading) setLoading(true);
     setError('');
 
     try {
@@ -69,6 +71,7 @@ function ModalDistribucion({ isOpen, onClose, onSuccess }) {
       };
 
       await axios.post('http://localhost:8000/api/operaciones/distribucion', dataToSend);
+      toast.success('Operación registrada exitosamente');
       
       onSuccess();
       onClose();
@@ -85,9 +88,11 @@ function ModalDistribucion({ isOpen, onClose, onSuccess }) {
         bruno_uyu: '', bruno_usd: ''
       });
     } catch (error) {
+      toast.error('Error al registrar operación');
       setError(error.response?.data?.detail || 'Error al registrar');
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
+      if (setLoading) setLoading(false);
     }
   };
 
@@ -214,10 +219,10 @@ function ModalDistribucion({ isOpen, onClose, onSuccess }) {
           <button
             type="submit"
             form="formDistribucion"
-            disabled={loading}
+            disabled={localLoading}
             className="px-3 py-1 text-xs text-white bg-purple-600 rounded hover:bg-purple-700 disabled:opacity-50"
           >
-            {loading ? 'Guardando...' : 'Guardar'}
+            {localLoading ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useOperations } from '../../hooks/useOperations';
 import OperationRow from './OperationRow';
 import Card from '../ui/Card';
+import Button from '../ui/Button';
 
 export function OperationsTable({ refresh, onOpenDetails }) {
   const { operaciones, loading, anular } = useOperations(refresh);
@@ -12,11 +13,18 @@ export function OperationsTable({ refresh, onOpenDetails }) {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Operaciones</h3>
         </div>
         {loading ? (
-          <div className="p-6 text-center text-gray-500 dark:text-slate-300">Cargando operaciones...</div>
+          <div className="p-6">
+            <div className="animate-pulse space-y-3">
+              <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded w-1/3" />
+              <div className="h-10 bg-gray-100 dark:bg-slate-900 rounded" />
+              <div className="h-10 bg-gray-100 dark:bg-slate-900 rounded" />
+              <div className="h-10 bg-gray-100 dark:bg-slate-900 rounded" />
+            </div>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-50 dark:bg-slate-900">
+              <thead className="sticky top-0 bg-white dark:bg-slate-900">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
@@ -27,7 +35,12 @@ export function OperationsTable({ refresh, onOpenDetails }) {
               </thead>
               <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
                 {operaciones.length === 0 ? (
-                  <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500 dark:text-slate-300">No hay operaciones registradas</td></tr>
+                  <tr>
+                    <td colSpan="5" className="px-6 py-8 text-center text-gray-500 dark:text-slate-300">
+                      <div className="mb-3">No hay operaciones registradas</div>
+                      <Button variant="primary" onClick={() => { /* abrir modal ingreso */ }}>Registrar primera operación</Button>
+                    </td>
+                  </tr>
                 ) : (
                   operaciones.map((op) => (
                     <OperationRow key={op.id} op={op} onSelect={onOpenDetails} onCancel={anular} />

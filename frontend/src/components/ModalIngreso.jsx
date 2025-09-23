@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
-function ModalIngreso({ isOpen, onClose, onSuccess }) {
+function ModalIngreso({ isOpen, onClose, onSuccess, setLoading }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     cliente: '',
@@ -23,7 +24,7 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
     { id: '651dfb5c-15d8-41e2-8339-785b137f44f2', nombre: 'Otros' }
   ]);
   
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -44,7 +45,8 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setLocalLoading(true);
+    if (setLoading) setLoading(true);
     setError('');
 
     try {
@@ -62,6 +64,7 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
       };
 
       await axios.post('http://localhost:8000/api/operaciones/ingreso', dataToSend);
+      toast.success('Operación registrada exitosamente');
       
       onSuccess();
       onClose();
@@ -79,9 +82,11 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
       });
     } catch (error) {
       console.error('Error completo:', error);
+      toast.error('Error al registrar operación');
       setError(error.response?.data?.detail || 'Error al registrar el ingreso');
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
+      if (setLoading) setLoading(false);
     }
   };
 
@@ -218,10 +223,10 @@ function ModalIngreso({ isOpen, onClose, onSuccess }) {
           <button
             type="submit"
             form="formIngreso"
-            disabled={loading}
+            disabled={localLoading}
             className="px-3 py-1.5 text-xs text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50"
           >
-            {loading ? 'Guardando...' : 'Guardar'}
+            {localLoading ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
       </div>
