@@ -7,7 +7,7 @@ import ModalGasto from '../components/ModalGasto';
 import ModalRetiro from '../components/ModalRetiro';
 import ModalDistribucion from '../components/ModalDistribucion';
 import { useMetrics } from '../hooks/useMetrics';
-import { formatMoneyUYU } from '../utils/formatters';
+import { formatMoney } from '../utils/formatters';
 import Button from '../components/ui/Button';
 
 function Dashboard() {
@@ -17,27 +17,25 @@ function Dashboard() {
   const [showDistrib, setShowDistrib] = useState(false);
   const [detailOp, setDetailOp] = useState(null);
 
-  const { loading, resumen, rentabilidad, refreshKey } = useMetrics();
+  const { loading, metricas, filtros, refreshKey } = useMetrics();
 
   if (loading) {
     return <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center text-gray-600 dark:text-slate-200">Cargando...</div>;
   }
 
-  const ingresosUYU = resumen?.ingresos?.uyu || 0;
-  const gastosUYU = resumen?.gastos?.uyu || 0;
-  const cantidadOperaciones = resumen?.cantidad_operaciones || 0;
-  const margenOperativo = typeof rentabilidad?.margen_operativo_porcentaje === 'number'
-    ? rentabilidad.margen_operativo_porcentaje.toFixed(2)
-    : '0.00';
+  const moneda = metricas?.ingresos?.moneda || 'UYU';
+  const ingresosVal = metricas?.ingresos?.valor || 0;
+  const gastosVal = metricas?.gastos?.valor || 0;
+  const margenOperativo = typeof metricas?.rentabilidad === 'number' ? metricas.rentabilidad.toFixed(2) : '0.00';
+  const areaLider = metricas?.area_lider || null;
 
   return (
     <>
       <MetricsGrid
-        ingresosUYU={ingresosUYU}
-        gastosUYU={gastosUYU}
+        ingresos={formatMoney(ingresosVal, moneda)}
+        gastos={formatMoney(gastosVal, moneda)}
         margenOperativo={margenOperativo}
-        cantidadOperaciones={cantidadOperaciones}
-        formatMoney={formatMoneyUYU}
+        areaLider={areaLider}
       />
 
       <section className="px-6 mb-8">

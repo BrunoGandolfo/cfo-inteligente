@@ -4,6 +4,14 @@ import { es } from 'date-fns/locale';
 export const formatMoneyUYU = (n) =>
   new Intl.NumberFormat('es-UY', { style: 'currency', currency: 'UYU', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
 
+export const formatMoney = (n, currency = 'UYU') => {
+  const amount = Number(n || 0);
+  if (currency === 'USD') {
+    return `US$ ${amount.toLocaleString('es-UY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  }
+  return `$ ${amount.toLocaleString('es-UY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+};
+
 export const formatMoneySmart = (op) => {
   const usd = Number(op.monto_usd || 0); const uyu = Number(op.monto_uyu || 0);
   const isUSD = usd > 100 && uyu / (usd || 1) > 30;

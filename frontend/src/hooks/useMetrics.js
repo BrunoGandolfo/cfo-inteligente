@@ -1,35 +1,37 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { getMonth, getYear } from 'date-fns';
+import { formatISO } from 'date-fns';
 import { useFilters } from './useFilters';
 
 export function useMetrics() {
-  const { from, version } = useFilters();
+  const { from, to, localidad, monedaVista, version } = useFilters();
   const [loading, setLoading] = useState(true);
-  const [resumen, setResumen] = useState(null);
-  const [rentabilidad, setRentabilidad] = useState(null);
+  const [metricas, setMetricas] = useState(null);
+  const [filtros, setFiltros] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
         setLoading(true);
-        const params = { mes: getMonth(from) + 1, anio: getYear(from) };
-        const [r1, r2] = await Promise.all([
-          axios.get('http://localhost:8000/api/reportes/resumen-mensual', { params }),
-          axios.get('http://localhost:8000/api/reportes/rentabilidad', { params }),
-        ]);
-        setResumen(r1.data);
-        setRentabilidad(r2.data);
+        const params = {
+          fecha_desde: formatISO(from, { representation: 'date' }),
+          fecha_hasta: formatISO(to, { representation: 'date' }),
+          localidad: localidad === 'Todas' ? undefined : localidad,
+          moneda_vista: monedaVista
+        };
+        const { data } = await axios.get('http://localhost:8000/api/reportes/dashboard', { params });
+        setMetricas(data.metricas);
+        setFiltros(data.filtros_aplicados);
         setRefreshKey(k => k + 1);
       } finally {
         setLoading(false);
       }
     };
     fetchAll();
-  }, [from, version]);
+  }, [from, to, localidad, monedaVista, version]);
 
-  return { loading, resumen, rentabilidad, refreshKey };
+  return { loading, metricas, filtros, refreshKey };
 }
 export default useMetrics;
 

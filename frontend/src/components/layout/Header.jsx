@@ -6,6 +6,7 @@ import DateRangePicker from '../filters/DateRangePicker';
 import LocalityFilter from '../filters/LocalityFilter';
 import Button from '../ui/Button';
 import { useFilters } from '../../hooks/useFilters';
+import MonedaToggle from '../filters/MonedaToggle';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -25,20 +26,22 @@ export function Header() {
       <div className="h-full flex items-center">
         {/* ZONA 1: Logo (ancho fijo) */}
         <div className="w-64 flex items-center px-6 border-r border-gray-200 dark:border-slate-800">
-          <img src="/logo-conexion.png" alt="Conexión" className="h-14 max-h-14 w-auto object-contain" />
+          <img src="/logo-conexion.png" alt="Conexión" className="h-10 md:h-14 max-h-14 w-auto object-contain" />
         </div>
 
         {/* ZONA 2: Centro con filtros */}
         <div className="flex-1 flex items-center justify-center px-6">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 text-xs md:text-sm">
             {/* Fecha y hora juntas */}
-            <div className="text-sm flex items-center">
+            <div className="hidden md:flex items-center">
               <span className="text-gray-600 dark:text-slate-300 capitalize">{fecha}</span>
               <span className="mx-2 text-gray-300">|</span>
               <span className="text-gray-900 dark:text-white">{hora}</span>
             </div>
             {/* Separador vertical */}
             <div className="h-8 w-px bg-gray-300 dark:bg-slate-700"></div>
+            {/* Selector de moneda */}
+            <MonedaToggle />
             {/* Filtros de fecha */}
             <DateRangePicker from={from} to={to} onFrom={setFrom} onTo={setTo} />
             {/* Localidad */}
