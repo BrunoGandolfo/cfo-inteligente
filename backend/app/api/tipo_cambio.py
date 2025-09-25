@@ -22,3 +22,21 @@ def obtener_tipo_cambio_venta():
         "fuente": datos["fuente"],
         "actualizado": datos["actualizado"]
     }
+
+@router.get("/promedio")
+def obtener_tipo_cambio_promedio():
+    """
+    Obtiene el tipo de cambio PROMEDIO entre compra y venta
+    Este es el valor más justo para conversiones
+    """
+    datos = obtener_tipo_cambio_actual()
+    return {
+        "valor": datos["promedio"],
+        "fuente": datos["fuente"],
+        "actualizado": datos["actualizado"],
+        "detalle": {
+            "compra": datos["compra"],
+            "venta": datos["venta"],
+            "promedio": datos["promedio"]
+        }
+    }
