@@ -1,35 +1,23 @@
 #!/usr/bin/env python3
 """
-Configuración de Vanna Open Source - Sin API key
-Funcionará igual en desarrollo y en la nube
+Vanna con OpenAI GPT-3.5 - Cargando .env correctamente
 """
-
-import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
+from dotenv import load_dotenv
 
-import vanna as vn
-from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
+# CARGAR .env en las variables de entorno
+load_dotenv()
 
-# Configurar Vanna con ChromaDB local (sin API key)
-class VannaLocal(ChromaDB_VectorStore):
+from vanna.chromadb import ChromaDB_VectorStore
+from vanna.openai import OpenAI_Chat
+
+class MyVanna(ChromaDB_VectorStore, OpenAI_Chat):
     def __init__(self, config=None):
         ChromaDB_VectorStore.__init__(self, config=config)
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY no encontrada en .env")
+        OpenAI_Chat.__init__(self, config={'api_key': api_key, 'model': 'gpt-3.5-turbo'})
 
-# Crear instancia de Vanna local
-vanna_config = {'path': './chroma_db'}
-my_vanna = VannaLocal(config=vanna_config)
-
-# Configurar conexión a PostgreSQL
-db_config = {
-    'host': 'localhost',
-    'dbname': 'cfo_inteligente', 
-    'user': 'cfo_user',
-    'password': 'cfo_password',
-    'port': 5432
-}
-
-print("✓ Vanna Open Source configurado")
-print("✓ ChromaDB local en ./chroma_db")
-print("✓ Listo para entrenar con tus datos")
-print("\nEsto funcionará IGUAL en la nube")
+my_vanna = MyVanna(config={'path': './chroma_db'})

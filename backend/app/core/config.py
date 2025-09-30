@@ -1,14 +1,23 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 class Settings(BaseSettings):
-    DATABASE_URL: str
-    DATABASE_TEST_URL: Optional[str] = None
-    SECRET_KEY: str
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    ENVIRONMENT: str = "development"
-
+    # Database
+    database_url: str
+    database_test_url: str = ""
+    
+    # Security
+    secret_key: str
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    
+    # Environment
+    environment: str = "development"
+    
+    # API Keys (opcionales)
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    google_ai_key: str = ""
+    
     class Config:
         env_file = ".env"
 

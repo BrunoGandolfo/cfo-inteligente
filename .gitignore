@@ -39,3 +39,4 @@ Thumbs.db
 /data/
 /uploads/
 *.sql
+backend/chroma_db/
