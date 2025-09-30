@@ -1169,4 +1169,531 @@ def train_gastos_ingresos_queries():
 # Entrenar queries de gastos e ingresos
 train_gastos_ingresos_queries()
 
+def train_rankings_analisis_queries():
+    queries = [
+        (
+            "Ranking de meses por rentabilidad",
+            """
+            WITH mensual AS (
+                SELECT
+                    DATE_TRUNC('month', o.fecha) AS mes,
+                    (
+                        (SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+                       - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END))
+                        / NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                    ) * 100 AS rentabilidad
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                GROUP BY 1
+            )
+            SELECT mes, rentabilidad
+            FROM mensual
+            ORDER BY rentabilidad DESC NULLS LAST
+            """
+        ),
+        (
+            "Top 10 operaciones más grandes del año",
+            """
+            SELECT id, fecha, tipo_operacion, monto_uyu
+            FROM operaciones
+            WHERE deleted_at IS NULL
+              AND DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            ORDER BY monto_uyu DESC NULLS LAST
+            LIMIT 10
+            """
+        ),
+        (
+            "Ranking de socios por distribuciones acumuladas",
+            """
+            SELECT
+                s.nombre AS socio,
+                SUM(dd.monto_uyu) AS total_uyu,
+                SUM(dd.monto_usd) AS total_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            JOIN socios s ON s.id = dd.socio_id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY s.nombre
+            ORDER BY total_uyu DESC NULLS LAST
+            """
+        ),
+        (
+            "Top 5 días con más ingresos",
+            """
+            SELECT
+                o.fecha::date AS dia,
+                SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY o.fecha::date
+            ORDER BY ingresos DESC NULLS LAST
+            LIMIT 5
+            """
+        ),
+        (
+            "Peores 5 días por gastos",
+            """
+            SELECT
+                o.fecha::date AS dia,
+                SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY o.fecha::date
+            ORDER BY gastos DESC NULLS LAST
+            LIMIT 5
+            """
+        ),
+        (
+            "Ranking de áreas por eficiencia",
+            """
+            SELECT
+                a.nombre AS area,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS eficiencia
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY a.nombre
+            ORDER BY eficiencia DESC NULLS LAST
+            """
+        ),
+        (
+            "Top 3 meses con mejor flujo de caja",
+            """
+            WITH mensual AS (
+                SELECT
+                    DATE_TRUNC('month', o.fecha) AS mes,
+                    (SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END)) AS flujo
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                GROUP BY 1
+            )
+            SELECT mes, flujo
+            FROM mensual
+            ORDER BY flujo DESC NULLS LAST
+            LIMIT 3
+            """
+        ),
+        (
+            "Ranking de trimestres por crecimiento",
+            """
+            WITH trimestral AS (
+                SELECT
+                    DATE_TRUNC('quarter', o.fecha) AS trimestre,
+                    SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                GROUP BY 1
+            )
+            SELECT
+                trimestre,
+                ingresos,
+                LAG(ingresos) OVER (ORDER BY trimestre) AS ingresos_prev,
+                (ingresos - COALESCE(LAG(ingresos) OVER (ORDER BY trimestre), 0)) AS crecimiento
+            FROM trimestral
+            ORDER BY crecimiento DESC NULLS LAST
+            """
+        ),
+        (
+            "Top localidades por rentabilidad",
+            """
+            SELECT
+                o.localidad,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY o.localidad
+            ORDER BY rentabilidad DESC NULLS LAST
+            """
+        ),
+        (
+            "Ranking de áreas por cantidad de operaciones",
+            """
+            SELECT
+                a.nombre AS area,
+                COUNT(*) AS operaciones
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY a.nombre
+            ORDER BY operaciones DESC NULLS LAST
+            """
+        ),
+        (
+            "Top 5 retiros más grandes",
+            """
+            SELECT id, fecha, monto_uyu
+            FROM operaciones
+            WHERE deleted_at IS NULL
+              AND tipo_operacion = 'RETIRO'
+              AND DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            ORDER BY monto_uyu DESC NULLS LAST
+            LIMIT 5
+            """
+        ),
+        (
+            "Ranking de meses por distribuciones",
+            """
+            SELECT
+                DATE_TRUNC('month', o.fecha) AS mes,
+                SUM(dd.monto_uyu) AS total_uyu,
+                SUM(dd.monto_usd) AS total_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+            GROUP BY 1
+            ORDER BY total_uyu DESC NULLS LAST
+            """
+        ),
+        (
+            "Bottom 5 áreas por rentabilidad",
+            """
+            SELECT
+                a.nombre AS area,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY a.nombre
+            ORDER BY rentabilidad ASC NULLS LAST
+            LIMIT 5
+            """
+        ),
+        (
+            "Ranking de años por ingresos totales",
+            """
+            SELECT
+                EXTRACT(YEAR FROM o.fecha)::int AS anio,
+                SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+            GROUP BY 1
+            ORDER BY ingresos DESC NULLS LAST
+            """
+        ),
+        (
+            "Top 10 gastos recurrentes",
+            """
+            SELECT
+                COALESCE(o.proveedor, 'SIN_PROVEEDOR') AS proveedor,
+                SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END) AS total_gastado,
+                COUNT(*) FILTER (WHERE o.tipo_operacion='GASTO') AS cantidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY COALESCE(o.proveedor, 'SIN_PROVEEDOR')
+            ORDER BY total_gastado DESC NULLS LAST
+            LIMIT 10
+            """
+        ),
+    ]
+
+    for question, sql in queries:
+        vn.train(question=question, sql=sql)
+
+def train_especificas_negocio_queries():
+    queries = [
+        (
+            "¿Cuánto facturamos en el área Jurídica?",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS total_juridica
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND a.nombre = 'Jurídica'
+            """
+        ),
+        (
+            "Gastos de Notarial en Mercedes",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos_notarial_mercedes
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND a.nombre = 'Notarial'
+              AND o.localidad = 'MERCEDES'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            """
+        ),
+        (
+            "Ingresos de Contable este trimestre",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos_contable_trim
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND a.nombre = 'Contable'
+              AND DATE_TRUNC('quarter', o.fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
+            """
+        ),
+        (
+            "¿Cuánto gastamos en Gastos Generales?",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos_generales_total
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND a.nombre = 'Gastos Generales'
+            """
+        ),
+        (
+            "Retiros totales del año",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='RETIRO' THEN o.monto_uyu ELSE 0 END) AS retiros_ytd
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            """
+        ),
+        (
+            "Balance general del mes",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END) AS gastos,
+                SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+              - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END) AS resultado
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            """
+        ),
+        (
+            "Flujo de caja operativo",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+              - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END) AS flujo_operativo_mes
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            """
+        ),
+        (
+            "Capital de trabajo actual",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='INGRESO'      THEN o.monto_uyu ELSE 0 END)
+              - SUM(CASE WHEN o.tipo_operacion='GASTO'        THEN o.monto_uyu ELSE 0 END)
+              - SUM(CASE WHEN o.tipo_operacion='RETIRO'       THEN o.monto_uyu ELSE 0 END)
+              - SUM(CASE WHEN o.tipo_operacion='DISTRIBUCION' THEN o.monto_uyu ELSE 0 END) AS capital_trabajo_aprox
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+            """
+        ),
+        (
+            "¿Cuántos días faltan para fin de mes?",
+            """
+            SELECT
+                (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month - 1 day' - CURRENT_DATE)::int AS dias_restantes
+            """
+        ),
+        (
+            "Promedio de distribuciones por socio",
+            """
+            SELECT
+                s.nombre AS socio,
+                AVG(dd.monto_uyu) AS promedio_uyu,
+                AVG(dd.monto_usd) AS promedio_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            JOIN socios s ON s.id = dd.socio_id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY s.nombre
+            ORDER BY promedio_uyu DESC NULLS LAST
+            """
+        ),
+        (
+            "¿Cuál es el tipo de cambio promedio usado?",
+            """
+            SELECT AVG(o.tipo_cambio) AS tipo_cambio_promedio_mes
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            """
+        ),
+        (
+            "Total de operaciones en USD",
+            """
+            SELECT
+                COUNT(*) AS cantidad,
+                SUM(o.monto_usd) AS total_usd
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.moneda_original = 'USD'
+            """
+        ),
+        (
+            "Total de operaciones en UYU",
+            """
+            SELECT
+                COUNT(*) AS cantidad,
+                SUM(o.monto_uyu) AS total_uyu
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.moneda_original = 'UYU'
+            """
+        ),
+        (
+            "¿Cuántas operaciones hicimos este mes?",
+            """
+            SELECT COUNT(*) AS operaciones_mes
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            """
+        ),
+        (
+            "Resumen ejecutivo del trimestre",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='INGRESO'      THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion='GASTO'        THEN o.monto_uyu ELSE 0 END) AS gastos,
+                SUM(CASE WHEN o.tipo_operacion='RETIRO'       THEN o.monto_uyu ELSE 0 END) AS retiros,
+                SUM(CASE WHEN o.tipo_operacion='DISTRIBUCION' THEN o.monto_uyu ELSE 0 END) AS distribuciones
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('quarter', o.fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
+            """
+        ),
+        (
+            "Estado de resultados simplificado",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END) AS gastos,
+                SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+              - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END) AS resultado,
+                CASE WHEN SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) = 0
+                     THEN 0
+                     ELSE (
+                        (SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+                       - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END))
+                        / NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                     ) * 100
+                END AS margen_pct
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            """
+        ),
+        (
+            "Margen operativo del área Jurídica",
+            """
+            SELECT
+                (
+                    (SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS margen_operativo
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND a.nombre = 'Jurídica'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            """
+        ),
+        (
+            "Tasa de crecimiento mensual",
+            """
+            WITH mensual AS (
+                SELECT
+                    DATE_TRUNC('month', o.fecha) AS mes,
+                    SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                  AND o.fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months'
+                GROUP BY 1
+            )
+            SELECT
+                mes,
+                ingresos,
+                LAG(ingresos) OVER (ORDER BY mes) AS ingresos_prev,
+                CASE WHEN COALESCE(LAG(ingresos) OVER (ORDER BY mes), 0) = 0 THEN NULL
+                     ELSE ((ingresos - LAG(ingresos) OVER (ORDER BY mes)) / NULLIF(LAG(ingresos) OVER (ORDER BY mes), 0)) * 100
+                END AS crecimiento_pct
+            FROM mensual
+            ORDER BY mes
+            """
+        ),
+        (
+            "Proyección de cierre de año",
+            """
+            WITH params AS (
+                SELECT
+                    SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos_mtd,
+                    SUM(CASE WHEN o.tipo_operacion='GASTO'   THEN o.monto_uyu ELSE 0 END) AS gastos_mtd,
+                    EXTRACT(DAY FROM CURRENT_DATE)::numeric AS dia,
+                    EXTRACT(DAY FROM (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month - 1 day'))::numeric AS dias_mes
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                  AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            )
+            SELECT
+                (ingresos_mtd / NULLIF(dia,0) * 365) AS ingresos_proyectados_anual,
+                (gastos_mtd   / NULLIF(dia,0) * 365) AS gastos_proyectados_anual,
+                CASE WHEN (ingresos_mtd / NULLIF(dia,0) * 365) = 0 THEN 0
+                     ELSE (((ingresos_mtd / NULLIF(dia,0) * 365) - (gastos_mtd / NULLIF(dia,0) * 365))
+                          / NULLIF((ingresos_mtd / NULLIF(dia,0) * 365), 0)) * 100
+                END AS rentabilidad_proyectada_pct
+            FROM params
+            """
+        ),
+        (
+            "Análisis de estacionalidad",
+            """
+            WITH mensual AS (
+                SELECT
+                    DATE_TRUNC('month', o.fecha) AS mes,
+                    EXTRACT(MONTH FROM o.fecha)::int AS nro_mes,
+                    SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                GROUP BY 1, 2
+            )
+            SELECT
+                nro_mes,
+                AVG(ingresos) AS promedio_ingresos
+            FROM mensual
+            GROUP BY nro_mes
+            ORDER BY nro_mes
+            """
+        ),
+    ]
+
+    for question, sql in queries:
+        vn.train(question=question, sql=sql)
+
+# Entrenar queries de rankings y análisis
+train_rankings_analisis_queries()
+# Entrenar queries específicas de negocio
+train_especificas_negocio_queries()
 print("Entrenamiento completado")
