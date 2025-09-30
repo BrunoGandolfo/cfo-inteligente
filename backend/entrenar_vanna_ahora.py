@@ -23,6 +23,31 @@ CREATE TABLE operaciones (
 );
 """)
 
+vn.train(ddl="""
+CREATE TABLE socios (
+    id UUID PRIMARY KEY,
+    nombre VARCHAR(100),
+    porcentaje_participacion NUMERIC(5,2)
+);
+""")
+
+vn.train(ddl="""
+CREATE TABLE distribuciones_detalle (
+    id UUID PRIMARY KEY,
+    operacion_id UUID REFERENCES operaciones(id),
+    socio_id UUID REFERENCES socios(id),
+    monto_uyu NUMERIC(15,2),
+    monto_usd NUMERIC(15,2)
+);
+""")
+
+vn.train(ddl="""
+CREATE TABLE areas (
+    id UUID PRIMARY KEY,
+    nombre VARCHAR(100)
+);
+""")
+
 # Entrenar pregunta específica
 vn.train(
     question="¿Cuánto hemos facturado hasta la fecha?",
@@ -442,5 +467,206 @@ def train_rentabilidad_queries():
 
 # Entrenar queries de rentabilidad prioritarias
 train_rentabilidad_queries()
+
+def train_distribuciones_queries():
+    queries = [
+        (
+            "¿Cuánto recibió Bruno este año?",
+            """
+            SELECT
+                COALESCE(SUM(dd.monto_uyu), 0) AS monto_uyu,
+                COALESCE(SUM(dd.monto_usd), 0) AS monto_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            JOIN socios s ON s.id = dd.socio_id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+              AND s.nombre = 'Bruno'
+            """
+        ),
+        (
+            "Total de distribuciones por socio este mes",
+            """
+            SELECT
+                s.nombre AS socio,
+                SUM(dd.monto_uyu) AS monto_uyu,
+                SUM(dd.monto_usd) AS monto_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            JOIN socios s ON s.id = dd.socio_id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            GROUP BY s.nombre
+            ORDER BY monto_uyu DESC
+            """
+        ),
+        (
+            "Distribuciones en USD vs UYU por socio",
+            """
+            SELECT
+                s.nombre AS socio,
+                SUM(dd.monto_uyu) AS total_uyu,
+                SUM(dd.monto_usd) AS total_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            JOIN socios s ON s.id = dd.socio_id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY s.nombre
+            ORDER BY total_uyu DESC
+            """
+        ),
+        (
+            "¿Cuánto recibió cada socio este año?",
+            """
+            SELECT
+                s.nombre AS socio,
+                SUM(dd.monto_uyu) AS monto_uyu,
+                SUM(dd.monto_usd) AS monto_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            JOIN socios s ON s.id = dd.socio_id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY s.nombre
+            ORDER BY monto_uyu DESC
+            """
+        ),
+        (
+            "Última distribución realizada",
+            """
+            WITH ultima AS (
+                SELECT id, fecha
+                FROM operaciones
+                WHERE deleted_at IS NULL
+                  AND tipo_operacion = 'DISTRIBUCION'
+                ORDER BY fecha DESC
+                LIMIT 1
+            )
+            SELECT
+                u.id AS operacion_id,
+                u.fecha,
+                COALESCE(SUM(dd.monto_uyu), 0) AS total_uyu,
+                COALESCE(SUM(dd.monto_usd), 0) AS total_usd
+            FROM ultima u
+            LEFT JOIN distribuciones_detalle dd ON dd.operacion_id = u.id
+            GROUP BY u.id, u.fecha
+            """
+        ),
+        (
+            "Total distribuido este trimestre",
+            """
+            SELECT
+                SUM(dd.monto_uyu) AS total_uyu,
+                SUM(dd.monto_usd) AS total_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND DATE_TRUNC('quarter', o.fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
+            """
+        ),
+        (
+            "Ranking de socios por monto recibido",
+            """
+            SELECT
+                s.nombre AS socio,
+                SUM(dd.monto_uyu) AS monto_uyu,
+                SUM(dd.monto_usd) AS monto_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            JOIN socios s ON s.id = dd.socio_id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY s.nombre
+            ORDER BY monto_uyu DESC
+            """
+        ),
+        (
+            "Distribuciones de Agustina en 2025",
+            """
+            SELECT
+                DATE_TRUNC('month', o.fecha) AS mes,
+                SUM(dd.monto_uyu) AS monto_uyu,
+                SUM(dd.monto_usd) AS monto_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            JOIN socios s ON s.id = dd.socio_id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND s.nombre = 'Agustina'
+              AND EXTRACT(YEAR FROM o.fecha) = 2025
+            GROUP BY 1
+            ORDER BY 1
+            """
+        ),
+        (
+            "Porcentaje recibido por cada socio",
+            """
+            WITH total_anual AS (
+                SELECT
+                    SUM(dd.monto_uyu) AS total_uyu
+                FROM operaciones o
+                JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+                WHERE o.deleted_at IS NULL
+                  AND o.tipo_operacion = 'DISTRIBUCION'
+                  AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            )
+            SELECT
+                s.nombre AS socio,
+                SUM(dd.monto_uyu) AS monto_uyu,
+                CASE WHEN ta.total_uyu = 0 THEN 0
+                     ELSE (SUM(dd.monto_uyu) / ta.total_uyu) * 100
+                END AS porcentaje_uyu
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            JOIN socios s ON s.id = dd.socio_id
+            CROSS JOIN total_anual ta
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY s.nombre, ta.total_uyu
+            ORDER BY porcentaje_uyu DESC
+            """
+        ),
+        (
+            "Distribuciones pendientes vs pagadas",
+            """
+            WITH base AS (
+                SELECT
+                    o.id,
+                    o.fecha,
+                    COUNT(dd.id) AS cantidad_detalles,
+                    COALESCE(SUM(dd.monto_uyu), 0) AS total_uyu,
+                    COALESCE(SUM(dd.monto_usd), 0) AS total_usd
+                FROM operaciones o
+                LEFT JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+                WHERE o.deleted_at IS NULL
+                  AND o.tipo_operacion = 'DISTRIBUCION'
+                  AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+                GROUP BY o.id, o.fecha
+            )
+            SELECT
+                CASE WHEN cantidad_detalles > 0 THEN 'PAGADA' ELSE 'PENDIENTE' END AS estado,
+                COUNT(*) AS operaciones,
+                SUM(total_uyu) AS total_uyu,
+                SUM(total_usd) AS total_usd
+            FROM base
+            GROUP BY estado
+            ORDER BY estado
+            """
+        ),
+    ]
+
+    for question, sql in queries:
+        vn.train(question=question, sql=sql)
+
+# Entrenar queries de distribuciones
+train_distribuciones_queries()
 
 print("Entrenamiento completado")
