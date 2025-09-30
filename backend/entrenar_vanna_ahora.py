@@ -949,4 +949,224 @@ def train_comparaciones_queries():
 # Entrenar queries de comparaciones
 train_comparaciones_queries()
 
+def train_gastos_ingresos_queries():
+    queries = [
+        (
+            "Total de ingresos este mes",
+            """
+            SELECT
+                SUM(o.monto_uyu) AS total_ingresos_mes
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'INGRESO'
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            """
+        ),
+        (
+            "Total de gastos este año",
+            """
+            SELECT
+                SUM(o.monto_uyu) AS total_gastos_anio
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'GASTO'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            """
+        ),
+        (
+            "Ingresos por área este trimestre",
+            """
+            SELECT
+                a.nombre AS area,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('quarter', o.fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
+            GROUP BY a.nombre
+            ORDER BY ingresos DESC
+            """
+        ),
+        (
+            "Gastos por área este mes",
+            """
+            SELECT
+                a.nombre AS area,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            GROUP BY a.nombre
+            ORDER BY gastos DESC
+            """
+        ),
+        (
+            "Mayor ingreso del mes",
+            """
+            SELECT
+                o.id,
+                o.fecha,
+                o.monto_uyu AS monto
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'INGRESO'
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            ORDER BY o.monto_uyu DESC NULLS LAST
+            LIMIT 1
+            """
+        ),
+        (
+            "Mayor gasto del año",
+            """
+            SELECT
+                o.id,
+                o.fecha,
+                o.monto_uyu AS monto
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'GASTO'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            ORDER BY o.monto_uyu DESC NULLS LAST
+            LIMIT 1
+            """
+        ),
+        (
+            "Promedio de ingresos diarios este mes",
+            """
+            WITH diarios AS (
+                SELECT
+                    o.fecha::date AS dia,
+                    SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos_dia
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                  AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+                GROUP BY o.fecha::date
+            )
+            SELECT AVG(ingresos_dia) AS promedio_diario
+            FROM diarios
+            """
+        ),
+        (
+            "Top 5 áreas por ingresos",
+            """
+            SELECT
+                a.nombre AS area,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY a.nombre
+            ORDER BY ingresos DESC NULLS LAST
+            LIMIT 5
+            """
+        ),
+        (
+            "Top 5 áreas por gastos",
+            """
+            SELECT
+                a.nombre AS area,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY a.nombre
+            ORDER BY gastos DESC NULLS LAST
+            LIMIT 5
+            """
+        ),
+        (
+            "Ingresos en USD vs UYU este mes",
+            """
+            SELECT
+                o.moneda_original,
+                SUM(o.monto_uyu) AS total_uyu,
+                SUM(o.monto_usd) AS total_usd
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'INGRESO'
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            GROUP BY o.moneda_original
+            ORDER BY o.moneda_original
+            """
+        ),
+        (
+            "Gastos en USD vs UYU este año",
+            """
+            SELECT
+                o.moneda_original,
+                SUM(o.monto_uyu) AS total_uyu,
+                SUM(o.monto_usd) AS total_usd
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'GASTO'
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY o.moneda_original
+            ORDER BY o.moneda_original
+            """
+        ),
+        (
+            "Ingresos por localidad este trimestre",
+            """
+            SELECT
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('quarter', o.fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
+            GROUP BY o.localidad
+            ORDER BY ingresos DESC NULLS LAST
+            """
+        ),
+        (
+            "Gastos operativos vs gastos generales",
+            """
+            SELECT
+                CASE WHEN COALESCE(a.nombre,'') = 'Gastos Generales' THEN 'GASTOS GENERALES' ELSE 'OPERATIVOS' END AS tipo_gasto,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS total
+            FROM operaciones o
+            LEFT JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY 1
+            ORDER BY 1
+            """
+        ),
+        (
+            "Ticket promedio de ingresos",
+            """
+            SELECT
+                AVG(o.monto_uyu) AS ticket_promedio,
+                COUNT(*) AS cantidad_ingresos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'INGRESO'
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            """
+        ),
+        (
+            "Relación gastos/ingresos por área",
+            """
+            SELECT
+                a.nombre AS area,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END)
+                / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0) AS relacion_gastos_ingresos
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            GROUP BY a.nombre
+            ORDER BY relacion_gastos_ingresos DESC NULLS LAST
+            """
+        ),
+    ]
+
+    for question, sql in queries:
+        vn.train(question=question, sql=sql)
+
+# Entrenar queries de gastos e ingresos
+train_gastos_ingresos_queries()
+
 print("Entrenamiento completado")
