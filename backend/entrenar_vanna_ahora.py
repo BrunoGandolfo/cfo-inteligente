@@ -669,4 +669,284 @@ def train_distribuciones_queries():
 # Entrenar queries de distribuciones
 train_distribuciones_queries()
 
+def train_comparaciones_queries():
+    queries = [
+        (
+            "Comparar ingresos de este mes vs mes anterior",
+            """
+            WITH mensual AS (
+                SELECT
+                    DATE_TRUNC('month', o.fecha) AS mes,
+                    SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                GROUP BY 1
+            )
+            SELECT
+                SUM(ingresos) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE)) AS ingresos_mes,
+                SUM(ingresos) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month') AS ingresos_mes_anterior,
+                COALESCE(SUM(ingresos) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE)), 0)
+              - COALESCE(SUM(ingresos) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month'), 0) AS variacion
+            FROM mensual
+            WHERE mes IN (DATE_TRUNC('month', CURRENT_DATE), DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month')
+            """
+        ),
+        (
+            "Comparar Mercedes vs Montevideo este año",
+            """
+            SELECT
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+              AND o.localidad IN ('MONTEVIDEO', 'MERCEDES')
+            GROUP BY o.localidad
+            ORDER BY o.localidad
+            """
+        ),
+        (
+            "Comparación Q1 2025 vs Q1 2024",
+            """
+            SELECT
+                EXTRACT(YEAR FROM o.fecha)::int AS anio,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND EXTRACT(QUARTER FROM o.fecha) = 1
+              AND EXTRACT(YEAR FROM o.fecha) IN (2024, 2025)
+            GROUP BY 1
+            ORDER BY 1
+            """
+        ),
+        (
+            "Evolución mensual de gastos últimos 6 meses",
+            """
+            SELECT
+                DATE_TRUNC('month', o.fecha) AS mes,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months'
+            GROUP BY 1
+            ORDER BY 1
+            """
+        ),
+        (
+            "Comparar rentabilidad de este año vs año pasado",
+            """
+            SELECT
+                EXTRACT(YEAR FROM o.fecha)::int AS anio,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion = 'GASTO'   THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND EXTRACT(YEAR FROM o.fecha) IN (EXTRACT(YEAR FROM CURRENT_DATE), EXTRACT(YEAR FROM CURRENT_DATE) - 1)
+            GROUP BY 1
+            ORDER BY 1
+            """
+        ),
+        (
+            "Ingresos por área este mes vs mes anterior",
+            """
+            WITH por_area AS (
+                SELECT
+                    a.nombre AS area,
+                    DATE_TRUNC('month', o.fecha) AS mes,
+                    SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+                FROM operaciones o
+                JOIN areas a ON a.id = o.area_id
+                WHERE o.deleted_at IS NULL
+                GROUP BY a.nombre, DATE_TRUNC('month', o.fecha)
+            )
+            SELECT
+                area,
+                SUM(ingresos) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE)) AS ingresos_mes,
+                SUM(ingresos) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month') AS ingresos_mes_anterior,
+                COALESCE(SUM(ingresos) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE)), 0)
+              - COALESCE(SUM(ingresos) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month'), 0) AS variacion
+            FROM por_area
+            WHERE mes IN (DATE_TRUNC('month', CURRENT_DATE), DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month')
+            GROUP BY area
+            ORDER BY variacion DESC NULLS LAST
+            """
+        ),
+        (
+            "Gastos Mercedes vs Montevideo último trimestre",
+            """
+            SELECT
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('quarter', o.fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
+              AND o.localidad IN ('MONTEVIDEO', 'MERCEDES')
+            GROUP BY o.localidad
+            ORDER BY o.localidad
+            """
+        ),
+        (
+            "Tendencia de ingresos últimos 12 meses",
+            """
+            WITH mensual AS (
+                SELECT
+                    DATE_TRUNC('month', o.fecha) AS mes,
+                    SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                  AND o.fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months'
+                GROUP BY 1
+            )
+            SELECT
+                mes,
+                ingresos,
+                LAG(ingresos) OVER (ORDER BY mes) AS ingresos_anterior,
+                ingresos - COALESCE(LAG(ingresos) OVER (ORDER BY mes), 0) AS variacion
+            FROM mensual
+            ORDER BY mes
+            """
+        ),
+        (
+            "Comparar distribuciones Q2 vs Q1 2025",
+            """
+            SELECT
+                EXTRACT(QUARTER FROM o.fecha)::int AS trimestre,
+                SUM(dd.monto_uyu) AS total_uyu,
+                SUM(dd.monto_usd) AS total_usd
+            FROM operaciones o
+            JOIN distribuciones_detalle dd ON dd.operacion_id = o.id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'DISTRIBUCION'
+              AND EXTRACT(YEAR FROM o.fecha) = 2025
+              AND EXTRACT(QUARTER FROM o.fecha) IN (1, 2)
+            GROUP BY 1
+            ORDER BY 1
+            """
+        ),
+        (
+            "Área con mayor crecimiento año a año",
+            """
+            WITH anual AS (
+                SELECT
+                    a.nombre AS area,
+                    EXTRACT(YEAR FROM o.fecha)::int AS anio,
+                    SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+                FROM operaciones o
+                JOIN areas a ON a.id = o.area_id
+                WHERE o.deleted_at IS NULL
+                GROUP BY a.nombre, EXTRACT(YEAR FROM o.fecha)
+            ), yoy AS (
+                SELECT
+                    area,
+                    anio,
+                    ingresos,
+                    LAG(ingresos) OVER (PARTITION BY area ORDER BY anio) AS ingresos_prev,
+                    ingresos - COALESCE(LAG(ingresos) OVER (PARTITION BY area ORDER BY anio), 0) AS crecimiento
+                FROM anual
+            )
+            SELECT area, anio, ingresos, ingresos_prev, crecimiento
+            FROM yoy
+            WHERE anio = EXTRACT(YEAR FROM CURRENT_DATE)
+            ORDER BY crecimiento DESC NULLS LAST
+            LIMIT 1
+            """
+        ),
+        (
+            "Comparación de retiros mes actual vs promedio",
+            """
+            WITH mensual AS (
+                SELECT
+                    DATE_TRUNC('month', o.fecha) AS mes,
+                    SUM(CASE WHEN o.tipo_operacion = 'RETIRO' THEN o.monto_uyu ELSE 0 END) AS retiros
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                  AND o.fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months'
+                GROUP BY 1
+            )
+            SELECT
+                SUM(retiros) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE)) AS retiros_mes,
+                AVG(retiros) AS promedio_12m,
+                COALESCE(SUM(retiros) FILTER (WHERE mes = DATE_TRUNC('month', CURRENT_DATE)), 0) - AVG(retiros) AS diferencia
+            FROM mensual
+            """
+        ),
+        (
+            "Evolución trimestral de rentabilidad",
+            """
+            SELECT
+                DATE_TRUNC('quarter', o.fecha) AS trimestre,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion = 'GASTO'   THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND o.fecha >= DATE_TRUNC('year', CURRENT_DATE) - INTERVAL '2 years'
+            GROUP BY 1
+            ORDER BY 1
+            """
+        ),
+        (
+            "Mercedes vs Montevideo por área",
+            """
+            SELECT
+                a.nombre AS area,
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+              AND o.localidad IN ('MONTEVIDEO', 'MERCEDES')
+            GROUP BY a.nombre, o.localidad
+            ORDER BY a.nombre, o.localidad
+            """
+        ),
+        (
+            "Comparar gastos generales 2025 vs 2024",
+            """
+            SELECT
+                EXTRACT(YEAR FROM o.fecha)::int AS anio,
+                SUM(o.monto_uyu) AS gastos
+            FROM operaciones o
+            JOIN areas a ON a.id = o.area_id
+            WHERE o.deleted_at IS NULL
+              AND o.tipo_operacion = 'GASTO'
+              AND a.nombre = 'Gastos Generales'
+              AND EXTRACT(YEAR FROM o.fecha) IN (2024, 2025)
+            GROUP BY 1
+            ORDER BY 1
+            """
+        ),
+        (
+            "Mejor vs peor mes del año en ingresos",
+            """
+            WITH mensual AS (
+                SELECT
+                    DATE_TRUNC('month', o.fecha) AS mes,
+                    SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                  AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+                GROUP BY 1
+            )
+            SELECT
+                (SELECT mes FROM mensual ORDER BY ingresos DESC NULLS LAST LIMIT 1)  AS mejor_mes,
+                (SELECT ingresos FROM mensual ORDER BY ingresos DESC NULLS LAST LIMIT 1) AS ingresos_mejor_mes,
+                (SELECT mes FROM mensual ORDER BY ingresos ASC  NULLS LAST LIMIT 1)  AS peor_mes,
+                (SELECT ingresos FROM mensual ORDER BY ingresos ASC  NULLS LAST LIMIT 1) AS ingresos_peor_mes
+            """
+        ),
+    ]
+
+    for question, sql in queries:
+        vn.train(question=question, sql=sql)
+
+# Entrenar queries de comparaciones
+train_comparaciones_queries()
+
 print("Entrenamiento completado")
