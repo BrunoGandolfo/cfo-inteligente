@@ -8,6 +8,21 @@ vn.connect_to_postgres(
     port=5432
 )
 
+# Entrenar documentación y contexto del negocio
+vn.train(documentation="""
+Conexión Consultora - Contexto del Negocio:
+- Consultora uruguaya con 5 socios: Agustina, Viviana, Gonzalo, Pancho y Bruno
+- Opera en 2 localidades: Montevideo y Mercedes
+- Áreas de negocio: Jurídica, Notarial, Contable, Recuperación, Gastos Generales, Otros
+- Tipos de operaciones: INGRESO, GASTO, RETIRO, DISTRIBUCION
+- Monedas: UYU (pesos uruguayos) y USD (dólares)
+- Fórmula de rentabilidad: (Ingresos - Gastos) / Ingresos * 100
+- Siempre filtrar deleted_at IS NULL para operaciones activas
+- Para comparaciones temporales usar DATE_TRUNC('quarter', fecha), DATE_TRUNC('month', fecha)
+- Trimestre actual: DATE_TRUNC('quarter', CURRENT_DATE)
+- Trimestre anterior: DATE_TRUNC('quarter', CURRENT_DATE) - INTERVAL '3 months'
+""")
+
 # DDL principal
 vn.train(ddl="""
 CREATE TABLE operaciones (
@@ -1699,8 +1714,263 @@ def train_especificas_negocio_queries():
     for question, sql in queries:
         vn.train(question=question, sql=sql)
 
+def train_variaciones_comunes_queries():
+    """
+    Queries para variaciones comunes de preguntas que usuarios reales hacen
+    """
+    queries = [
+        # Variaciones de comparación trimestral
+        (
+            "Comparar este trimestre vs anterior",
+            """
+            WITH trimestres AS (
+                SELECT
+                    DATE_TRUNC('quarter', o.fecha) AS trimestre,
+                    SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                    SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos,
+                    (
+                        (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                       - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END))
+                        / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                    ) * 100 AS rentabilidad
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                GROUP BY 1
+                ORDER BY 1 DESC
+                LIMIT 2
+            )
+            SELECT 
+                trimestre,
+                ingresos,
+                gastos,
+                rentabilidad
+            FROM trimestres
+            ORDER BY trimestre DESC
+            """
+        ),
+        (
+            "Comparar trimestre actual con el anterior",
+            """
+            WITH trimestres AS (
+                SELECT
+                    DATE_TRUNC('quarter', o.fecha) AS trimestre,
+                    SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                    SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos
+                FROM operaciones o
+                WHERE o.deleted_at IS NULL
+                GROUP BY 1
+                ORDER BY 1 DESC
+                LIMIT 2
+            )
+            SELECT 
+                trimestre,
+                ingresos,
+                gastos,
+                ingresos - gastos AS resultado
+            FROM trimestres
+            ORDER BY trimestre DESC
+            """
+        ),
+        (
+            "Dame un resumen ejecutivo",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos_totales,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos_totales,
+                SUM(CASE WHEN o.tipo_operacion = 'RETIRO' THEN o.monto_uyu ELSE 0 END) AS retiros_totales,
+                SUM(CASE WHEN o.tipo_operacion = 'DISTRIBUCION' THEN o.monto_uyu ELSE 0 END) AS distribuciones_totales,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            """
+        ),
+        (
+            "Resumen ejecutivo del mes",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+              - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS resultado,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            """
+        ),
+        (
+            "Comparación Mercedes Montevideo",
+            """
+            SELECT
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            GROUP BY o.localidad
+            ORDER BY o.localidad
+            """
+        ),
+        (
+            "Comparación Mercedes vs Montevideo",
+            """
+            SELECT
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            GROUP BY o.localidad
+            ORDER BY rentabilidad DESC
+            """
+        ),
+        (
+            "Comparar oficinas",
+            """
+            SELECT
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            GROUP BY o.localidad
+            ORDER BY ingresos DESC
+            """
+        ),
+        (
+            "Comparación Mercedes vs Montevideo",
+            """
+            SELECT
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            GROUP BY o.localidad
+            ORDER BY rentabilidad DESC
+            """
+        ),
+        (
+            "Mercedes vs Montevideo",
+            """
+            SELECT
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            GROUP BY o.localidad
+            ORDER BY o.localidad
+            """
+        ),
+        (
+            "Comparar localidades",
+            """
+            SELECT
+                o.localidad,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            GROUP BY o.localidad
+            ORDER BY ingresos DESC
+            """
+        ),
+        (
+            "Cómo venimos este mes",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos,
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+              - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS resultado,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+            """
+        ),
+        (
+            "Cómo va el año",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos_ytd,
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos_ytd,
+                (
+                    (SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END)
+                   - SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END))
+                    / NULLIF(SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END), 0)
+                ) * 100 AS rentabilidad_ytd
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('year', o.fecha) = DATE_TRUNC('year', CURRENT_DATE)
+            """
+        ),
+        (
+            "Ingresos trimestre actual",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.monto_uyu ELSE 0 END) AS ingresos_trimestre
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('quarter', o.fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
+            """
+        ),
+        (
+            "Gastos trimestre actual",
+            """
+            SELECT
+                SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.monto_uyu ELSE 0 END) AS gastos_trimestre
+            FROM operaciones o
+            WHERE o.deleted_at IS NULL
+              AND DATE_TRUNC('quarter', o.fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
+            """
+        ),
+    ]
+    
+    for question, sql in queries:
+        vn.train(question=question, sql=sql)
+
 # Entrenar queries de rankings y análisis
 train_rankings_analisis_queries()
 # Entrenar queries específicas de negocio
 train_especificas_negocio_queries()
+# Entrenar variaciones comunes de preguntas
+train_variaciones_comunes_queries()
+
 print("Entrenamiento completado")
+print(f"Total de queries entrenadas: ~110+")

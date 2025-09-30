@@ -22,9 +22,7 @@ from configurar_vanna_local import my_vanna as vn
 router = APIRouter()
 
 # Cliente de Anthropic para Claude Sonnet 4.5
-client = anthropic.Anthropic(
-    api_key=os.getenv("ANTHROPIC_API_KEY")  # Usar variable de entorno
-)
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 class PreguntaCFO(BaseModel):
     pregunta: str
@@ -69,6 +67,9 @@ Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
     
     except Exception as e:
         # Si falla Claude, retornar datos crudos formateados
+        print(f"ERROR en generar_respuesta_narrativa: {e}")
+        import traceback
+        traceback.print_exc()
         return f"Resultado: {json.dumps(datos, indent=2, ensure_ascii=False, default=str)}"
 
 @router.post("/ask")
@@ -91,6 +92,32 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
         
         if not sql_generado:
             raise HTTPException(status_code=400, detail="No pude generar SQL para esa pregunta")
+        
+        # VALIDACIÓN: Detectar si Vanna devolvió texto explicativo en lugar de SQL
+        sql_limpio = sql_generado.strip()
+        sql_upper = sql_limpio.upper()
+        
+        # Buscar SQL válido (puede estar en cualquier parte del texto)
+        contiene_select = 'SELECT' in sql_upper
+        contiene_with = 'WITH' in sql_upper
+        
+        # Palabras que DEFINITIVAMENTE indican que NO hay SQL
+        palabras_no_sql = [
+            'NO ES POSIBLE', 'CANNOT', 'IMPOSSIBLE', 'NOT POSSIBLE',
+            'REQUIERE MÁS', 'INSUFICIENT', 'NO DISPONEMOS', 'NO DISPONGO'
+        ]
+        
+        definitivamente_no_sql = any(palabra in sql_upper[:200] for palabra in palabras_no_sql)
+        
+        # Si no contiene SELECT/WITH Y tiene palabras de no-SQL, entonces es texto explicativo
+        if not (contiene_select or contiene_with) or definitivamente_no_sql:
+            return {
+                "pregunta": data.pregunta,
+                "respuesta": "Lo siento, no tengo suficiente información entrenada para responder esa pregunta específica. ¿Podrías reformularla de otra manera? Por ejemplo: 'ingresos del trimestre actual' o 'rentabilidad este mes'.",
+                "sql_generado": None,
+                "status": "error",
+                "error_tipo": "no_sql_generated"
+            }
         
         # Ejecutar el SQL
         resultado = ejecutar_consulta_cfo(db, sql_generado)
