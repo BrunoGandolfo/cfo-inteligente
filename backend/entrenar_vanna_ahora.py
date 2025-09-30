@@ -12,14 +12,21 @@ vn.connect_to_postgres(
 vn.train(ddl="""
 CREATE TABLE operaciones (
     id UUID PRIMARY KEY,
-    tipo_operacion VARCHAR(20),
-    fecha DATE,
-    monto_original NUMERIC(15,2),
-    moneda_original VARCHAR(3),
-    tipo_cambio NUMERIC(10,4),
-    monto_usd NUMERIC(15,2),
-    monto_uyu NUMERIC(15,2),
-    deleted_at TIMESTAMP
+    tipo_operacion VARCHAR(20) NOT NULL,
+    fecha DATE NOT NULL,
+    monto_original NUMERIC(15,2) NOT NULL,
+    moneda_original VARCHAR(3) NOT NULL,
+    tipo_cambio NUMERIC(10,4) NOT NULL,
+    monto_usd NUMERIC(15,2) NOT NULL,
+    monto_uyu NUMERIC(15,2) NOT NULL,
+    area_id UUID NOT NULL REFERENCES areas(id),
+    localidad VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(500),
+    cliente VARCHAR(200),
+    proveedor VARCHAR(200),
+    deleted_at TIMESTAMP,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
 );
 """)
 
