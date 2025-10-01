@@ -4,7 +4,10 @@ Router API para CFO Inteligente - Conecta Vanna con ejecución
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.config import settings
 from app.services.cfo_ai_service import ejecutar_consulta_cfo
+from app.services.sql_post_processor import SQLPostProcessor
+from app.services.claude_sql_generator import ClaudeSQLGenerator
 from pydantic import BaseModel
 import sys
 import os
@@ -12,7 +15,7 @@ import json
 import anthropic
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
+# Cargar variables de entorno (fallback por si acaso)
 load_dotenv()
 
 # Agregar path para importar scripts
@@ -21,8 +24,17 @@ from configurar_vanna_local import my_vanna as vn
 
 router = APIRouter()
 
-# Cliente de Anthropic para Claude Sonnet 4.5
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+# FIX: Limpiar la API key por si viene con saltos de línea o duplicada
+api_key_limpia = settings.anthropic_api_key.strip()
+if '\n' in api_key_limpia or len(api_key_limpia) > 108:
+    # Si está duplicada, tomar solo la primera parte
+    api_key_limpia = api_key_limpia.split('\n')[0].strip()[:108]
+
+# Cliente de Anthropic para Claude Sonnet 4.5 (respuestas narrativas)
+client = anthropic.Anthropic(api_key=api_key_limpia)
+
+# Generador de SQL con Claude Sonnet 4.5 (modelo principal)
+claude_sql_gen = ClaudeSQLGenerator()
 
 class PreguntaCFO(BaseModel):
     pregunta: str
@@ -32,8 +44,27 @@ def generar_respuesta_narrativa(pregunta: str, datos: list, sql_generado: str) -
     Usa Claude Sonnet 4.5 para generar respuesta narrativa profesional
     """
     try:
+        # === LOGS DE DIAGNÓSTICO ===
+        print("\n" + "="*80)
+        print("🔍 DEBUG: Iniciando generar_respuesta_narrativa()")
+        print("="*80)
+        
+        # Verificar API Key
+        print(f"✅ API Key presente: {bool(api_key_limpia)}")
+        if api_key_limpia:
+            print(f"✅ API Key primeros 10 chars: {api_key_limpia[:10]}...")
+            print(f"✅ API Key longitud: {len(api_key_limpia)} (debe ser 108)")
+        
+        # Verificar cliente
+        print(f"✅ Cliente Anthropic inicializado: {bool(client)}")
+        
+        # Verificar datos
+        print(f"✅ Datos recibidos: {len(datos)} filas")
+        print(f"✅ Pregunta: {pregunta}")
+        
         # Formatear datos de manera legible
         datos_texto = json.dumps(datos, indent=2, ensure_ascii=False, default=str)
+        print(f"✅ Datos formateados (primeros 200 chars): {datos_texto[:200]}...")
         
         prompt = f"""Eres el CFO AI de Conexión Consultora, una consultora en Uruguay.
 
@@ -57,19 +88,35 @@ INSTRUCCIONES:
 
 Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
         
+        print("🚀 Llamando a Claude Sonnet 4.5...")
+        print(f"   Modelo: claude-sonnet-4-5-20250929")
+        print(f"   Max tokens: 250")
+        
         message = client.messages.create(
             model="claude-sonnet-4-5-20250929",
             max_tokens=250,
             messages=[{"role": "user", "content": prompt}]
         )
         
-        return message.content[0].text
-    
+        print("✅ Respuesta recibida de Claude")
+        print(f"   Tipo de contenido: {type(message.content)}")
+        print(f"   Contenido: {message.content[0].text[:100]}...")
+        
+        respuesta = message.content[0].text
+        print(f"✅ Respuesta narrativa generada exitosamente ({len(respuesta)} chars)")
+        print("="*80 + "\n")
+        
+        return respuesta
+        
     except Exception as e:
         # Si falla Claude, retornar datos crudos formateados
-        print(f"ERROR en generar_respuesta_narrativa: {e}")
+        print("\n" + "❌"*40)
+        print(f"ERROR CRÍTICO en generar_respuesta_narrativa: {type(e).__name__}: {e}")
+        print("❌"*40)
         import traceback
         traceback.print_exc()
+        print("❌"*40 + "\n")
+        
         return f"Resultado: {json.dumps(datos, indent=2, ensure_ascii=False, default=str)}"
 
 @router.post("/ask")
@@ -87,7 +134,7 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
             port=5432
         )
         
-        # Generar SQL con Vanna
+        # Generar SQL con Vanna (GPT-3.5 + 180+ queries entrenadas)
         sql_generado = vn.generate_sql(data.pregunta, allow_llm_to_see_data=True)
         
         if not sql_generado:
@@ -109,7 +156,7 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
         
         definitivamente_no_sql = any(palabra in sql_upper[:200] for palabra in palabras_no_sql)
         
-        # Si no contiene SELECT/WITH Y tiene palabras de no-SQL, entonces es texto explicativo
+        # Si no contiene SELECT/WITH Y tiene palabras de no-SQL, retornar error
         if not (contiene_select or contiene_with) or definitivamente_no_sql:
             return {
                 "pregunta": data.pregunta,
@@ -119,8 +166,12 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
                 "error_tipo": "no_sql_generated"
             }
         
-        # Ejecutar el SQL
-        resultado = ejecutar_consulta_cfo(db, sql_generado)
+        # POST-PROCESAMIENTO: Mejorar SQL según patrones en la pregunta
+        sql_procesado_info = SQLPostProcessor.procesar_sql(data.pregunta, sql_generado)
+        sql_final = sql_procesado_info['sql']
+        
+        # Ejecutar el SQL (procesado o original)
+        resultado = ejecutar_consulta_cfo(db, sql_final)
         
         # Generar respuesta narrativa con Claude Sonnet 4.5
         if resultado.get('success') and resultado.get('data'):

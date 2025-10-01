@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 
 class Settings(BaseSettings):
     # Database
@@ -13,12 +14,14 @@ class Settings(BaseSettings):
     # Environment
     environment: str = "development"
     
-    # API Keys (opcionales)
-    openai_api_key: str = ""
-    anthropic_api_key: str = ""
-    google_ai_key: str = ""
+    # API Keys - Usar Field(alias=...) para soportar MAYÚSCULAS en .env
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
+    google_ai_key: str = Field(default="", alias="GOOGLE_AI_KEY")
     
     class Config:
         env_file = ".env"
+        case_sensitive = False  # Permite minúsculas y MAYÚSCULAS
+        populate_by_name = True  # Permite usar tanto el nombre como el alias
 
 settings = Settings()
