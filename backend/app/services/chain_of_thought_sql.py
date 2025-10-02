@@ -19,24 +19,19 @@ from typing import Dict, Any, Optional, List
 import anthropic
 import os
 
+from app.core.logger import get_logger
+from app.core.constants import KEYWORDS_TEMPORALES, CLAUDE_MODEL, CLAUDE_MAX_TOKENS
+
+logger = get_logger(__name__)
+
 
 class ChainOfThoughtSQL:
     """
     Generador SQL en 2 pasos con Chain-of-Thought
     """
     
-    # Keywords que indican necesidad de metadatos temporales
-    KEYWORDS_TEMPORALES = [
-        'proyección', 'proyeccion', 'proyectar',
-        'últimos', 'ultimos', 'últimas', 'ultimas',
-        'tendencia', 'evolución', 'evolucion',
-        'promedio', 'media',
-        'basado en', 'en base a',
-        'fin de año', 'fin del año', 'cierre',
-        'comparar', 'vs anterior', 'versus',
-        'crecimiento', 'variación', 'variacion',
-        'estimar', 'estimación', 'estimacion'
-    ]
+    # Keywords importadas de constants.py
+    # Ver app.core.constants.KEYWORDS_TEMPORALES
     
     @classmethod
     def necesita_metadatos(cls, pregunta: str) -> bool:
@@ -50,7 +45,7 @@ class ChainOfThoughtSQL:
             True si necesita Chain-of-Thought, False para flujo normal
         """
         pregunta_lower = pregunta.lower()
-        return any(keyword in pregunta_lower for keyword in cls.KEYWORDS_TEMPORALES)
+        return any(keyword in pregunta_lower for keyword in KEYWORDS_TEMPORALES)
     
     @staticmethod
     def generar_sql_metadatos() -> str:
@@ -165,14 +160,12 @@ Genera ÚNICAMENTE el SQL query:"""
                 sql_generado = sql_generado.replace("```sql", "").replace("```", "").strip()
             
             # DEBUG: Mostrar SQL generado con contexto
-            print(f"   [CoT DEBUG] SQL GENERADO CON CONTEXTO:")
-            print(f"{sql_generado}")
-            print(f"   [CoT DEBUG] ─────────────────────────────")
+            logger.debug(f"Chain-of-Thought SQL generado con contexto: {sql_generado[:200]}...")
             
             return sql_generado
             
         except Exception as e:
-            print(f"Error en Chain-of-Thought SQL: {e}")
+            logger.error(f"Error en Chain-of-Thought SQL: {e}", exc_info=True)
             return f"ERROR: {str(e)}"
 
 
@@ -203,12 +196,12 @@ def generar_con_chain_of_thought(
     """
     from sqlalchemy import text
     
-    print("🔗 [Chain-of-Thought] Detectada pregunta temporal compleja")
+    logger.info("Chain-of-Thought detectada pregunta temporal compleja")
     
     # PASO 1: Obtener metadatos
     sql_metadatos = ChainOfThoughtSQL.generar_sql_metadatos()
     
-    print(f"📊 [Chain-of-Thought] Obteniendo metadatos temporales...")
+    logger.info("Chain-of-Thought obteniendo metadatos temporales")
     
     try:
         result = db_session.execute(text(sql_metadatos))
@@ -219,15 +212,12 @@ def generar_con_chain_of_thought(
         
         metadatos = dict(row._mapping)
         
-        print(f"   ✅ Metadatos obtenidos:")
-        print(f"      - Fecha actual: {metadatos.get('fecha_actual')}")
-        print(f"      - Meses con datos 2025: {metadatos.get('meses_con_datos_2025')}")
-        print(f"      - Meses restantes: {metadatos.get('meses_restantes_2025')}")
+        logger.info(f"Metadatos obtenidos: Fecha={metadatos.get('fecha_actual')}, Meses datos={metadatos.get('meses_con_datos_2025')}, Restantes={metadatos.get('meses_restantes_2025')}")
         
         # PASO 2: Generar SQL final con contexto
         metadatos_str = ChainOfThoughtSQL.formatear_metadatos_para_prompt(metadatos)
         
-        print(f"🎯 [Chain-of-Thought] Generando SQL final con contexto temporal...")
+        logger.info("Chain-of-Thought generando SQL final con contexto temporal")
         
         sql_final = ChainOfThoughtSQL.generar_sql_con_contexto(
             pregunta,
@@ -235,7 +225,7 @@ def generar_con_chain_of_thought(
             claude_generator
         )
         
-        print(f"   ✅ SQL generado con Chain-of-Thought")
+        logger.info("Chain-of-Thought SQL generado exitosamente")
         
         return {
             'sql': sql_final,
@@ -246,7 +236,7 @@ def generar_con_chain_of_thought(
         }
     
     except Exception as e:
-        print(f"   ❌ Error en Chain-of-Thought: {e}")
+        logger.error(f"Error en Chain-of-Thought: {e}", exc_info=True)
         return {
             'sql': None,
             'metadatos_usados': {},
