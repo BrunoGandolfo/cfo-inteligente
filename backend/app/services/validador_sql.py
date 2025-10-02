@@ -50,11 +50,16 @@ class ValidadorSQL:
         sql_upper = sql.upper()
         
         # Distribuciones por socio
+        # Detectar por nombre específico de socio
         if any(nombre in pregunta_lower for nombre in ['bruno', 'agustina', 'viviana', 'gonzalo', 'pancho']):
             if 'distribu' in pregunta_lower or 'recib' in pregunta_lower or 'toca' in pregunta_lower:
                 return 'distribucion_socio'
             if 'retir' in pregunta_lower:
                 return 'retiros'
+        
+        # Detectar distribuciones genéricas (sin nombre específico)
+        if 'distribu' in pregunta_lower and ('socio' in pregunta_lower or 'cada socio' in pregunta_lower):
+            return 'distribucion_socio'
         
         # Rentabilidad
         if 'rentabilidad' in pregunta_lower or 'margen' in pregunta_lower:
@@ -103,19 +108,27 @@ class ValidadorSQL:
     
     @classmethod
     def validar_distribucion_socio(cls, resultado: List[Dict]) -> Dict[str, Any]:
-        """Valida distribuciones a socios"""
+        """
+        Valida distribuciones a socios
+        
+        NOTA: Límite máximo ELIMINADO - no hay restricción real de negocio
+        Solo valida que no sean negativos
+        """
         if not resultado or len(resultado) == 0:
             return {'valido': True, 'razon': 'Sin distribuciones (válido)'}
         
+        # VALIDACIÓN DESACTIVADA: No hay límite máximo real
+        # Las distribuciones pueden ser de cualquier monto según utilidades
+        
+        # Solo validar que no sean negativos
         for row in resultado:
-            # Buscar campos de monto
             for key in ['monto_uyu', 'monto_usd', 'total', 'total_uyu', 'total_usd']:
                 if key in row and row[key] is not None:
                     monto = float(row[key])
-                    if monto > cls.LIMITES['distribucion_socio_max']:
+                    if monto < 0:
                         return {
                             'valido': False,
-                            'razon': f'Distribución sospechosamente alta: ${monto:,.2f} (máx esperado: ${cls.LIMITES["distribucion_socio_max"]:,.0f})'
+                            'razon': f'Distribución con valor negativo: ${monto:,.2f}'
                         }
         
         return {'valido': True, 'razon': None}
@@ -209,15 +222,28 @@ class ValidadorSQL:
     
     @classmethod
     def validar_retiros(cls, resultado: List[Dict]) -> Dict[str, Any]:
-        """Valida retiros de socios"""
+        """
+        Valida retiros de socios
+        
+        NOTA: Límite máximo ELIMINADO - no hay restricción real de negocio
+        Solo valida que no sean negativos
+        """
         if not resultado or len(resultado) == 0:
             return {'valido': True, 'razon': None}
         
+        # VALIDACIÓN DESACTIVADA: No hay límite máximo real
+        # Los retiros dependen de las utilidades disponibles
+        
+        # Solo validar que no sean negativos
         for row in resultado:
             for key in ['retiros', 'total_retiros', 'total', 'monto']:
                 if key in row and row[key] is not None:
                     monto = float(row[key])
-                    return cls.validar_rango(monto, 0, cls.LIMITES['retiro_max'], 'Retiro')
+                    if monto < 0:
+                        return {
+                            'valido': False,
+                            'razon': f'Retiro con valor negativo: ${monto:,.2f}'
+                        }
         
         return {'valido': True, 'razon': None}
     
