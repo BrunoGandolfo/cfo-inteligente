@@ -34,6 +34,6 @@ def read_root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy", "environment": settings.ENVIRONMENT}
+    return {"status": "healthy", "environment": settings.environment}
 from app.api.cfo_ai import router as cfo_router
 app.include_router(cfo_router, prefix="/api/cfo", tags=["cfo"])

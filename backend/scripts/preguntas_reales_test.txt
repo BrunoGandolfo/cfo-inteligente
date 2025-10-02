@@ -1,0 +1,51 @@
+¿Cuánto facturamos este mes?
+¿Cómo viene la rentabilidad?
+¿Cuál es el margen de este mes?
+¿Estamos mejor que el mes pasado?
+¿Cómo vamos en el año?
+¿Cuánto ganamos este trimestre?
+¿Cuál es la rentabilidad del área Jurídica?
+¿Qué área es más rentable?
+¿Cómo está la rentabilidad de Notarial?
+Dame un resumen del mes
+¿Cuál fue el mejor mes del año?
+¿Venimos mejorando la rentabilidad?
+¿Cuánto es el resultado operativo?
+¿Cómo viene el margen comparado con el año pasado?
+¿Proyectamos bien el cierre de año?
+¿Cuánto le toca a Bruno este año?
+¿Cuánto recibió Agustina en distribuciones?
+¿Qué socio retiró más plata?
+¿Cuándo fue la última distribución?
+¿Cuánto se distribuyó este trimestre?
+¿Están bien los porcentajes de cada socio?
+¿Cuánto llevó Viviana en el año?
+¿Qué socio tiene más retiros?
+¿Cuánto se repartió en total?
+¿Gonzalo está recibiendo lo que corresponde?
+¿Facturamos más este mes que el anterior?
+¿Cómo se compara este trimestre con el pasado?
+¿Estamos creciendo o bajando?
+¿Qué trimestre fue mejor?
+¿Cómo va octubre comparado con septiembre?
+¿Mejoramos respecto al año pasado?
+¿Cuál fue el peor mes?
+¿La tendencia es positiva o negativa?
+¿Estamos en alza o en baja?
+¿Cómo viene la facturación mes a mes?
+¿Cuánto facturamos en dólares este mes?
+¿Cuánto gastamos en pesos?
+¿Qué porcentaje de facturación es en USD?
+¿Cuánto se distribuyó en dólares?
+¿Operamos más en pesos o dólares?
+¿Cuál es el tipo de cambio promedio que usamos?
+¿Qué área factura más en dólares?
+¿Cuánto es todo en dólares?
+¿Qué área genera más ingresos?
+¿Cuánto factura Montevideo vs Mercedes?
+¿Qué oficina es más rentable?
+¿Cómo está Mercedes este mes?
+¿Cuánto gastó Contable?
+¿Qué área tiene más gastos?
+¿Cuál es la facturación de cada área?
+

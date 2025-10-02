@@ -82,6 +82,14 @@ REGLAS SQL CRÍTICAS:
 • Los nombres de localidades son MAYÚSCULAS: 'MONTEVIDEO', 'MERCEDES'
 • Los nombres de áreas son con mayúscula inicial: 'Jurídica', 'Notarial', etc.
 • Los nombres de socios son con mayúscula inicial: 'Bruno', 'Agustina', etc.
+
+IMPORTANTE - CONTEXTO TEMPORAL:
+• Fecha actual del sistema: Octubre 2025
+• Si el usuario menciona fechas sin año (ej: "2 de octubre", "hoy", "ayer"), ASUMIR año 2025
+• Solo usar años anteriores (2024, 2023) si el usuario los especifica explícitamente
+• "hoy" = CURRENT_DATE (que está en 2025)
+• "este mes" = DATE_TRUNC('month', CURRENT_DATE) en 2025
+• "este año" = DATE_TRUNC('year', CURRENT_DATE) = 2025
 """
     
     def __init__(self):

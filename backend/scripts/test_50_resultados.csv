@@ -1,0 +1,172 @@
+numero,pregunta,status,metodo,tiempo_respuesta,tiempo_generacion_sql,sql_preview,respuesta_preview,error
+1,¿Cuánto facturamos este mes?,success,claude,7.07s,4.51s,"SELECT 
+    SUM(monto_uyu) as total_facturado_uyu,
+    SUM(monto_usd) as total_f",Este mes facturamos **$ 1.148.660 UYU** y **USD 28.840**.,
+2,¿Cómo viene la rentabilidad?,success,claude,13.91s,7.78s,"WITH datos_actuales AS (
+  SELECT 
+    DATE_TRUNC('month', CURRENT_DATE) as peri","La rentabilidad viene complicada este mes. Bajamos de **65,43%** en el mes anterior a **33,47%** en ",
+3,¿Cuál es el margen de este mes?,success,claude,8.51s,5.25s,"WITH datos_mes AS (
+  SELECT 
+    SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN ","El margen de este mes es del **33,47%**. 
+
+Con ingresos de **$ 1.148.660** y gastos de **$ 764.157**",
+4,¿Estamos mejor que el mes pasado?,success,claude,17.73s,12.57s,"WITH mes_actual AS (
+    SELECT 
+        SUM(CASE WHEN tipo_operacion = 'INGRESO","Lamentablemente, **no estamos mejor que el mes pasado**. Aunque los ingresos subieron levemente en $",
+5,¿Cómo vamos en el año?,success,claude,8.87s,4.80s,"WITH datos_año AS (
+  SELECT 
+    SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN ","Vamos muy bien en el año. Llevamos **$ 10.079.410** en ingresos y **$ 3.651.977** en gastos, lo que ",
+6,¿Cuánto ganamos este trimestre?,success,claude,10.08s,6.18s,"SELECT 
+    SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END) ","Este trimestre la consultora tuvo una ganancia de **$ 384.503**, resultado de ingresos por $ 1.148.6",
+7,¿Cuál es la rentabilidad del área Jurídica?,success,claude,9.12s,4.84s,"WITH datos_juridica AS (
+    SELECT 
+        SUM(CASE WHEN tipo_operacion = 'ING","La rentabilidad del área Jurídica es **excelente**, alcanzando un **75,94%**. Con ingresos de **$ 6.",
+8,¿Qué área es más rentable?,success,claude,11.33s,5.91s,"WITH ingresos_por_area AS (
+    SELECT 
+        a.nombre AS area,
+        COALES","El área **""Otros""** es la más rentable de la consultora, con una rentabilidad del **100%**. Generó i",
+9,¿Cómo está la rentabilidad de Notarial?,success,claude,10.77s,6.72s,"SELECT 
+    'Notarial' as area,
+    SUM(CASE WHEN tipo_operacion = 'INGRESO' THE","La rentabilidad de Notarial está excelente: **78,62%**. El área generó ingresos por **$ 6.403.720** ",
+10,Dame un resumen del mes,success,claude,10.42s,5.81s,"WITH mes_actual AS (
+  SELECT 
+    DATE_TRUNC('month', CURRENT_DATE) as periodo,","En octubre 2025, Conexión Consultora facturó **$1.148.660** con gastos de **$764.157**, generando un",
+11,¿Cuál fue el mejor mes del año?,success,claude,9.53s,5.65s,"WITH meses_año AS (
+    SELECT 
+        DATE_TRUNC('month', fecha) AS mes,
+     ","El mejor mes del año fue **mayo de 2025**, con un resultado extraordinario de **$ 1.702.553**. Los i",
+12,¿Venimos mejorando la rentabilidad?,success,claude,14.56s,6.26s,"WITH rentabilidad_mensual AS (
+    SELECT 
+        DATE_TRUNC('month', fecha) AS","Lamentablemente, **no estamos mejorando la rentabilidad**. En los últimos tres meses venimos en caíd",
+13,¿Cuánto es el resultado operativo?,success,claude,7.83s,4.29s,"SELECT 
+    SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END) ","El resultado operativo de Conexión Consultora es de **$ 23.707.334,92** (pesos uruguayos). Este resu",
+14,¿Cómo viene el margen comparado con el año pasado?,success,claude,12.57s,7.89s,"WITH año_actual AS (
+    SELECT 
+        DATE_TRUNC('year', CURRENT_DATE) as per","El margen viene más ajustado que el año pasado. Actualmente estamos en **63,77%**, mientras que en 2",
+15,¿Proyectamos bien el cierre de año?,success,claude,14.53s,9.35s,"WITH meses_transcurridos AS (
+    SELECT EXTRACT(MONTH FROM CURRENT_DATE) AS mes","Según la proyección basada en el promedio mensual, estamos encaminados a cerrar el año con ingresos ",
+16,¿Cuánto le toca a Bruno este año?,success,claude,7.43s,3.71s,"SELECT 
+    COALESCE(SUM(dd.monto_uyu), 0) as total_uyu,
+    COALESCE(SUM(dd.mon","Este año a Bruno le corresponden **$ 45.178,73 UYU** (equivalente a **USD 1.138,14**) en distribucio",
+17,¿Cuánto recibió Agustina en distribuciones?,success,claude,6.79s,3.38s,"SELECT 
+    s.nombre,
+    SUM(dd.monto_uyu) as total_uyu,
+    SUM(dd.monto_usd) ","Agustina recibió un total de **$ 142.062,49 UYU** y **USD 2.999,41** en distribuciones. Estos montos",
+18,¿Qué socio retiró más plata?,error,N/A,3.64s,N/A,"SELECT 
+    s.nombre AS socio,
+    SUM(o.monto_uyu) AS total_retirado_uyu,
+    S",No pude obtener datos para esa pregunta. Error: Desconocido,
+19,¿Cuándo fue la última distribución?,success,claude,5.91s,2.71s,"SELECT fecha, monto_usd, monto_uyu, descripcion
+FROM operaciones
+WHERE tipo_oper","La última distribución de utilidades fue el **31 de octubre de 2025** por un monto de **USD 44,58** ",
+20,¿Cuánto se distribuyó este trimestre?,success,claude,7.42s,3.96s,"SELECT 
+    COALESCE(SUM(monto_uyu), 0) as total_distribuido_uyu,
+    COALESCE(S","Este trimestre se distribuyeron **$ 35.469 UYU** y **USD 622**, realizando un total de 10 distribuci",
+21,¿Están bien los porcentajes de cada socio?,success,claude,9.05s,5.17s,"SELECT 
+    nombre,
+    porcentaje_participacion,
+    CASE 
+        WHEN porcent","Sí, los porcentajes están perfectos. La suma total de participación de todos los socios da exactamen",
+22,¿Cuánto llevó Viviana en el año?,success,claude,7.12s,3.80s,"SELECT 
+    COALESCE(SUM(dd.monto_uyu), 0) as total_retirado_uyu,
+    COALESCE(S",Viviana llevó retirado en lo que va del año un total de **$ 46.535 UYU** y **USD 1.176**. Estos mont,
+23,¿Qué socio tiene más retiros?,error,N/A,3.90s,N/A,"SELECT 
+    s.nombre,
+    COUNT(*) as cantidad_retiros,
+    SUM(o.monto_uyu) as ",No pude obtener datos para esa pregunta. Error: Desconocido,
+24,¿Cuánto se repartió en total?,success,claude,7.00s,3.92s,"SELECT 
+    SUM(monto_uyu) as total_repartido_uyu,
+    SUM(monto_usd) as total_r","En total se repartieron **$UYU 741.872,76** y **US$ 15.500,84** en concepto de distribuciones. Estas",
+25,¿Gonzalo está recibiendo lo que corresponde?,success,claude,17.02s,10.44s,"WITH ingresos_totales AS (
+    SELECT 
+        DATE_TRUNC('month', fecha) as per","**No, Gonzalo no está recibiendo lo que corresponde.** Analizando los últimos meses, existe una dife",
+26,¿Facturamos más este mes que el anterior?,success,claude,9.57s,6.20s,"WITH mes_actual AS (
+    SELECT COALESCE(SUM(monto_uyu), 0) AS facturacion
+    F","Sí, facturamos más este mes. La facturación actual es de **$ 1.148.660**, mientras que el mes anteri",
+27,¿Cómo se compara este trimestre con el pasado?,success,claude,16.60s,12.10s,"WITH trimestre_actual AS (
+    SELECT 
+        'Trimestre Actual' as periodo,
+  ",La situación muestra una **caída significativa** en este trimestre comparado con el anterior. Los in,
+28,¿Estamos creciendo o bajando?,success,claude,15.82s,8.86s,"WITH meses AS (
+  SELECT 
+    DATE_TRUNC('month', fecha) AS mes,
+    SUM(CASE WH","La situación es mixta: los **ingresos se mantienen relativamente estables** (oscilando entre $1,1M y",
+29,¿Qué trimestre fue mejor?,success,claude,9.15s,5.09s,"WITH trimestres AS (
+    SELECT 
+        DATE_TRUNC('quarter', fecha) AS trimest","El mejor trimestre fue el **cuarto trimestre de 2024** (octubre-diciembre), con un resultado de **$ ",
+30,¿Cómo va octubre comparado con septiembre?,success,claude,14.59s,9.79s,"WITH octubre AS (
+    SELECT 
+        SUM(CASE WHEN tipo_operacion = 'INGRESO' T","Octubre viene más bajo que septiembre. Los ingresos cayeron **$ 344.944** (-14,8%), llegando a $ 1.9",
+31,¿Mejoramos respecto al año pasado?,error,N/A,11.91s,N/A,"WITH año_actual AS (
+    SELECT 
+        SUM(CASE WHEN tipo_operacion = 'INGRESO",No pude obtener datos para esa pregunta. Error: (psycopg2.errors.FeatureNotSupported) invalid UNION/,
+32,¿Cuál fue el peor mes?,success,claude,11.02s,7.08s,"WITH meses_rentabilidad AS (
+    SELECT 
+        DATE_TRUNC('month', fecha) AS m","El peor mes fue **marzo de 2025**, con una rentabilidad de **-677,55%**. Los ingresos fueron de apen",
+33,¿La tendencia es positiva o negativa?,success,claude,12.64s,7.75s,"WITH meses_rentabilidad AS (
+    SELECT 
+        DATE_TRUNC('month', fecha) AS m","La tendencia es **negativa**. La rentabilidad viene cayendo de manera pronunciada: pasó de 80,31% en",
+34,¿Estamos en alza o en baja?,success,claude,13.67s,7.92s,"WITH meses_recientes AS (
+  SELECT 
+    DATE_TRUNC('month', fecha) AS mes,
+    S","Estamos en **baja**. El resultado de octubre fue de **$384.504**, cayendo un 48% respecto a septiemb",
+35,¿Cómo viene la facturación mes a mes?,success,claude,13.62s,6.93s,"SELECT 
+    DATE_TRUNC('month', fecha) AS mes,
+    TO_CHAR(DATE_TRUNC('month', f",La facturación viene con altibajos. En 2024 tuvimos un año muy sólido con ingresos mensuales promedi,
+36,¿Cuánto facturamos en dólares este mes?,success,claude,6.14s,3.33s,"SELECT 
+    COALESCE(SUM(monto_usd), 0) as facturacion_usd
+FROM operaciones
+WHER","Este mes facturamos **USD 28.839,54** hasta el momento. 
+
+Es la suma total de ingresos registrados e",
+37,¿Cuánto gastamos en pesos?,success,claude,5.46s,2.70s,"SELECT SUM(monto_uyu) as total_gastos_uyu
+FROM operaciones
+WHERE tipo_operacion ",Gastamos un total de **$ 7.971.058** en pesos uruguayos. Esta cifra incluye todos los gastos registr,
+38,¿Qué porcentaje de facturación es en USD?,success,claude,7.20s,3.83s,"SELECT 
+    ROUND(
+        SUM(CASE WHEN moneda_original = 'USD' THEN monto_uyu ","El 95,16% de la facturación de Conexión Consultora es en dólares estadounidenses. Esto indica que la",
+39,¿Cuánto se distribuyó en dólares?,success,claude,5.45s,2.70s,"SELECT SUM(monto_usd) as total_distribuido_usd
+FROM operaciones
+WHERE tipo_opera","Se distribuyeron **USD 15.500,84** en total. Este monto corresponde a todas las operaciones de distr",
+40,¿Operamos más en pesos o dólares?,success,claude,6.55s,3.13s,"SELECT 
+    moneda_original,
+    COUNT(*) as cantidad_operaciones,
+    SUM(monto","Operamos principalmente en pesos uruguayos. El 76,42% de nuestras operaciones son en UYU (1.750 oper",
+41,¿Cuál es el tipo de cambio promedio que usamos?,success,claude,6.48s,3.47s,"SELECT 
+    ROUND(AVG(tipo_cambio), 4) as tipo_cambio_promedio,
+    COUNT(*) as ","El tipo de cambio promedio que venimos usando es de **$39,76** (pesos uruguayos por dólar). Este val",
+42,¿Qué área factura más en dólares?,success,claude,6.15s,3.25s,"SELECT 
+    a.nombre AS area,
+    SUM(o.monto_usd) AS total_facturado_usd
+FROM o","El área que más factura en dólares es **Recuperación**, con un total de **USD 173.177,57**. Es clara",
+43,¿Cuánto es todo en dólares?,success,claude,9.11s,4.66s,"SELECT 
+    SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_usd ELSE 0 END) ","Acá te paso el resumen en dólares de todas las operaciones:
+
+**Ingresos totales:** USD 797.252,21  
+",
+44,¿Qué área genera más ingresos?,success,claude,6.02s,3.09s,"SELECT 
+    a.nombre AS area,
+    SUM(o.monto_uyu) AS total_ingresos
+FROM operac","El área que genera más ingresos es **Recuperación**, con un total de **$ 6.889.931,39**. Esta área l",
+45,¿Cuánto factura Montevideo vs Mercedes?,success,claude,6.90s,3.27s,"SELECT 
+    localidad,
+    SUM(monto_uyu) as facturacion_uyu,
+    SUM(monto_usd)","Montevideo factura **$ 16.239.449** (UYU) o **USD 408.925**, mientras que Mercedes factura **$ 15.43",
+46,¿Qué oficina es más rentable?,success,claude,9.06s,4.61s,"WITH datos_localidad AS (
+  SELECT 
+    localidad,
+    SUM(CASE WHEN tipo_operac","La oficina de **Montevideo** es la más rentable, con un margen del **77,43%** sobre ingresos de **$ ",
+47,¿Cómo está Mercedes este mes?,success,claude,11.86s,7.82s,"WITH mes_actual AS (
+  SELECT 
+    DATE_TRUNC('month', CURRENT_DATE) AS inicio_m",Mercedes está teniendo un muy buen desempeño en octubre 2025. Generó ingresos por **$ 703.367** con ,
+48,¿Cuánto gastó Contable?,success,claude,7.17s,3.24s,"SELECT 
+    SUM(monto_uyu) as total_gastos_uyu,
+    SUM(monto_usd) as total_gast",El área Contable registró gastos totales de **$ 1.660.906 UYU** (aproximadamente **USD 41.853**). Es,
+49,¿Qué área tiene más gastos?,success,claude,6.53s,3.07s,"SELECT 
+    a.nombre AS area,
+    SUM(o.monto_uyu) AS total_gastos
+FROM operacio","El área con más gastos es **Gastos Generales**, acumulando un total de **$ 1.735.353,56**. Esta cate",
+50,¿Cuál es la facturación de cada área?,success,claude,8.29s,3.21s,"SELECT 
+    a.nombre AS area,
+    SUM(o.monto_uyu) AS facturacion_uyu,
+    SUM(o","La facturación por área muestra que **Recuperación** lidera con **$ 6.889.931 (USD 173.178)**, segui",

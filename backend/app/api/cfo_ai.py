@@ -8,6 +8,8 @@ from app.core.config import settings
 from app.services.cfo_ai_service import ejecutar_consulta_cfo
 from app.services.sql_post_processor import SQLPostProcessor
 from app.services.claude_sql_generator import ClaudeSQLGenerator
+from app.services.sql_router import generar_sql_inteligente
+from app.services.validador_sql import validar_resultado_sql
 from pydantic import BaseModel
 import sys
 import os
@@ -125,46 +127,25 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
     Endpoint que recibe pregunta en español y retorna datos
     """
     try:
-        # Conectar Vanna a PostgreSQL
-        vn.connect_to_postgres(
-            host='localhost',
-            dbname='cfo_inteligente',
-            user='cfo_user',
-            password='cfo_pass',
-            port=5432
-        )
+        # === GENERAR SQL CON ROUTER INTELIGENTE (Claude → Vanna fallback) ===
+        resultado_sql = generar_sql_inteligente(data.pregunta)
         
-        # Generar SQL con Vanna (GPT-3.5 + 180+ queries entrenadas)
-        sql_generado = vn.generate_sql(data.pregunta, allow_llm_to_see_data=True)
-        
-        if not sql_generado:
-            raise HTTPException(status_code=400, detail="No pude generar SQL para esa pregunta")
-        
-        # VALIDACIÓN: Detectar si Vanna devolvió texto explicativo en lugar de SQL
-        sql_limpio = sql_generado.strip()
-        sql_upper = sql_limpio.upper()
-        
-        # Buscar SQL válido (puede estar en cualquier parte del texto)
-        contiene_select = 'SELECT' in sql_upper
-        contiene_with = 'WITH' in sql_upper
-        
-        # Palabras que DEFINITIVAMENTE indican que NO hay SQL
-        palabras_no_sql = [
-            'NO ES POSIBLE', 'CANNOT', 'IMPOSSIBLE', 'NOT POSSIBLE',
-            'REQUIERE MÁS', 'INSUFICIENT', 'NO DISPONEMOS', 'NO DISPONGO'
-        ]
-        
-        definitivamente_no_sql = any(palabra in sql_upper[:200] for palabra in palabras_no_sql)
-        
-        # Si no contiene SELECT/WITH Y tiene palabras de no-SQL, retornar error
-        if not (contiene_select or contiene_with) or definitivamente_no_sql:
+        if not resultado_sql['exito']:
             return {
                 "pregunta": data.pregunta,
-                "respuesta": "Lo siento, no tengo suficiente información entrenada para responder esa pregunta específica. ¿Podrías reformularla de otra manera? Por ejemplo: 'ingresos del trimestre actual' o 'rentabilidad este mes'.",
+                "respuesta": f"No pude generar SQL válido. {resultado_sql['error']}",
                 "sql_generado": None,
                 "status": "error",
-                "error_tipo": "no_sql_generated"
+                "error_tipo": "sql_generation_failed",
+                "metadata": {
+                    "metodo": resultado_sql['metodo'],
+                    "tiempo_generacion": resultado_sql['tiempo_total'],
+                    "intentos": resultado_sql['intentos']['total'],
+                    "tiempos_detalle": resultado_sql['tiempos']
+                }
             }
+        
+        sql_generado = resultado_sql['sql']
         
         # POST-PROCESAMIENTO: Mejorar SQL según patrones en la pregunta
         sql_procesado_info = SQLPostProcessor.procesar_sql(data.pregunta, sql_generado)
@@ -172,6 +153,15 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
         
         # Ejecutar el SQL (procesado o original)
         resultado = ejecutar_consulta_cfo(db, sql_final)
+        
+        # VALIDACIÓN POST-EJECUCIÓN: Verificar que los datos sean razonables
+        if resultado.get('success') and resultado.get('data'):
+            validacion = validar_resultado_sql(data.pregunta, sql_final, resultado['data'])
+            
+            if not validacion['valido']:
+                print(f"⚠️ [Validación] Resultado sospechoso: {validacion['razon']}")
+                print(f"   Tipo query: {validacion['tipo_query']}")
+                # Por ahora solo loggeamos, no rechazamos
         
         # Generar respuesta narrativa con Claude Sonnet 4.5
         if resultado.get('success') and resultado.get('data'):
@@ -186,7 +176,14 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
                 "respuesta": respuesta_narrativa,
                 "datos_raw": resultado['data'],
                 "sql_generado": sql_generado,
-                "status": "success"
+                "status": "success",
+                "metadata": {
+                    "metodo_generacion_sql": resultado_sql['metodo'],
+                    "tiempo_generacion_sql": resultado_sql['tiempo_total'],
+                    "intentos_sql": resultado_sql['intentos']['total'],
+                    "tiempos_detalle": resultado_sql['tiempos'],
+                    "post_procesamiento": sql_procesado_info.get('modificado', False)
+                }
             }
         else:
             # Si el SQL falló, retornar el error
