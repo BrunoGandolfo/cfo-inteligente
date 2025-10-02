@@ -8,7 +8,12 @@ from typing import Optional
 import os
 from dotenv import load_dotenv
 
+from app.core.logger import get_logger
+from app.core.constants import CLAUDE_MODEL, CLAUDE_MAX_TOKENS, CLAUDE_TEMPERATURE
+
 load_dotenv()
+
+logger = get_logger(__name__)
 
 
 class ClaudeSQLGenerator:
@@ -183,9 +188,9 @@ Genera ÚNICAMENTE el SQL query:"""
 
         try:
             response = self.client.messages.create(
-                model="claude-sonnet-4-5-20250929",
-                max_tokens=1500,
-                temperature=0.0,  # Más determinístico
+                model=CLAUDE_MODEL,
+                max_tokens=CLAUDE_MAX_TOKENS,
+                temperature=CLAUDE_TEMPERATURE,
                 messages=[{"role": "user", "content": prompt}]
             )
             
@@ -198,6 +203,6 @@ Genera ÚNICAMENTE el SQL query:"""
             return sql_generado
             
         except Exception as e:
-            print(f"Error en Claude SQL Generator: {e}")
+            logger.error(f"Error en Claude SQL Generator: {e}", exc_info=True)
             return f"ERROR: {str(e)}"
 
