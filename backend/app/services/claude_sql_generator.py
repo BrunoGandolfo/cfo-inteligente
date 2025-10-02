@@ -90,6 +90,59 @@ IMPORTANTE - CONTEXTO TEMPORAL:
 • "hoy" = CURRENT_DATE (que está en 2025)
 • "este mes" = DATE_TRUNC('month', CURRENT_DATE) en 2025
 • "este año" = DATE_TRUNC('year', CURRENT_DATE) = 2025
+
+REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
+
+1. PORCENTAJES DE MONEDA:
+   - Para calcular % USD vs UYU: SIEMPRE usar la columna moneda_original
+   - NUNCA calcular porcentajes basándose en monto_usd o monto_uyu
+   - Ejemplo correcto: COUNT(CASE WHEN moneda_original='USD' THEN 1 END)
+
+2. RANKINGS Y TOP N:
+   - Para rankings: SIEMPRE mostrar TOP 5 como mínimo
+   - NUNCA usar LIMIT 1 a menos que la pregunta pida explícitamente "el más/mejor/mayor"
+   - Si pregunta "mejores áreas", mostrar al menos 3
+   - Ejemplo: ORDER BY rentabilidad DESC LIMIT 5
+
+3. DISTRIBUCIONES POR SOCIO:
+   - Límite razonable por socio: máximo $100.000 UYU
+   - Si resultado > $100K: puede ser error de SQL
+   - Usar tipo_cambio de la operación para conversiones
+
+4. AFIRMACIONES DE UNICIDAD:
+   - NUNCA usar palabras "único", "solo", "únicamente" sin verificar
+   - Si usas LIMIT 1, primero ejecutar COUNT para confirmar que hay solo 1
+   - Para comparaciones: SIEMPRE mostrar todos los registros con GROUP BY
+   - Ejemplo: Si dices "única oficina", verificar que COUNT(DISTINCT localidad) = 1
+
+5. UNION ALL CON COLUMNAS ENUM:
+   - Si necesitas UNION ALL con columna tipo ENUM: usar CAST explícito
+   - NUNCA insertar strings literales en columnas ENUM directamente
+   - Ejemplo: CAST('TOTAL' AS TEXT) en lugar de 'TOTAL'
+
+6. PROYECCIONES TEMPORALES:
+   - Para proyecciones fin de año: meses_restantes = 12 - EXTRACT(MONTH FROM CURRENT_DATE)
+   - NUNCA asumir meses restantes sin calcular
+   - Verificar que estás proyectando desde datos del año actual
+   - Ejemplo: EXTRACT(MONTH FROM CURRENT_DATE) para mes actual
+
+7. FILTROS TEMPORALES POR DEFECTO:
+   - Si la pregunta NO especifica período temporal: SIEMPRE filtrar por año actual (2025)
+   - Ejemplos: "¿Cuánto facturamos?", "¿Qué porcentaje es USD?", "rentabilidad" sin período
+   - Usar: WHERE fecha >= '2025-01-01' AND fecha < '2026-01-01'
+   - O mejor: WHERE DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
+   - SOLO omitir filtro temporal si pregunta dice "histórico", "todos los años", "desde inicio"
+
+8. CONVERSIONES DE MONEDA EN AGREGACIONES:
+   - Para totales en USD: usar SUM(monto_usd) SIN filtrar por moneda_original
+   - Para totales en UYU: usar SUM(monto_uyu) SIN filtrar por moneda_original
+   - Las columnas monto_usd y monto_uyu YA contienen TODO convertido
+   - NUNCA usar: SUM(CASE WHEN moneda_original='USD' THEN monto_usd...)
+   - SOLO filtrar por moneda_original si pregunta pide explícitamente "operaciones emitidas en USD"
+   - Ejemplo CORRECTO: "Facturación en USD" = SUM(monto_usd)
+   - Ejemplo INCORRECTO: SUM(CASE WHEN moneda_original='USD' THEN monto_usd ELSE 0 END)
+
+IMPORTANTE: Si una query viola alguna de estas reglas, usar approach alternativo más seguro.
 """
     
     def __init__(self):

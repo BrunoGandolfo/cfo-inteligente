@@ -10,6 +10,7 @@ from app.services.sql_post_processor import SQLPostProcessor
 from app.services.claude_sql_generator import ClaudeSQLGenerator
 from app.services.sql_router import generar_sql_inteligente
 from app.services.validador_sql import validar_resultado_sql
+from app.services.chain_of_thought_sql import ChainOfThoughtSQL, generar_con_chain_of_thought
 from pydantic import BaseModel
 import sys
 import os
@@ -127,8 +128,33 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
     Endpoint que recibe pregunta en español y retorna datos
     """
     try:
-        # === GENERAR SQL CON ROUTER INTELIGENTE (Claude → Vanna fallback) ===
-        resultado_sql = generar_sql_inteligente(data.pregunta)
+        # === CHAIN-OF-THOUGHT: Detectar si necesita metadatos temporales ===
+        if ChainOfThoughtSQL.necesita_metadatos(data.pregunta):
+            print("🔗 [Chain-of-Thought] Detectada pregunta temporal compleja")
+            
+            # Generar SQL en 2 pasos con contexto temporal real
+            resultado_cot = generar_con_chain_of_thought(data.pregunta, db, claude_sql_gen)
+            
+            if resultado_cot['exito']:
+                # Usar SQL generado con Chain-of-Thought
+                sql_generado = resultado_cot['sql']
+                resultado_sql = {
+                    'sql': sql_generado,
+                    'metodo': 'claude_chain_of_thought',
+                    'exito': True,
+                    'tiempo_total': 0,  # Se calculará después
+                    'tiempos': {'claude': 0, 'vanna': None},
+                    'intentos': {'claude': 2, 'vanna': 0, 'total': 2},  # 2 pasos
+                    'error': None,
+                    'debug': {'metadatos': resultado_cot['metadatos_usados']}
+                }
+            else:
+                # Chain-of-Thought falló, usar flujo normal
+                print(f"   ⚠️ Chain-of-Thought falló, usando flujo normal")
+                resultado_sql = generar_sql_inteligente(data.pregunta)
+        else:
+            # Pregunta simple, flujo normal
+            resultado_sql = generar_sql_inteligente(data.pregunta)
         
         if not resultado_sql['exito']:
             return {
@@ -146,6 +172,32 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
             }
         
         sql_generado = resultado_sql['sql']
+        
+        # VALIDACIÓN PRE-EJECUCIÓN: Detectar problemas lógicos en SQL ANTES de ejecutar
+        from app.services.validador_sql import ValidadorSQL
+        validacion_pre = ValidadorSQL.validar_sql_antes_ejecutar(data.pregunta, sql_generado)
+        
+        if not validacion_pre['valido']:
+            print(f"⚠️ [Validación Pre-SQL] SQL rechazado - Problemas detectados:")
+            for problema in validacion_pre['problemas']:
+                print(f"   - {problema}")
+            
+            # RECHAZAR SQL y usar fallback
+            if validacion_pre['sugerencia_fallback'] == 'query_predefinida':
+                from app.services.query_fallback import QueryFallback
+                sql_predefinido = QueryFallback.get_query_for(data.pregunta)
+                
+                if sql_predefinido:
+                    print(f"   ✅ SQL rechazado, usando query predefinida")
+                    sql_generado = sql_predefinido
+                    resultado_sql['metodo'] = f"{resultado_sql['metodo']}_fallback_predefinido"
+                else:
+                    print(f"   ⚠️ No hay query predefinida, SQL puede tener errores")
+                    # Continuar con SQL original pero marcar advertencia
+                    resultado_sql['metodo'] = f"{resultado_sql['metodo']}_con_advertencias"
+            else:
+                print(f"   ⚠️ SQL continúa pero puede tener errores lógicos")
+                resultado_sql['metodo'] = f"{resultado_sql['metodo']}_con_advertencias"
         
         # POST-PROCESAMIENTO: Mejorar SQL según patrones en la pregunta
         sql_procesado_info = SQLPostProcessor.procesar_sql(data.pregunta, sql_generado)
