@@ -19,8 +19,23 @@ from typing import Dict, Any, Optional
 import sqlparse
 from datetime import datetime
 
+# Imports del core
+from app.core.logger import get_logger
+from app.core.constants import (
+    CLAUDE_MAX_TOKENS,
+    MAX_REINTENTOS_VANNA,
+    DEFAULT_PG_HOST,
+    DEFAULT_PG_PORT,
+    DEFAULT_PG_DB,
+    DEFAULT_PG_USER,
+    DEFAULT_PG_PASS
+)
+
 # Imports de los generadores SQL
 from app.services.claude_sql_generator import ClaudeSQLGenerator
+
+# Logger para este módulo
+logger = get_logger(__name__)
 
 # Agregar path para Vanna
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../scripts'))
@@ -40,13 +55,13 @@ class SQLRouter:
         """Inicializa los generadores SQL"""
         self.claude_gen = ClaudeSQLGenerator()
         
-        # Conectar Vanna a PostgreSQL usando variables de entorno
+        # Conectar Vanna a PostgreSQL usando variables de entorno o defaults
         vn.connect_to_postgres(
-            host=os.getenv('PG_HOST', 'localhost'),
-            dbname=os.getenv('PG_DB', 'cfo_inteligente'),
-            user=os.getenv('PG_USER', 'cfo_user'),
-            password=os.getenv('PG_PASS', 'cfo_pass'),
-            port=int(os.getenv('PG_PORT', '5432'))
+            host=os.getenv('PG_HOST', DEFAULT_PG_HOST),
+            dbname=os.getenv('PG_DB', DEFAULT_PG_DB),
+            user=os.getenv('PG_USER', DEFAULT_PG_USER),
+            password=os.getenv('PG_PASS', DEFAULT_PG_PASS),
+            port=int(os.getenv('PG_PORT', str(DEFAULT_PG_PORT)))
         )
     
     @staticmethod
@@ -200,7 +215,7 @@ class SQLRouter:
         inicio = time.time()
         
         try:
-            print(f"🤖 [Claude] Generando SQL para: '{pregunta[:60]}...'")
+            logger.info(f"Claude generando SQL para: '{pregunta[:60]}'")
             
             sql_raw = self.claude_gen.generar_sql(pregunta)
             tiempo = time.time() - inicio
@@ -218,9 +233,7 @@ class SQLRouter:
             sql_limpio = self.extraer_sql_limpio(sql_raw)
             
             # DEBUG: Mostrar SQL generado
-            print(f"   [DEBUG] SQL GENERADO POR CLAUDE:")
-            print(f"{sql_limpio if sql_limpio else 'NONE - No se pudo extraer'}")
-            print(f"   [DEBUG] ──────────────────────────")
+            logger.debug(f"SQL generado por Claude: {sql_limpio if sql_limpio else 'NONE'}")
             
             if not sql_limpio:
                 return {
@@ -243,7 +256,7 @@ class SQLRouter:
                     'error': f"SQL inválido: {validacion['error']}"
                 }
             
-            print(f"   ✅ Claude exitoso ({tiempo:.2f}s) - {validacion['tipo']}")
+            logger.info(f"Claude exitoso en {tiempo:.2f}s - Tipo: {validacion['tipo']}")
             
             return {
                 'sql': sql_limpio,
@@ -256,7 +269,7 @@ class SQLRouter:
         
         except Exception as e:
             tiempo = time.time() - inicio
-            print(f"   ❌ Claude falló ({tiempo:.2f}s): {str(e)[:50]}")
+            logger.error(f"Claude falló en {tiempo:.2f}s: {str(e)[:50]}")
             
             return {
                 'sql': None,
@@ -282,7 +295,7 @@ class SQLRouter:
         inicio = time.time()
         
         try:
-            print(f"🧠 [Vanna] Generando SQL para: '{pregunta[:60]}...'")
+            logger.info(f"Vanna generando SQL para: '{pregunta[:60]}'")
             
             sql_raw = vn.generate_sql(pregunta, allow_llm_to_see_data=True)
             tiempo = time.time() - inicio
@@ -338,7 +351,7 @@ class SQLRouter:
                     'error': f"SQL inválido: {validacion['error']}"
                 }
             
-            print(f"   ✅ Vanna exitoso ({tiempo:.2f}s) - {validacion['tipo']}")
+            logger.info(f"Vanna exitoso en {tiempo:.2f}s - Tipo: {validacion['tipo']}")
             
             return {
                 'sql': sql_limpio,
@@ -351,7 +364,7 @@ class SQLRouter:
         
         except Exception as e:
             tiempo = time.time() - inicio
-            print(f"   ❌ Vanna falló ({tiempo:.2f}s): {str(e)[:50]}")
+            logger.error(f"Vanna falló en {tiempo:.2f}s: {str(e)[:50]}")
             
             return {
                 'sql': None,
@@ -398,9 +411,7 @@ class SQLRouter:
         intentos = {'claude': 0, 'vanna': 0, 'total': 0}
         debug_info = {'timestamp': datetime.now().isoformat()}
         
-        print("\n" + "="*80)
-        print(f"🔀 [SQL Router] Pregunta: '{pregunta[:70]}'")
-        print("="*80)
+        logger.info(f"SQL Router procesando pregunta: '{pregunta[:70]}'")
         
         # ═══════════════════════════════════════════════════════════════
         # FASE 1: INTENTAR CON CLAUDE SONNET 4.5 (PRIMARY)
@@ -419,10 +430,7 @@ class SQLRouter:
         if resultado_claude['exito']:
             tiempo_total = time.time() - inicio_total
             
-            print(f"✅ [SQL Router] Éxito con CLAUDE")
-            print(f"   Método: claude")
-            print(f"   Tiempo: {tiempo_total:.2f}s")
-            print("="*80 + "\n")
+            logger.info(f"SQL Router exitoso con Claude en {tiempo_total:.2f}s")
             
             return {
                 'sql': resultado_claude['sql'],
@@ -436,19 +444,19 @@ class SQLRouter:
             }
         
         # Claude falló, log del error
-        print(f"   ⚠️  Claude falló: {resultado_claude['error']}")
+        logger.warning(f"Claude falló: {resultado_claude['error']}")
         
         # ═══════════════════════════════════════════════════════════════
         # FASE 2: FALLBACK A VANNA AI (RESILIENCIA)
         # ═══════════════════════════════════════════════════════════════
         
-        print(f"🔄 [SQL Router] Usando Vanna como fallback...")
+        logger.info("Usando Vanna como fallback")
         
         for intento in range(reintentos_vanna):
             intentos['vanna'] += 1
             intentos['total'] += 1
             
-            print(f"   Intento Vanna {intento + 1}/{reintentos_vanna}")
+            logger.debug(f"Intento Vanna {intento + 1}/{reintentos_vanna}")
             
             resultado_vanna = self.generar_sql_con_vanna(pregunta)
             
@@ -466,11 +474,7 @@ class SQLRouter:
             if resultado_vanna['exito']:
                 tiempo_total = time.time() - inicio_total
                 
-                print(f"✅ [SQL Router] Éxito con VANNA (fallback)")
-                print(f"   Método: vanna_fallback")
-                print(f"   Intentos: {intentos['vanna']}")
-                print(f"   Tiempo: {tiempo_total:.2f}s")
-                print("="*80 + "\n")
+                logger.info(f"SQL Router exitoso con Vanna fallback ({intentos['vanna']} intentos) en {tiempo_total:.2f}s")
                 
                 return {
                     'sql': resultado_vanna['sql'],
@@ -483,7 +487,7 @@ class SQLRouter:
                     'debug': debug_info
                 }
             
-            print(f"   ⚠️  Vanna intento {intento + 1} falló: {resultado_vanna['error']}")
+            logger.debug(f"Vanna intento {intento + 1} falló: {resultado_vanna['error']}")
         
         # ═══════════════════════════════════════════════════════════════
         # AMBOS MÉTODOS FALLARON
@@ -491,11 +495,7 @@ class SQLRouter:
         
         tiempo_total = time.time() - inicio_total
         
-        print(f"❌ [SQL Router] FALLO TOTAL - Ambos métodos fallaron")
-        print(f"   Claude: {resultado_claude['error'][:50] if resultado_claude['error'] else 'N/A'}")
-        print(f"   Vanna: {resultado_vanna['error'][:50] if resultado_vanna['error'] else 'N/A'}")
-        print(f"   Tiempo total: {tiempo_total:.2f}s")
-        print("="*80 + "\n")
+        logger.error(f"SQL Router - Ambos métodos fallaron. Claude: {resultado_claude['error'][:50] if resultado_claude['error'] else 'N/A'}. Vanna: {resultado_vanna['error'][:50] if resultado_vanna['error'] else 'N/A'}")
         
         return {
             'sql': None,
@@ -539,7 +539,7 @@ def get_sql_router() -> SQLRouter:
     global _router_instance
     
     if _router_instance is None:
-        print("🔧 Inicializando SQL Router (Claude + Vanna)...")
+        logger.info("Inicializando SQL Router (Claude + Vanna)")
         _router_instance = SQLRouter()
     
     return _router_instance
