@@ -5,7 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
+from app.core.logger import get_logger
 from app.services.cfo_ai_service import ejecutar_consulta_cfo
+
+logger = get_logger(__name__)
 from app.services.sql_post_processor import SQLPostProcessor
 from app.services.claude_sql_generator import ClaudeSQLGenerator
 from app.services.sql_router import generar_sql_inteligente
@@ -48,26 +51,14 @@ def generar_respuesta_narrativa(pregunta: str, datos: list, sql_generado: str) -
     """
     try:
         # === LOGS DE DIAGNÓSTICO ===
-        print("\n" + "="*80)
-        print("🔍 DEBUG: Iniciando generar_respuesta_narrativa()")
-        print("="*80)
+        logger.debug("Iniciando generar_respuesta_narrativa()")
         
-        # Verificar API Key
-        print(f"✅ API Key presente: {bool(api_key_limpia)}")
-        if api_key_limpia:
-            print(f"✅ API Key primeros 10 chars: {api_key_limpia[:10]}...")
-            print(f"✅ API Key longitud: {len(api_key_limpia)} (debe ser 108)")
-        
-        # Verificar cliente
-        print(f"✅ Cliente Anthropic inicializado: {bool(client)}")
-        
-        # Verificar datos
-        print(f"✅ Datos recibidos: {len(datos)} filas")
-        print(f"✅ Pregunta: {pregunta}")
+        # Verificar configuración
+        logger.debug(f"API Key presente: {bool(api_key_limpia)}, longitud: {len(api_key_limpia)}")
+        logger.debug(f"Datos recibidos: {len(datos)} filas para pregunta: {pregunta[:60]}")
         
         # Formatear datos de manera legible
         datos_texto = json.dumps(datos, indent=2, ensure_ascii=False, default=str)
-        print(f"✅ Datos formateados (primeros 200 chars): {datos_texto[:200]}...")
         
         prompt = f"""Eres el CFO AI de Conexión Consultora, una consultora en Uruguay.
 
@@ -91,9 +82,7 @@ INSTRUCCIONES:
 
 Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
         
-        print("🚀 Llamando a Claude Sonnet 4.5...")
-        print(f"   Modelo: claude-sonnet-4-5-20250929")
-        print(f"   Max tokens: 250")
+        logger.info("Generando narrativa con Claude Sonnet 4.5")
         
         message = client.messages.create(
             model="claude-sonnet-4-5-20250929",
@@ -101,24 +90,14 @@ Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
             messages=[{"role": "user", "content": prompt}]
         )
         
-        print("✅ Respuesta recibida de Claude")
-        print(f"   Tipo de contenido: {type(message.content)}")
-        print(f"   Contenido: {message.content[0].text[:100]}...")
-        
         respuesta = message.content[0].text
-        print(f"✅ Respuesta narrativa generada exitosamente ({len(respuesta)} chars)")
-        print("="*80 + "\n")
+        logger.info(f"Narrativa generada exitosamente ({len(respuesta)} chars)")
         
         return respuesta
         
     except Exception as e:
         # Si falla Claude, retornar datos crudos formateados
-        print("\n" + "❌"*40)
-        print(f"ERROR CRÍTICO en generar_respuesta_narrativa: {type(e).__name__}: {e}")
-        print("❌"*40)
-        import traceback
-        traceback.print_exc()
-        print("❌"*40 + "\n")
+        logger.error(f"Error crítico en generar_respuesta_narrativa: {type(e).__name__}: {e}", exc_info=True)
         
         return f"Resultado: {json.dumps(datos, indent=2, ensure_ascii=False, default=str)}"
 
@@ -178,9 +157,7 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
         validacion_pre = ValidadorSQL.validar_sql_antes_ejecutar(data.pregunta, sql_generado)
         
         if not validacion_pre['valido']:
-            print(f"⚠️ [Validación Pre-SQL] SQL rechazado - Problemas detectados:")
-            for problema in validacion_pre['problemas']:
-                print(f"   - {problema}")
+            logger.warning(f"Validación Pre-SQL rechazó SQL - Problemas: {', '.join(validacion_pre['problemas'])}")
             
             # RECHAZAR SQL y usar fallback
             if validacion_pre['sugerencia_fallback'] == 'query_predefinida':
@@ -188,15 +165,15 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
                 sql_predefinido = QueryFallback.get_query_for(data.pregunta)
                 
                 if sql_predefinido:
-                    print(f"   ✅ SQL rechazado, usando query predefinida")
+                    logger.info("Usando query predefinida como fallback")
                     sql_generado = sql_predefinido
                     resultado_sql['metodo'] = f"{resultado_sql['metodo']}_fallback_predefinido"
                 else:
-                    print(f"   ⚠️ No hay query predefinida, SQL puede tener errores")
+                    logger.warning("No hay query predefinida, SQL puede tener errores")
                     # Continuar con SQL original pero marcar advertencia
                     resultado_sql['metodo'] = f"{resultado_sql['metodo']}_con_advertencias"
             else:
-                print(f"   ⚠️ SQL continúa pero puede tener errores lógicos")
+                logger.warning("SQL continúa pero puede tener errores lógicos")
                 resultado_sql['metodo'] = f"{resultado_sql['metodo']}_con_advertencias"
         
         # POST-PROCESAMIENTO: Mejorar SQL según patrones en la pregunta
@@ -211,8 +188,7 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
             validacion = validar_resultado_sql(data.pregunta, sql_final, resultado['data'])
             
             if not validacion['valido']:
-                print(f"⚠️ [Validación] Resultado sospechoso: {validacion['razon']}")
-                print(f"   Tipo query: {validacion['tipo_query']}")
+                logger.warning(f"Validación post-SQL - Resultado sospechoso: {validacion['razon']} (Tipo: {validacion['tipo_query']})")
                 # Por ahora solo loggeamos, no rechazamos
         
         # Generar respuesta narrativa con Claude Sonnet 4.5
