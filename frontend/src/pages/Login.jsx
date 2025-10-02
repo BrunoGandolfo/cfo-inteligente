@@ -23,7 +23,7 @@ function Login() {
       // Redirigir a dashboard
       toast.success('Bienvenido al sistema');
       window.location.href = '/dashboard';
-    } catch (err) {
+    } catch {
       setError('Email o contraseña incorrectos');
       toast.error('Credenciales incorrectas');
     }

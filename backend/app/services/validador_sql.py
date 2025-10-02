@@ -11,8 +11,7 @@ Versión: 1.0
 Fecha: Octubre 2025
 """
 
-from typing import Dict, Any, List, Optional
-import re
+from typing import Dict, Any, List
 
 
 class ValidadorSQL:

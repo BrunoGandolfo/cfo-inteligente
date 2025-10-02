@@ -4,7 +4,7 @@ Servicio que conecta Vanna (pregunta->SQL) con la ejecución real
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 def ejecutar_consulta_cfo(db: Session, sql_query: str) -> Dict[str, Any]:
     """

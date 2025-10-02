@@ -15,12 +15,10 @@ Versión: 1.0
 Fecha: Octubre 2025
 """
 
-from typing import Dict, Any, Optional, List
-import anthropic
-import os
+from typing import Dict, Any
 
 from app.core.logger import get_logger
-from app.core.constants import KEYWORDS_TEMPORALES, CLAUDE_MODEL, CLAUDE_MAX_TOKENS
+from app.core.constants import KEYWORDS_TEMPORALES
 
 logger = get_logger(__name__)
 

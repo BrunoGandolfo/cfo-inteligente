@@ -1,7 +1,7 @@
 """
 Router API para CFO Inteligente - Conecta Vanna con ejecución
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
@@ -15,18 +15,12 @@ from app.services.sql_router import generar_sql_inteligente
 from app.services.validador_sql import validar_resultado_sql
 from app.services.chain_of_thought_sql import ChainOfThoughtSQL, generar_con_chain_of_thought
 from pydantic import BaseModel
-import sys
-import os
 import json
 import anthropic
 from dotenv import load_dotenv
 
 # Cargar variables de entorno (fallback por si acaso)
 load_dotenv()
-
-# Agregar path para importar scripts
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../scripts'))
-from configurar_vanna_local import my_vanna as vn
 
 router = APIRouter()
 

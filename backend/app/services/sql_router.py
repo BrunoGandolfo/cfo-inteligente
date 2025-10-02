@@ -22,8 +22,6 @@ from datetime import datetime
 # Imports del core
 from app.core.logger import get_logger
 from app.core.constants import (
-    CLAUDE_MAX_TOKENS,
-    MAX_REINTENTOS_VANNA,
     DEFAULT_PG_HOST,
     DEFAULT_PG_PORT,
     DEFAULT_PG_DB,

@@ -4,7 +4,6 @@ Garantiza 100% de cobertura para preguntas críticas
 """
 
 from typing import Optional
-import re
 
 
 class QueryFallback:

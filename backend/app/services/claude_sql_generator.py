@@ -4,7 +4,6 @@ Mayor precisión y determinismo que GPT-3.5
 """
 
 import anthropic
-from typing import Optional
 import os
 from dotenv import load_dotenv
 
