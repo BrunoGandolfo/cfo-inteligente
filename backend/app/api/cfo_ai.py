@@ -103,7 +103,7 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
     try:
         # === CHAIN-OF-THOUGHT: Detectar si necesita metadatos temporales ===
         if ChainOfThoughtSQL.necesita_metadatos(data.pregunta):
-            print("🔗 [Chain-of-Thought] Detectada pregunta temporal compleja")
+            logger.info("Chain-of-Thought detectada: pregunta temporal compleja")
             
             # Generar SQL en 2 pasos con contexto temporal real
             resultado_cot = generar_con_chain_of_thought(data.pregunta, db, claude_sql_gen)
@@ -123,7 +123,7 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
                 }
             else:
                 # Chain-of-Thought falló, usar flujo normal
-                print(f"   ⚠️ Chain-of-Thought falló, usando flujo normal")
+                logger.warning("Chain-of-Thought falló, usando flujo normal de generación SQL")
                 resultado_sql = generar_sql_inteligente(data.pregunta)
         else:
             # Pregunta simple, flujo normal
