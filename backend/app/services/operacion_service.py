@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import Operacion, TipoOperacion, Moneda, Localidad, DistribucionDetalle, Area, Socio
 from app.schemas.operacion import IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
 from decimal import Decimal
+from typing import Optional
 
 def calcular_montos(monto_original: Decimal, moneda_original: str, tipo_cambio: Decimal):
     if moneda_original == "UYU":
@@ -9,21 +10,38 @@ def calcular_montos(monto_original: Decimal, moneda_original: str, tipo_cambio: 
     else:  # USD
         return monto_original * tipo_cambio, monto_original
 
-def crear_ingreso(db: Session, data: IngresoCreate):
-    monto_uyu, monto_usd = calcular_montos(data.monto_original, data.moneda_original, data.tipo_cambio)
+def _crear_operacion_base(
+    db: Session,
+    tipo_operacion: TipoOperacion,
+    fecha,
+    monto_original: Decimal,
+    moneda_original: str,
+    tipo_cambio: Decimal,
+    area_id,
+    localidad: str,
+    descripcion: str,
+    cliente: Optional[str] = None,
+    proveedor: Optional[str] = None
+):
+    """
+    Función base para crear operaciones de tipo ingreso/gasto.
+    Elimina duplicación entre crear_ingreso y crear_gasto.
+    """
+    monto_uyu, monto_usd = calcular_montos(monto_original, moneda_original, tipo_cambio)
     
     operacion = Operacion(
-        tipo_operacion=TipoOperacion.INGRESO,
-        fecha=data.fecha,
-        monto_original=data.monto_original,
-        moneda_original=Moneda[data.moneda_original],
-        tipo_cambio=data.tipo_cambio,
+        tipo_operacion=tipo_operacion,
+        fecha=fecha,
+        monto_original=monto_original,
+        moneda_original=Moneda[moneda_original],
+        tipo_cambio=tipo_cambio,
         monto_uyu=monto_uyu,
         monto_usd=monto_usd,
-        area_id=data.area_id,
-        localidad=Localidad[data.localidad.upper().replace(" ", "_")],
-        descripcion=data.descripcion,
-        cliente=data.cliente
+        area_id=area_id,
+        localidad=Localidad[localidad.upper().replace(" ", "_")],
+        descripcion=descripcion,
+        cliente=cliente,
+        proveedor=proveedor
     )
     
     db.add(operacion)
@@ -31,27 +49,33 @@ def crear_ingreso(db: Session, data: IngresoCreate):
     db.refresh(operacion)
     return operacion
 
+def crear_ingreso(db: Session, data: IngresoCreate):
+    return _crear_operacion_base(
+        db=db,
+        tipo_operacion=TipoOperacion.INGRESO,
+        fecha=data.fecha,
+        monto_original=data.monto_original,
+        moneda_original=data.moneda_original,
+        tipo_cambio=data.tipo_cambio,
+        area_id=data.area_id,
+        localidad=data.localidad,
+        descripcion=data.descripcion,
+        cliente=data.cliente
+    )
+
 def crear_gasto(db: Session, data: GastoCreate):
-    monto_uyu, monto_usd = calcular_montos(data.monto_original, data.moneda_original, data.tipo_cambio)
-    
-    operacion = Operacion(
+    return _crear_operacion_base(
+        db=db,
         tipo_operacion=TipoOperacion.GASTO,
         fecha=data.fecha,
         monto_original=data.monto_original,
-        moneda_original=Moneda[data.moneda_original],
+        moneda_original=data.moneda_original,
         tipo_cambio=data.tipo_cambio,
-        monto_uyu=monto_uyu,
-        monto_usd=monto_usd,
         area_id=data.area_id,
-        localidad=Localidad[data.localidad.upper().replace(" ", "_")],
+        localidad=data.localidad,
         descripcion=data.descripcion,
         proveedor=data.proveedor
     )
-    
-    db.add(operacion)
-    db.commit()
-    db.refresh(operacion)
-    return operacion
 
 def crear_retiro(db: Session, data: RetiroCreate):
     # Retiro de efectivo - registro simple
