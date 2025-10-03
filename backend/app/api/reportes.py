@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
-from datetime import datetime, date, timedelta
-from decimal import Decimal
+from sqlalchemy import and_
+from datetime import date, timedelta
 from typing import Tuple
 from app.core.database import get_db
 from app.models import Operacion, TipoOperacion, Area
