@@ -15,13 +15,12 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading }) {
     descripcion: ''
   });
   
+  // Solo áreas productivas que generan ingresos (NO Gastos Generales ni Otros)
   const [areas] = useState([
     { id: 'd3aff49c-748c-4d1d-bc47-cdda1cfb913d', nombre: 'Jurídica' },
     { id: '53ba7821-8836-4e74-ad56-a288d290881d', nombre: 'Notarial' },
     { id: '14700c01-3b3d-49c6-8e2e-f3ebded1b1bb', nombre: 'Contable' },
-    { id: '11c64c64-c7f6-4e85-9c26-b577c3d7a5b7', nombre: 'Recuperación' },
-    { id: 'b11006d3-6cfc-4766-9201-ab56274401a6', nombre: 'Gastos Generales' },
-    { id: '651dfb5c-15d8-41e2-8339-785b137f44f2', nombre: 'Otros' }
+    { id: '11c64c64-c7f6-4e85-9c26-b577c3d7a5b7', nombre: 'Recuperación' }
   ]);
   
   const [localLoading, setLocalLoading] = useState(false);
