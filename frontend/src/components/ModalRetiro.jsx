@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import ModalBase from './shared/ModalBase';
 
 function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
+    socio_id: '',
     monto_uyu: '',
     monto_usd: '',
-    localidad: 'Montevideo',
     tipo_cambio: '',
     descripcion: ''
   });
   
+  const [socios] = useState([
+    { id: '1e8aa519-c5e9-4c49-9e3e-f5c8d91d3a2e', nombre: 'Agustina' },
+    { id: '2f9bb62a-d6fa-5d5a-af4f-06d9e82e4b3f', nombre: 'Viviana' },
+    { id: '3g0cc73b-e701-6e6b-bg50-17eaf93f5c40', nombre: 'Gonzalo' },
+    { id: '4h1dd84c-f812-7f7c-ch61-28fbg040gd51', nombre: 'Pancho' },
+    { id: '5i2ee95d-0923-8g8d-di72-39gch151he62', nombre: 'Bruno' }
+  ]);
+  
   const [localLoading, setLocalLoading] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -25,186 +32,132 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
     try {
       const response = await axios.get('http://localhost:8000/api/tipo-cambio/venta');
       setFormData(prev => ({ ...prev, tipo_cambio: response.data.valor.toString() }));
-    } catch (error) {
-      console.error('Error cargando tipo de cambio:', error);
+    } catch {
       setFormData(prev => ({ ...prev, tipo_cambio: '40.50' }));
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validar que al menos un monto esté presente
-    if (!formData.monto_uyu && !formData.monto_usd) {
-      setError('Debe ingresar al menos un monto (UYU o USD)');
-      return;
-    }
-    
+  const handleSubmitInterno = async () => {
     setLocalLoading(true);
     if (setLoading) setLoading(true);
-    setError('');
 
     try {
       const dataToSend = {
         fecha: formData.fecha,
-        monto_uyu: formData.monto_uyu ? parseFloat(formData.monto_uyu) : null,
-        monto_usd: formData.monto_usd ? parseFloat(formData.monto_usd) : null,
-        localidad: formData.localidad,
+        socio_id: formData.socio_id,
+        monto_uyu: parseFloat(formData.monto_uyu) || 0,
+        monto_usd: parseFloat(formData.monto_usd) || 0,
         tipo_cambio: parseFloat(formData.tipo_cambio) || 40.50,
         descripcion: formData.descripcion || null
       };
 
       await axios.post('http://localhost:8000/api/operaciones/retiro', dataToSend);
-      toast.success('Operación registrada exitosamente');
       
       onSuccess();
       onClose();
       
-      // Reset form
       setFormData({
         fecha: new Date().toISOString().split('T')[0],
+        socio_id: '',
         monto_uyu: '',
         monto_usd: '',
-        localidad: 'Montevideo',
         tipo_cambio: '',
         descripcion: ''
       });
-    } catch (error) {
-      console.error('Error completo:', error);
-      toast.error('Error al registrar operación');
-      setError(error.response?.data?.detail || 'Error al registrar el retiro');
     } finally {
       setLocalLoading(false);
       if (setLoading) setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-2">
-      <div className="bg-white rounded-lg w-full max-w-md max-h-[70vh] flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 pb-2 border-b">
-          <h2 className="text-lg font-bold text-yellow-600">Registrar Retiro</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">
-            ✕
-          </button>
+    <ModalBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Registrar Retiro"
+      onSubmit={handleSubmitInterno}
+      isLoading={localLoading}
+      size="max-w-md"
+    >
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Fecha</label>
+          <input
+            type="date"
+            required
+            value={formData.fecha}
+            max={new Date().toISOString().split('T')[0]}
+            onChange={(e) => setFormData({...formData, fecha: e.target.value})}
+            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+          />
         </div>
-
-        {/* Contenido más simple */}
-        <div className="p-4">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded mb-2 text-xs">
-              {error}
-            </div>
-          )}
-
-          <form id="formRetiro" onSubmit={handleSubmit}>
-            {/* Fecha y Localidad */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700">Fecha</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.fecha}
-                  max={new Date().toISOString().split('T')[0]}
-                  onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">Localidad</label>
-                <select
-                  value={formData.localidad}
-                  onChange={(e) => setFormData({...formData, localidad: e.target.value})}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                >
-                  <option value="Montevideo">Montevideo</option>
-                  <option value="Mercedes">Mercedes</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Tipo de cambio */}
-            <div className="mb-3">
-              <label className="block text-xs font-medium text-gray-700">Tipo de Cambio (USD → UYU)</label>
-              <input
-                type="number"
-                required
-                step="0.01"
-                min="0.01"
-                value={formData.tipo_cambio}
-                onChange={(e) => setFormData({...formData, tipo_cambio: e.target.value})}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-              />
-            </div>
-
-            {/* Montos separados */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700">Retiro en UYU</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.monto_uyu}
-                  onChange={(e) => setFormData({...formData, monto_uyu: e.target.value})}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                  placeholder="$ 0.00"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">Retiro en USD</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.monto_usd}
-                  onChange={(e) => setFormData({...formData, monto_usd: e.target.value})}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                  placeholder="USD 0.00"
-                />
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 mb-3">* Ingrese al menos un monto</p>
-
-            {/* Descripción */}
-            <div className="mb-3">
-              <label className="block text-xs font-medium text-gray-700">Descripción</label>
-              <textarea
-                value={formData.descripcion}
-                onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                rows="2"
-                placeholder="Opcional"
-              />
-            </div>
-          </form>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end gap-2 p-4 pt-2 border-t">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Socio *</label>
+          <select
+            required
+            value={formData.socio_id}
+            onChange={(e) => setFormData({...formData, socio_id: e.target.value})}
+            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
           >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            form="formRetiro"
-            disabled={localLoading}
-            className="px-4 py-2 text-sm text-white bg-yellow-600 rounded hover:bg-yellow-700 disabled:opacity-50"
-          >
-            {localLoading ? 'Guardando...' : 'Guardar Retiro'}
-          </button>
+            <option value="">Seleccione...</option>
+            {socios.map(socio => (
+              <option key={socio.id} value={socio.id}>{socio.nombre}</option>
+            ))}
+          </select>
         </div>
       </div>
-    </div>
+
+      <div className="grid grid-cols-3 gap-2 mb-2">
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Monto UYU</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.monto_uyu}
+            onChange={(e) => setFormData({...formData, monto_uyu: e.target.value})}
+            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            placeholder="0.00"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Monto USD</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.monto_usd}
+            onChange={(e) => setFormData({...formData, monto_usd: e.target.value})}
+            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            placeholder="0.00"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700">T.C.</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            value={formData.tipo_cambio}
+            onChange={(e) => setFormData({...formData, tipo_cambio: e.target.value})}
+            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+          />
+        </div>
+      </div>
+
+      <div className="mb-2">
+        <label className="block text-xs font-medium text-gray-700">Descripción</label>
+        <textarea
+          value={formData.descripcion}
+          onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
+          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+          rows="1"
+          placeholder="Opcional"
+        />
+      </div>
+    </ModalBase>
   );
 }
 
 export default ModalRetiro;
+
