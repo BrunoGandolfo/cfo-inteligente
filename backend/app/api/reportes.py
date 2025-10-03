@@ -3,10 +3,23 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from datetime import datetime, date, timedelta
 from decimal import Decimal
+from typing import Tuple
 from app.core.database import get_db
 from app.models import Operacion, TipoOperacion, Area
 
 router = APIRouter()
+
+def _calcular_rango_mes(mes: int, anio: int) -> Tuple[date, date]:
+    """
+    Calcula el primer y último día del mes especificado.
+    Helper para evitar duplicación en endpoints de reportes.
+    """
+    fecha_inicio = date(anio, mes, 1)
+    if mes == 12:
+        fecha_fin = date(anio + 1, 1, 1) - timedelta(days=1)
+    else:
+        fecha_fin = date(anio, mes + 1, 1) - timedelta(days=1)
+    return fecha_inicio, fecha_fin
 
 @router.get("/resumen-mensual")
 def resumen_mensual(
@@ -20,11 +33,7 @@ def resumen_mensual(
         mes = hoy.month
         anio = hoy.year
     
-    fecha_inicio = date(anio, mes, 1)
-    if mes == 12:
-        fecha_fin = date(anio + 1, 1, 1) - timedelta(days=1)
-    else:
-        fecha_fin = date(anio, mes + 1, 1) - timedelta(days=1)
+    fecha_inicio, fecha_fin = _calcular_rango_mes(mes, anio)
     
     operaciones = db.query(Operacion).filter(
         and_(
@@ -69,11 +78,7 @@ def reporte_por_area(
         mes = hoy.month
         anio = hoy.year
     
-    fecha_inicio = date(anio, mes, 1)
-    if mes == 12:
-        fecha_fin = date(anio + 1, 1, 1) - timedelta(days=1)
-    else:
-        fecha_fin = date(anio, mes + 1, 1) - timedelta(days=1)
+    fecha_inicio, fecha_fin = _calcular_rango_mes(mes, anio)
     
     areas = db.query(Area).filter(Area.activo == True).all()
     
@@ -113,11 +118,7 @@ def calcular_rentabilidad(
         mes = hoy.month
         anio = hoy.year
     
-    fecha_inicio = date(anio, mes, 1)
-    if mes == 12:
-        fecha_fin = date(anio + 1, 1, 1) - timedelta(days=1)
-    else:
-        fecha_fin = date(anio, mes + 1, 1) - timedelta(days=1)
+    fecha_inicio, fecha_fin = _calcular_rango_mes(mes, anio)
     
     operaciones = db.query(Operacion).filter(
         and_(
