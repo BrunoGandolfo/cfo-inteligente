@@ -1,0 +1,4 @@
+  237 src/components/ModalIngreso.jsx
+  278 src/components/ModalGasto.jsx
+  210 src/components/ModalRetiro.jsx
+  725 total
