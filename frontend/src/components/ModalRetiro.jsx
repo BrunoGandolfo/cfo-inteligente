@@ -5,20 +5,11 @@ import ModalBase from './shared/ModalBase';
 function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
-    socio_id: '',
     monto_uyu: '',
     monto_usd: '',
     tipo_cambio: '',
     descripcion: ''
   });
-  
-  const [socios] = useState([
-    { id: '1e8aa519-c5e9-4c49-9e3e-f5c8d91d3a2e', nombre: 'Agustina' },
-    { id: '2f9bb62a-d6fa-5d5a-af4f-06d9e82e4b3f', nombre: 'Viviana' },
-    { id: '3g0cc73b-e701-6e6b-bg50-17eaf93f5c40', nombre: 'Gonzalo' },
-    { id: '4h1dd84c-f812-7f7c-ch61-28fbg040gd51', nombre: 'Pancho' },
-    { id: '5i2ee95d-0923-8g8d-di72-39gch151he62', nombre: 'Bruno' }
-  ]);
   
   const [localLoading, setLocalLoading] = useState(false);
 
@@ -44,7 +35,6 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
     try {
       const dataToSend = {
         fecha: formData.fecha,
-        socio_id: formData.socio_id,
         monto_uyu: parseFloat(formData.monto_uyu) || 0,
         monto_usd: parseFloat(formData.monto_usd) || 0,
         tipo_cambio: parseFloat(formData.tipo_cambio) || 40.50,
@@ -58,7 +48,6 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
       
       setFormData({
         fecha: new Date().toISOString().split('T')[0],
-        socio_id: '',
         monto_uyu: '',
         monto_usd: '',
         tipo_cambio: '',
@@ -79,32 +68,16 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
       isLoading={localLoading}
       size="max-w-md"
     >
-      <div className="grid grid-cols-2 gap-2 mb-2">
-        <div>
-          <label className="block text-xs font-medium text-gray-700">Fecha</label>
-          <input
-            type="date"
-            required
-            value={formData.fecha}
-            max={new Date().toISOString().split('T')[0]}
-            onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700">Socio *</label>
-          <select
-            required
-            value={formData.socio_id}
-            onChange={(e) => setFormData({...formData, socio_id: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-          >
-            <option value="">Seleccione...</option>
-            {socios.map(socio => (
-              <option key={socio.id} value={socio.id}>{socio.nombre}</option>
-            ))}
-          </select>
-        </div>
+      <div className="mb-2">
+        <label className="block text-xs font-medium text-gray-700">Fecha</label>
+        <input
+          type="date"
+          required
+          value={formData.fecha}
+          max={new Date().toISOString().split('T')[0]}
+          onChange={(e) => setFormData({...formData, fecha: e.target.value})}
+          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-2">
