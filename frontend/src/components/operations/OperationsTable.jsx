@@ -4,7 +4,7 @@ import OperationRow from './OperationRow';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 
-export function OperationsTable({ refresh, onOpenDetails }) {
+export function OperationsTable({ refresh, onOpenDetails, onEdit }) {
   const { operacionesAll: operaciones, loading, anular } = useOperations(refresh);
   
   // 🔍 DIAGNÓSTICO OperationsTable
@@ -50,7 +50,7 @@ export function OperationsTable({ refresh, onOpenDetails }) {
                   </tr>
                 ) : (
                   operaciones.map((op) => (
-                    <OperationRow key={op.id} op={op} onSelect={onOpenDetails} onCancel={anular} />
+                    <OperationRow key={op.id} op={op} onSelect={onOpenDetails} onEdit={onEdit} />
                   ))
                 )}
               </tbody>
@@ -61,7 +61,7 @@ export function OperationsTable({ refresh, onOpenDetails }) {
     </section>
   );
 }
-OperationsTable.propTypes = { refresh: PropTypes.number, onOpenDetails: PropTypes.func };
+OperationsTable.propTypes = { refresh: PropTypes.number, onOpenDetails: PropTypes.func, onEdit: PropTypes.func };
 export default OperationsTable;
 
 

@@ -3,13 +3,23 @@ import PropTypes from 'prop-types';
 import { X, FileText } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 import { useMetrics } from '../../hooks/useMetrics';
 import OperationsTable from './OperationsTable';
 import OperationDetails from './OperationDetails';
+import ModalIngreso from '../ModalIngreso';
+import ModalGasto from '../ModalGasto';
+import ModalRetiro from '../ModalRetiro';
 
 export function OperationsPanel({ isOpen, onClose }) {
   const { refreshKey } = useMetrics();
   const [detailOp, setDetailOp] = useState(null);
+  const [editOp, setEditOp] = useState(null);
+  
+  const handleEdit = (op) => {
+    setEditOp(op);
+  };
   return (
     <AnimatePresence>
       {isOpen && (
@@ -57,11 +67,41 @@ export function OperationsPanel({ isOpen, onClose }) {
 
             {/* Body con tabla */}
             <div className="flex-1 overflow-y-auto">
-              <OperationsTable refresh={refreshKey} onOpenDetails={(op) => setDetailOp(op)} />
+              <OperationsTable 
+                refresh={refreshKey} 
+                onOpenDetails={(op) => setDetailOp(op)}
+                onEdit={handleEdit}
+              />
             </div>
 
             {/* Modal de detalles */}
             <OperationDetails open={!!detailOp} onClose={() => setDetailOp(null)} op={detailOp} />
+            
+            {/* Modales de edición */}
+            {editOp && editOp.tipo_operacion === 'ingreso' && (
+              <ModalIngreso 
+                isOpen={true}
+                onClose={() => setEditOp(null)}
+                onSuccess={() => setEditOp(null)}
+                editMode={editOp}
+              />
+            )}
+            {editOp && editOp.tipo_operacion === 'gasto' && (
+              <ModalGasto 
+                isOpen={true}
+                onClose={() => setEditOp(null)}
+                onSuccess={() => setEditOp(null)}
+                editMode={editOp}
+              />
+            )}
+            {editOp && editOp.tipo_operacion === 'retiro' && (
+              <ModalRetiro 
+                isOpen={true}
+                onClose={() => setEditOp(null)}
+                onSuccess={() => setEditOp(null)}
+                editMode={editOp}
+              />
+            )}
           </motion.aside>
         </>
       )}
