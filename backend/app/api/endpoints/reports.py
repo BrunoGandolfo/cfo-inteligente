@@ -14,7 +14,7 @@ Fecha: Octubre 2025
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 import tempfile
 import os
@@ -37,28 +37,41 @@ router = APIRouter()
 
 @router.post("/generate/monthly")
 def generar_reporte_mensual(
-    mes: int,
-    anio: int,
+    mes: int = None,
+    anio: int = None,
     db: Session = Depends(get_db)
 ):
     """
     Genera reporte PDF mensual completo con insights de IA.
     
     Args:
-        mes: Número de mes (1-12)
-        anio: Año (ej: 2025)
+        mes: Número de mes (1-12). Si no se proporciona, usa mes actual
+        anio: Año (ej: 2025). Si no se proporciona, usa año actual
         
     Returns:
         FileResponse con PDF generado
     """
-    logger.info(f"=== GENERANDO REPORTE MENSUAL: {mes}/{anio} ===")
-    
     try:
+        # PASO 0: Usar mes/año actual si no se especifican
+        if mes is None or anio is None:
+            hoy = datetime.now()
+            mes = mes or hoy.month
+            anio = anio or hoy.year
+            logger.info(f"Parámetros no especificados, usando período actual: {mes}/{anio}")
+        
+        logger.info(f"=== GENERANDO REPORTE MENSUAL: {mes}/{anio} ===")
+        
         # PASO 1: Validar fechas
         from calendar import monthrange
         
         if not (1 <= mes <= 12):
             raise HTTPException(status_code=400, detail=f"Mes inválido: {mes}")
+        
+        if anio < 2020 or anio > datetime.now().year + 1:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Año fuera de rango válido (2020-{datetime.now().year + 1})"
+            )
         
         start_date = date(anio, mes, 1)
         ultimo_dia = monthrange(anio, mes)[1]

@@ -1,0 +1,1 @@
+{"detail":[{"type":"missing","loc":["query","mes"],"msg":"Field required","input":null},{"type":"missing","loc":["query","anio"],"msg":"Field required","input":null}]}
