@@ -26,7 +26,7 @@ function Dashboard() {
   const [detailOp, setDetailOp] = useState(null);
 
   const { loading, metricas, filtros, refreshKey } = useMetrics();
-  const { operacionesAll } = useOperations(refreshKey);
+  const { operacionesAll, refetch } = useOperations(refreshKey);
   const { operaciones: chartData, loading: chartLoading } = useChartData();
 
   if (loading) {
@@ -135,7 +135,11 @@ function Dashboard() {
         <ModalIngreso 
           isOpen={showIngreso} 
           onClose={() => setShowIngreso(false)} 
-          onSuccess={() => { setShowIngreso(false); setLoadingIngreso(false); }}
+          onSuccess={() => { 
+            setShowIngreso(false); 
+            setLoadingIngreso(false); 
+            refetch();
+          }}
           setLoading={setLoadingIngreso}
         />
       )}
@@ -143,7 +147,11 @@ function Dashboard() {
         <ModalGasto 
           isOpen={showGasto} 
           onClose={() => setShowGasto(false)} 
-          onSuccess={() => { setShowGasto(false); setLoadingGasto(false); }}
+          onSuccess={() => { 
+            setShowGasto(false); 
+            setLoadingGasto(false); 
+            refetch();
+          }}
           setLoading={setLoadingGasto}
         />
       )}
@@ -151,7 +159,11 @@ function Dashboard() {
         <ModalRetiro 
           isOpen={showRetiro} 
           onClose={() => setShowRetiro(false)} 
-          onSuccess={() => { setShowRetiro(false); setLoadingRetiro(false); }}
+          onSuccess={() => { 
+            setShowRetiro(false); 
+            setLoadingRetiro(false); 
+            refetch();
+          }}
           setLoading={setLoadingRetiro}
         />
       )}
@@ -159,7 +171,11 @@ function Dashboard() {
         <ModalDistribucion 
           isOpen={showDistrib} 
           onClose={() => setShowDistrib(false)} 
-          onSuccess={() => { setShowDistrib(false); setLoadingDistrib(false); }}
+          onSuccess={() => { 
+            setShowDistrib(false); 
+            setLoadingDistrib(false); 
+            refetch();
+          }}
           setLoading={setLoadingDistrib}
         />
       )}
