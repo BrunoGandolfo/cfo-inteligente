@@ -26,7 +26,7 @@ export function Header() {
       <div className="h-full flex items-center">
         {/* ZONA 1: Izquierda (250px fijo) */}
         <div className="w-[250px] flex items-center px-6 border-r border-gray-200 dark:border-slate-800">
-          <img src="/logo-conexion.png" alt="Conexión" className="h-10 w-auto object-contain" />
+          <img src="/logo-conexion.png" alt="Conexión" className="h-12 w-auto object-contain" />
         </div>
 
         {/* ZONA 2: Centro (flex-1) — filtros en línea con gap-3 */}
@@ -54,7 +54,7 @@ export function Header() {
           <Avatar name={userName} />
           <span className="hidden md:inline text-sm text-gray-700 dark:text-slate-200">{`Hola, ${userName}`}</span>
           <button
-            className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-white hover:bg-red-50 dark:bg-slate-800 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-200"
             onClick={() => { 
               toast.success('Sesión cerrada correctamente');
               setTimeout(() => {

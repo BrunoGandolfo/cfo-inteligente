@@ -5,6 +5,8 @@ import ModalBase from './shared/ModalBase';
 function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
+    localidad: 'Montevideo',
+    tipo_cambio: '',
     descripcion: '',
     // 5 socios con UYU y USD cada uno
     agustina_uyu: '',
@@ -21,6 +23,21 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
   
   const [localLoading, setLocalLoading] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      cargarTipoCambio();
+    }
+  }, [isOpen]);
+
+  const cargarTipoCambio = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/tipo-cambio/venta');
+      setFormData(prev => ({ ...prev, tipo_cambio: response.data.valor.toString() }));
+    } catch {
+      setFormData(prev => ({ ...prev, tipo_cambio: '40.50' }));
+    }
+  };
+
   const handleSubmitInterno = async () => {
     setLocalLoading(true);
     if (setLoading) setLoading(true);
@@ -28,14 +45,18 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
     try {
       const dataToSend = {
         fecha: formData.fecha,
-        descripcion: formData.descripcion || null,
-        distribuciones: [
-          { socio: 'Agustina', monto_uyu: parseFloat(formData.agustina_uyu) || 0, monto_usd: parseFloat(formData.agustina_usd) || 0 },
-          { socio: 'Viviana', monto_uyu: parseFloat(formData.viviana_uyu) || 0, monto_usd: parseFloat(formData.viviana_usd) || 0 },
-          { socio: 'Gonzalo', monto_uyu: parseFloat(formData.gonzalo_uyu) || 0, monto_usd: parseFloat(formData.gonzalo_usd) || 0 },
-          { socio: 'Pancho', monto_uyu: parseFloat(formData.pancho_uyu) || 0, monto_usd: parseFloat(formData.pancho_usd) || 0 },
-          { socio: 'Bruno', monto_uyu: parseFloat(formData.bruno_uyu) || 0, monto_usd: parseFloat(formData.bruno_usd) || 0 }
-        ]
+        localidad: formData.localidad,
+        tipo_cambio: parseFloat(formData.tipo_cambio) || 40.50,
+        agustina_uyu: parseFloat(formData.agustina_uyu) || null,
+        agustina_usd: parseFloat(formData.agustina_usd) || null,
+        viviana_uyu: parseFloat(formData.viviana_uyu) || null,
+        viviana_usd: parseFloat(formData.viviana_usd) || null,
+        gonzalo_uyu: parseFloat(formData.gonzalo_uyu) || null,
+        gonzalo_usd: parseFloat(formData.gonzalo_usd) || null,
+        pancho_uyu: parseFloat(formData.pancho_uyu) || null,
+        pancho_usd: parseFloat(formData.pancho_usd) || null,
+        bruno_uyu: parseFloat(formData.bruno_uyu) || null,
+        bruno_usd: parseFloat(formData.bruno_usd) || null
       };
 
       await axios.post('http://localhost:8000/api/operaciones/distribucion', dataToSend);
@@ -45,6 +66,8 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
       
       setFormData({
         fecha: new Date().toISOString().split('T')[0],
+        localidad: 'Montevideo',
+        tipo_cambio: '',
         descripcion: '',
         agustina_uyu: '',
         agustina_usd: '',
@@ -72,16 +95,40 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
       isLoading={localLoading}
       size="max-w-2xl"
     >
-      <div className="mb-3">
-        <label className="block text-xs font-medium text-gray-700 mb-1">Fecha</label>
-        <input
-          type="date"
-          required
-          value={formData.fecha}
-          max={new Date().toISOString().split('T')[0]}
-          onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-          className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
-        />
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Fecha</label>
+          <input
+            type="date"
+            required
+            value={formData.fecha}
+            max={new Date().toISOString().split('T')[0]}
+            onChange={(e) => setFormData({...formData, fecha: e.target.value})}
+            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Localidad</label>
+          <select
+            value={formData.localidad}
+            onChange={(e) => setFormData({...formData, localidad: e.target.value})}
+            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+          >
+            <option value="Montevideo">Montevideo</option>
+            <option value="Mercedes">Mercedes</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">T.C.</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            value={formData.tipo_cambio}
+            onChange={(e) => setFormData({...formData, tipo_cambio: e.target.value})}
+            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+          />
+        </div>
       </div>
 
       <div className="mb-3">

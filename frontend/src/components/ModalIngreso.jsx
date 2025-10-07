@@ -86,7 +86,7 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading }) {
       title="Registrar Ingreso"
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
-      size="max-w-md"
+      size="max-w-2xl"
     >
       <div className="grid grid-cols-3 gap-2 mb-2">
         <div>

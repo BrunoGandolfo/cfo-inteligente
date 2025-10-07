@@ -5,6 +5,7 @@ import ModalBase from './shared/ModalBase';
 function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
+    localidad: 'Montevideo',
     monto_uyu: '',
     monto_usd: '',
     tipo_cambio: '',
@@ -35,6 +36,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
     try {
       const dataToSend = {
         fecha: formData.fecha,
+        localidad: formData.localidad,
         monto_uyu: parseFloat(formData.monto_uyu) || 0,
         monto_usd: parseFloat(formData.monto_usd) || 0,
         tipo_cambio: parseFloat(formData.tipo_cambio) || 40.50,
@@ -48,6 +50,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
       
       setFormData({
         fecha: new Date().toISOString().split('T')[0],
+        localidad: 'Montevideo',
         monto_uyu: '',
         monto_usd: '',
         tipo_cambio: '',
@@ -66,18 +69,31 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
       title="Registrar Retiro"
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
-      size="max-w-md"
+      size="max-w-2xl"
     >
-      <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700">Fecha</label>
-        <input
-          type="date"
-          required
-          value={formData.fecha}
-          max={new Date().toISOString().split('T')[0]}
-          onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-        />
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Fecha</label>
+          <input
+            type="date"
+            required
+            value={formData.fecha}
+            max={new Date().toISOString().split('T')[0]}
+            onChange={(e) => setFormData({...formData, fecha: e.target.value})}
+            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Localidad</label>
+          <select
+            value={formData.localidad}
+            onChange={(e) => setFormData({...formData, localidad: e.target.value})}
+            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+          >
+            <option value="Montevideo">Montevideo</option>
+            <option value="Mercedes">Mercedes</option>
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-2">
