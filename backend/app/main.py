@@ -37,3 +37,6 @@ def health_check():
     return {"status": "healthy", "environment": settings.environment}
 from app.api.cfo_ai import router as cfo_router
 app.include_router(cfo_router, prefix="/api/cfo", tags=["cfo"])
+
+from app.api.endpoints import reports as reports_endpoints
+app.include_router(reports_endpoints.router, prefix="/api/reports", tags=["reports"])

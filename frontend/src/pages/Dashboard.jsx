@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios';
 import MetricsGrid from '../components/metrics/MetricsGrid';
 import ModalIngreso from '../components/ModalIngreso';
 import ModalGasto from '../components/ModalGasto';
@@ -58,7 +59,34 @@ function Dashboard() {
 
       <section className="px-6 mb-8">
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5">Registrar Operación</h2>
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Registrar Operación</h2>
+            <button
+              onClick={async () => {
+                const now = new Date();
+                const mes = now.getMonth() + 1;
+                const anio = now.getFullYear();
+                try {
+                  const response = await axios.post(`http://localhost:8000/api/reports/generate/monthly?mes=${mes}&anio=${anio}`, {}, { responseType: 'blob' });
+                  const url = window.URL.createObjectURL(new Blob([response.data]));
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.setAttribute('download', `Reporte_CFO_${anio}_${mes.toString().padStart(2, '0')}.pdf`);
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                } catch (error) {
+                  console.error('Error generando reporte:', error);
+                }
+              }}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Generar Reporte PDF
+            </button>
+          </div>
           <div className="grid grid-cols-4 gap-4">
             <button
               onClick={() => setShowIngreso(true)}
