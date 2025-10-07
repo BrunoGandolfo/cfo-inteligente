@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import ModalBase from './shared/ModalBase';
 
-function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
+function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     proveedor: '',
@@ -30,9 +30,23 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
 
   useEffect(() => {
     if (isOpen) {
-      cargarTipoCambio();
+      if (editMode) {
+        setFormData({
+          fecha: editMode.fecha,
+          proveedor: editMode.proveedor || '',
+          proveedor_telefono: '',
+          area_id: editMode.area?.id || editMode.area_id || '',
+          localidad: editMode.localidad || 'Montevideo',
+          monto_original: editMode.monto_original?.toString() || '',
+          moneda_original: editMode.moneda_original || 'UYU',
+          tipo_cambio: editMode.tipo_cambio?.toString() || '',
+          descripcion: editMode.descripcion || ''
+        });
+      } else {
+        cargarTipoCambio();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editMode]);
 
   const cargarTipoCambio = async () => {
     try {
@@ -60,9 +74,14 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
         descripcion: formData.descripcion || null
       };
 
-      await axios.post('http://localhost:8000/api/operaciones/gasto', dataToSend);
+      if (editMode) {
+        await axios.patch(`http://localhost:8000/api/operaciones/${editMode.id}`, dataToSend);
+        toast.success('✅ Gasto actualizado correctamente');
+      } else {
+        await axios.post('http://localhost:8000/api/operaciones/gasto', dataToSend);
+        toast.success('✅ Gasto registrado correctamente');
+      }
       
-      toast.success('✅ Gasto registrado correctamente');
       onSuccess();
       onClose();
       
@@ -87,7 +106,8 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
     <ModalBase
       isOpen={isOpen}
       onClose={onClose}
-      title="Registrar Gasto"
+      title={editMode ? "Editar Gasto" : "Registrar Gasto"}
+      submitLabel={editMode ? "Actualizar" : "Guardar"}
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"

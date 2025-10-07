@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import ModalBase from './shared/ModalBase';
 
-function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
+function ModalRetiro({ isOpen, onClose, onSuccess, setLoading, editMode }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     localidad: 'Montevideo',
@@ -17,9 +17,20 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
 
   useEffect(() => {
     if (isOpen) {
-      cargarTipoCambio();
+      if (editMode) {
+        setFormData({
+          fecha: editMode.fecha,
+          localidad: editMode.localidad || 'Montevideo',
+          monto_uyu: editMode.monto_uyu?.toString() || '',
+          monto_usd: editMode.monto_usd?.toString() || '',
+          tipo_cambio: editMode.tipo_cambio?.toString() || '',
+          descripcion: editMode.descripcion || ''
+        });
+      } else {
+        cargarTipoCambio();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editMode]);
 
   const cargarTipoCambio = async () => {
     try {
@@ -44,9 +55,14 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
         descripcion: formData.descripcion || null
       };
 
-      await axios.post('http://localhost:8000/api/operaciones/retiro', dataToSend);
+      if (editMode) {
+        await axios.patch(`http://localhost:8000/api/operaciones/${editMode.id}`, dataToSend);
+        toast.success('✅ Retiro actualizado correctamente');
+      } else {
+        await axios.post('http://localhost:8000/api/operaciones/retiro', dataToSend);
+        toast.success('✅ Retiro registrado correctamente');
+      }
       
-      toast.success('✅ Retiro registrado correctamente');
       onSuccess();
       onClose();
       
@@ -68,7 +84,8 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
     <ModalBase
       isOpen={isOpen}
       onClose={onClose}
-      title="Registrar Retiro"
+      title={editMode ? "Editar Retiro" : "Registrar Retiro"}
+      submitLabel={editMode ? "Actualizar" : "Guardar"}
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"

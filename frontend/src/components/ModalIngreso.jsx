@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import ModalBase from './shared/ModalBase';
 
-function ModalIngreso({ isOpen, onClose, onSuccess, setLoading }) {
+function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     cliente: '',
@@ -28,9 +28,24 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading }) {
 
   useEffect(() => {
     if (isOpen) {
-      cargarTipoCambio();
+      if (editMode) {
+        // Modo edición: precargar datos
+        setFormData({
+          fecha: editMode.fecha,
+          cliente: editMode.cliente || '',
+          cliente_telefono: '',
+          area_id: editMode.area?.id || editMode.area_id || '',
+          localidad: editMode.localidad || 'Montevideo',
+          monto_original: editMode.monto_original?.toString() || '',
+          moneda_original: editMode.moneda_original || 'UYU',
+          tipo_cambio: editMode.tipo_cambio?.toString() || '',
+          descripcion: editMode.descripcion || ''
+        });
+      } else {
+        cargarTipoCambio();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editMode]);
 
   const cargarTipoCambio = async () => {
     try {
@@ -58,9 +73,14 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading }) {
         descripcion: formData.descripcion || null
       };
 
-      await axios.post('http://localhost:8000/api/operaciones/ingreso', dataToSend);
+      if (editMode) {
+        await axios.patch(`http://localhost:8000/api/operaciones/${editMode.id}`, dataToSend);
+        toast.success('✅ Ingreso actualizado correctamente');
+      } else {
+        await axios.post('http://localhost:8000/api/operaciones/ingreso', dataToSend);
+        toast.success('✅ Ingreso registrado correctamente');
+      }
       
-      toast.success('✅ Ingreso registrado correctamente');
       onSuccess();
       onClose();
       
@@ -85,7 +105,8 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading }) {
     <ModalBase
       isOpen={isOpen}
       onClose={onClose}
-      title="Registrar Ingreso"
+      title={editMode ? "Editar Ingreso" : "Registrar Ingreso"}
+      submitLabel={editMode ? "Actualizar" : "Guardar"}
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"
