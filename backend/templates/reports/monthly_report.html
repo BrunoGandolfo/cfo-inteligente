@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Mensual CFO - {{ period_label }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm 1.5cm;
+            @top-center {
+                content: "Conexión Consultora - Reporte Mensual";
+                font-size: 10pt;
+                color: #6B7280;
+            }
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9pt;
+                color: #9CA3AF;
+            }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            color: #1F2937;
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: #1F2937;
+            font-size: 24pt;
+            margin-top: 0;
+            border-bottom: 3px solid #3B82F6;
+            padding-bottom: 0.5rem;
+        }
+        
+        h2 {
+            color: #3B82F6;
+            font-size: 18pt;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .metric-card {
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 10pt;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .metric-value {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0.5rem 0;
+        }
+        
+        .metric-value.positive { color: #10B981; }
+        .metric-value.negative { color: #EF4444; }
+        
+        .chart-container {
+            text-align: center;
+            margin: 1.5rem 0;
+            page-break-inside: avoid;
+        }
+        
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .insight-box {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            page-break-inside: avoid;
+        }
+        
+        .insight-box h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 12pt;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        th {
+            background: #F3F4F6;
+            padding: 0.75rem;
+            text-align: left;
+            font-size: 10pt;
+            border-bottom: 2px solid #D1D5DB;
+        }
+        
+        td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <!-- Página 1: Resumen Ejecutivo -->
+    <h1>Reporte Financiero - {{ period_label }}</h1>
+    
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">Ingresos</div>
+            <div class="metric-value positive">{{ format_currency(metricas.ingresos.uyu) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Gastos</div>
+            <div class="metric-value negative">{{ format_currency(metricas.gastos.uyu) }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Rentabilidad</div>
+            <div class="metric-value">{{ format_percentage(metricas.rentabilidad_porcentaje) }}</div>
+        </div>
+    </div>
+    
+    <h2>Insights Clave</h2>
+    {{ insights_html|safe }}
+    
+    {% if charts.evolucion %}
+    <div class="chart-container">
+        <img src="{{ charts.evolucion }}" alt="Evolución Mensual">
+    </div>
+    {% endif %}
+    
+    <div class="page-break"></div>
+    
+    <!-- Página 2: Análisis por Área -->
+    <h2>Desempeño por Área</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Área</th>
+                <th style="text-align: right;">Ingresos</th>
+                <th style="text-align: right;">Gastos</th>
+                <th style="text-align: right;">Rentabilidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for area in por_area %}
+            <tr>
+                <td>{{ area.nombre }}</td>
+                <td style="text-align: right;">{{ format_currency(area.ingresos) }}</td>
+                <td style="text-align: right;">{{ format_currency(area.gastos) }}</td>
+                <td style="text-align: right;">{{ format_percentage(area.rentabilidad) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% if charts.areas %}
+    <div class="chart-container">
+        <img src="{{ charts.areas }}" alt="Distribución por Área">
+    </div>
+    {% endif %}
+    
+</body>
+</html>
+
