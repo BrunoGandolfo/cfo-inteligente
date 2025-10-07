@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
 from datetime import date, timedelta
 from typing import Tuple
 from app.core.database import get_db
-from app.models import Operacion, TipoOperacion, Area
+from app.models import Operacion, TipoOperacion, Area, Localidad
 
 router = APIRouter()
 
@@ -152,4 +152,83 @@ def calcular_rentabilidad(
         "resultado_neto": float(resultado_neto),
         "margen_operativo_porcentaje": round(float(margen_operativo), 2),
         "margen_neto_porcentaje": round(float(margen_neto), 2)
+    }
+
+@router.get("/operaciones-grafico")
+def operaciones_para_graficos(
+    fecha_desde: date = Query(...),
+    fecha_hasta: date = Query(...),
+    localidad: str | None = Query(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna operaciones filtradas para visualización en gráficos.
+    
+    Endpoint diseñado específicamente para gráficos del dashboard:
+    - Acepta filtros de fecha y localidad (igual que dashboard_report)
+    - Retorna operaciones individuales con sus relaciones (area, cliente, proveedor)
+    - Límite configurable (default: 100) para cargar más datos que el CRUD
+    
+    Patrón arquitectónico:
+    - /api/operaciones: CRUD básico (últimas 50, sin filtros)
+    - /api/reportes/dashboard: Métricas agregadas
+    - /api/reportes/operaciones-grafico: Operaciones para visualización (este endpoint)
+    """
+    # Construir filtros dinámicos (patrón dashboard_report)
+    filtros = [
+        Operacion.fecha >= fecha_desde,
+        Operacion.fecha <= fecha_hasta,
+        Operacion.deleted_at == None
+    ]
+    
+    # Filtro de localidad opcional (patrón dashboard_report)
+    if localidad and localidad != "Todas":
+        localidad_map = {
+            "Montevideo": Localidad.MONTEVIDEO,
+            "MONTEVIDEO": Localidad.MONTEVIDEO,
+            "Mercedes": Localidad.MERCEDES,
+            "MERCEDES": Localidad.MERCEDES,
+        }
+        enum_loc = localidad_map.get(localidad)
+        if enum_loc:
+            filtros.append(Operacion.localidad == enum_loc)
+    
+    # Query con joinedload para incluir relaciones (patrón operaciones.py)
+    operaciones = db.query(Operacion)\
+        .options(joinedload(Operacion.area))\
+        .filter(and_(*filtros))\
+        .order_by(Operacion.fecha)\
+        .all()
+    
+    # Serialización completa (patrón operaciones.py)
+    result = []
+    for op in operaciones:
+        result.append({
+            "id": str(op.id),
+            "tipo_operacion": op.tipo_operacion.value if op.tipo_operacion else None,
+            "fecha": op.fecha.isoformat() if op.fecha else None,
+            "monto_original": float(op.monto_original) if op.monto_original else 0,
+            "moneda_original": op.moneda_original.value if op.moneda_original else None,
+            "tipo_cambio": float(op.tipo_cambio) if op.tipo_cambio else 0,
+            "monto_uyu": float(op.monto_uyu) if op.monto_uyu else 0,
+            "monto_usd": float(op.monto_usd) if op.monto_usd else 0,
+            "area_id": str(op.area_id) if op.area_id else None,
+            "area": {
+                "id": str(op.area.id),
+                "nombre": op.area.nombre
+            } if op.area else None,
+            "localidad": op.localidad.value if op.localidad else None,
+            "cliente": op.cliente,
+            "proveedor": op.proveedor,
+            "descripcion": op.descripcion
+        })
+    
+    return {
+        "operaciones": result,
+        "cantidad": len(result),
+        "filtros_aplicados": {
+            "fecha_desde": fecha_desde.isoformat(),
+            "fecha_hasta": fecha_hasta.isoformat(),
+            "localidad": localidad or "Todas"
+        }
     }

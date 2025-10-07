@@ -1,9 +1,23 @@
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
 import Card from '../ui/Card';
+import { AREAS } from '../../utils/constants';
 
 const COLORS = ['#10B981', '#EF4444', '#3B82F6', '#8B5CF6', '#F59E0B'];
 
 export function ChartsSection({ operaciones }) {
+  // 🔍 DIAGNÓSTICO: Ver qué datos recibe el componente
+  console.log('╔═══════════════════════════════════════════════════════════╗');
+  console.log('║ 🔍 DIAGNÓSTICO ChartsSection - ENTRADA DE DATOS         ║');
+  console.log('╚═══════════════════════════════════════════════════════════╝');
+  console.log('📊 Total operaciones recibidas:', operaciones?.length || 0);
+  console.log('📅 Fechas únicas:', [...new Set((operaciones || []).map(op => op.fecha))].sort());
+  console.log('📍 Localidades únicas:', [...new Set((operaciones || []).map(op => op.localidad))]);
+  console.log('🏢 Áreas (area_id) únicas:', [...new Set((operaciones || []).map(op => op.area_id))]);
+  console.log('🏢 Áreas (area.id) únicas:', [...new Set((operaciones || []).filter(op => op.area).map(op => op.area.id))]);
+  console.log('💰 Tipos de operación:', [...new Set((operaciones || []).map(op => op.tipo_operacion || op.tipo))]);
+  console.log('📦 Muestra de 3 operaciones:', (operaciones || []).slice(0, 3));
+  console.log('');
+
   // Tooltips personalizados
   const CustomTooltipEvolution = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -65,7 +79,14 @@ export function ChartsSection({ operaciones }) {
           <LineChart data={evolutionData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="mes" />
-            <YAxis />
+            <YAxis 
+              tickFormatter={(value) => {
+                if (value >= 1000000) return `$${(value/1000000).toFixed(1)}M`;
+                if (value >= 1000) return `$${(value/1000).toFixed(0)}K`;
+                return `$${value}`;
+              }}
+              width={80}
+            />
             <Tooltip content={<CustomTooltipEvolution />} />
             <Legend />
             <Line type="monotone" dataKey="ingresos" stroke="#10B981" strokeWidth={2} />
@@ -96,7 +117,14 @@ export function ChartsSection({ operaciones }) {
           <BarChart data={locationData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="localidad" />
-            <YAxis />
+            <YAxis 
+              tickFormatter={(value) => {
+                if (value >= 1000000) return `$${(value/1000000).toFixed(1)}M`;
+                if (value >= 1000) return `$${(value/1000).toFixed(0)}K`;
+                return `$${value}`;
+              }}
+              width={80}
+            />
             <Tooltip content={<CustomTooltipBars />} />
             <Legend />
             <Bar dataKey="ingresos" fill="#10B981" />
@@ -109,58 +137,112 @@ export function ChartsSection({ operaciones }) {
 }
 
 function prepareEvolutionData(operaciones) {
+  console.log('📈 prepareEvolutionData - INICIO');
+  console.log('  📥 Operaciones para procesar:', operaciones.length);
+  
   const months = {};
   operaciones.forEach(op => {
     const d = new Date(op.fecha);
-    const month = d.toLocaleDateString('es-UY', { month: 'short' });
-    if (!months[month]) months[month] = { mes: month, ingresos: 0, gastos: 0 };
+    // Usar año-mes como key para ordenar correctamente
+    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const monthLabel = d.toLocaleDateString('es-UY', { month: 'short' });
+    
+    if (!months[yearMonth]) {
+      months[yearMonth] = { 
+        mes: monthLabel, 
+        ingresos: 0, 
+        gastos: 0,
+        sortKey: yearMonth  // Para ordenar
+      };
+    }
+    
     const tipo = (op.tipo || op.tipo_operacion || '').toUpperCase();
     const monto = Number(op.monto_uyu || 0);
-    if (tipo === 'INGRESO') months[month].ingresos += monto;
-    if (tipo === 'GASTO') months[month].gastos += monto;
+    if (tipo === 'INGRESO') months[yearMonth].ingresos += monto;
+    if (tipo === 'GASTO') months[yearMonth].gastos += monto;
   });
-  return Object.values(months).slice(-6);
+  
+  console.log('  📅 Meses en objeto (keys ordenables):', Object.keys(months));
+  
+  // Convertir a array y ordenar cronológicamente
+  const allMonths = Object.values(months).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  console.log('  📅 Array ordenado cronológicamente:', allMonths.map(m => m.mes));
+  
+  const result = allMonths.slice(-6);
+  console.log('  📅 Array final (últimos 6 meses):', result.map(m => m.mes));
+  console.log('  📊 Resultado final:', result);
+  console.log('');
+  
+  return result;
 }
 
 function prepareAreaData(operaciones) {
-  const AREAS_MAP = {
-    'd3aff49c-748c-4d1d-bc47-cdda1cfb913d': 'Jurídica',
-    '53ba7821-8836-4e74-ad56-a288d290881d': 'Notarial',
-    '14700c01-3b3d-49c6-8e2e-f3ebded1b1bb': 'Contable',
-    '11c64c64-c7f6-4e85-9c26-b577c3d7a5b7': 'Recuperación',
-    'b11006d3-6cfc-4766-9201-ab56274401a6': 'Gastos Generales'
-  };
+  console.log('🥧 prepareAreaData - INICIO');
+  console.log('  📥 Total operaciones recibidas:', operaciones.length);
+  
+  console.log('  🗺️  AREAS importado de constants:', AREAS);
+  
+  const ingresos = operaciones.filter(op => (op.tipo || op.tipo_operacion || '').toUpperCase() === 'INGRESO');
+  console.log('  💰 Operaciones tipo INGRESO:', ingresos.length);
+  
   const areas = {};
-  operaciones
-    .filter(op => (op.tipo || op.tipo_operacion || '').toUpperCase() === 'INGRESO')
-    .forEach(op => {
-      const areaName = AREAS_MAP[op.area_id] || 'Otros';
-      areas[areaName] = (areas[areaName] || 0) + Number(op.monto_uyu || 0);
-    });
+  ingresos.forEach(op => {
+    const areaId = op.area_id || (op.area ? op.area.id : null);
+    console.log(`    🔍 Procesando: area_id="${areaId}", monto=${op.monto_uyu}`);
+    const areaName = AREAS[areaId] || 'Otros';
+    console.log(`       ➡️  Mapeado a: "${areaName}"`);
+    areas[areaName] = (areas[areaName] || 0) + Number(op.monto_uyu || 0);
+  });
+  
+  console.log('  📊 Areas acumuladas:', areas);
+  
   const total = Object.values(areas).reduce((sum, val) => sum + val, 0);
-  return Object.entries(areas).map(([name, value]) => ({
+  console.log('  💵 Total acumulado:', total);
+  
+  const result = Object.entries(areas).map(([name, value]) => ({
     name,
     value,
     total,
     percentage: total > 0 ? (value / total * 100).toFixed(1) : 0
   }));
+  
+  console.log('  ✅ Resultado final para gráfico torta:', result);
+  console.log('');
+  
+  return result;
 }
 
 function prepareLocationData(operaciones) {
+  console.log('📊 prepareLocationData - INICIO');
+  console.log('  📥 Total operaciones recibidas:', operaciones.length);
+  console.log('  📍 Localidades en operaciones:', [...new Set(operaciones.map(op => op.localidad))]);
+  
   const data = { MONTEVIDEO: { ingresos: 0, gastos: 0 }, MERCEDES: { ingresos: 0, gastos: 0 } };
+  
   operaciones.forEach(op => {
     const loc = (op.localidad || '').toUpperCase();
     const tipo = (op.tipo || op.tipo_operacion || '').toUpperCase();
     const monto = Number(op.monto_uyu || 0);
+    
     if (loc && data[loc]) {
       if (tipo === 'INGRESO') data[loc].ingresos += monto;
       if (tipo === 'GASTO') data[loc].gastos += monto;
+    } else if (loc) {
+      console.log(`    ⚠️  Localidad "${loc}" no matchea MONTEVIDEO ni MERCEDES`);
     }
   });
-  return [
+  
+  console.log('  📊 Data acumulada:', data);
+  
+  const result = [
     { localidad: 'Montevideo', ...data.MONTEVIDEO },
     { localidad: 'Mercedes', ...data.MERCEDES }
   ];
+  
+  console.log('  ✅ Resultado final para gráfico barras:', result);
+  console.log('');
+  
+  return result;
 }
 
 export default ChartsSection;

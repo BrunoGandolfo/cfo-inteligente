@@ -11,6 +11,7 @@ import { formatMoney } from '../utils/formatters';
 import Button from '../components/ui/Button';
 import ChartsSection from '../components/charts/ChartsSection';
 import { useOperations } from '../hooks/useOperations';
+import { useChartData } from '../hooks/useChartData';
 import ActiveFilters from '../components/filters/ActiveFilters';
 
 function Dashboard() {
@@ -26,6 +27,7 @@ function Dashboard() {
 
   const { loading, metricas, filtros, refreshKey } = useMetrics();
   const { operacionesAll } = useOperations(refreshKey);
+  const { operaciones: chartData, loading: chartLoading } = useChartData();
 
   if (loading) {
     return <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center text-gray-600 dark:text-slate-200">Cargando...</div>;
@@ -48,7 +50,7 @@ function Dashboard() {
 
       <ActiveFilters />
 
-      <ChartsSection operaciones={operacionesAll || []} />
+      <ChartsSection operaciones={chartData || []} />
 
       <section className="px-6 mb-8">
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg shadow-sm p-6">
