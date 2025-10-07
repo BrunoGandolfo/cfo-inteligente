@@ -11,6 +11,7 @@ import OperationDetails from './OperationDetails';
 import ModalIngreso from '../ModalIngreso';
 import ModalGasto from '../ModalGasto';
 import ModalRetiro from '../ModalRetiro';
+import ModalDistribucion from '../ModalDistribucion';
 
 export function OperationsPanel({ isOpen, onClose }) {
   const { refreshKey } = useMetrics();
@@ -96,6 +97,14 @@ export function OperationsPanel({ isOpen, onClose }) {
             )}
             {editOp && editOp.tipo_operacion === 'retiro' && (
               <ModalRetiro 
+                isOpen={true}
+                onClose={() => setEditOp(null)}
+                onSuccess={() => setEditOp(null)}
+                editMode={editOp}
+              />
+            )}
+            {editOp && editOp.tipo_operacion === 'distribucion' && (
+              <ModalDistribucion 
                 isOpen={true}
                 onClose={() => setEditOp(null)}
                 onSuccess={() => setEditOp(null)}

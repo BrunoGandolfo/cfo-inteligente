@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import ModalBase from './shared/ModalBase';
 
-function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
+function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading, editMode }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     localidad: 'Montevideo',
@@ -26,9 +26,30 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
 
   useEffect(() => {
     if (isOpen) {
-      cargarTipoCambio();
+      if (editMode) {
+        // Modo edición: precargar datos
+        setFormData({
+          fecha: editMode.fecha,
+          localidad: editMode.localidad || 'Montevideo',
+          tipo_cambio: editMode.tipo_cambio?.toString() || '',
+          descripcion: editMode.descripcion || '',
+          // Los montos de socios se cargarán dinámicamente
+          agustina_uyu: '',
+          agustina_usd: '',
+          viviana_uyu: '',
+          viviana_usd: '',
+          gonzalo_uyu: '',
+          gonzalo_usd: '',
+          pancho_uyu: '',
+          pancho_usd: '',
+          bruno_uyu: '',
+          bruno_usd: ''
+        });
+      } else {
+        cargarTipoCambio();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editMode]);
 
   const cargarTipoCambio = async () => {
     try {
@@ -60,9 +81,14 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
         bruno_usd: parseFloat(formData.bruno_usd) || null
       };
 
-      await axios.post('http://localhost:8000/api/operaciones/distribucion', dataToSend);
+      if (editMode) {
+        await axios.patch(`http://localhost:8000/api/operaciones/${editMode.id}`, dataToSend);
+        toast.success('✅ Distribución actualizada correctamente');
+      } else {
+        await axios.post('http://localhost:8000/api/operaciones/distribucion', dataToSend);
+        toast.success('✅ Distribución registrada correctamente');
+      }
       
-      toast.success('✅ Distribución registrada correctamente');
       onSuccess();
       onClose();
       
@@ -92,7 +118,8 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
     <ModalBase
       isOpen={isOpen}
       onClose={onClose}
-      title="Registrar Distribución"
+      title={editMode ? "Editar Distribución" : "Registrar Distribución"}
+      submitLabel={editMode ? "Actualizar" : "Guardar"}
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"
