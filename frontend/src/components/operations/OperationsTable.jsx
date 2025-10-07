@@ -6,6 +6,13 @@ import Button from '../ui/Button';
 
 export function OperationsTable({ refresh, onOpenDetails }) {
   const { operaciones, loading, anular } = useOperations(refresh);
+  
+  // 🔍 DIAGNÓSTICO OperationsTable
+  console.log('📋 OPERATIONS TABLE:');
+  console.log('  refresh prop:', refresh);
+  console.log('  operaciones:', operaciones?.length || 0);
+  console.log('  loading:', loading);
+  
   return (
     <section className="px-6 mb-8">
       <Card className="overflow-hidden">

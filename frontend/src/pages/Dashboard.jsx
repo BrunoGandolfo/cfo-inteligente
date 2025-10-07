@@ -29,6 +29,13 @@ function Dashboard() {
   const { operacionesAll, refetch } = useOperations(refreshKey);
   const { operaciones: chartData, loading: chartLoading } = useChartData();
 
+  // 🔍 DIAGNÓSTICO Dashboard
+  console.log('🏠 DASHBOARD - Estado actual:');
+  console.log('  refreshKey:', refreshKey);
+  console.log('  operacionesAll:', operacionesAll?.length || 0, 'operaciones');
+  console.log('  chartData:', chartData?.length || 0, 'operaciones');
+  console.log('  loading:', loading);
+
   if (loading) {
     return <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center text-gray-600 dark:text-slate-200">Cargando...</div>;
   }
