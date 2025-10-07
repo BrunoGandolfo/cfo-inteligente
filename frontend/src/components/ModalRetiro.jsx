@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import ModalBase from './shared/ModalBase';
 
 function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
@@ -45,6 +46,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
 
       await axios.post('http://localhost:8000/api/operaciones/retiro', dataToSend);
       
+      toast.success('✅ Retiro registrado correctamente');
       onSuccess();
       onClose();
       

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import ModalBase from './shared/ModalBase';
 
 function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
@@ -61,6 +62,7 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
 
       await axios.post('http://localhost:8000/api/operaciones/distribucion', dataToSend);
       
+      toast.success('✅ Distribución registrada correctamente');
       onSuccess();
       onClose();
       

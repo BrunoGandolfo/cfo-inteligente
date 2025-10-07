@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import ModalBase from './shared/ModalBase';
 
 function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
@@ -61,6 +62,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
 
       await axios.post('http://localhost:8000/api/operaciones/gasto', dataToSend);
       
+      toast.success('✅ Gasto registrado correctamente');
       onSuccess();
       onClose();
       

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import ModalBase from './shared/ModalBase';
 
 function ModalIngreso({ isOpen, onClose, onSuccess, setLoading }) {
@@ -59,6 +60,7 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading }) {
 
       await axios.post('http://localhost:8000/api/operaciones/ingreso', dataToSend);
       
+      toast.success('✅ Ingreso registrado correctamente');
       onSuccess();
       onClose();
       

@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import MetricsGrid from '../components/metrics/MetricsGrid';
-import OperationsTable from '../components/operations/OperationsTable';
-import OperationDetails from '../components/operations/OperationDetails';
 import ModalIngreso from '../components/ModalIngreso';
 import ModalGasto from '../components/ModalGasto';
 import ModalRetiro from '../components/ModalRetiro';
@@ -23,7 +21,6 @@ function Dashboard() {
   const [loadingGasto, setLoadingGasto] = useState(false);
   const [loadingRetiro, setLoadingRetiro] = useState(false);
   const [loadingDistrib, setLoadingDistrib] = useState(false);
-  const [detailOp, setDetailOp] = useState(null);
 
   const { loading, metricas, filtros, refreshKey } = useMetrics();
   const { operacionesAll, refetch } = useOperations(refreshKey);
@@ -133,10 +130,6 @@ function Dashboard() {
           </div>
         </div>
       </section>
-
-      <OperationsTable refresh={refreshKey} onOpenDetails={(op) => setDetailOp(op)} />
-
-      <OperationDetails open={!!detailOp} onClose={() => setDetailOp(null)} op={detailOp} />
 
       {showIngreso && (
         <ModalIngreso 
