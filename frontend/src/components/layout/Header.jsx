@@ -26,7 +26,7 @@ export function Header() {
       <div className="h-full flex items-center">
         {/* ZONA 1: Izquierda (250px fijo) */}
         <div className="w-[250px] flex items-center px-6 border-r border-gray-200 dark:border-slate-800">
-          <img src="/logo-conexion.png" alt="Conexión" className="h-12 w-auto object-contain" />
+          <img src="/logo-conexion.png" alt="Conexión" className="h-16 w-auto object-contain" />
         </div>
 
         {/* ZONA 2: Centro (flex-1) — filtros en línea con gap-3 */}

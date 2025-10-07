@@ -9,14 +9,14 @@ export function DateRangePicker({ from, to, onFrom, onTo }) {
         selected={from}
         onChange={onFrom}
         dateFormat="dd/MM/yyyy"
-        className="px-3 py-2 text-sm border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+        className="px-3 py-2 text-sm border-2 border-blue-400 dark:border-blue-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:shadow-md"
       />
-      <span className="text-gray-500">–</span>
+      <span className="text-gray-500 dark:text-gray-400 font-bold">–</span>
       <DatePicker
         selected={to}
         onChange={onTo}
         dateFormat="dd/MM/yyyy"
-        className="px-3 py-2 text-sm border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+        className="px-3 py-2 text-sm border-2 border-blue-400 dark:border-blue-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:shadow-md"
       />
     </div>
   );

@@ -89,10 +89,11 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"
+      borderColor="border-red-500"
     >
       <div className="grid grid-cols-3 gap-2 mb-2">
         <div>
-          <label className="block text-xs font-medium text-gray-700">Fecha</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Fecha</label>
           <input
             type="date"
             required
@@ -103,7 +104,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700">Área *</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Área *</label>
           <select
             required
             value={formData.area_id}
@@ -117,7 +118,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700">Local</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Local</label>
           <select
             value={formData.localidad}
             onChange={(e) => setFormData({...formData, localidad: e.target.value})}
@@ -130,7 +131,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700">Proveedor</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Proveedor</label>
         <input
           type="text"
           value={formData.proveedor}
@@ -142,7 +143,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
 
       <div className="grid grid-cols-3 gap-2 mb-2">
         <div>
-          <label className="block text-xs font-medium text-gray-700">Moneda</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Moneda</label>
           <select
             value={formData.moneda_original}
             onChange={(e) => setFormData({...formData, moneda_original: e.target.value})}
@@ -153,7 +154,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700">Monto *</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto *</label>
           <input
             type="number"
             required
@@ -166,7 +167,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700">T.C.</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">T.C.</label>
           <input
             type="number"
             required
@@ -180,7 +181,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading }) {
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700">Descripción</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Descripción</label>
         <textarea
           value={formData.descripcion}
           onChange={(e) => setFormData({...formData, descripcion: e.target.value})}

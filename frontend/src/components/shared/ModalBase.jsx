@@ -10,7 +10,8 @@ export default function ModalBase({
   onSubmit,
   submitLabel = 'Guardar',
   isLoading = false,
-  size = 'max-w-2xl'
+  size = 'max-w-2xl',
+  borderColor = 'border-gray-300'
 }) {
   if (!isOpen) return null;
 
@@ -25,7 +26,7 @@ export default function ModalBase({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${size}`}>
+      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full border-t-4 ${borderColor} ${size}`}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
           <h2 className="text-xl font-semibold dark:text-white">{title}</h2>

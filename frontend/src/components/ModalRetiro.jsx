@@ -70,10 +70,11 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"
+      borderColor="border-amber-500"
     >
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div>
-          <label className="block text-xs font-medium text-gray-700">Fecha</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Fecha</label>
           <input
             type="date"
             required
@@ -84,7 +85,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700">Localidad</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Localidad</label>
           <select
             value={formData.localidad}
             onChange={(e) => setFormData({...formData, localidad: e.target.value})}
@@ -98,7 +99,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
 
       <div className="grid grid-cols-3 gap-2 mb-2">
         <div>
-          <label className="block text-xs font-medium text-gray-700">Monto UYU</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto UYU</label>
           <input
             type="number"
             step="0.01"
@@ -110,7 +111,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700">Monto USD</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto USD</label>
           <input
             type="number"
             step="0.01"
@@ -122,7 +123,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700">T.C.</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">T.C.</label>
           <input
             type="number"
             step="0.01"
@@ -135,7 +136,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading }) {
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700">Descripción</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Descripción</label>
         <textarea
           value={formData.descripcion}
           onChange={(e) => setFormData({...formData, descripcion: e.target.value})}

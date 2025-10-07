@@ -94,10 +94,11 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"
+      borderColor="border-blue-500"
     >
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Fecha</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Fecha</label>
           <input
             type="date"
             required
@@ -108,7 +109,7 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Localidad</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Localidad</label>
           <select
             value={formData.localidad}
             onChange={(e) => setFormData({...formData, localidad: e.target.value})}
@@ -119,7 +120,7 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">T.C.</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">T.C.</label>
           <input
             type="number"
             step="0.01"
@@ -132,36 +133,36 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading }) {
       </div>
 
       <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Montos por Socio</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Montos por Socio</label>
         <div className="grid grid-cols-3 gap-2">
-          <div className="text-xs font-semibold text-gray-600">Socio</div>
-          <div className="text-xs font-semibold text-gray-600">UYU</div>
-          <div className="text-xs font-semibold text-gray-600">USD</div>
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">Socio</div>
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">UYU</div>
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">USD</div>
           
-          <div className="text-xs py-1">Agustina</div>
+          <div className="text-xs py-1 dark:text-gray-200">Agustina</div>
           <input type="number" step="0.01" min="0" value={formData.agustina_uyu} onChange={(e) => setFormData({...formData, agustina_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
           <input type="number" step="0.01" min="0" value={formData.agustina_usd} onChange={(e) => setFormData({...formData, agustina_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
           
-          <div className="text-xs py-1">Viviana</div>
+          <div className="text-xs py-1 dark:text-gray-200">Viviana</div>
           <input type="number" step="0.01" min="0" value={formData.viviana_uyu} onChange={(e) => setFormData({...formData, viviana_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
           <input type="number" step="0.01" min="0" value={formData.viviana_usd} onChange={(e) => setFormData({...formData, viviana_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
           
-          <div className="text-xs py-1">Gonzalo</div>
+          <div className="text-xs py-1 dark:text-gray-200">Gonzalo</div>
           <input type="number" step="0.01" min="0" value={formData.gonzalo_uyu} onChange={(e) => setFormData({...formData, gonzalo_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
           <input type="number" step="0.01" min="0" value={formData.gonzalo_usd} onChange={(e) => setFormData({...formData, gonzalo_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
           
-          <div className="text-xs py-1">Pancho</div>
+          <div className="text-xs py-1 dark:text-gray-200">Pancho</div>
           <input type="number" step="0.01" min="0" value={formData.pancho_uyu} onChange={(e) => setFormData({...formData, pancho_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
           <input type="number" step="0.01" min="0" value={formData.pancho_usd} onChange={(e) => setFormData({...formData, pancho_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
           
-          <div className="text-xs py-1">Bruno</div>
+          <div className="text-xs py-1 dark:text-gray-200">Bruno</div>
           <input type="number" step="0.01" min="0" value={formData.bruno_uyu} onChange={(e) => setFormData({...formData, bruno_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
           <input type="number" step="0.01" min="0" value={formData.bruno_usd} onChange={(e) => setFormData({...formData, bruno_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
         </div>
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700">Descripción</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Descripción</label>
         <textarea
           value={formData.descripcion}
           onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
