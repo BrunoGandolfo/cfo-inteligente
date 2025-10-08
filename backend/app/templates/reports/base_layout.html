@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title | default('Reporte CFO') }}</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════
+           CONFIGURACIÓN DE PÁGINA (@page)
+           ═══════════════════════════════════════════════════════════ */
+        @page {
+            size: A4;
+            margin: 2cm 1.5cm;
+            
+            @top-center {
+                content: "{{ empresa_nombre | default('Conexión Consultora') }}";
+                font-family: 'Inter', Arial, sans-serif;
+                font-size: 10pt;
+                color: #6B7280;
+            }
+            
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: 'Inter', Arial, sans-serif;
+                font-size: 9pt;
+                color: #9CA3AF;
+            }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           RESET Y TIPOGRAFÍA
+           ═══════════════════════════════════════════════════════════ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.6;
+            color: #1F2937;
+            background: white;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           VARIABLES DE COLOR (Moderna 2024)
+           ═══════════════════════════════════════════════════════════ */
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --success: #10B981;
+            --success-light: #D1FAE5;
+            --danger: #EF4444;
+            --danger-light: #FEE2E2;
+            --warning: #F59E0B;
+            --secondary: #8B5CF6;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-600: #4B5563;
+            --gray-800: #1F2937;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           HEADER CORPORATIVO
+           ═══════════════════════════════════════════════════════════ */
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 3px solid var(--primary);
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            max-width: 180px;
+            height: auto;
+        }
+        
+        .header-info {
+            text-align: right;
+        }
+        
+        .header-info h1 {
+            font-size: 24pt;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 5px;
+        }
+        
+        .header-info .subtitle {
+            font-size: 11pt;
+            color: var(--gray-600);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           SECCIONES
+           ═══════════════════════════════════════════════════════════ */
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            font-size: 16pt;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        
+        .section-subtitle {
+            font-size: 13pt;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           CARDS Y BOXES
+           ═══════════════════════════════════════════════════════════ */
+        .card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .metric-box {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .metric-box .label {
+            font-size: 10pt;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .metric-box .value {
+            font-size: 26pt;
+            font-weight: 700;
+        }
+        
+        .metric-box .change {
+            font-size: 11pt;
+            margin-top: 5px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           TABLES
+           ═══════════════════════════════════════════════════════════ */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 9.5pt;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
+        }
+        
+        th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-800);
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        tr:hover {
+            background: var(--gray-50);
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           BADGES Y LABELS
+           ═══════════════════════════════════════════════════════════ */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: var(--success-light);
+            color: var(--success);
+        }
+        
+        .badge-danger {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+        
+        .badge-warning {
+            background: #FEF3C7;
+            color: var(--warning);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           CHARTS CONTAINERS
+           ═══════════════════════════════════════════════════════════ */
+        .chart-container {
+            margin: 20px 0;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+        
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           INSIGHTS Y HIGHLIGHTS
+           ═══════════════════════════════════════════════════════════ */
+        .insight {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+        }
+        
+        .insight-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .insight-content {
+            color: var(--gray-800);
+            line-height: 1.8;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           GRID SYSTEM
+           ═══════════════════════════════════════════════════════════ */
+        .row {
+            display: flex;
+            margin: 0 -10px;
+            page-break-inside: avoid;
+        }
+        
+        .col-6 {
+            flex: 0 0 50%;
+            padding: 0 10px;
+        }
+        
+        .col-4 {
+            flex: 0 0 33.333%;
+            padding: 0 10px;
+        }
+        
+        .col-3 {
+            flex: 0 0 25%;
+            padding: 0 10px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           FOOTER
+           ═══════════════════════════════════════════════════════════ */
+        .report-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--gray-200);
+            font-size: 9pt;
+            color: var(--gray-600);
+            text-align: center;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           PAGE BREAKS
+           ═══════════════════════════════════════════════════════════ */
+        .page-break {
+            page-break-after: always;
+        }
+        
+        .no-break {
+            page-break-inside: avoid;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════
+           UTILITIES
+           ═══════════════════════════════════════════════════════════ */
+        .mb-10 { margin-bottom: 10px; }
+        .mb-20 { margin-bottom: 20px; }
+        .mb-30 { margin-bottom: 30px; }
+        .mt-20 { margin-top: 20px; }
+        
+        .text-sm { font-size: 9pt; }
+        .text-lg { font-size: 12pt; }
+        
+        .font-bold { font-weight: 700; }
+        .font-semibold { font-weight: 600; }
+        
+        .text-muted { color: var(--gray-600); }
+        .text-primary { color: var(--primary); }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+    </style>
+</head>
+<body>
+    {% block content %}
+    <!-- Contenido específico de cada página aquí -->
+    {% endblock %}
+</body>
+</html>
+

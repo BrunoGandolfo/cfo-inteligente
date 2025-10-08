@@ -1,0 +1,19 @@
+{# Component: Contenedor para gráfico #}
+<div class="chart-container no-break">
+    {% if title %}
+    <h3 class="section-subtitle">{{ title }}</h3>
+    {% endif %}
+    
+    {% if chart_path %}
+    <img src="file://{{ chart_path }}" alt="{{ title | default('Gráfico') }}" style="max-width: 100%; height: auto;">
+    {% else %}
+    <div class="card" style="padding: 40px; text-align: center; background: var(--gray-50);">
+        <p class="text-muted">Gráfico no disponible</p>
+    </div>
+    {% endif %}
+    
+    {% if description %}
+    <p class="text-sm text-muted" style="margin-top: 10px; text-align: center;">{{ description }}</p>
+    {% endif %}
+</div>
+

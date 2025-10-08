@@ -1,0 +1,19 @@
+{# Component: Report Header con logo y título #}
+<div class="report-header">
+    <div class="logo-container">
+        {# TODO: Reemplazar con logo base64 real desde logo-conexion.png #}
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" 
+             alt="Conexión Consultora" 
+             class="logo" 
+             style="max-width: 180px;">
+    </div>
+    
+    <div class="header-info">
+        <h1>{{ report_title | default('Reporte Ejecutivo CFO') }}</h1>
+        <div class="subtitle">{{ period_label }}</div>
+        <div class="text-sm text-muted" style="margin-top: 5px;">
+            Generado: {{ generated_at.strftime('%d/%m/%Y %H:%M') }}
+        </div>
+    </div>
+</div>
+

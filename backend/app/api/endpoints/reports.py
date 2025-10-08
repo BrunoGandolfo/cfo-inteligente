@@ -1,200 +1,260 @@
 """
-Reports API - Endpoints para generación de reportes PDF
+Reports Endpoints - API para generación de reportes
 
-Integra todas las capas del sistema de reportes:
-- Agregación de datos
-- Generación de gráficos
-- Insights con IA
-- Generación de PDF
+Define endpoints REST para sistema de reportes PDF.
 
 Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from datetime import date, datetime
 from pathlib import Path
-import tempfile
-import os
 
-from app.core.database import get_db
-from app.core.logger import get_logger
-from app.services.report_data import MonthlyAggregator
-from app.services.charts import ChartFactory
-from app.services.insights import (
-    InsightContextBuilder,
-    InsightGenerator,
-    InsightFormatter
+from app.schemas.report.request import ReportRequest
+from app.schemas.report.response import ReportResponse, ReportMetadata
+from app.services.report_orchestrator import ReportOrchestrator
+from app.services.ai.insights_orchestrator import InsightsOrchestrator
+from app.services.pdf.report_builder import ReportBuilder
+from app.core.dependencies import (
+    get_db,
+    get_chart_config,
+    get_insights_orchestrator,
+    get_report_builder
 )
-from app.services.pdf import PDFGenerator, AssetManager
+from app.core.logger import get_logger
+from app.core.exceptions import InvalidDateRangeError, InsufficientDataError, PDFGenerationError
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=["reports"])
 
 
-@router.post("/generate/monthly")
-def generar_reporte_mensual(
-    mes: int = None,
-    anio: int = None,
-    db: Session = Depends(get_db)
-):
+# ═══════════════════════════════════════════════════════════════
+# ENDPOINT PRINCIPAL: GENERAR REPORTE PDF DINÁMICO
+# ═══════════════════════════════════════════════════════════════
+
+@router.post(
+    "/pdf/dinamico",
+    response_class=FileResponse,
+    summary="Generar Reporte PDF Dinámico",
+    description="""
+    Genera reporte ejecutivo CFO en PDF con:
+    - 29+ métricas calculadas automáticamente
+    - 7 tipos de gráficos profesionales
+    - Insights generados por Claude Sonnet 4.5
+    - Comparación con período anterior (opcional)
+    - Proyecciones con regresión lineal (opcional)
+    
+    Formato: 10 páginas ejecutivas en A4, diseño moderno 2024.
     """
-    Genera reporte PDF mensual completo con insights de IA.
+)
+async def generate_dynamic_report(
+    request: ReportRequest,
+    db: Session = Depends(get_db),
+    insights_orch: InsightsOrchestrator = Depends(get_insights_orchestrator),
+    report_builder: ReportBuilder = Depends(get_report_builder)
+) -> FileResponse:
+    """
+    Genera reporte PDF dinámico.
+    
+    RESPONSABILIDAD: Solo HTTP (validar, inyectar deps, retornar).
+    NO implementa lógica de negocio.
     
     Args:
-        mes: Número de mes (1-12). Si no se proporciona, usa mes actual
-        anio: Año (ej: 2025). Si no se proporciona, usa año actual
+        request: ReportRequest con configuración
+        db: Session inyectada por Depends
+        insights_orch: InsightsOrchestrator inyectado
+        report_builder: ReportBuilder inyectado
         
     Returns:
         FileResponse con PDF generado
+        
+    Raises:
+        HTTPException 400: Si request inválido
+        HTTPException 404: Si no hay suficientes datos
+        HTTPException 500: Si falla generación
     """
+    logger.info(f"Request recibido: POST /api/reports/pdf/dinamico")
+    logger.debug(f"Period: {request.period.tipo}, Options: {request.options.dict()}")
+    
     try:
-        # PASO 0: Usar mes/año actual si no se especifican
-        if mes is None or anio is None:
-            hoy = datetime.now()
-            mes = mes or hoy.month
-            anio = anio or hoy.year
-            logger.info(f"Parámetros no especificados, usando período actual: {mes}/{anio}")
+        # Obtener configuración de charts según paleta
+        chart_config = get_chart_config(paleta=request.options.paleta)
         
-        logger.info(f"=== GENERANDO REPORTE MENSUAL: {mes}/{anio} ===")
+        # Crear orchestrator con dependencias inyectadas
+        orchestrator = ReportOrchestrator(
+            db=db,
+            chart_config=chart_config,
+            insights_orchestrator=insights_orch,
+            report_builder=report_builder
+        )
         
-        # PASO 1: Validar fechas
-        from calendar import monthrange
+        # Delegar generación al orchestrator
+        result = orchestrator.generate(request)
         
-        if not (1 <= mes <= 12):
-            raise HTTPException(status_code=400, detail=f"Mes inválido: {mes}")
+        # Log resultado
+        logger.info(
+            f"Reporte generado: {result['filename']} "
+            f"({result['pages']} páginas, {result['size_kb']:.1f} KB, "
+            f"{result['generation_time_seconds']:.2f}s)"
+        )
         
-        if anio < 2020 or anio > datetime.now().year + 1:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Año fuera de rango válido (2020-{datetime.now().year + 1})"
-            )
-        
-        start_date = date(anio, mes, 1)
-        ultimo_dia = monthrange(anio, mes)[1]
-        end_date = date(anio, mes, ultimo_dia)
-        
-        logger.info(f"Período: {start_date} a {end_date}")
-        
-        # PASO 2: Agregar datos con MonthlyAggregator
-        logger.info("Agregando datos financieros...")
-        aggregator = MonthlyAggregator(db)
-        data = aggregator.aggregate(start_date, end_date)
-        
-        logger.info(f"Datos agregados: {data['metadata']['total_operations']} operaciones")
-        
-        # PASO 3: Generar gráficos
-        logger.info("Generando gráficos...")
-        temp_dir = Path(tempfile.mkdtemp(prefix='cfo_charts_'))
-        
-        charts_paths = {}
-        
-        # Gráfico 1: Evolución mensual (histórico)
-        if data['historico']['meses']:
-            chart_data = {
-                'labels': [m['mes'] for m in data['historico']['meses']],
-                'series': [
-                    {
-                        'name': 'Ingresos',
-                        'values': [m['ingresos'] for m in data['historico']['meses']],
-                        'color': '#10B981'
-                    },
-                    {
-                        'name': 'Gastos',
-                        'values': [m['gastos'] for m in data['historico']['meses']],
-                        'color': '#EF4444'
-                    }
-                ]
-            }
-            charts_paths['evolucion'] = ChartFactory.create_and_save(
-                'line',
-                chart_data,
-                str(temp_dir / 'evolucion.png'),
-                {'title': 'Evolución Últimos 6 Meses'}
-            )
-        
-        # Gráfico 2: Distribución por área
-        if data['por_area']:
-            chart_data = {
-                'labels': [a['nombre'] for a in data['por_area'][:5]],
-                'values': [a['ingresos'] for a in data['por_area'][:5]]
-            }
-            charts_paths['areas'] = ChartFactory.create_and_save(
-                'pie',
-                chart_data,
-                str(temp_dir / 'areas.png'),
-                {'title': 'Distribución por Área'}
-            )
-        
-        logger.info(f"Gráficos generados: {len(charts_paths)}")
-        
-        # PASO 4: Generar insights con IA
-        logger.info("Generando insights con Claude...")
-        
-        context_builder = InsightContextBuilder('monthly')
-        context_builder.with_metrics(data['metricas_principales'])\
-                      .with_historical(data['historico'])\
-                      .with_period_info(start_date, end_date, data['metricas_periodo']['mes_nombre'])\
-                      .select_analysis_lenses(mes)
-        
-        context_string = context_builder.to_prompt_string()
-        
-        insight_gen = InsightGenerator()
-        insights = insight_gen.generate_insights(context_string, num_insights=4)
-        
-        insights_html = InsightFormatter.format_to_html(insights)
-        
-        logger.info(f"Insights generados: {len(insights)}")
-        
-        # PASO 5: Convertir gráficos a base64
-        logger.info("Convirtiendo gráficos a base64...")
-        charts_base64 = AssetManager.batch_convert(charts_paths)
-        
-        # PASO 6: Generar PDF
-        logger.info("Generando PDF...")
-        
-        pdf_gen = PDFGenerator()
-        
-        template_context = {
-            'period_label': data['metricas_periodo']['mes_nombre'],
-            'metricas': data['metricas_principales'],
-            'por_area': data['por_area'],
-            'por_localidad': data['por_localidad'],
-            'charts': charts_base64,
-            'insights_html': insights_html,
-            'generated_at': data['metadata']['generated_at']
-        }
-        
-        output_pdf = temp_dir / f'reporte_{anio}_{mes:02d}.pdf'
-        pdf_path = pdf_gen.generate('monthly_report.html', template_context, str(output_pdf))
-        
-        logger.info(f"✅ PDF generado: {pdf_path}")
-        
-        # PASO 7: Retornar archivo
+        # Retornar PDF como FileResponse
         return FileResponse(
-            path=pdf_path,
+            path=result['pdf_path'],
             media_type='application/pdf',
-            filename=f'Reporte_CFO_{anio}_{mes:02d}.pdf'
+            filename=result['filename'],
+            headers={
+                'X-Report-Pages': str(result['pages']),
+                'X-Report-Size-KB': f"{result['size_kb']:.1f}",
+                'X-Generation-Time': f"{result['generation_time_seconds']:.2f}",
+                'X-Warnings': '; '.join(result.get('warnings', []))
+            }
+        )
+        
+    except InvalidDateRangeError as e:
+        logger.warning(f"Request inválido: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.detail if hasattr(e, 'detail') else str(e)
+        )
+    
+    except InsufficientDataError as e:
+        logger.warning(f"Datos insuficientes: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.detail if hasattr(e, 'detail') else str(e)
+        )
+    
+    except PDFGenerationError as e:
+        logger.error(f"Error generando PDF: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=e.detail if hasattr(e, 'detail') else str(e)
         )
     
     except Exception as e:
-        logger.error(f"Error generando reporte: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error inesperado: {type(e).__name__}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generando reporte: {str(e)}"
+        )
 
 
-@router.get("/types")
-def listar_tipos_reportes():
-    """Lista tipos de reportes disponibles"""
+# ═══════════════════════════════════════════════════════════════
+# ENDPOINT: METADATA ONLY (sin generar PDF)
+# ═══════════════════════════════════════════════════════════════
+
+@router.post(
+    "/preview",
+    response_model=ReportResponse,
+    summary="Preview de Reporte",
+    description="""
+    Retorna metadata de lo que se generaría SIN generar el PDF.
+    Útil para preview en frontend antes de generar.
+    """
+)
+async def preview_report(
+    request: ReportRequest,
+    db: Session = Depends(get_db)
+) -> ReportResponse:
+    """
+    Preview de reporte sin generar PDF.
+    
+    Calcula métricas y retorna metadata.
+    """
+    logger.info("Request recibido: POST /api/reports/preview")
+    
+    try:
+        from app.services.validators.request_validator import validate_request
+        from app.utils.date_resolver import resolve_period
+        from app.repositories.operations_repository import OperationsRepository
+        from app.services.validators.data_validator import validate_sufficient_data
+        
+        # Validar request
+        validate_request(request)
+        
+        # Resolver fechas
+        fecha_inicio, fecha_fin = resolve_period(
+            tipo=request.period.tipo,
+            fecha_inicio_custom=request.period.fecha_inicio,
+            fecha_fin_custom=request.period.fecha_fin
+        )
+        
+        # Obtener operaciones
+        repo = OperationsRepository(db)
+        operaciones = repo.get_by_period(fecha_inicio, fecha_fin)
+        
+        # Validar suficientes datos
+        validate_sufficient_data(operaciones, minimo_requerido=20)
+        
+        # Preparar metadata (sin generar PDF)
+        from app.utils.date_resolver import get_period_label
+        
+        metadata = ReportMetadata(
+            filename=f"Reporte_CFO_{get_period_label(fecha_inicio, fecha_fin)}.pdf",
+            size_kb=0.0,  # No generado aún
+            pages=10,  # Estimado
+            generation_time_seconds=0.0,
+            period_label=get_period_label(fecha_inicio, fecha_fin),
+            fecha_inicio=fecha_inicio.isoformat(),
+            fecha_fin=fecha_fin.isoformat(),
+            generated_at=datetime.now(),
+            has_comparison=bool(request.comparison and request.comparison.activo),
+            has_projections=request.options.incluir_proyecciones,
+            has_ai_insights=request.options.incluir_insights_ia
+        )
+        
+        return ReportResponse(
+            success=True,
+            metadata=metadata,
+            warnings=None
+        )
+        
+    except Exception as e:
+        logger.error(f"Error en preview: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+# ═══════════════════════════════════════════════════════════════
+# ENDPOINT: HEALTH CHECK
+# ═══════════════════════════════════════════════════════════════
+
+@router.get(
+    "/health",
+    summary="Health Check",
+    description="Verifica que el sistema de reportes esté operativo"
+)
+async def health_check() -> dict:
+    """
+    Health check del sistema de reportes.
+    
+    Verifica:
+    - Database connection
+    - Templates directory
+    - Anthropic API key configurada
+    """
+    from app.core.dependencies import check_dependencies
+    
+    deps_status = check_dependencies()
+    
+    all_ok = all(deps_status.values())
+    
     return {
-        'available_types': [
-            {
-                'id': 'monthly',
-                'name': 'Reporte Mensual',
-                'description': 'Análisis completo de un mes específico'
-            }
-        ]
+        "status": "healthy" if all_ok else "degraded",
+        "service": "reports",
+        "dependencies": deps_status,
+        "version": "1.0.0"
     }
 
+
+# ═══════════════════════════════════════════════════════════════
+# IMPORTAR datetime SI ES NECESARIO
+# ═══════════════════════════════════════════════════════════════
+
+from datetime import datetime

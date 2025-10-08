@@ -1,0 +1,26 @@
+{# Página 4: Análisis de Ingresos #}
+{% include 'reports/components/header.html' %}
+
+<div class="section">
+    <h2 class="section-title">Análisis de Ingresos</h2>
+    
+    {# Distribución por área #}
+    <h3 class="section-subtitle">Distribución por Área</h3>
+    {% set dimension_name = 'Área' %}
+    {% set metric_name = 'Ingresos' %}
+    {% set items = ingresos_por_area %}
+    {% set is_currency = True %}
+    {% set show_total = True %}
+    {% set total = ingresos_uyu %}
+    {% include 'reports/components/distribution_table.html' %}
+    
+    {# Gráfico de pie #}
+    {% if ingresos_pie_chart_path %}
+    {% set title = 'Composición de Ingresos por Área' %}
+    {% set chart_path = ingresos_pie_chart_path %}
+    {% include 'reports/components/chart.html' %}
+    {% endif %}
+</div>
+
+<div class="page-break"></div>
+

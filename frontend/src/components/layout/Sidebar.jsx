@@ -2,11 +2,11 @@ import { Home, FileText, BarChart3, TrendingUp, Settings, Sparkles } from 'lucid
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
-export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
+export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onReportsToggle }) {
   const items = [
     { key: 'Dashboard', icon: Home, label: 'Dashboard' },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
-    { key: 'Reportes', icon: BarChart3, label: 'Reportes' },
+    { key: 'Reportes', icon: BarChart3, label: 'Reportes', action: onReportsToggle },
     { key: 'Análisis', icon: TrendingUp, label: 'Análisis' },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
     { key: 'Configuración', icon: Settings, label: 'Configuración' },
@@ -46,7 +46,8 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
 Sidebar.propTypes = {
   active: PropTypes.string,
   onChatToggle: PropTypes.func,
-  onOpsToggle: PropTypes.func
+  onOpsToggle: PropTypes.func,
+  onReportsToggle: PropTypes.func
 };
 export default Sidebar;
 

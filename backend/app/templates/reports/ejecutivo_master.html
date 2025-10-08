@@ -1,0 +1,62 @@
+{# 
+  Master Template: Reporte Ejecutivo CFO - 10 páginas
+  
+  Este template incluye todas las páginas del reporte en secuencia.
+  Se usa como entrada para WeasyPrint para generar el PDF completo.
+#}
+{% extends "reports/base_layout.html" %}
+
+{% block content %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 1: PORTADA
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/portada.html' %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 2: RESUMEN EJECUTIVO
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/resumen_ejecutivo.html' %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 3: MÉTRICAS PRINCIPALES
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/metricas_principales.html' %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 4: ANÁLISIS DE INGRESOS
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/analisis_ingresos.html' %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 5: ANÁLISIS DE GASTOS
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/analisis_gastos.html' %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 6: RENTABILIDAD
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/rentabilidad.html' %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 7: DISTRIBUCIÓN POR ÁREAS Y LOCALIDADES
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/distribucion_areas.html' %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 8: PROYECCIONES Y TENDENCIAS
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/proyecciones.html' %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 9: INSIGHTS Y RECOMENDACIONES (IA)
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/insights_ia.html' %}
+
+{# ═══════════════════════════════════════════════════════════════
+   PÁGINA 10: CONCLUSIONES Y PRÓXIMOS PASOS
+   ═══════════════════════════════════════════════════════════════ #}
+{% include 'reports/pages/conclusiones.html' %}
+
+{% endblock %}
+

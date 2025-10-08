@@ -15,6 +15,10 @@ from .base_chart import BaseChart
 from .line_chart import LineChart
 from .pie_chart import PieChart
 from .bar_chart import BarChart
+from .waterfall_chart import WaterfallChart
+from .donut_chart import DonutChart
+from .combo_chart import ComboChart
+from .heatmap_chart import HeatmapChart
 
 
 class ChartFactory:
@@ -34,7 +38,10 @@ class ChartFactory:
         'line': LineChart,
         'pie': PieChart,
         'bar': BarChart,
-        # 'combo': ComboChart,  # TODO: Implementar
+        'waterfall': WaterfallChart,
+        'donut': DonutChart,
+        'combo': ComboChart,
+        'heatmap': HeatmapChart
     }
     
     @classmethod
@@ -48,7 +55,8 @@ class ChartFactory:
         Crea instancia del gráfico apropiado.
         
         Args:
-            chart_type: Tipo de gráfico ('line', 'pie', 'bar', 'combo')
+            chart_type: Tipo de gráfico ('line', 'pie', 'bar', 'waterfall', 
+                       'donut', 'combo', 'heatmap')
             data: Datos para el gráfico (estructura específica por tipo)
             config: Configuración opcional (title, width, height, etc)
             

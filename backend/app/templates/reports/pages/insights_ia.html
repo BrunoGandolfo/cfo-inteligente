@@ -1,0 +1,91 @@
+{# Página 9: Insights Generados por IA #}
+{% include 'reports/components/header.html' %}
+
+<div class="section">
+    <h2 class="section-title">Insights y Recomendaciones</h2>
+    
+    <p class="mb-30 text-muted">
+        Los siguientes insights fueron generados mediante análisis con Claude Sonnet 4.5, 
+        combinando datos cuantitativos con contexto de la industria de estudios contables en Uruguay.
+    </p>
+    
+    {# Insights según tipo #}
+    {% if insights %}
+        {% if 'insight_1' in insights %}
+            {# Insights operativos #}
+            <div class="insight no-break">
+                <div class="insight-title">Insight 1: Análisis Operativo</div>
+                <div class="insight-content">{{ insights.insight_1 }}</div>
+            </div>
+            
+            {% if 'insight_2' in insights %}
+            <div class="insight no-break">
+                <div class="insight-title">Insight 2: Eficiencia</div>
+                <div class="insight-content">{{ insights.insight_2 }}</div>
+            </div>
+            {% endif %}
+            
+            {% if 'insight_3' in insights %}
+            <div class="insight no-break">
+                <div class="insight-title">Insight 3: Recomendación</div>
+                <div class="insight-content">{{ insights.insight_3 }}</div>
+            </div>
+            {% endif %}
+            
+        {% elif 'tendencia' in insights %}
+            {# Insights estratégicos #}
+            <div class="insight no-break">
+                <div class="insight-title">Tendencia Principal</div>
+                <div class="insight-content">{{ insights.tendencia }}</div>
+            </div>
+            
+            {% if 'patron' in insights %}
+            <div class="insight no-break">
+                <div class="insight-title">Patrón Identificado</div>
+                <div class="insight-content">{{ insights.patron }}</div>
+            </div>
+            {% endif %}
+            
+            {% if 'oportunidad' in insights %}
+            <div class="insight no-break">
+                <div class="insight-title">Oportunidad</div>
+                <div class="insight-content">{{ insights.oportunidad }}</div>
+            </div>
+            {% endif %}
+            
+            {% if 'riesgo' in insights %}
+            <div class="insight no-break">
+                <div class="insight-title">Riesgo</div>
+                <div class="insight-content">{{ insights.riesgo }}</div>
+            </div>
+            {% endif %}
+            
+        {% elif 'cambio_principal' in insights %}
+            {# Insights comparativos #}
+            <div class="insight no-break">
+                <div class="insight-title">Cambio Principal</div>
+                <div class="insight-content">{{ insights.cambio_principal }}</div>
+            </div>
+            
+            {% if 'evaluacion' in insights %}
+            <div class="insight no-break">
+                <div class="insight-title">Evaluación</div>
+                <div class="insight-content">{{ insights.evaluacion }}</div>
+            </div>
+            {% endif %}
+            
+            {% if 'recomendacion' in insights %}
+            <div class="insight no-break">
+                <div class="insight-title">Recomendación</div>
+                <div class="insight-content">{{ insights.recomendacion }}</div>
+            </div>
+            {% endif %}
+        {% endif %}
+    {% else %}
+        <div class="card text-center" style="padding: 40px;">
+            <p class="text-muted">No se generaron insights para este reporte.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="page-break"></div>

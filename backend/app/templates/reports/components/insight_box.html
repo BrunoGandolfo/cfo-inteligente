@@ -1,0 +1,21 @@
+{# Component: Box de insight con IA #}
+<div class="insight no-break">
+    {% if title %}
+    <div class="insight-title">{{ title }}</div>
+    {% endif %}
+    
+    <div class="insight-content">
+        {{ content }}
+    </div>
+    
+    {% if source == 'fallback' %}
+    <div class="text-sm text-muted" style="margin-top: 10px; font-style: italic;">
+        ⚙️ Insight generado algorítmicamente
+    </div>
+    {% elif source == 'ai' %}
+    <div class="text-sm text-muted" style="margin-top: 10px; font-style: italic;">
+        🤖 Insight generado por Claude Sonnet 4.5
+    </div>
+    {% endif %}
+</div>
+

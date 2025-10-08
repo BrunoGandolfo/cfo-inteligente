@@ -1,0 +1,9 @@
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Output PDFs temporales
+app/output/
+audits/
+test_reporte_*.pdf

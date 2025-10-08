@@ -1,4 +1,6 @@
 """
-Tests package - Sistema CFO Inteligente
-"""
+Tests Package
 
+Autor: Sistema CFO Inteligente
+Fecha: Octubre 2025
+"""

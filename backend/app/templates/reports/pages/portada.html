@@ -1,0 +1,61 @@
+{# Página 1: Portada del reporte #}
+<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 80vh; text-align: center;">
+    {# Logo grande #}
+    <div style="margin-bottom: 60px;">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" 
+             alt="Conexión Consultora" 
+             style="max-width: 300px;">
+    </div>
+    
+    {# Título principal #}
+    <h1 style="font-size: 36pt; font-weight: 700; color: var(--primary); margin-bottom: 20px;">
+        Reporte Ejecutivo CFO
+    </h1>
+    
+    {# Período #}
+    <div style="font-size: 20pt; color: var(--gray-600); margin-bottom: 40px;">
+        {{ period_label }}
+    </div>
+    
+    {# Fecha generación #}
+    <div style="font-size: 12pt; color: var(--gray-600); margin-bottom: 60px;">
+        {{ fecha_inicio.strftime('%d/%m/%Y') }} - {{ fecha_fin.strftime('%d/%m/%Y') }}
+    </div>
+    
+    {# KPIs destacados en portada #}
+    <div class="row" style="width: 100%; max-width: 700px; margin-top: 40px;">
+        <div class="col-3">
+            <div style="padding: 20px; background: var(--gray-50); border-radius: 10px;">
+                <div class="text-sm text-muted mb-10">Ingresos</div>
+                <div class="text-lg font-bold text-primary">{{ ingresos_uyu | format_currency(short=True) }}</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div style="padding: 20px; background: var(--gray-50); border-radius: 10px;">
+                <div class="text-sm text-muted mb-10">Margen</div>
+                <div class="text-lg font-bold text-success">{{ margen_operativo | format_percentage }}</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div style="padding: 20px; background: var(--gray-50); border-radius: 10px;">
+                <div class="text-sm text-muted mb-10">Resultado</div>
+                <div class="text-lg font-bold text-primary">{{ resultado_neto_uyu | format_currency(short=True) }}</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div style="padding: 20px; background: var(--gray-50); border-radius: 10px;">
+                <div class="text-sm text-muted mb-10">Operaciones</div>
+                <div class="text-lg font-bold">{{ cantidad_operaciones }}</div>
+            </div>
+        </div>
+    </div>
+    
+    {# Información generación #}
+    <div style="position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; font-size: 10pt; color: var(--gray-600);">
+        Generado el {{ generated_at.strftime('%d de %B de %Y a las %H:%M') }}<br>
+        Sistema CFO Inteligente | Conexión Consultora
+    </div>
+</div>
+
+<div class="page-break"></div>
+

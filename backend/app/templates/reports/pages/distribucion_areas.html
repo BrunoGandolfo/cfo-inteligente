@@ -1,0 +1,54 @@
+{# Página 7: Distribución por Áreas y Localidades #}
+{% include 'reports/components/header.html' %}
+
+<div class="section">
+    <h2 class="section-title">Distribución por Áreas y Localidades</h2>
+    
+    {# Distribución por área #}
+    <h3 class="section-subtitle">Ingresos por Área</h3>
+    {% if ingresos_por_area %}
+    <table>
+        <thead>
+            <tr>
+                <th>Área</th>
+                <th class="text-right">Ingresos</th>
+                <th class="text-right">Porcentaje</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in ingresos_por_area %}
+            <tr>
+                <td class="font-semibold">{{ item.nombre }}</td>
+                <td class="text-right">{{ item.valor | format_currency }}</td>
+                <td class="text-right">{{ item.porcentaje | format_percentage }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    
+    {# Distribución por localidad #}
+    <h3 class="section-subtitle mt-20">Ingresos por Localidad</h3>
+    {% if ingresos_por_localidad %}
+    <table>
+        <thead>
+            <tr>
+                <th>Localidad</th>
+                <th class="text-right">Ingresos</th>
+                <th class="text-right">Porcentaje</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in ingresos_por_localidad %}
+            <tr>
+                <td class="font-semibold">{{ item.nombre }}</td>
+                <td class="text-right">{{ item.valor | format_currency }}</td>
+                <td class="text-right">{{ item.porcentaje | format_percentage }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<div class="page-break"></div>

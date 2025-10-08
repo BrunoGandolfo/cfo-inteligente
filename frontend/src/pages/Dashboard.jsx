@@ -5,6 +5,7 @@ import ModalIngreso from '../components/ModalIngreso';
 import ModalGasto from '../components/ModalGasto';
 import ModalRetiro from '../components/ModalRetiro';
 import ModalDistribucion from '../components/ModalDistribucion';
+import { ReportGeneratorModal } from '../components/reports/ReportGeneratorModal';
 import { useMetrics } from '../hooks/useMetrics';
 import { formatMoney } from '../utils/formatters';
 import Button from '../components/ui/Button';
@@ -12,12 +13,14 @@ import ChartsSection from '../components/charts/ChartsSection';
 import { useOperations } from '../hooks/useOperations';
 import { useChartData } from '../hooks/useChartData';
 import ActiveFilters from '../components/filters/ActiveFilters';
+import { FileText } from 'lucide-react';
 
 function Dashboard() {
   const [showIngreso, setShowIngreso] = useState(false);
   const [showGasto, setShowGasto] = useState(false);
   const [showRetiro, setShowRetiro] = useState(false);
   const [showDistrib, setShowDistrib] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [loadingIngreso, setLoadingIngreso] = useState(false);
   const [loadingGasto, setLoadingGasto] = useState(false);
   const [loadingRetiro, setLoadingRetiro] = useState(false);
@@ -62,28 +65,10 @@ function Dashboard() {
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Registrar Operación</h2>
             <button
-              onClick={async () => {
-                const now = new Date();
-                const mes = now.getMonth() + 1;
-                const anio = now.getFullYear();
-                try {
-                  const response = await axios.post(`http://localhost:8000/api/reports/generate/monthly?mes=${mes}&anio=${anio}`, {}, { responseType: 'blob' });
-                  const url = window.URL.createObjectURL(new Blob([response.data]));
-                  const link = document.createElement('a');
-                  link.href = url;
-                  link.setAttribute('download', `Reporte_CFO_${anio}_${mes.toString().padStart(2, '0')}.pdf`);
-                  document.body.appendChild(link);
-                  link.click();
-                  link.remove();
-                } catch (error) {
-                  console.error('Error generando reporte:', error);
-                }
-              }}
+              onClick={() => setShowReportModal(true)}
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              <FileText className="w-5 h-5" />
               Generar Reporte PDF
             </button>
           </div>
@@ -205,6 +190,12 @@ function Dashboard() {
             refetch();
           }}
           setLoading={setLoadingDistrib}
+        />
+      )}
+      {showReportModal && (
+        <ReportGeneratorModal 
+          isOpen={showReportModal} 
+          onClose={() => setShowReportModal(false)} 
         />
       )}
     </>

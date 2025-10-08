@@ -1,0 +1,89 @@
+{# Página 2: Resumen Ejecutivo #}
+{% include 'reports/components/header.html' %}
+
+<div class="section">
+    <h2 class="section-title">Resumen Ejecutivo</h2>
+    
+    {# Grid de métricas clave #}
+    {% include 'reports/components/summary_grid.html' %}
+    
+    {# Highlights principales #}
+    <div class="row">
+        <div class="col-6">
+            <div class="card">
+                <h3 class="section-subtitle">Desempeño General</h3>
+                <p class="mb-20">
+                    Durante el período <strong>{{ period_label }}</strong>, la empresa registró:
+                </p>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li>Ingresos totales: <strong class="text-primary">{{ ingresos_uyu | format_currency }}</strong></li>
+                    <li>Gastos operativos: <strong>{{ gastos_uyu | format_currency }}</strong></li>
+                    <li>Resultado operativo: <strong class="text-success">{{ resultado_operativo_uyu | format_currency }}</strong></li>
+                    <li>Margen operativo: <strong>{{ margen_operativo | format_percentage }}</strong></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="col-6">
+            <div class="card">
+                <h3 class="section-subtitle">Área Líder</h3>
+                <p class="mb-10">
+                    <strong class="text-primary">{{ area_lider.nombre }}</strong> se destaca como el área con mayor contribución:
+                </p>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li>Participación en ingresos: <strong>{{ area_lider.porcentaje | format_percentage }}</strong></li>
+                    <li>Rentabilidad: <strong class="text-success">{{ area_lider.rentabilidad | format_percentage }}</strong></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    {% if tiene_comparacion %}
+    <div class="mt-20">
+        <h3 class="section-subtitle">Comparación con Período Anterior</h3>
+        <div class="card" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);">
+            <div class="row">
+                <div class="col-4 text-center">
+                    <div class="text-sm text-muted mb-10">Variación Ingresos</div>
+                    <div class="text-lg font-bold">
+                        {% if variacion_mom_ingresos > 0 %}
+                        <span class="text-success">↗ {{ variacion_mom_ingresos | format_percentage }}</span>
+                        {% elif variacion_mom_ingresos < 0 %}
+                        <span class="text-danger">↘ {{ variacion_mom_ingresos | format_percentage }}</span>
+                        {% else %}
+                        <span>→ 0%</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-4 text-center">
+                    <div class="text-sm text-muted mb-10">Variación Gastos</div>
+                    <div class="text-lg font-bold">
+                        {% if variacion_mom_gastos > 0 %}
+                        <span class="text-danger">↗ {{ variacion_mom_gastos | format_percentage }}</span>
+                        {% elif variacion_mom_gastos < 0 %}
+                        <span class="text-success">↘ {{ variacion_mom_gastos | format_percentage }}</span>
+                        {% else %}
+                        <span>→ 0%</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-4 text-center">
+                    <div class="text-sm text-muted mb-10">Variación Rentabilidad</div>
+                    <div class="text-lg font-bold">
+                        {% if variacion_mom_rentabilidad > 0 %}
+                        <span class="text-success">↗ {{ variacion_mom_rentabilidad | format_percentage }}pp</span>
+                        {% elif variacion_mom_rentabilidad < 0 %}
+                        <span class="text-danger">↘ {{ variacion_mom_rentabilidad | format_percentage }}pp</span>
+                        {% else %}
+                        <span>→ 0pp</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="page-break"></div>
+

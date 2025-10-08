@@ -1,0 +1,55 @@
+{# Component: Tabla de distribución con barras visuales #}
+<table>
+    <thead>
+        <tr>
+            <th>{{ dimension_name | default('Categoría') }}</th>
+            <th class="text-right">{{ metric_name | default('Monto') }}</th>
+            <th class="text-right">Porcentaje</th>
+            <th style="width: 200px;">Distribución</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td class="font-semibold">{{ item.nombre }}</td>
+            <td class="text-right">
+                {% if is_currency %}
+                    {{ item.valor | format_currency }}
+                {% else %}
+                    {{ item.valor }}
+                {% endif %}
+            </td>
+            <td class="text-right">
+                <span class="font-bold">{{ item.porcentaje | format_percentage }}</span>
+            </td>
+            <td>
+                <div style="background: var(--gray-200); border-radius: 4px; height: 20px; position: relative;">
+                    <div style="background: linear-gradient(90deg, var(--primary), var(--primary-dark)); 
+                                border-radius: 4px; 
+                                height: 100%; 
+                                width: {{ item.porcentaje }}%;
+                                max-width: 100%;">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    {% if show_total %}
+    <tfoot>
+        <tr style="border-top: 2px solid var(--gray-800); font-weight: bold;">
+            <td>TOTAL</td>
+            <td class="text-right">
+                {% if is_currency %}
+                    {{ total | format_currency }}
+                {% else %}
+                    {{ total }}
+                {% endif %}
+            </td>
+            <td class="text-right">100%</td>
+            <td></td>
+        </tr>
+    </tfoot>
+    {% endif %}
+</table>
+

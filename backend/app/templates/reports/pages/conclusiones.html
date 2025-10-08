@@ -1,0 +1,77 @@
+{# Página 10: Conclusiones y Próximos Pasos #}
+{% include 'reports/components/header.html' %}
+
+<div class="section">
+    <h2 class="section-title">Conclusiones</h2>
+    
+    {# Resumen de hallazgos clave #}
+    <div class="card mb-30" style="background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border-left: 4px solid var(--success);">
+        <h3 class="section-subtitle">Hallazgos Clave</h3>
+        <ul style="margin-left: 20px; line-height: 2.2;">
+            <li>
+                <strong>Desempeño General:</strong> 
+                El período {{ period_label }} cerró con ingresos de {{ ingresos_uyu | format_currency }} 
+                y un margen operativo del {{ margen_operativo | format_percentage }}.
+            </li>
+            <li>
+                <strong>Área Destacada:</strong> 
+                {{ area_lider.nombre }} lidera con el {{ area_lider.porcentaje | format_percentage }} 
+                de los ingresos totales.
+            </li>
+            <li>
+                <strong>Eficiencia Operativa:</strong> 
+                Ticket promedio de ingreso de {{ ticket_promedio_ingreso | format_currency }} 
+                en {{ cantidad_operaciones }} operaciones.
+            </li>
+            {% if tiene_comparacion and variacion_mom_ingresos %}
+            <li>
+                <strong>Evolución:</strong> 
+                {% if variacion_mom_ingresos > 0 %}
+                Crecimiento del {{ variacion_mom_ingresos | format_percentage }} respecto al período anterior.
+                {% elif variacion_mom_ingresos < 0 %}
+                Descenso del {{ variacion_mom_ingresos | format_percentage }} respecto al período anterior.
+                {% else %}
+                Estabilidad respecto al período anterior.
+                {% endif %}
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    
+    {# Próximos pasos recomendados #}
+    <h3 class="section-subtitle">Próximos Pasos Recomendados</h3>
+    <div class="row">
+        <div class="col-6">
+            <div class="card" style="border-left: 4px solid var(--primary);">
+                <h4 style="color: var(--primary); margin-bottom: 10px;">Corto Plazo (30 días)</h4>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li>Monitorear métricas clave semanalmente</li>
+                    <li>Optimizar procesos en áreas con menor rentabilidad</li>
+                    <li>Revisar estructura de costos operativos</li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card" style="border-left: 4px solid var(--secondary);">
+                <h4 style="color: var(--secondary); margin-bottom: 10px;">Mediano Plazo (90 días)</h4>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li>Implementar estrategias de diversificación</li>
+                    <li>Evaluar oportunidades de escalamiento</li>
+                    <li>Fortalecer áreas de alto rendimiento</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    {# Footer informativo #}
+    <div class="report-footer mt-20">
+        <p style="margin-bottom: 10px;">
+            Este reporte fue generado automáticamente por el Sistema CFO Inteligente de Conexión Consultora.
+        </p>
+        <p style="font-size: 8pt; color: var(--gray-600);">
+            Para consultas o análisis adicionales, contacte a su CFO o equipo directivo.<br>
+            Generado el {{ generated_at.strftime('%d de %B de %Y a las %H:%M') }}
+        </p>
+    </div>
+</div>
+

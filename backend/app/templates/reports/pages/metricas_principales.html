@@ -1,0 +1,20 @@
+{# Página 3: Métricas Principales #}
+{% include 'reports/components/header.html' %}
+
+<div class="section">
+    <h2 class="section-title">Métricas Principales</h2>
+    
+    {# Tabla de KPIs #}
+    {% include 'reports/components/kpi_table.html' %}
+    
+    {# Gráfico de waterfall #}
+    {% if waterfall_chart_path %}
+    {% set title = 'Flujo de Rentabilidad' %}
+    {% set chart_path = waterfall_chart_path %}
+    {% set description = 'Evolución desde ingresos hasta resultado neto' %}
+    {% include 'reports/components/chart.html' %}
+    {% endif %}
+</div>
+
+<div class="page-break"></div>
+

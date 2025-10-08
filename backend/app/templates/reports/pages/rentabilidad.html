@@ -1,0 +1,55 @@
+{# Página 6: Análisis de Rentabilidad #}
+{% include 'reports/components/header.html' %}
+
+<div class="section">
+    <h2 class="section-title">Análisis de Rentabilidad</h2>
+    
+    {# Ratios principales #}
+    <div class="row mb-30">
+        <div class="col-6">
+            <div class="metric-box" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%);">
+                <div class="label">Margen Operativo</div>
+                <div class="value">{{ margen_operativo | format_percentage }}</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="metric-box">
+                <div class="label">Margen Neto</div>
+                <div class="value">{{ margen_neto | format_percentage }}</div>
+            </div>
+        </div>
+    </div>
+    
+    {# Rentabilidad por área #}
+    <h3 class="section-subtitle">Rentabilidad por Área</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Área</th>
+                <th class="text-right">Ingresos</th>
+                <th class="text-right">Rentabilidad</th>
+                <th style="width: 150px;">Nivel</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for area, rent in rentabilidad_por_area.items() %}
+            <tr>
+                <td class="font-semibold">{{ area }}</td>
+                <td class="text-right">{{ porcentaje_ingresos_por_area[area] | format_percentage }}</td>
+                <td class="text-right font-bold">{{ rent | format_percentage }}</td>
+                <td>
+                    {% if rent >= 35 %}
+                    <span class="badge badge-success">Excelente</span>
+                    {% elif rent >= 25 %}
+                    <span class="badge">Buena</span>
+                    {% else %}
+                    <span class="badge badge-warning">Mejorable</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="page-break"></div>
