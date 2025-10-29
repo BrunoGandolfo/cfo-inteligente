@@ -21,6 +21,8 @@ from app.services.metrics.ratios_calculator import RatiosCalculator
 from app.services.metrics.distribution_calculator import DistributionCalculator
 from app.services.metrics.efficiency_calculator import EfficiencyCalculator
 from app.services.metrics.trends_calculator import TrendsCalculator
+from app.services.metrics.localidad_analyzer import LocalidadAnalyzer
+from app.services.metrics.cliente_analyzer import ClienteAnalyzer
 
 logger = get_logger(__name__)
 
@@ -176,7 +178,27 @@ class MetricsAggregator:
         trends = trends_calc.calculate()
         
         # ═══════════════════════════════════════════════════════════════
-        # PASO 5: CALCULAR EXTRAS (M27-M29)
+        # PASO 5: ANALIZAR LOCALIDADES
+        # ═══════════════════════════════════════════════════════════════
+        
+        localidad_calc = LocalidadAnalyzer(self.operaciones)
+        localidad_analysis = localidad_calc.calculate()
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PASO 6: ANALIZAR CLIENTES
+        # ═══════════════════════════════════════════════════════════════
+        
+        cliente_calc = ClienteAnalyzer(self.operaciones)
+        cliente_analysis = cliente_calc.calculate()
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PASO 6B: CALCULAR SERIES TEMPORALES MENSUALES
+        # ═══════════════════════════════════════════════════════════════
+        
+        series_temporales = self._calculate_series_temporales()
+        
+        # ═══════════════════════════════════════════════════════════════
+        # PASO 7: CALCULAR EXTRAS (M27-M29)
         # ═══════════════════════════════════════════════════════════════
         
         area_lider = self._calc_area_lider(ratios['rentabilidad_por_area'], distribution['porcentaje_ingresos_por_area'])
@@ -214,6 +236,15 @@ class MetricsAggregator:
             # Trends (M21-M26)
             **trends,
             
+            # Localidad Analysis
+            **localidad_analysis,
+            
+            # Cliente Analysis
+            **cliente_analysis,
+            
+            # Series temporales (para gráficos)
+            **series_temporales,
+            
             # Extras (M27-M29)
             'area_lider': area_lider,
             'localidad_lider': localidad_lider,
@@ -226,7 +257,7 @@ class MetricsAggregator:
             'tiene_comparacion': bool(self.operaciones_comparacion)
         }
         
-        self.logger.info(f"Agregación completada: {len(metricas_completas)} métricas totales")
+        self.logger.info(f"Agregación completada: {len(metricas_completas)} métricas totales (incluye análisis localidades y clientes)")
         
         return metricas_completas
     
@@ -279,5 +310,68 @@ class MetricsAggregator:
         return {
             'nombre': localidad_lider_nombre,
             'porcentaje': porcentaje_por_localidad[localidad_lider_nombre]
+        }
+    
+    def _calculate_series_temporales(self) -> Dict[str, Any]:
+        """
+        Calcula series temporales mensuales para gráficos de línea.
+        
+        Agrupa operaciones por mes y calcula:
+        - Ingresos mensuales
+        - Gastos mensuales
+        - Utilidad mensual (ingresos - gastos)
+        
+        Returns:
+            Dict con 4 listas:
+            {
+                'meses': ['Oct 2025', 'Nov 2025', ...],
+                'ingresos_por_mes': [150000, 180000, ...],
+                'gastos_por_mes': [50000, 60000, ...],
+                'utilidad_por_mes': [100000, 120000, ...]
+            }
+        """
+        from datetime import datetime
+        from collections import defaultdict
+        from app.models import TipoOperacion
+        
+        # Agrupar operaciones por mes
+        ops_por_mes = defaultdict(lambda: {'ingresos': 0, 'gastos': 0})
+        
+        for op in self.operaciones:
+            mes_key = op.fecha.strftime('%Y-%m')
+            
+            if op.tipo_operacion == TipoOperacion.INGRESO:
+                ops_por_mes[mes_key]['ingresos'] += float(op.monto_uyu)
+            elif op.tipo_operacion == TipoOperacion.GASTO:
+                ops_por_mes[mes_key]['gastos'] += float(op.monto_uyu)
+        
+        # Ordenar por fecha
+        meses_ordenados = sorted(ops_por_mes.keys())
+        
+        # Preparar series
+        meses = []
+        ingresos_por_mes = []
+        gastos_por_mes = []
+        utilidad_por_mes = []
+        
+        for mes in meses_ordenados:
+            # Formato: "Oct 2025"
+            fecha = datetime.strptime(mes, '%Y-%m')
+            mes_label = fecha.strftime('%b %Y')
+            
+            ing = ops_por_mes[mes]['ingresos']
+            gas = ops_por_mes[mes]['gastos']
+            util = ing - gas
+            
+            meses.append(mes_label)
+            ingresos_por_mes.append(ing)
+            gastos_por_mes.append(gas)
+            utilidad_por_mes.append(util)
+        
+        return {
+            'meses': meses,
+            'ingresos_por_mes': ingresos_por_mes,
+            'gastos_por_mes': gastos_por_mes,
+            'utilidad_por_mes': utilidad_por_mes
         }
 

@@ -11,6 +11,7 @@ Fecha: Octubre 2025
 from typing import Dict, Any, Optional
 from datetime import datetime
 from pathlib import Path
+import base64
 import tempfile
 import shutil
 
@@ -228,7 +229,7 @@ class ReportOrchestrator:
             # ═══════════════════════════════════════════════════════════════
             
             logger.info("PASO 6: Generando gráficos")
-            charts_paths = self._generate_charts(metricas)
+            charts_paths = self._generate_charts(metricas, operaciones)
             logger.info(f"✓ Gráficos generados: {len(charts_paths)} charts")
             
             # ═══════════════════════════════════════════════════════════════
@@ -310,12 +311,13 @@ class ReportOrchestrator:
     # MÉTODOS PRIVADOS (helpers de orchestration)
     # ═══════════════════════════════════════════════════════════════
     
-    def _generate_charts(self, metricas: Dict[str, Any]) -> Dict[str, str]:
+    def _generate_charts(self, metricas: Dict[str, Any], operaciones: list) -> Dict[str, str]:
         """
         Genera todos los gráficos necesarios.
         
         Args:
             metricas: Métricas calculadas
+            operaciones: Lista de operaciones (para análisis adicional)
             
         Returns:
             Dict con paths a gráficos generados
@@ -326,20 +328,194 @@ class ReportOrchestrator:
         
         charts_paths = {}
         
-        # TODO: Implementar generación de cada tipo de gráfico
-        # Por ahora retornar dict vacío (templates manejan ausencia)
+        try:
+            # ═══════════════════════════════════════════════════════════════
+            # 1. WATERFALL CHART - Flujo de Rentabilidad
+            # ═══════════════════════════════════════════════════════════════
+            
+            waterfall_data = {
+                'labels': ['Ingresos', 'Gastos', 'Retiros', 'Distribuciones', 'Resultado'],
+                'values': [
+                    float(metricas.get('ingresos_uyu', 0)),
+                    -float(metricas.get('gastos_uyu', 0)),
+                    -float(metricas.get('retiros_uyu', 0)),
+                    -float(metricas.get('distribuciones_uyu', 0)),
+                    float(metricas.get('resultado_neto_uyu', 0))
+                ],
+                'measures': ['absolute', 'relative', 'relative', 'relative', 'total']
+            }
+            
+            waterfall_path = ChartFactory.create_and_save(
+                'waterfall',
+                waterfall_data,
+                f'{self.temp_dir}/waterfall.png',
+                {'title': 'Flujo de Rentabilidad (UYU)', 'height': 400}
+            )
+            charts_paths['waterfall_chart_path'] = waterfall_path
+            logger.debug(f"✓ Waterfall generado: {waterfall_path}")
+            
+            # ═══════════════════════════════════════════════════════════════
+            # 2. DONUT CHART - Distribución por Áreas
+            # ═══════════════════════════════════════════════════════════════
+            
+            dist_areas = metricas.get('porcentaje_ingresos_por_area', {})
+            logger.info(f"🔍 dist_areas obtenido: {dist_areas}")
+            logger.info(f"🔍 Tipo: {type(dist_areas)}, Len: {len(dist_areas)}, Bool: {bool(dist_areas)}")
+            
+            if dist_areas:
+                logger.info("🔍 Entrando a generar donut áreas...")
+                try:
+                    donut_areas_data = {
+                        'labels': list(dist_areas.keys()),
+                        'values': list(dist_areas.values())
+                    }
+                    logger.info(f"🔍 donut_areas_data preparado: labels={donut_areas_data['labels']}, values={donut_areas_data['values']}")
+                    
+                    donut_areas_path = ChartFactory.create_and_save(
+                        'donut',
+                        donut_areas_data,
+                        f'{self.temp_dir}/donut_areas.png',
+                        {'title': 'Distribución de Ingresos por Área', 'height': 350}
+                    )
+                    charts_paths['area_donut_chart_path'] = donut_areas_path
+                    logger.info(f"✅ Donut áreas generado exitosamente: {donut_areas_path}")
+                except Exception as e:
+                    logger.error(f"❌ ERROR generando donut áreas: {type(e).__name__}: {str(e)}", exc_info=True)
+            else:
+                logger.warning("⚠️ dist_areas es falsy, saltando donut áreas")
+            
+            # ═══════════════════════════════════════════════════════════════
+            # 3. DONUT CHART - Distribución por Localidades
+            # ═══════════════════════════════════════════════════════════════
+            
+            dist_localidades = metricas.get('porcentaje_ingresos_por_localidad', {})
+            logger.info(f"🔍 dist_localidades obtenido: {dist_localidades}")
+            logger.info(f"🔍 Tipo: {type(dist_localidades)}, Len: {len(dist_localidades)}, Bool: {bool(dist_localidades)}")
+            
+            if dist_localidades:
+                logger.info("🔍 Entrando a generar donut localidades...")
+                try:
+                    donut_loc_data = {
+                        'labels': list(dist_localidades.keys()),
+                        'values': list(dist_localidades.values())
+                    }
+                    logger.info(f"🔍 donut_loc_data preparado: labels={donut_loc_data['labels']}, values={donut_loc_data['values']}")
+                    
+                    donut_loc_path = ChartFactory.create_and_save(
+                        'donut',
+                        donut_loc_data,
+                        f'{self.temp_dir}/donut_localidades.png',
+                        {'title': 'Distribución por Localidad', 'height': 350}
+                    )
+                    charts_paths['localidad_donut_chart_path'] = donut_loc_path
+                    logger.info(f"✅ Donut localidades generado exitosamente: {donut_loc_path}")
+                except Exception as e:
+                    logger.error(f"❌ ERROR generando donut localidades: {type(e).__name__}: {str(e)}", exc_info=True)
+            else:
+                logger.warning("⚠️ dist_localidades es falsy, saltando donut localidades")
+            
+            # ═══════════════════════════════════════════════════════════════
+            # 4. LINE CHART - Evolución Temporal (ingresos/gastos/utilidad)
+            # ═══════════════════════════════════════════════════════════════
+            
+            # Verificar si existen datos temporales
+            ingresos_mes = metricas.get('ingresos_por_mes', [])
+            gastos_mes = metricas.get('gastos_por_mes', [])
+            meses = metricas.get('meses', [])
+            
+            if meses and len(meses) > 0 and len(ingresos_mes) > 0:
+                logger.info("🔍 Generando line chart temporal...")
+                try:
+                    # Calcular utilidad por mes
+                    utilidad_mes = []
+                    for i in range(len(ingresos_mes)):
+                        ing = ingresos_mes[i] if i < len(ingresos_mes) else 0
+                        gas = gastos_mes[i] if i < len(gastos_mes) else 0
+                        utilidad_mes.append(ing - gas)
+                    
+                    line_temporal_path = ChartFactory.create_and_save(
+                        'line',
+                        {
+                            'labels': meses,  # API correcta: 'labels' en vez de 'x'
+                            'series': [       # API correcta: 'series' en vez de 'y_series'
+                                {'name': 'Ingresos', 'values': ingresos_mes, 'color': '#3B82F6'},
+                                {'name': 'Gastos', 'values': gastos_mes, 'color': '#EF4444'},
+                                {'name': 'Utilidad', 'values': utilidad_mes, 'color': '#10B981'}
+                            ]
+                        },
+                        f'{self.temp_dir}/line_temporal.png',
+                        {'title': 'Evolución Temporal (3 meses)', 'height': 400}
+                    )
+                    charts_paths['line_temporal_chart_path'] = line_temporal_path
+                    logger.info(f"✅ Line chart temporal generado: {line_temporal_path}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Error generando line temporal: {e}")
+            else:
+                logger.info("⚠️ No hay datos temporales, saltando line chart")
+            
+            # ═══════════════════════════════════════════════════════════════
+            # 5. BAR CHART - Top 10 Clientes por Facturación
+            # ═══════════════════════════════════════════════════════════════
+            
+            top_clientes = metricas.get('top_clientes', [])
+            
+            if top_clientes and len(top_clientes) > 0:
+                logger.info("🔍 Generando bar chart Top 10 clientes...")
+                try:
+                    # Top 10 clientes
+                    top_10 = top_clientes[:10]
+                    
+                    bar_clientes_path = ChartFactory.create_and_save(
+                        'bar',
+                        {
+                            'categories': [c.get('cliente', f'Cliente {i+1}') for i, c in enumerate(top_10)],  # API correcta: 'categories'
+                            'series': [  # API correcta: 'series' con estructura de lista
+                                {
+                                    'name': 'Facturación',
+                                    'values': [c.get('facturacion', 0) for c in top_10],  # Key correcta: 'facturacion'
+                                    'color': '#3B82F6'
+                                }
+                            ]
+                        },
+                        f'{self.temp_dir}/bar_top_clientes.png',
+                        {'title': 'Top 10 Clientes por Facturación', 'height': 500}
+                    )
+                    charts_paths['bar_top_clientes_chart_path'] = bar_clientes_path
+                    logger.info(f"✅ Bar chart Top 10 generado: {bar_clientes_path}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Error generando bar Top 10: {e}")
+            else:
+                logger.info("⚠️ No hay top_clientes, saltando bar chart")
+            
+            logger.info(f"✓ Total gráficos generados: {len(charts_paths)}")
+            
+        except Exception as e:
+            logger.error(f"Error generando gráficos: {str(e)}", exc_info=True)
+            # Retornar paths parciales o vacíos - NO fallar el reporte
         
-        # Ejemplo de cómo se generarían:
-        # factory = ChartFactory()
-        # 
-        # 1. Waterfall chart
-        # data = self._prepare_waterfall_data(metricas)
-        # path = factory.create_and_save('waterfall', data, f'{self.temp_dir}/waterfall.png')
-        # charts_paths['waterfall_chart_path'] = path
+        # ═══════════════════════════════════════════════════════════════
+        # CONVERSIÓN DE PNG A BASE64 PARA EMBEBER EN HTML/PDF
+        # ═══════════════════════════════════════════════════════════════
         
-        logger.debug(f"Charts generados: {len(charts_paths)}")
+        logger.info("Convirtiendo gráficos PNG a base64 data URIs...")
+        charts_base64 = {}
         
-        return charts_paths
+        for key, path in charts_paths.items():
+            try:
+                if path and Path(path).exists():
+                    with open(path, "rb") as f:
+                        encoded = base64.b64encode(f.read()).decode()
+                        charts_base64[key] = f"data:image/png;base64,{encoded}"
+                        file_size_kb = len(encoded) / 1024
+                        logger.debug(f"✓ {key} convertido a base64 ({file_size_kb:.1f} KB)")
+                else:
+                    logger.warning(f"⚠️ Path no existe para {key}: {path}")
+            except Exception as e:
+                logger.error(f"❌ Error convirtiendo {key} a base64: {e}")
+        
+        logger.info(f"✓ Total gráficos convertidos a base64: {len(charts_base64)}/{len(charts_paths)}")
+        
+        return charts_base64
     
     def _cleanup(self) -> None:
         """

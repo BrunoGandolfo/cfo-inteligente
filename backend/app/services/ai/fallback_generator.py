@@ -24,8 +24,7 @@ def generate_operativo_fallback(metricas: Dict[str, Any]) -> Dict[str, str]:
     """
     ingresos = float(metricas.get('ingresos_uyu', 0))
     gastos = float(metricas.get('gastos_uyu', 0))
-    margen_operativo = metricas.get('margen_operativo', 0.0)
-    margen_neto = metricas.get('margen_neto', 0.0)
+    rentabilidad_neta = metricas.get('rentabilidad_neta', 0.0)
     
     area_lider = metricas.get('area_lider', {})
     area_nombre = area_lider.get('nombre', 'N/A')
@@ -35,10 +34,10 @@ def generate_operativo_fallback(metricas: Dict[str, Any]) -> Dict[str, str]:
     cantidad_ops = metricas.get('cantidad_operaciones', 0)
     
     # Insight 1: Rentabilidad general
-    if margen_operativo >= 35:
+    if rentabilidad_neta >= 35:
         nivel_rent = "excelente"
         accion = "Mantener estrategia actual y buscar escalamiento"
-    elif margen_operativo >= 25:
+    elif rentabilidad_neta >= 25:
         nivel_rent = "buena"
         accion = "Optimizar gastos operativos para mejorar margen"
     else:
@@ -46,10 +45,9 @@ def generate_operativo_fallback(metricas: Dict[str, Any]) -> Dict[str, str]:
         accion = "Revisar estructura de costos urgentemente"
     
     insight_1 = (
-        f"Rentabilidad operativa {nivel_rent}: El margen operativo de "
-        f"{format_percentage(margen_operativo)} sobre ingresos de "
+        f"Rentabilidad neta {nivel_rent}: La rentabilidad de "
+        f"{format_percentage(rentabilidad_neta)} sobre ingresos de "
         f"{format_currency(ingresos)} indica un desempeño {nivel_rent}. "
-        f"Margen neto: {format_percentage(margen_neto)}. "
         f"Acción recomendada: {accion}."
     )
     
@@ -117,16 +115,16 @@ def generate_estrategico_fallback(metricas: Dict[str, Any]) -> Dict[str, str]:
     dist_areas = metricas.get('porcentaje_ingresos_por_area', {})
     
     # Tendencia (basada en margen)
-    if margen_operativo >= 30:
+    if rentabilidad_neta >= 30:
         tendencia_text = (
-            f"Tendencia positiva sostenible: Margen operativo de "
-            f"{format_percentage(margen_operativo)} durante {duracion_dias} días "
+            f"Tendencia positiva sostenible: Rentabilidad neta de "
+            f"{format_percentage(rentabilidad_neta)} durante {duracion_dias} días "
             f"indica operación eficiente con capacidad de crecimiento."
         )
     else:
         tendencia_text = (
-            f"Oportunidad de mejora: Margen operativo de "
-            f"{format_percentage(margen_operativo)} sugiere necesidad de "
+            f"Oportunidad de mejora: Rentabilidad neta de "
+            f"{format_percentage(rentabilidad_neta)} sugiere necesidad de "
             f"optimización de costos y revisión de estructura de precios."
         )
     
@@ -244,21 +242,22 @@ def generate_comparativo_fallback(
     
     # Evaluación
     if var_rentabilidad is not None and var_ingresos is not None:
-        if var_rentabilidad > 5 and var_ingresos > 0:
+        diff_rent = rent_actual - rent_anterior
+        if diff_rent > 5 and var_ingresos > 0:
             evaluacion = (
                 f"Cambio positivo excepcional: Ingresos subieron {format_percentage(var_ingresos)} "
-                f"Y rentabilidad mejoró {var_rentabilidad:+.1f} puntos porcentuales. "
+                f"Y rentabilidad mejoró {diff_rent:+.1f} puntos porcentuales. "
                 f"Indica crecimiento eficiente con control de costos."
             )
-        elif var_rentabilidad < -5 and var_ingresos > 0:
+        elif diff_rent < -5 and var_ingresos > 0:
             evaluacion = (
                 f"Alerta: Ingresos crecieron {format_percentage(var_ingresos)} "
-                f"pero rentabilidad cayó {var_rentabilidad:.1f}pp. "
+                f"pero rentabilidad cayó {diff_rent:.1f}pp. "
                 f"Crecimiento no sostenible, costos aumentaron más rápido."
             )
         else:
             evaluacion = (
-                f"Cambio moderado: Variación de rentabilidad ({var_rentabilidad:+.1f}pp) "
+                f"Cambio moderado: Variación de rentabilidad ({diff_rent:+.1f}pp) "
                 f"alineada con variación de ingresos ({format_percentage(var_ingresos)}). "
                 f"Operación estable."
             )

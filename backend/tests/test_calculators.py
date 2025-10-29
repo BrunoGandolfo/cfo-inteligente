@@ -89,43 +89,19 @@ def test_totals_calculator_metric_names():
 # TESTS: ResultsCalculator
 # ═══════════════════════════════════════════════════════════════
 
-def test_results_calculator_operativo():
-    """Test: ResultsCalculator calcula resultado operativo."""
+def test_results_calculator_utilidad_neta():
+    """Test: ResultsCalculator calcula utilidad neta."""
     totals = {
         'ingresos_uyu': Decimal('100000'),
         'gastos_uyu': Decimal('30000'),
         'ingresos_usd': Decimal('2500'),
-        'gastos_usd': Decimal('750'),
-        'retiros_uyu': Decimal('0'),
-        'retiros_usd': Decimal('0'),
-        'distribuciones_uyu': Decimal('0'),
-        'distribuciones_usd': Decimal('0')
+        'gastos_usd': Decimal('750')
     }
     
     calc = ResultsCalculator([], totals)
     results = calc.calculate()
     
-    assert results['resultado_operativo_uyu'] == Decimal('70000')  # 100k - 30k
-
-
-def test_results_calculator_neto():
-    """Test: ResultsCalculator calcula resultado neto."""
-    totals = {
-        'ingresos_uyu': Decimal('100000'),
-        'gastos_uyu': Decimal('30000'),
-        'retiros_uyu': Decimal('10000'),
-        'distribuciones_uyu': Decimal('5000'),
-        'ingresos_usd': Decimal('0'),
-        'gastos_usd': Decimal('0'),
-        'retiros_usd': Decimal('0'),
-        'distribuciones_usd': Decimal('0')
-    }
-    
-    calc = ResultsCalculator([], totals)
-    results = calc.calculate()
-    
-    # 100k - 30k - 10k - 5k = 55k
-    assert results['resultado_neto_uyu'] == Decimal('55000')
+    assert results['utilidad_neta_uyu'] == Decimal('70000')  # 100k - 30k
 
 
 def test_results_calculator_metric_names():
@@ -133,59 +109,39 @@ def test_results_calculator_metric_names():
     calc = ResultsCalculator([], {})
     names = calc.get_metric_names()
     
-    assert len(names) == 4
-    assert 'resultado_operativo_uyu' in names
+    assert len(names) == 2
+    assert 'utilidad_neta_uyu' in names
 
 
 # ═══════════════════════════════════════════════════════════════
 # TESTS: RatiosCalculator
 # ═══════════════════════════════════════════════════════════════
 
-def test_ratios_calculator_margen_operativo():
-    """Test: RatiosCalculator calcula margen operativo."""
+def test_ratios_calculator_rentabilidad_neta():
+    """Test: RatiosCalculator calcula rentabilidad neta."""
     totals = {
         'ingresos_uyu': Decimal('100000'),
-        'gastos_uyu': Decimal('30000'),
-        'retiros_uyu': Decimal('0'),
-        'distribuciones_uyu': Decimal('0')
+        'gastos_uyu': Decimal('30000')
     }
     
     calc = RatiosCalculator([], totals)
     ratios = calc.calculate()
     
     # (100k - 30k) / 100k × 100 = 70%
-    assert ratios['margen_operativo'] == 70.0
-
-
-def test_ratios_calculator_margen_neto():
-    """Test: RatiosCalculator calcula margen neto."""
-    totals = {
-        'ingresos_uyu': Decimal('100000'),
-        'gastos_uyu': Decimal('30000'),
-        'retiros_uyu': Decimal('10000'),
-        'distribuciones_uyu': Decimal('5000')
-    }
-    
-    calc = RatiosCalculator([], totals)
-    ratios = calc.calculate()
-    
-    # (100k - 30k - 10k - 5k) / 100k × 100 = 55%
-    assert abs(ratios['margen_neto'] - 55.0) < 0.01  # Tolerancia para floats
+    assert ratios['rentabilidad_neta'] == 70.0
 
 
 def test_ratios_calculator_division_por_cero():
     """Test: RatiosCalculator maneja división por cero."""
     totals = {
         'ingresos_uyu': Decimal('0'),
-        'gastos_uyu': Decimal('0'),
-        'retiros_uyu': Decimal('0'),
-        'distribuciones_uyu': Decimal('0')
+        'gastos_uyu': Decimal('0')
     }
     
     calc = RatiosCalculator([], totals)
     ratios = calc.calculate()
     
-    assert ratios['margen_operativo'] == 0.0
+    assert ratios['rentabilidad_neta'] == 0.0
 
 
 # ═══════════════════════════════════════════════════════════════

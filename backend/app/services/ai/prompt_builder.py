@@ -28,7 +28,7 @@ def build_operativo_prompt(metricas: Dict[str, Any]) -> str:
     period_label = metricas.get('period_label', 'período')
     ingresos = float(metricas.get('ingresos_uyu', 0))
     gastos = float(metricas.get('gastos_uyu', 0))
-    margen_operativo = metricas.get('margen_operativo', 0.0)
+    rentabilidad_neta = metricas.get('rentabilidad_neta', 0.0)
     margen_neto = metricas.get('margen_neto', 0.0)
     
     # Área líder
@@ -48,7 +48,7 @@ TIPO DE ANÁLISIS: Operativo (táctico, accionable)
 DATOS CLAVE:
 - Ingresos: {format_currency(ingresos)}
 - Gastos: {format_currency(gastos)}
-- Margen Operativo: {format_percentage(margen_operativo)}
+- Rentabilidad Neta: {format_percentage(rentabilidad_neta)}
 - Margen Neto: {format_percentage(margen_neto)}
 - Área líder: {area_lider_nombre} ({format_percentage(area_lider_pct)} de ingresos)
 - Ticket promedio ingreso: {format_currency(ticket_ingreso)}
@@ -93,7 +93,7 @@ def build_estrategico_prompt(metricas: Dict[str, Any]) -> str:
     """
     period_label = metricas.get('period_label', 'período')
     ingresos = float(metricas.get('ingresos_uyu', 0))
-    margen_operativo = metricas.get('margen_operativo', 0.0)
+    rentabilidad_neta = metricas.get('rentabilidad_neta', 0.0)
     duracion_dias = metricas.get('duracion_dias', 0)
     
     # Distribución por área
@@ -113,7 +113,7 @@ TIPO DE ANÁLISIS: Estratégico (tendencias, patrones, visión mediano plazo)
 
 DATOS CLAVE:
 - Ingresos totales: {format_currency(ingresos)}
-- Margen Operativo: {format_percentage(margen_operativo)}
+- Rentabilidad Neta: {format_percentage(rentabilidad_neta)}
 - Distribución por área: {areas_str}
 - Rentabilidad por área: {rent_str}
 

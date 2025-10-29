@@ -165,8 +165,8 @@ class TrendsCalculator(BaseCalculator):
         if not self.comparacion_ratios:
             return None
         
-        margen_actual = self.ratios['margen_operativo']
-        margen_anterior = self.comparacion_ratios['margen_operativo']
+        margen_actual = self.ratios.get('rentabilidad_neta', self.ratios.get('margen_operativo', 0))
+        margen_anterior = self.comparacion_ratios.get('rentabilidad_neta', self.comparacion_ratios.get('margen_operativo', 0))
         
         # Diferencia absoluta (no porcentual)
         return margen_actual - margen_anterior

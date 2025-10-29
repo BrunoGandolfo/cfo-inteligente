@@ -1,0 +1,55 @@
+{# Página: Análisis por Localidades #}
+{% include 'reports/components/header.html' %}
+
+<div class="section">
+    <h2 class="section-title">Análisis por Localidad</h2>
+    
+    {# Tabla de análisis #}
+    <table>
+        <thead>
+            <tr>
+                <th>Localidad</th>
+                <th class="text-right">Utilidad Neta</th>
+                <th class="text-right">Distribuciones</th>
+                <th class="text-right">Ratio Dist/Util</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if ratio_distribucion_utilidad %}
+            {% for localidad, data in ratio_distribucion_utilidad.items() %}
+            <tr>
+                <td class="font-semibold">{{ localidad }}</td>
+                <td class="text-right">{{ data.utilidad | format_currency }}</td>
+                <td class="text-right">{{ data.distribuciones | format_currency }}</td>
+                <td class="text-right font-bold">{{ data.ratio_porcentaje | format_percentage }}</td>
+                <td>
+                    {% if data.estado == 'PRUDENTE' %}
+                    <span class="badge badge-success">✅ Prudente</span>
+                    {% elif data.estado == 'MODERADO' %}
+                    <span class="badge badge-warning">⚠️ Moderado</span>
+                    {% elif data.estado == 'ALTO_RIESGO' %}
+                    <span class="badge badge-danger">⚠️ Alto Riesgo</span>
+                    {% elif data.estado == 'DESCAPITALIZANDO' %}
+                    <span class="badge badge-danger">🚨 Descapitalizando</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+    
+    {# Interpretación #}
+    <div class="card mt-20" style="background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%); border-left: 4px solid var(--primary);">
+        <h3 class="section-subtitle">Interpretación del Ratio</h3>
+        <ul style="margin-left: 20px; line-height: 2;">
+            <li>< 50%: ✅ Prudente - Acumulando capital</li>
+            <li>50-80%: ⚠️ Moderado - Monitorear</li>
+            <li>> 80%: ⚠️ Alto riesgo - Distribuyendo mucho</li>
+            <li>> 100%: 🚨 Descapitalizando - Distribuyendo más de lo ganado</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page-break"></div>

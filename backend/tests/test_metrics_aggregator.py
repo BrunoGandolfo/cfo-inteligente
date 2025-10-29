@@ -56,11 +56,13 @@ def test_aggregator_calcula_todas_metricas(sample_operaciones):
     
     # Debe tener métricas de todos los calculadores
     assert 'ingresos_uyu' in metricas  # TotalsCalculator
-    assert 'resultado_operativo_uyu' in metricas  # ResultsCalculator
-    assert 'margen_operativo' in metricas  # RatiosCalculator
+    assert 'utilidad_neta_uyu' in metricas  # ResultsCalculator
+    assert 'rentabilidad_neta' in metricas  # RatiosCalculator
     assert 'porcentaje_ingresos_por_area' in metricas  # DistributionCalculator
     assert 'ticket_promedio_ingreso' in metricas  # EfficiencyCalculator
     assert 'variacion_mom_ingresos' in metricas  # TrendsCalculator
+    assert 'utilidad_neta_por_localidad' in metricas  # LocalidadAnalyzer
+    assert 'top_clientes' in metricas  # ClienteAnalyzer
     
     # Metadata
     assert 'fecha_inicio' in metricas
@@ -93,7 +95,7 @@ def test_aggregator_margen_correcto(sample_operaciones):
     metricas = aggregator.aggregate_all()
     
     # (150k - 40k) / 150k × 100 = 73.33%
-    assert abs(metricas['margen_operativo'] - 73.33) < 0.1
+    assert abs(metricas['rentabilidad_neta'] - 73.33) < 0.1
 
 
 def test_aggregator_area_lider(sample_operaciones):

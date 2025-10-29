@@ -1,8 +1,11 @@
 """
-RatiosCalculator - Calcula M11-M14: Rentabilidad %
+RatiosCalculator - Calcula M11-M13: Rentabilidad
 
-Calcula márgenes y rentabilidad por segmentos.
+Calcula rentabilidad neta y rentabilidad por segmentos.
 Depende de TotalsCalculator.
+
+IMPORTANTE: Solo existe "Rentabilidad Neta" = (Ing - Gas) / Ing
+NO existe "margen operativo" ni "margen neto" diferenciado.
 
 Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
@@ -17,29 +20,27 @@ from app.services.metrics.base_calculator import BaseCalculator
 
 class RatiosCalculator(BaseCalculator):
     """
-    Calcula M11-M14: Rentabilidad %.
+    Calcula M11-M13: Rentabilidad %.
     
     RESPONSABILIDAD: Calcular porcentajes de rentabilidad.
     DEPENDENCIA: Necesita totals (inyectado).
     
     Métricas calculadas:
-    - M11: Margen Operativo % = ((Ing - Gas) / Ing) × 100
-    - M12: Margen Neto % = ((Ing - Gas - Ret - Dist) / Ing) × 100
-    - M13: Rentabilidad por Área (Dict {area: %})
-    - M14: Rentabilidad por Localidad (Dict {localidad: %})
+    - M11: Rentabilidad Neta % = ((Ing - Gas) / Ing) × 100
+    - M12: Rentabilidad por Área (Dict {area: %})
+    - M13: Rentabilidad por Localidad (Dict {localidad: %})
     
     Fórmula rentabilidad:
         Rentabilidad % = ((Ingresos - Gastos) / Ingresos) × 100
         
-        Por segmento (área o localidad):
-        - Se suman ingresos y gastos del segmento
-        - Se aplica misma fórmula
+        NOTA: Retiros y Distribuciones NO se restan.
+        Son USOS de la utilidad, no costos.
     
     Ejemplo:
         >>> totals = {'ingresos_uyu': Decimal('100'), 'gastos_uyu': Decimal('30')}
         >>> calc = RatiosCalculator(ops, totals)
         >>> ratios = calc.calculate()
-        >>> print(ratios['margen_operativo'])
+        >>> print(ratios['rentabilidad_neta'])
         70.0
     """
     
@@ -59,11 +60,10 @@ class RatiosCalculator(BaseCalculator):
         Calcula todos los ratios de rentabilidad.
         
         Returns:
-            Dict con 4 métricas (2 floats y 2 dicts)
+            Dict con 3 métricas (1 float y 2 dicts)
         """
         return {
-            'margen_operativo': self._calc_margen_operativo(),
-            'margen_neto': self._calc_margen_neto(),
+            'rentabilidad_neta': self._calc_rentabilidad_neta(),
             'rentabilidad_por_area': self._calc_rentabilidad_por_area(),
             'rentabilidad_por_localidad': self._calc_rentabilidad_por_localidad()
         }
@@ -71,8 +71,7 @@ class RatiosCalculator(BaseCalculator):
     def get_metric_names(self) -> List[str]:
         """Retorna nombres de métricas."""
         return [
-            'margen_operativo',
-            'margen_neto',
+            'rentabilidad_neta',
             'rentabilidad_por_area',
             'rentabilidad_por_localidad'
         ]
@@ -81,12 +80,15 @@ class RatiosCalculator(BaseCalculator):
     # MÉTODOS PRIVADOS (funciones puras, fáciles de testear)
     # ═══════════════════════════════════════════════════════════════
     
-    def _calc_margen_operativo(self) -> float:
+    def _calc_rentabilidad_neta(self) -> float:
         """
-        Calcula margen operativo: ((Ingresos - Gastos) / Ingresos) × 100
+        Calcula rentabilidad neta: ((Ingresos - Gastos) / Ingresos) × 100
+        
+        NOTA: Retiros y Distribuciones NO se restan.
+        Son USOS de la utilidad generada, no costos operativos.
         
         Returns:
-            Float en porcentaje (ej: 33.46)
+            Float en porcentaje (ej: 54.35)
             0.0 si ingresos = 0 (evita división por cero)
         """
         ingresos = float(self.totals['ingresos_uyu'])
@@ -96,24 +98,6 @@ class RatiosCalculator(BaseCalculator):
             return 0.0
         
         return ((ingresos - gastos) / ingresos) * 100
-    
-    def _calc_margen_neto(self) -> float:
-        """
-        Calcula margen neto: ((Ing - Gas - Ret - Dist) / Ing) × 100
-        
-        Returns:
-            Float en porcentaje (ej: 27.48)
-        """
-        ingresos = float(self.totals['ingresos_uyu'])
-        gastos = float(self.totals['gastos_uyu'])
-        retiros = float(self.totals['retiros_uyu'])
-        distribuciones = float(self.totals['distribuciones_uyu'])
-        
-        if ingresos == 0:
-            return 0.0
-        
-        resultado_neto = ingresos - gastos - retiros - distribuciones
-        return (resultado_neto / ingresos) * 100
     
     def _calc_rentabilidad_por_area(self) -> Dict[str, float]:
         """
@@ -187,4 +171,3 @@ class RatiosCalculator(BaseCalculator):
                 rentabilidad[localidad] = 0.0
         
         return rentabilidad
-

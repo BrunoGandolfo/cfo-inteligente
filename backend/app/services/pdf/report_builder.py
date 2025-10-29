@@ -249,7 +249,15 @@ class ReportBuilder:
                 metricas.get('porcentaje_ingresos_por_localidad', {}),
                 metricas.get('ingresos_uyu', 0)
             ),
-            'gastos_por_area': {},  # TODO: Si se necesita
+            'gastos_por_area': self._prepare_gastos_por_area(metricas),
+            
+            # Análisis de localidades y clientes (nuevos)
+            'utilidad_neta_por_localidad': metricas.get('utilidad_neta_por_localidad', {}),
+            'distribuciones_por_localidad': metricas.get('distribuciones_por_localidad', {}),
+            'ratio_distribucion_utilidad': metricas.get('ratio_distribucion_utilidad', {}),
+            'top_clientes': metricas.get('top_clientes', []),
+            'analisis_pareto': metricas.get('analisis_pareto', {}),
+            'indice_hhi': metricas.get('indice_hhi', {})
         }
         
         return context
@@ -265,16 +273,47 @@ class ReportBuilder:
                 'color': 'var(--primary)'
             },
             {
-                'label': 'Margen Operativo',
-                'valor': metricas.get('margen_operativo', 0),
+                'label': 'Gastos Totales',
+                'valor': metricas.get('gastos_uyu', 0),
+                'tipo': 'currency',
+                'variacion': metricas.get('variacion_mom_gastos'),
+                'color': 'var(--danger)'
+            },
+            {
+                'label': 'Utilidad Neta',
+                'valor': metricas.get('utilidad_neta_uyu', 0),
+                'tipo': 'currency',
+                'color': 'var(--success)'
+            },
+            {
+                'label': 'Retiros',
+                'valor': metricas.get('retiros_uyu', 0),
+                'tipo': 'currency',
+                'color': 'var(--warning)'
+            },
+            {
+                'label': 'Distribuciones',
+                'valor': metricas.get('distribuciones_uyu', 0),
+                'tipo': 'currency',
+                'color': 'var(--secondary)'
+            },
+            {
+                'label': 'Rentabilidad Neta',
+                'valor': metricas.get('rentabilidad_neta', 0),
                 'tipo': 'percentage',
                 'variacion': metricas.get('variacion_mom_rentabilidad'),
                 'color': 'var(--success)'
             },
             {
-                'label': 'Resultado Neto',
-                'valor': metricas.get('resultado_neto_uyu', 0),
+                'label': 'Ticket Promedio',
+                'valor': metricas.get('ticket_promedio_ingreso', 0),
                 'tipo': 'currency',
+                'color': 'var(--primary)'
+            },
+            {
+                'label': 'Operaciones',
+                'valor': metricas.get('cantidad_operaciones', 0),
+                'tipo': 'number',
                 'color': 'var(--primary)'
             }
         ]
@@ -286,21 +325,21 @@ class ReportBuilder:
                 'nombre': 'Ingresos',
                 'valor': metricas.get('ingresos_uyu', 0),
                 'tipo': 'currency',
-                'valor_anterior': None,  # TODO: Si hay comparación
+                'valor_anterior': metricas.get('ingresos_uyu_anterior'),
                 'variacion': metricas.get('variacion_mom_ingresos')
             },
             {
                 'nombre': 'Gastos',
                 'valor': metricas.get('gastos_uyu', 0),
                 'tipo': 'currency',
-                'valor_anterior': None,
+                'valor_anterior': metricas.get('gastos_uyu_anterior'),
                 'variacion': metricas.get('variacion_mom_gastos')
             },
             {
-                'nombre': 'Margen Operativo',
-                'valor': metricas.get('margen_operativo', 0),
+                'nombre': 'Rentabilidad Neta',
+                'valor': metricas.get('rentabilidad_neta', 0),
                 'tipo': 'percentage',
-                'valor_anterior': None,
+                'valor_anterior': metricas.get('rentabilidad_neta_anterior'),
                 'variacion': metricas.get('variacion_mom_rentabilidad')
             }
         ]
@@ -319,6 +358,50 @@ class ReportBuilder:
             }
             for nombre, pct in porcentajes.items()
         ]
+    
+    def _prepare_gastos_por_area(self, metricas: Dict[str, Any]) -> list:
+        """
+        Prepara gastos por área para templates.
+        
+        Args:
+            metricas: Dict con métricas calculadas
+            
+        Returns:
+            Lista con estructura [{nombre, valor, porcentaje}, ...]
+        """
+        gastos_total = metricas.get('gastos_uyu', 0)
+        if gastos_total == 0:
+            return []
+        
+        # Calcular gastos por área a partir de rentabilidad_por_area
+        # Fórmula: Gastos_area = Ingresos_area × (1 - Rentabilidad_area/100)
+        
+        rentabilidad_por_area = metricas.get('rentabilidad_por_area', {})
+        porcentaje_ingresos_por_area = metricas.get('porcentaje_ingresos_por_area', {})
+        ingresos_total = metricas.get('ingresos_uyu', 0)
+        
+        if not rentabilidad_por_area or not porcentaje_ingresos_por_area:
+            return []
+        
+        gastos_por_area = []
+        
+        for area, rent_pct in rentabilidad_por_area.items():
+            # Calcular ingresos del área
+            ing_pct = porcentaje_ingresos_por_area.get(area, 0)
+            ing_area = (ing_pct / 100) * ingresos_total
+            
+            # Calcular gastos: Gastos = Ingresos × (1 - Rent/100)
+            gas_area = ing_area * (1 - (rent_pct / 100))
+            gas_pct = (gas_area / gastos_total * 100) if gastos_total > 0 else 0
+            
+            gastos_por_area.append({
+                'nombre': area,
+                'valor': gas_area,
+                'porcentaje': gas_pct
+            })
+        
+        # Ordenar por valor descendente
+        return sorted(gastos_por_area, key=lambda x: x['valor'], reverse=True)
     
     def _prepare_metadata(self, metricas: Dict[str, Any]) -> Dict[str, str]:
         """Prepara metadata para el PDF."""

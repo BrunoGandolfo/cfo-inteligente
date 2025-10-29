@@ -49,6 +49,24 @@
         </tbody>
     </table>
     {% endif %}
+    
+    {# Gráficos de distribución lado a lado #}
+    <div class="row mt-20">
+        <div class="col-6">
+            {% if area_donut_chart_path %}
+            {% set title = 'Distribución por Área' %}
+            {% set chart_path = area_donut_chart_path %}
+            {% include 'reports/components/chart.html' %}
+            {% endif %}
+        </div>
+        <div class="col-6">
+            {% if localidad_donut_chart_path %}
+            {% set title = 'Distribución por Localidad' %}
+            {% set chart_path = localidad_donut_chart_path %}
+            {% include 'reports/components/chart.html' %}
+            {% endif %}
+        </div>
+    </div>
 </div>
 
 <div class="page-break"></div>

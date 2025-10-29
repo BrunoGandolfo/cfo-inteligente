@@ -8,14 +8,14 @@
     <div class="row mb-30">
         <div class="col-6">
             <div class="metric-box" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%);">
-                <div class="label">Margen Operativo</div>
-                <div class="value">{{ margen_operativo | format_percentage }}</div>
+                <div class="label">Rentabilidad Neta</div>
+                <div class="value">{{ rentabilidad_neta | format_percentage }}</div>
             </div>
         </div>
         <div class="col-6">
             <div class="metric-box">
-                <div class="label">Margen Neto</div>
-                <div class="value">{{ margen_neto | format_percentage }}</div>
+                <div class="label">Utilidad Neta</div>
+                <div class="value">{{ utilidad_neta_uyu | format_currency }}</div>
             </div>
         </div>
     </div>

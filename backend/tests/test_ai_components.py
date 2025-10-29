@@ -119,8 +119,7 @@ def test_fallback_operativo_menciona_numeros():
     metricas = {
         'ingresos_uyu': 100000.0,
         'gastos_uyu': 30000.0,
-        'margen_operativo': 70.0,
-        'margen_neto': 55.0,
+        'rentabilidad_neta': 70.0,
         'area_lider': {'nombre': 'Notarial', 'porcentaje': 45.0},
         'ticket_promedio_ingreso': 12500.0,
         'cantidad_operaciones': 8
@@ -129,7 +128,7 @@ def test_fallback_operativo_menciona_numeros():
     insights = generate_operativo_fallback(metricas)
     
     # Debe mencionar porcentaje
-    assert '70' in insights['insight_1'] or '70.0%' in insights['insight_1']
+    assert '70' in insights['insight_1'] or '70.0' in insights['insight_1']
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -140,7 +139,7 @@ def test_fallback_estrategico_genera_insights():
     """Test: Fallback estratégico genera insights."""
     metricas = {
         'ingresos_uyu': 500000.0,
-        'margen_operativo': 35.0,
+        'rentabilidad_neta': 35.0,
         'duracion_dias': 90,
         'rentabilidad_por_area': {'Notarial': 78.5, 'Jurídica': 65.2},
         'porcentaje_ingresos_por_area': {'Notarial': 55.0, 'Jurídica': 45.0}
@@ -159,7 +158,7 @@ def test_fallback_estrategico_identifica_disparidad():
     """Test: Fallback estratégico identifica disparidad en áreas."""
     metricas = {
         'ingresos_uyu': 500000.0,
-        'margen_operativo': 35.0,
+        'rentabilidad_neta': 35.0,
         'duracion_dias': 90,
         'rentabilidad_por_area': {'Notarial': 80.0, 'Jurídica': 40.0},  # Brecha grande
         'porcentaje_ingresos_por_area': {'Notarial': 50.0, 'Jurídica': 50.0}
