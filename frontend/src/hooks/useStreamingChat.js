@@ -116,13 +116,16 @@ export function useStreamingChat() {
               console.log('🔍 SQL generado:', parsed.query);
             } 
             else if (eventType === 'token') {
-              // Token de texto - agregar al mensaje
+              // Token de texto - agregar tal cual (backend ya acumula palabras completas)
               streamingContent += dataStr;
+              
               setMessages(prev => prev.map(msg =>
                 msg.id === assistantMsgId
                   ? { ...msg, content: streamingContent, streaming: true }
                   : msg
               ));
+              
+              // Sin delay aquí - el backend ya controla la velocidad
             } 
             else if (eventType === 'done') {
               const parsed = JSON.parse(dataStr);

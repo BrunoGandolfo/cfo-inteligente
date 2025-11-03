@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { X, Send, Sparkles, TrendingUp, DollarSign, BarChart3, CalendarDays } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
+import ReactMarkdown from 'react-markdown';
 import { useStreamingChat } from '../../hooks/useStreamingChat';
 
 export function ChatPanel({ isOpen, onClose }) {
@@ -81,7 +82,7 @@ export function ChatPanel({ isOpen, onClose }) {
             className={clsx(
               'fixed right-0 top-16 h-[calc(100vh-4rem)] w-full sm:w-[400px]',
               'bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800',
-              'shadow-2xl z-50 flex flex-col'
+              'shadow-2xl z-50 flex flex-col font-sans'
             )}
           >
             {/* Header */}
@@ -188,13 +189,19 @@ export function ChatPanel({ isOpen, onClose }) {
                   )}
                   <div
                     className={clsx(
-                      'px-4 py-2.5 rounded-2xl max-w-[85%] text-sm',
+                      'px-4 py-2.5 rounded-2xl max-w-[85%] text-sm font-sans',
                       msg.role === 'user'
                         ? 'bg-blue-600 text-white rounded-tr-sm'
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white rounded-tl-sm'
                     )}
                   >
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    {msg.role === 'assistant' ? (
+                      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    )}
                   </div>
                   {msg.role === 'user' && (
                     <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center shrink-0 text-xs font-medium text-gray-700 dark:text-slate-200">

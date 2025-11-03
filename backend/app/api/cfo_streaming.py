@@ -206,7 +206,11 @@ INSTRUCCIONES:
 Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
             
             # Stream de Claude con manejo de errores
+            # ESTRATEGIA: Acumular palabras completas antes de enviar (mejor UX)
             try:
+                import time
+                word_buffer = ""
+                
                 with client.messages.stream(
                     model="claude-sonnet-4-5-20250929",
                     max_tokens=500,
@@ -215,7 +219,19 @@ Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
                 ) as stream:
                     for text in stream.text_stream:
                         respuesta_completa.append(text)
-                        yield sse_format("token", text)
+                        word_buffer += text
+                        
+                        # Enviar cuando tengamos palabra completa (termina en espacio o puntuación)
+                        if text.endswith((' ', '\n', '.', ',', '!', '?', ':', ';', ')', ']', '}')):
+                            if word_buffer.strip():
+                                yield sse_format("token", word_buffer)
+                                word_buffer = ""
+                                # Delay para velocidad natural (150ms por palabra ≈ 7 palabras/seg)
+                                time.sleep(0.15)
+                    
+                    # Enviar cualquier texto restante
+                    if word_buffer.strip():
+                        yield sse_format("token", word_buffer)
             
             except Exception as e:
                 logger.error(f"Stream: Error en streaming Claude - {e}")
