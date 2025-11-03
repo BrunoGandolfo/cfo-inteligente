@@ -197,9 +197,13 @@ class SQLRouter:
                 'error': f'Error en sqlparse: {str(e)}'
             }
     
-    def generar_sql_con_claude(self, pregunta: str) -> Dict[str, Any]:
+    def generar_sql_con_claude(self, pregunta: str, contexto: list = None) -> Dict[str, Any]:
         """
-        Genera SQL usando Claude Sonnet 4.5
+        Genera SQL usando Claude Sonnet 4.5 con memoria de conversación
+        
+        Args:
+            pregunta: Pregunta actual del usuario
+            contexto: Mensajes previos de la conversación
         
         Returns:
             {
@@ -213,9 +217,9 @@ class SQLRouter:
         inicio = time.time()
         
         try:
-            logger.info(f"Claude generando SQL para: '{pregunta[:60]}'")
+            logger.info(f"Claude generando SQL para: '{pregunta[:60]}' (contexto: {len(contexto or [])} mensajes)")
             
-            sql_raw = self.claude_gen.generar_sql(pregunta)
+            sql_raw = self.claude_gen.generar_sql(pregunta, contexto=contexto)
             tiempo = time.time() - inicio
             
             if not sql_raw:
@@ -372,7 +376,7 @@ class SQLRouter:
                 'error': f'Exception en Vanna: {type(e).__name__}: {str(e)}'
             }
     
-    def generar_sql_inteligente(self, pregunta: str, reintentos_vanna: int = 1) -> Dict[str, Any]:
+    def generar_sql_inteligente(self, pregunta: str, contexto: list = None, reintentos_vanna: int = 1) -> Dict[str, Any]:
         """
         Router principal: Intenta Claude primero, Vanna como fallback
         
@@ -382,6 +386,7 @@ class SQLRouter:
         
         Args:
             pregunta: Pregunta del usuario en lenguaje natural
+            contexto: Lista de mensajes previos para memoria de conversación
             reintentos_vanna: Número de reintentos si Vanna falla (default: 1)
             
         Returns:
@@ -418,7 +423,7 @@ class SQLRouter:
         intentos['claude'] = 1
         intentos['total'] += 1
         
-        resultado_claude = self.generar_sql_con_claude(pregunta)
+        resultado_claude = self.generar_sql_con_claude(pregunta, contexto=contexto)
         tiempos['claude'] = resultado_claude['tiempo']
         debug_info['claude'] = {
             'sql_raw': resultado_claude['sql_raw'][:200] if resultado_claude['sql_raw'] else None,
@@ -547,20 +552,24 @@ def get_sql_router() -> SQLRouter:
 # FUNCIÓN DE CONVENIENCIA (Para compatibilidad)
 # ══════════════════════════════════════════════════════════════
 
-def generar_sql_inteligente(pregunta: str) -> Dict[str, Any]:
+def generar_sql_inteligente(pregunta: str, contexto: list = None) -> Dict[str, Any]:
     """
-    Función wrapper para facilitar el uso
+    Función wrapper para facilitar el uso con memoria de conversación
+    
+    Args:
+        pregunta: Pregunta del usuario en lenguaje natural
+        contexto: Lista de mensajes previos [{"role": "user|assistant", "content": "..."}]
     
     Uso directo:
         from app.services.sql_router import generar_sql_inteligente
         
-        resultado = generar_sql_inteligente("¿Cuál es la rentabilidad del mes?")
+        resultado = generar_sql_inteligente("¿Cuál es la rentabilidad del mes?", contexto=mensajes_previos)
         if resultado['exito']:
             sql = resultado['sql']
             # ejecutar SQL...
     """
     router = get_sql_router()
-    return router.generar_sql_inteligente(pregunta)
+    return router.generar_sql_inteligente(pregunta, contexto=contexto)
 
 
 # ══════════════════════════════════════════════════════════════

@@ -156,22 +156,23 @@ IMPORTANTE: Si una query viola alguna de estas reglas, usar approach alternativo
         
         self.client = anthropic.Anthropic(api_key=api_key)
     
-    def generar_sql(self, pregunta: str) -> str:
+    def generar_sql(self, pregunta: str, contexto: list = None) -> str:
         """
-        Genera SQL usando Claude Sonnet 4.5
+        Genera SQL usando Claude Sonnet 4.5 con memoria de conversación
         
         Args:
             pregunta: Pregunta del usuario en lenguaje natural
+            contexto: Lista de mensajes previos [{"role": "user|assistant", "content": "..."}]
             
         Returns:
             SQL válido de PostgreSQL o texto explicativo si no puede
         """
+        contexto = contexto or []
         
-        prompt = f"""{self.DDL_CONTEXT}
+        # Construir prompt del sistema
+        prompt_sistema = f"""{self.DDL_CONTEXT}
 
 {self.BUSINESS_CONTEXT}
-
-PREGUNTA DEL USUARIO: {pregunta}
 
 INSTRUCCIONES:
 • Genera SOLO el SQL query en PostgreSQL, sin explicaciones ni markdown
@@ -182,15 +183,30 @@ INSTRUCCIONES:
 • Si pide rentabilidad, usa la fórmula: (Ingresos - Gastos) / Ingresos * 100
 • SIEMPRE incluye WHERE deleted_at IS NULL
 • Para comparaciones temporales, usa CTEs con DATE_TRUNC
+• Si hay contexto previo, usa las respuestas anteriores para entender referencias
 
 Genera ÚNICAMENTE el SQL query:"""
+        
+        # Construir mensajes para Claude
+        mensajes = []
+        
+        # Agregar contexto de conversación si existe
+        if contexto:
+            for msg in contexto:
+                mensajes.append(msg)
+        
+        # Agregar pregunta actual
+        mensajes.append({
+            "role": "user",
+            "content": f"{prompt_sistema}\n\nPREGUNTA: {pregunta}"
+        })
 
         try:
             response = self.client.messages.create(
                 model=CLAUDE_MODEL,
                 max_tokens=CLAUDE_MAX_TOKENS,
                 temperature=CLAUDE_TEMPERATURE,
-                messages=[{"role": "user", "content": prompt}]
+                messages=mensajes
             )
             
             sql_generado = response.content[0].text.strip()
@@ -198,6 +214,8 @@ Genera ÚNICAMENTE el SQL query:"""
             # Limpiar si viene con markdown
             if sql_generado.startswith("```"):
                 sql_generado = sql_generado.replace("```sql", "").replace("```", "").strip()
+            
+            logger.info(f"SQL generado con {len(contexto)} mensajes de contexto")
             
             return sql_generado
             

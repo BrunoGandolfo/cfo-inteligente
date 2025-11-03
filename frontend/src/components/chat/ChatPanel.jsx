@@ -10,6 +10,7 @@ export function ChatPanel({ isOpen, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -46,7 +47,8 @@ export function ChatPanel({ isOpen, onClose }) {
 
     try {
       const response = await axios.post('http://localhost:8000/api/cfo/ask', {
-        pregunta: input.trim()
+        pregunta: input.trim(),
+        ...(conversationId && { conversation_id: conversationId })
       }, {
         headers: { 
           'Content-Type': 'application/json',
@@ -56,6 +58,16 @@ export function ChatPanel({ isOpen, onClose }) {
       
       // Usar la respuesta narrativa de Claude Sonnet 4.5
       const responseText = response.data.respuesta || 'Sin respuesta';
+
+      // Guardar conversation_id para mantener memoria
+      if (response.data.conversation_id) {
+        if (!conversationId) {
+          console.log('🆕 Nueva conversación iniciada:', response.data.conversation_id);
+        } else {
+          console.log('💬 Continuando conversación:', response.data.conversation_id);
+        }
+        setConversationId(response.data.conversation_id);
+      }
 
       const aiMsg = { 
         role: 'assistant', 
@@ -91,7 +103,8 @@ export function ChatPanel({ isOpen, onClose }) {
 
   const handleClearHistory = () => {
     setMessages([]);
-    toast.success('Historial limpiado');
+    setConversationId(null);
+    toast.success('Historial limpiado - Nueva conversación');
   };
 
   return (
@@ -148,6 +161,26 @@ export function ChatPanel({ isOpen, onClose }) {
                 </button>
               </div>
             </div>
+
+            {/* Indicador de conversación activa */}
+            {conversationId && messages.length > 0 && (
+              <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800/30">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                    <span className="font-medium">Conversación activa</span>
+                    <span className="text-blue-500/70">- Recordando contexto</span>
+                  </div>
+                  <button
+                    onClick={handleClearHistory}
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                    title="Iniciar nueva conversación"
+                  >
+                    🔄 Nueva
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">

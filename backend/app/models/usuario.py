@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 import uuid
 from datetime import datetime
@@ -15,3 +16,6 @@ class Usuario(Base):
     activo = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relaciones
+    conversaciones = relationship("Conversacion", back_populates="usuario", cascade="all, delete-orphan")

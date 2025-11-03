@@ -15,9 +15,13 @@ from app.services.sql_router import generar_sql_inteligente
 from app.services.validador_sql import validar_resultado_sql
 from app.services.chain_of_thought_sql import ChainOfThoughtSQL, generar_con_chain_of_thought
 from pydantic import BaseModel
+from typing import Optional, List
+from uuid import UUID
 import json
 import anthropic
 from dotenv import load_dotenv
+from app.services.conversacion_service import ConversacionService
+from app.schemas.conversacion import ConversacionListResponse, ConversacionResponse
 
 # Cargar variables de entorno (fallback por si acaso)
 load_dotenv()
@@ -38,6 +42,7 @@ claude_sql_gen = ClaudeSQLGenerator()
 
 class PreguntaCFO(BaseModel):
     pregunta: str
+    conversation_id: Optional[UUID] = None  # NUEVO: para continuar conversación
 
 def generar_respuesta_narrativa(pregunta: str, datos: list, sql_generado: str) -> str:
     """
@@ -98,9 +103,39 @@ Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
 @router.post("/ask")
 def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
     """
-    Endpoint que recibe pregunta en español y retorna datos
+    Endpoint que recibe pregunta en español y retorna datos con memoria de conversación
     """
+    conversacion_id = None
+    contexto = []
+    
     try:
+        # === SISTEMA DE MEMORIA: Obtener o crear conversación (ANTES de generar SQL) ===
+        if data.conversation_id:
+            # Continuar conversación existente
+            conversacion_id = data.conversation_id
+            logger.info(f"Continuando conversación {conversacion_id}")
+            
+            # Obtener contexto de mensajes previos (últimos 10)
+            contexto = ConversacionService.obtener_contexto(db, conversacion_id, limite=10)
+            logger.info(f"Contexto cargado: {len(contexto)} mensajes previos")
+        else:
+            # Crear nueva conversación INMEDIATAMENTE (antes de generar SQL)
+            titulo = ConversacionService.generar_titulo(data.pregunta)
+            from app.models.usuario import Usuario
+            usuario = db.query(Usuario).filter(Usuario.email == "bruno@conexion.com.uy").first()
+            
+            if usuario:
+                conversacion = ConversacionService.crear_conversacion(db, usuario.id, titulo)
+                conversacion_id = conversacion.id
+                logger.info(f"Nueva conversación creada: {conversacion_id}")
+            else:
+                logger.warning("Usuario bruno@conexion.com.uy no encontrado - continuando sin memoria")
+        
+        # Guardar pregunta del usuario AHORA (antes de generar SQL para tener historial completo)
+        if conversacion_id:
+            ConversacionService.agregar_mensaje(db, conversacion_id, "user", data.pregunta)
+            logger.info(f"Pregunta guardada en conversación {conversacion_id}")
+        
         # === CHAIN-OF-THOUGHT: Detectar si necesita metadatos temporales ===
         if ChainOfThoughtSQL.necesita_metadatos(data.pregunta):
             logger.info("Chain-of-Thought detectada: pregunta temporal compleja")
@@ -124,10 +159,10 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
             else:
                 # Chain-of-Thought falló, usar flujo normal
                 logger.warning("Chain-of-Thought falló, usando flujo normal de generación SQL")
-                resultado_sql = generar_sql_inteligente(data.pregunta)
+                resultado_sql = generar_sql_inteligente(data.pregunta, contexto=contexto)
         else:
-            # Pregunta simple, flujo normal
-            resultado_sql = generar_sql_inteligente(data.pregunta)
+            # Pregunta simple, flujo normal CON CONTEXTO
+            resultado_sql = generar_sql_inteligente(data.pregunta, contexto=contexto)
         
         if not resultado_sql['exito']:
             return {
@@ -193,18 +228,27 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
                 sql_generado
             )
             
+            # === GUARDAR RESPUESTA DEL ASSISTANT ===
+            if conversacion_id:
+                ConversacionService.agregar_mensaje(
+                    db, conversacion_id, "assistant", respuesta_narrativa, sql_generado=sql_generado
+                )
+                logger.info(f"Respuesta guardada en conversación {conversacion_id}")
+            
             return {
                 "pregunta": data.pregunta,
                 "respuesta": respuesta_narrativa,
                 "datos_raw": resultado['data'],
                 "sql_generado": sql_generado,
                 "status": "success",
+                "conversation_id": str(conversacion_id) if conversacion_id else None,  # NUEVO
                 "metadata": {
                     "metodo_generacion_sql": resultado_sql['metodo'],
                     "tiempo_generacion_sql": resultado_sql['tiempo_total'],
                     "intentos_sql": resultado_sql['intentos']['total'],
                     "tiempos_detalle": resultado_sql['tiempos'],
-                    "post_procesamiento": sql_procesado_info.get('modificado', False)
+                    "post_procesamiento": sql_procesado_info.get('modificado', False),
+                    "contexto_mensajes": len(contexto)  # NUEVO
                 }
             }
         else:
@@ -214,14 +258,83 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
                 "respuesta": f"No pude obtener datos para esa pregunta. Error: {resultado.get('error', 'Desconocido')}",
                 "sql_generado": sql_generado,
                 "resultado": resultado,
-                "status": "error"
+                "status": "error",
+                "conversation_id": str(conversacion_id) if conversacion_id else None
             }
             
     except Exception as e:
+        logger.error(f"Error en preguntar_cfo: {str(e)}", exc_info=True)
         return {
             "pregunta": data.pregunta,
             "sql_generado": None,
             "resultado": None,
             "error": str(e),
-            "status": "error"
+            "status": "error",
+            "conversation_id": str(conversacion_id) if conversacion_id else None
         }
+
+
+# ══════════════════════════════════════════════════════════════
+# ENDPOINTS DE GESTIÓN DE CONVERSACIONES
+# ══════════════════════════════════════════════════════════════
+
+@router.get("/conversaciones", response_model=List[ConversacionListResponse])
+def listar_conversaciones(
+    db: Session = Depends(get_db),
+    limit: int = 50
+):
+    """Lista las conversaciones del usuario (por ahora hardcoded a Bruno)"""
+    # TODO: Usar current_user cuando auth esté completo
+    from app.models.usuario import Usuario
+    usuario = db.query(Usuario).filter(Usuario.email == "bruno@conexion.com.uy").first()
+    
+    if not usuario:
+        return []
+    
+    conversaciones = ConversacionService.listar_conversaciones(db, usuario.id, limit)
+    
+    return [
+        {
+            "id": conv.id,
+            "titulo": conv.titulo,
+            "updated_at": conv.updated_at,
+            "cantidad_mensajes": len(conv.mensajes)
+        }
+        for conv in conversaciones
+    ]
+
+
+@router.get("/conversaciones/{conversacion_id}", response_model=ConversacionResponse)
+def obtener_conversacion(
+    conversacion_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """Obtiene una conversación completa con todos sus mensajes"""
+    # TODO: Validar propiedad cuando auth esté completo
+    from app.models.conversacion import Conversacion
+    conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id).first()
+    
+    if not conversacion:
+        from fastapi import HTTPException
+        raise HTTPException(404, "Conversación no encontrada")
+    
+    return conversacion
+
+
+@router.delete("/conversaciones/{conversacion_id}")
+def eliminar_conversacion(
+    conversacion_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """Elimina una conversación (y sus mensajes por CASCADE)"""
+    from app.models.conversacion import Conversacion
+    conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id).first()
+    
+    if not conversacion:
+        from fastapi import HTTPException
+        raise HTTPException(404, "Conversación no encontrada")
+    
+    db.delete(conversacion)
+    db.commit()
+    
+    return {"success": True, "message": "Conversación eliminada"}
