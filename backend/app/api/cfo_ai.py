@@ -122,14 +122,14 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
             # Crear nueva conversación INMEDIATAMENTE (antes de generar SQL)
             titulo = ConversacionService.generar_titulo(data.pregunta)
             from app.models.usuario import Usuario
-            usuario = db.query(Usuario).filter(Usuario.email == "bruno@conexion.com.uy").first()
+            usuario = db.query(Usuario).filter(Usuario.email == "bgandolfo@cgmasociados.com").first()
             
             if usuario:
                 conversacion = ConversacionService.crear_conversacion(db, usuario.id, titulo)
                 conversacion_id = conversacion.id
                 logger.info(f"Nueva conversación creada: {conversacion_id}")
             else:
-                logger.warning("Usuario bruno@conexion.com.uy no encontrado - continuando sin memoria")
+                logger.warning("Usuario bgandolfo@cgmasociados.com no encontrado - continuando sin memoria")
         
         # Guardar pregunta del usuario AHORA (antes de generar SQL para tener historial completo)
         if conversacion_id:
@@ -286,7 +286,7 @@ def listar_conversaciones(
     """Lista las conversaciones del usuario (por ahora hardcoded a Bruno)"""
     # TODO: Usar current_user cuando auth esté completo
     from app.models.usuario import Usuario
-    usuario = db.query(Usuario).filter(Usuario.email == "bruno@conexion.com.uy").first()
+    usuario = db.query(Usuario).filter(Usuario.email == "bgandolfo@cgmasociados.com").first()
     
     if not usuario:
         return []
