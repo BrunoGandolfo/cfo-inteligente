@@ -1,26 +1,27 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { X, Send, Sparkles, TrendingUp, DollarSign, BarChart3, CalendarDays } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
-import axios from 'axios';
-import toast from 'react-hot-toast';
+import { useStreamingChat } from '../../hooks/useStreamingChat';
 
 export function ChatPanel({ isOpen, onClose }) {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [conversationId, setConversationId] = useState(null);
-  const messagesEndRef = useRef(null);
-  const textareaRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const {
+    messages,
+    input,
+    setInput,
+    isTyping,
+    conversationId,
+    messagesEndRef,
+    textareaRef,
+    sendMessage,
+    clearHistory,
+    scrollToBottom
+  } = useStreamingChat();
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   // Auto-expand textarea
   useEffect(() => {
@@ -37,56 +38,9 @@ export function ChatPanel({ isOpen, onClose }) {
     { icon: CalendarDays, text: 'Comparar este trimestre vs anterior' },
   ];
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!input.trim() || isTyping) return;
-    
-    const userMsg = { role: 'user', content: input.trim(), timestamp: new Date() };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setIsTyping(true);
-
-    try {
-      const response = await axios.post('http://localhost:8000/api/cfo/ask', {
-        pregunta: input.trim(),
-        ...(conversationId && { conversation_id: conversationId })
-      }, {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      // Usar la respuesta narrativa de Claude Sonnet 4.5
-      const responseText = response.data.respuesta || 'Sin respuesta';
-
-      // Guardar conversation_id para mantener memoria
-      if (response.data.conversation_id) {
-        if (!conversationId) {
-          console.log('🆕 Nueva conversación iniciada:', response.data.conversation_id);
-        } else {
-          console.log('💬 Continuando conversación:', response.data.conversation_id);
-        }
-        setConversationId(response.data.conversation_id);
-      }
-
-      const aiMsg = { 
-        role: 'assistant', 
-        content: responseText,
-        timestamp: new Date() 
-      };
-      setMessages(prev => [...prev, aiMsg]);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al consultar al CFO AI');
-      const errorMsg = { 
-        role: 'assistant', 
-        content: 'Lo siento, hubo un error al procesar tu pregunta. Intenta nuevamente.', 
-        timestamp: new Date() 
-      };
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
-      setIsTyping(false);
-    }
+    sendMessage(input);
   };
 
   const handleSuggestionClick = (text) => {
@@ -102,9 +56,7 @@ export function ChatPanel({ isOpen, onClose }) {
   };
 
   const handleClearHistory = () => {
-    setMessages([]);
-    setConversationId(null);
-    toast.success('Historial limpiado - Nueva conversación');
+    clearHistory();
   };
 
   return (

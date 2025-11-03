@@ -1,3 +1,48 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Tipografía profesional sistema financiero */
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  body {
+    @apply antialiased;
+  }
+  
+  /* Números tabulares - critical para sistemas financieros */
+  table td,
+  .metric,
+  .kpi,
+  .amount,
+  [data-numeric="true"] {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+  
+  /* Código y SQL */
+  code,
+  pre,
+  .sql-query,
+  .code-block {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-variant-ligatures: none;
+  }
+}
+
+@layer utilities {
+  /* Utility classes para tipografía */
+  .font-tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+  
+  .font-proportional {
+    font-variant-numeric: proportional-nums;
+    font-feature-settings: "pnum" 1;
+  }
+}
