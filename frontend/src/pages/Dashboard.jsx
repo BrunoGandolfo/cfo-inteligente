@@ -60,23 +60,24 @@ function Dashboard() {
 
       <ChartsSection operaciones={chartData || []} />
 
-      <section className="px-6 mb-8">
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg shadow-sm p-6">
+      <section className="px-4 xl:px-6 mb-8">
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg shadow-sm p-4 xl:p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Registrar Operación</h2>
+            <h2 className="text-lg xl:text-xl font-bold text-gray-900 dark:text-white">Registrar Operación</h2>
             <button
               onClick={() => setShowReportModal(true)}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+              className="px-3 xl:px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg text-sm xl:text-base font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 shrink-0"
             >
-              <FileText className="w-5 h-5" />
-              Generar Reporte PDF
+              <FileText className="w-4 xl:w-5 h-4 xl:h-5" />
+              <span className="hidden xl:inline">Generar Reporte PDF</span>
+              <span className="inline xl:hidden">Reporte</span>
             </button>
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xl:gap-4">
             <button
               onClick={() => setShowIngreso(true)}
               disabled={loadingIngreso}
-              className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border-2 border-emerald-400 dark:border-emerald-600 rounded-xl p-6 hover:shadow-2xl hover:scale-105 hover:border-emerald-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border-2 border-emerald-400 dark:border-emerald-600 rounded-xl p-4 xl:p-6 hover:shadow-2xl hover:scale-105 hover:border-emerald-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex flex-col items-center justify-center text-center space-y-3">
                 <div className="w-12 h-12 bg-emerald-500 dark:bg-emerald-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -93,7 +94,7 @@ function Dashboard() {
             <button
               onClick={() => setShowGasto(true)}
               disabled={loadingGasto}
-              className="group relative overflow-hidden bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-2 border-red-400 dark:border-red-600 rounded-xl p-6 hover:shadow-2xl hover:scale-105 hover:border-red-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative overflow-hidden bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-2 border-red-400 dark:border-red-600 rounded-xl p-4 xl:p-6 hover:shadow-2xl hover:scale-105 hover:border-red-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex flex-col items-center justify-center text-center space-y-3">
                 <div className="w-12 h-12 bg-red-500 dark:bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -110,7 +111,7 @@ function Dashboard() {
             <button
               onClick={() => setShowRetiro(true)}
               disabled={loadingRetiro}
-              className="group relative overflow-hidden bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-2 border-amber-400 dark:border-amber-600 rounded-xl p-6 hover:shadow-2xl hover:scale-105 hover:border-amber-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative overflow-hidden bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-2 border-amber-400 dark:border-amber-600 rounded-xl p-4 xl:p-6 hover:shadow-2xl hover:scale-105 hover:border-amber-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex flex-col items-center justify-center text-center space-y-3">
                 <div className="w-12 h-12 bg-amber-500 dark:bg-amber-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -127,7 +128,7 @@ function Dashboard() {
             <button
               onClick={() => setShowDistrib(true)}
               disabled={loadingDistrib}
-              className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-2 border-blue-400 dark:border-blue-600 rounded-xl p-6 hover:shadow-2xl hover:scale-105 hover:border-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-2 border-blue-400 dark:border-blue-600 rounded-xl p-4 xl:p-6 hover:shadow-2xl hover:scale-105 hover:border-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex flex-col items-center justify-center text-center space-y-3">
                 <div className="w-12 h-12 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">

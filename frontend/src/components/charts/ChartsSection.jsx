@@ -72,9 +72,9 @@ export function ChartsSection({ operaciones }) {
   const locationData = prepareLocationData(operaciones || []);
 
   return (
-    <section className="px-6 mb-8 grid grid-cols-3 gap-6">
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Evolución Mensual</h3>
+    <section className="px-4 xl:px-6 mb-8 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6">
+      <Card className="p-4 xl:p-6">
+        <h3 className="text-base xl:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Evolución Mensual</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={evolutionData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -95,8 +95,8 @@ export function ChartsSection({ operaciones }) {
         </ResponsiveContainer>
       </Card>
 
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Distribución por Área</h3>
+      <Card className="p-4 xl:p-6">
+        <h3 className="text-base xl:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Distribución por Área</h3>
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie data={areaData} cx="50%" cy="50%" labelLine={false}
@@ -111,8 +111,8 @@ export function ChartsSection({ operaciones }) {
         </ResponsiveContainer>
       </Card>
 
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Comparación por Localidad</h3>
+      <Card className="p-4 xl:p-6">
+        <h3 className="text-base xl:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Comparación por Localidad</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={locationData}>
             <CartesianGrid strokeDasharray="3 3" />

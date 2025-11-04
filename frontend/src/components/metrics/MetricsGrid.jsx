@@ -4,7 +4,7 @@ import MetricCard from './MetricCard';
 
 export function MetricsGrid({ ingresos, gastos, margenOperativo, areaLider }) {
   return (
-    <section className="grid grid-cols-4 gap-6 mb-8 px-6">
+    <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-6 mb-8 px-4 xl:px-6">
       <div className="rounded-lg shadow-sm hover:shadow-md transform hover:scale-[1.02] transition-all duration-200 border-l-4 border-green-500 bg-white dark:bg-slate-900">
         <MetricCard title="Ingresos del mes" value={ingresos} icon={TrendingUp} colorClass="text-emerald-600" />
       </div>
