@@ -48,8 +48,8 @@ export function Header() {
 
   return (
     <>
-      <header className="h-16 fixed top-0 w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 z-40">
-        <div className="h-full flex items-center min-w-0">
+    <header className="h-16 fixed top-0 w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 z-50">
+      <div className="h-full flex items-center min-w-0">
           {/* ZONA 1: Logo (250px fijo) */}
           <div className="w-[250px] flex items-center px-4 xl:px-6 border-r border-gray-200 dark:border-slate-800 shrink-0">
             <img src="/logo-conexion.png" alt="Conexión" className="h-14 xl:h-16 w-auto object-contain" />
@@ -63,13 +63,13 @@ export function Header() {
               <div className="flex items-center shrink-0">
                 {/* Fecha larga en 2XL+ */}
                 <span className="hidden 2xl:inline text-gray-600 dark:text-gray-400 capitalize">{fecha}</span>
-                {/* Fecha corta en XL-2XL */}
-                <span className="hidden xl:inline 2xl:hidden text-gray-600 dark:text-gray-400">{fechaCorta}</span>
-                {/* Solo hora en <XL */}
-                <span className="inline xl:hidden text-gray-600 dark:text-gray-400">{hora}</span>
+                {/* Fecha corta en LG-<2XL */}
+                <span className="hidden lg:inline 2xl:hidden text-gray-600 dark:text-gray-400">{fechaCorta}</span>
+                {/* Solo hora en <LG */}
+                <span className="inline lg:hidden text-gray-600 dark:text-gray-400">{hora}</span>
                 
-                <span className="mx-2 text-gray-300 dark:text-slate-700 hidden xl:inline">|</span>
-                <span className="hidden xl:inline text-gray-900 dark:text-white">{hora}</span>
+                <span className="mx-2 text-gray-300 dark:text-slate-700 hidden lg:inline">|</span>
+                <span className="hidden lg:inline text-gray-900 dark:text-white">{hora}</span>
               </div>
               
               <div className="h-8 w-px bg-gray-300 dark:bg-slate-700 shrink-0"></div>
@@ -138,8 +138,8 @@ export function Header() {
                 }, 500);
               }}
             >
-              <span className="hidden xl:inline">Cerrar sesión</span>
-              <span className="inline xl:hidden">Salir</span>
+              <span className="hidden lg:inline">Cerrar sesión</span>
+              <span className="inline lg:hidden">Salir</span>
             </button>
           </div>
         </div>

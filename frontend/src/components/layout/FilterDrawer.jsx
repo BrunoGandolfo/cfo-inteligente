@@ -63,7 +63,7 @@ export function FilterDrawer({
       {/* OVERLAY - Cerrar al click fuera */}
       <div 
         className={`
-          fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300
+          fixed inset-0 bg-black/30 backdrop-blur-sm z-30 transition-opacity duration-300
           2xl:hidden
           ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}
@@ -74,7 +74,7 @@ export function FilterDrawer({
       {/* DRAWER - Slide down desde top */}
       <div 
         className={`
-          fixed top-16 left-0 right-0 z-50
+          fixed top-16 left-0 right-0 z-40
           bg-white dark:bg-slate-900 
           border-b border-gray-200 dark:border-slate-800
           shadow-2xl
