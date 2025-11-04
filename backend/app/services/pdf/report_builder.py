@@ -13,6 +13,7 @@ from pathlib import Path
 from datetime import datetime
 from decimal import Decimal
 import os
+import base64
 
 from app.services.pdf.template_renderer import TemplateRenderer
 from app.services.pdf.pdf_compiler import PDFCompiler
@@ -214,6 +215,15 @@ class ReportBuilder:
         Returns:
             Dict con contexto completo para Jinja2
         """
+        # Logo en base64
+        logo_path = Path(__file__).parent.parent.parent / "static" / "logo-conexion.png"
+        if logo_path.exists():
+            with open(logo_path, "rb") as f:
+                logo_base64 = base64.b64encode(f.read()).decode()
+        else:
+            logo_base64 = ""
+            logger.warning(f"Logo no encontrado en: {logo_path}")
+        
         context = {
             # Metadata general
             'generated_at': datetime.now(),
@@ -228,6 +238,9 @@ class ReportBuilder:
             
             # Comparación
             'tiene_comparacion': metricas.get('tiene_comparacion', False),
+            
+            # Logo
+            'logo_base64': logo_base64,
             
             # Métricas (spread todas las métricas)
             **metricas,

@@ -322,6 +322,13 @@ class ReportOrchestrator:
         Returns:
             Dict con paths a gráficos generados
         """
+        # Configuración ESTANDARIZADA de dimensiones de gráficos
+        CHART_CONFIG = {
+            'principal': {'width': 800, 'height': 450},   # Waterfall, Line temporal
+            'secundario': {'width': 700, 'height': 400},  # Donuts (áreas, localidades)
+            'detalle': {'width': 900, 'height': 500}      # Bar clientes, Pareto
+        }
+        
         # Crear directorio temporal
         self.temp_dir = tempfile.mkdtemp(prefix='report_charts_')
         logger.debug(f"Directorio temporal: {self.temp_dir}")
@@ -349,7 +356,7 @@ class ReportOrchestrator:
                 'waterfall',
                 waterfall_data,
                 f'{self.temp_dir}/waterfall.png',
-                {'title': 'Flujo de Rentabilidad (UYU)', 'height': 400}
+                {'title': 'Flujo de Rentabilidad (UYU)', **CHART_CONFIG['principal']}
             )
             charts_paths['waterfall_chart_path'] = waterfall_path
             logger.debug(f"✓ Waterfall generado: {waterfall_path}")
@@ -375,7 +382,7 @@ class ReportOrchestrator:
                         'donut',
                         donut_areas_data,
                         f'{self.temp_dir}/donut_areas.png',
-                        {'title': 'Distribución de Ingresos por Área', 'height': 350}
+                        {'title': 'Distribución de Ingresos por Área', **CHART_CONFIG['secundario']}
                     )
                     charts_paths['area_donut_chart_path'] = donut_areas_path
                     logger.info(f"✅ Donut áreas generado exitosamente: {donut_areas_path}")
@@ -405,7 +412,7 @@ class ReportOrchestrator:
                         'donut',
                         donut_loc_data,
                         f'{self.temp_dir}/donut_localidades.png',
-                        {'title': 'Distribución por Localidad', 'height': 350}
+                        {'title': 'Distribución por Localidad', **CHART_CONFIG['secundario']}
                     )
                     charts_paths['localidad_donut_chart_path'] = donut_loc_path
                     logger.info(f"✅ Donut localidades generado exitosamente: {donut_loc_path}")
@@ -444,7 +451,7 @@ class ReportOrchestrator:
                             ]
                         },
                         f'{self.temp_dir}/line_temporal.png',
-                        {'title': 'Evolución Temporal (3 meses)', 'height': 400}
+                        {'title': f'Evolución Temporal ({len(meses)} meses)', **CHART_CONFIG['principal']}
                     )
                     charts_paths['line_temporal_chart_path'] = line_temporal_path
                     logger.info(f"✅ Line chart temporal generado: {line_temporal_path}")
@@ -478,7 +485,7 @@ class ReportOrchestrator:
                             ]
                         },
                         f'{self.temp_dir}/bar_top_clientes.png',
-                        {'title': 'Top 10 Clientes por Facturación', 'height': 500}
+                        {'title': 'Top 10 Clientes por Facturación', **CHART_CONFIG['detalle']}
                     )
                     charts_paths['bar_top_clientes_chart_path'] = bar_clientes_path
                     logger.info(f"✅ Bar chart Top 10 generado: {bar_clientes_path}")

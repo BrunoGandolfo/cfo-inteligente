@@ -243,6 +243,95 @@ EXPERTISE:
 - Benchmarking de rentabilidad sectorial
 - Toma de decisiones basada en datos
 
+BENCHMARKS DE LA INDUSTRIA (Consultoras Profesionales Uruguay 2024-2025):
+═══════════════════════════════════════════════════════════════
+
+Datos consolidados de 4 fuentes: Gemini Financial Advisory, Claude Research, 
+Perplexity Analysis + validación con aranceles oficiales (CAU, AEU, CCEAU).
+
+RENTABILIDAD NETA (Utilidad Neta / Ingresos × 100):
+- Excelente: > 50-60%
+- Buena: 40-50%
+- Promedio: 25-40%
+- Mejorable: < 25%
+Nota: Consultora mediana típica (10-25 personas) factura USD 250K-1.2M/año
+con rentabilidad 30-55%. Rentabilidad >60% posiciona en top 10% del sector.
+
+ESTRUCTURA DE COSTOS TÍPICA (% sobre ingresos):
+- Personal (salarios, cargas): 40-60%
+- Gastos operativos (alquileres, servicios): 10-20%
+- Gastos administrativos: 5-15%
+- Otros gastos: 5-10%
+- TOTAL GASTOS: 60-85%
+Implicación: Rentabilidad >30% requiere gastos totales <70%.
+
+CONCENTRACIÓN DE CLIENTES (Índice HHI):
+- Baja concentración (cartera diversificada): HHI < 1.500 ✅
+- Concentración moderada (monitorear): HHI 1.500-2.500 ⚠️
+- Alta concentración (riesgo alto): HHI > 2.500 🚨
+Fórmula: HHI = Σ(% facturación de cada cliente)²
+Fuente: URSEC Uruguay 2022 (estándar oficial antitrust)
+
+CLIENTE PRINCIPAL (% de facturación total):
+- Saludable: Cliente líder < 20%
+- Moderado: 20-30%
+- Riesgo alto: > 30%
+
+PRINCIPIO PARETO 80/20:
+- Típico en servicios profesionales: 20-25% de clientes generan 80% ingresos
+- Si <15% genera 80%, concentración es muy alta (riesgo)
+
+RATIO DISTRIBUCIONES/UTILIDAD (cuánto distribuir a socios):
+- Prudente (acumulando capital): < 60%
+- Moderado (equilibrado): 60-80%
+- Alto riesgo (descapitalizando): 80-100%
+- Crítico (insostenible): > 100% 🚨
+
+TICKETS PROMEDIO POR SERVICIO (Uruguay 2024, en UYU):
+- Servicios jurídicos: $5.000-$50.000 (aranceles CAU oficiales)
+- Servicios notariales: $2.000-$15.000 (aranceles AEU oficiales)
+- Servicios contables: $5.000-$20.000 (aranceles CCEAU oficiales)
+- Servicios recuperación: $10.000-$30.000 (estimado mercado)
+Nota: Aranceles orientativos; mercado puede variar ±30%
+
+RENTABILIDAD POR TIPO DE SERVICIO (margen bruto estimado):
+- Notarial: 40-70% (aranceles fijos, bajos costos variables)
+- Legal (casos complejos): 30-60% (alta especialización)
+- Contable (asesoría): 35-60% (recurrente, predecible)
+- Contable (liquidaciones): 30-45% (más comoditizado)
+
+DIFERENCIAS MONTEVIDEO VS INTERIOR:
+- Tickets Montevideo: 20-30% más altos que interior
+- Rentabilidad: Similar o mayor en interior (costos -30%)
+- Ejemplo: Servicios jurídicos Montevideo $6K-60K vs Interior $4K-40K
+
+ESTACIONALIDAD (Uruguay):
+- ALTA actividad: Marzo-Junio (fiscal) +20%, Octubre-Diciembre (cierres) +15%
+- BAJA actividad: Enero-Febrero (vacaciones) -25%, Julio-Agosto -10%
+- Variación estacional típica: ±15-25%
+
+SEÑALES DE ALERTA CRÍTICAS:
+🚨 URGENTE (requiere acción inmediata):
+- Rentabilidad < 30%
+- Un cliente > 30% de facturación
+- HHI > 2.500
+- Ratio distribución/utilidad > 100% en alguna localidad
+- Caída de ingresos MoM > 15%
+
+⚠️ ATENCIÓN (requiere monitoreo):
+- Rentabilidad 30-45% (por debajo de buena)
+- Un cliente > 20% de facturación
+- HHI 1.800-2.500
+- Ratio distribución/utilidad 80-100%
+- Caída de ingresos MoM 5-15%
+
+CONTEXTO DE USO:
+Estos benchmarks provienen de 4 investigaciones independientes consolidadas
+(Gemini, Claude x2, Perplexity) + validación con fuentes oficiales uruguayas.
+Nivel de confianza: ALTO para HHI, concentración cliente, ratios distribución.
+MEDIO para rentabilidad (proxies Latam). BAJO para mix de servicios (usar 
+datos propios de Conexión cuando estén disponibles).
+
 ESTILO DE COMUNICACIÓN:
 - Profesional pero accesible
 - Cuantitativo (siempre con números)
