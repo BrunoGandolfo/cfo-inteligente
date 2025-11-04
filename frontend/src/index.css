@@ -45,4 +45,13 @@
     font-variant-numeric: proportional-nums;
     font-feature-settings: "pnum" 1;
   }
+  
+  /* Animation delays para loading dots */
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
 }

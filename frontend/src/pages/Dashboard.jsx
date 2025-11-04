@@ -13,7 +13,8 @@ import ChartsSection from '../components/charts/ChartsSection';
 import { useOperations } from '../hooks/useOperations';
 import { useChartData } from '../hooks/useChartData';
 import ActiveFilters from '../components/filters/ActiveFilters';
-import { FileText } from 'lucide-react';
+import { FileText, TrendingUp, TrendingDown, Wallet, Users } from 'lucide-react';
+import OperationButton from '../components/operations/OperationButton';
 
 function Dashboard() {
   const [showIngreso, setShowIngreso] = useState(false);
@@ -73,74 +74,56 @@ function Dashboard() {
               <span className="inline xl:hidden">Reporte</span>
             </button>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xl:gap-4">
-            <button
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-5">
+            
+            <OperationButton
+              variant="ingreso"
+              title="Registrar Ingreso"
+              description="Facturación, cobros y ventas del estudio"
+              lastActivity="$1.234.567 - 2 Nov"
+              shortcut="⌘ + 1"
+              icon={TrendingUp}
               onClick={() => setShowIngreso(true)}
+              loading={loadingIngreso}
               disabled={loadingIngreso}
-              className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border-2 border-emerald-400 dark:border-emerald-600 rounded-xl p-4 xl:p-6 hover:shadow-2xl hover:scale-105 hover:border-emerald-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="flex flex-col items-center justify-center text-center space-y-3">
-                <div className="w-12 h-12 bg-emerald-500 dark:bg-emerald-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </div>
-                <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                  {loadingIngreso ? 'Procesando...' : 'Ingreso'}
-                </span>
-              </div>
-            </button>
-
-            <button
+            />
+            
+            <OperationButton
+              variant="gasto"
+              title="Registrar Gasto"
+              description="Gastos operativos, servicios y honorarios"
+              lastActivity="$456.890 - 3 Nov"
+              shortcut="⌘ + 2"
+              icon={TrendingDown}
               onClick={() => setShowGasto(true)}
+              loading={loadingGasto}
               disabled={loadingGasto}
-              className="group relative overflow-hidden bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-2 border-red-400 dark:border-red-600 rounded-xl p-4 xl:p-6 hover:shadow-2xl hover:scale-105 hover:border-red-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="flex flex-col items-center justify-center text-center space-y-3">
-                <div className="w-12 h-12 bg-red-500 dark:bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                  </svg>
-                </div>
-                <span className="text-sm font-semibold text-red-700 dark:text-red-300">
-                  {loadingGasto ? 'Procesando...' : 'Gasto'}
-                </span>
-              </div>
-            </button>
-
-            <button
+            />
+            
+            <OperationButton
+              variant="retiro"
+              title="Retiro de Socios"
+              description="Retiros vinculados a operaciones de la empresa"
+              lastActivity="$789.012 - 28 Oct"
+              shortcut="⌘ + 3"
+              icon={Wallet}
               onClick={() => setShowRetiro(true)}
+              loading={loadingRetiro}
               disabled={loadingRetiro}
-              className="group relative overflow-hidden bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-2 border-amber-400 dark:border-amber-600 rounded-xl p-4 xl:p-6 hover:shadow-2xl hover:scale-105 hover:border-amber-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="flex flex-col items-center justify-center text-center space-y-3">
-                <div className="w-12 h-12 bg-amber-500 dark:bg-amber-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-                  {loadingRetiro ? 'Procesando...' : 'Retiro'}
-                </span>
-              </div>
-            </button>
-
-            <button
+            />
+            
+            <OperationButton
+              variant="distribucion"
+              title="Distribución de Utilidades"
+              description="Distribución mensual de utilidades entre socios"
+              lastActivity="$3.456.789 - 1 Oct"
+              shortcut="⌘ + 4"
+              icon={Users}
               onClick={() => setShowDistrib(true)}
+              loading={loadingDistrib}
               disabled={loadingDistrib}
-              className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-2 border-blue-400 dark:border-blue-600 rounded-xl p-4 xl:p-6 hover:shadow-2xl hover:scale-105 hover:border-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="flex flex-col items-center justify-center text-center space-y-3">
-                <div className="w-12 h-12 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
-                  {loadingDistrib ? 'Procesando...' : 'Distribución'}
-                </span>
-              </div>
-            </button>
+            />
+            
           </div>
         </div>
       </section>
