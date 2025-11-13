@@ -158,15 +158,66 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
    - Ejemplo CORRECTO "trimestre actual":
      WHERE DATE_TRUNC('quarter', fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
 
-10. UNION ALL Y ORDER BY:
-   - Si usas UNION ALL: NO uses ORDER BY con CASE WHEN socio = 'TOTAL'
-   - PostgreSQL requiere ORDER BY solo con nombres de columnas después de UNION
-   - NUNCA: ORDER BY CASE WHEN socio = 'TOTAL' THEN 1 ELSE 0 END
-   - Para ordenar TOTAL al final: usar subquery o CTE
-   - Ejemplo CORRECTO con subquery:
+10. UNION ALL CON FILA DE TOTAL:
+   - Para mostrar TOTAL al final después de UNION ALL: usa columna auxiliar de ordenamiento
+   - Agrega columna 'orden' a cada SELECT: 0 para filas normales, 1 para TOTAL
+   - Luego ordena por: ORDER BY orden, socio
+   - Ejemplo CORRECTO:
      SELECT * FROM (
-       SELECT ... UNION ALL SELECT 'TOTAL' AS socio, ...
-     ) t ORDER BY socio
+       SELECT 0 AS orden, socio, total_uyu, total_usd FROM por_socio
+       UNION ALL
+       SELECT 1 AS orden, socio, total_uyu, total_usd FROM total_general
+     ) t ORDER BY orden, socio
+
+11. TOTALES DE DISTRIBUCIONES:
+   - Para totales de distribuciones: SIEMPRE sumar distribuciones_detalle.monto_uyu
+   - NUNCA sumar operaciones.monto_uyu para totales (puede tener redondeo)
+   - operaciones.monto_uyu = total de la operación (referencial)
+   - distribuciones_detalle.monto_uyu = desglose exacto por socio (fuente de verdad)
+   - Ejemplo CORRECTO para "total distribuido":
+     SELECT SUM(dd.monto_uyu) AS total_uyu
+     FROM distribuciones_detalle dd
+     INNER JOIN operaciones o ON dd.operacion_id = o.id
+     WHERE o.tipo_operacion = 'DISTRIBUCION'
+       AND o.deleted_at IS NULL
+       AND o.fecha >= ...
+   - Esto garantiza que: SUM(por_socio) = total_general
+
+EJEMPLO COMPLETO - DISTRIBUCIONES CON TOTAL:
+Pregunta: "¿Cuánto se distribuyó en los últimos 3 meses por socio?"
+
+Query CORRECTO:
+WITH distribuciones_periodo AS (
+    SELECT o.id
+    FROM operaciones o
+    WHERE o.tipo_operacion = 'DISTRIBUCION'
+        AND o.deleted_at IS NULL
+        AND o.fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '3 months'
+        AND o.fecha < DATE_TRUNC('month', CURRENT_DATE)
+),
+por_socio AS (
+    SELECT 0 AS orden, s.nombre AS socio, 
+           SUM(dd.monto_uyu) AS total_uyu, 
+           SUM(dd.monto_usd) AS total_usd
+    FROM distribuciones_detalle dd
+    INNER JOIN socios s ON dd.socio_id = s.id
+    INNER JOIN distribuciones_periodo dp ON dd.operacion_id = dp.id
+    GROUP BY s.nombre
+),
+total_general AS (
+    SELECT 1 AS orden, 'TOTAL' AS socio,
+           SUM(dd.monto_uyu) AS total_uyu,
+           SUM(dd.monto_usd) AS total_usd
+    FROM distribuciones_detalle dd
+    INNER JOIN distribuciones_periodo dp ON dd.operacion_id = dp.id
+)
+SELECT socio, total_uyu, total_usd 
+FROM (
+    SELECT * FROM por_socio
+    UNION ALL
+    SELECT * FROM total_general
+) t
+ORDER BY orden, socio;
 
 IMPORTANTE: Si una query viola alguna de estas reglas, usar approach alternativo más seguro.
 """
