@@ -80,7 +80,8 @@ REGLAS SQL CRÍTICAS:
 • Para comparaciones "este X vs anterior": usar DATE_TRUNC y LIMIT con ORDER BY DESC
 • Para "mejor/peor": ORDER BY + LIMIT 1
 • Para "cómo venimos/estamos": mostrar ingresos, gastos, resultado y rentabilidad
-• Para trimestre actual: DATE_TRUNC('quarter', CURRENT_DATE)
+• Para "trimestre actual/trimestre fiscal": DATE_TRUNC('quarter', CURRENT_DATE)
+• Para "últimos X meses" (ventana rodante): fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL 'X months'
 • Para mes actual: DATE_TRUNC('month', CURRENT_DATE)
 • Para año actual: DATE_TRUNC('year', CURRENT_DATE)
 • Los nombres de localidades son MAYÚSCULAS: 'MONTEVIDEO', 'MERCEDES'
@@ -145,6 +146,27 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
    - SOLO filtrar por moneda_original si pregunta pide explícitamente "operaciones emitidas en USD"
    - Ejemplo CORRECTO: "Facturación en USD" = SUM(monto_usd)
    - Ejemplo INCORRECTO: SUM(CASE WHEN moneda_original='USD' THEN monto_usd ELSE 0 END)
+
+9. PERÍODOS RODANTES VS TRIMESTRES:
+   - "últimos X meses" = ventana RODANTE desde mes actual hacia atrás
+   - NUNCA usar DATE_TRUNC('quarter') para "últimos X meses"
+   - Usar: fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL 'X months'
+   - "trimestre actual" = DATE_TRUNC('quarter', CURRENT_DATE)
+   - Ejemplo CORRECTO "últimos 3 meses":
+     WHERE fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '3 months'
+       AND fecha < DATE_TRUNC('month', CURRENT_DATE)
+   - Ejemplo CORRECTO "trimestre actual":
+     WHERE DATE_TRUNC('quarter', fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
+
+10. UNION ALL Y ORDER BY:
+   - Si usas UNION ALL: NO uses ORDER BY con CASE WHEN socio = 'TOTAL'
+   - PostgreSQL requiere ORDER BY solo con nombres de columnas después de UNION
+   - NUNCA: ORDER BY CASE WHEN socio = 'TOTAL' THEN 1 ELSE 0 END
+   - Para ordenar TOTAL al final: usar subquery o CTE
+   - Ejemplo CORRECTO con subquery:
+     SELECT * FROM (
+       SELECT ... UNION ALL SELECT 'TOTAL' AS socio, ...
+     ) t ORDER BY socio
 
 IMPORTANTE: Si una query viola alguna de estas reglas, usar approach alternativo más seguro.
 """
