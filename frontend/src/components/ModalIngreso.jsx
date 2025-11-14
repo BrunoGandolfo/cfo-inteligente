@@ -16,12 +16,14 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
     descripcion: ''
   });
   
-  // Solo áreas productivas que generan ingresos (NO Gastos Generales ni Otros)
+  // Áreas productivas que generan ingresos + Otros
+  // Filosofía DHH: Convención explícita sobre configuración
   const [areas] = useState([
     { id: 'd3aff49c-748c-4d1d-bc47-cdda1cfb913d', nombre: 'Jurídica' },
     { id: '53ba7821-8836-4e74-ad56-a288d290881d', nombre: 'Notarial' },
     { id: '14700c01-3b3d-49c6-8e2e-f3ebded1b1bb', nombre: 'Contable' },
-    { id: '11c64c64-c7f6-4e85-9c26-b577c3d7a5b7', nombre: 'Recuperación' }
+    { id: '11c64c64-c7f6-4e85-9c26-b577c3d7a5b7', nombre: 'Recuperación' },
+    { id: '651dfb5c-15d8-41e2-8339-785b137f44f2', nombre: 'Otros' }
   ]);
   
   const [localLoading, setLocalLoading] = useState(false);
@@ -152,13 +154,14 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Cliente</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Cliente *</label>
         <input
           type="text"
+          required
           value={formData.cliente}
           onChange={(e) => setFormData({...formData, cliente: e.target.value})}
           className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-          placeholder="Opcional"
+          placeholder="Nombre del cliente"
         />
       </div>
 

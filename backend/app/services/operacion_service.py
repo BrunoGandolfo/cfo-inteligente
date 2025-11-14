@@ -78,9 +78,12 @@ def crear_gasto(db: Session, data: GastoCreate):
     )
 
 def crear_retiro(db: Session, data: RetiroCreate):
-    # Retiro de efectivo - registro simple
-    area_gastos = db.query(Area).filter(Area.nombre == "Gastos Generales").first()
+    """
+    Crear retiro de efectivo (movimiento financiero).
     
+    RETIRO no necesita área - es un movimiento de caja, no una operación operativa.
+    Filosofía DHH: NULL = no aplica, no forzar "Gastos Generales".
+    """
     # Determinar montos
     if data.monto_uyu and data.monto_usd:
         monto_uyu = data.monto_uyu
@@ -106,7 +109,7 @@ def crear_retiro(db: Session, data: RetiroCreate):
         tipo_cambio=data.tipo_cambio,
         monto_uyu=monto_uyu,
         monto_usd=monto_usd,
-        area_id=area_gastos.id,
+        area_id=None,  # RETIRO no necesita área
         localidad=Localidad[data.localidad.upper().replace(" ", "_")],
         descripcion=data.descripcion
     )
@@ -117,9 +120,12 @@ def crear_retiro(db: Session, data: RetiroCreate):
     return operacion
 
 def crear_distribucion(db: Session, data: DistribucionCreate):
-    # Distribución de utilidades - registrar por socio
-    area_gastos = db.query(Area).filter(Area.nombre == "Gastos Generales").first()
+    """
+    Crear distribución de utilidades a socios (movimiento financiero).
     
+    DISTRIBUCION no necesita área - es reparto de efectivo, no una operación operativa.
+    Filosofía DHH: NULL = no aplica, no forzar "Gastos Generales".
+    """
     # Calcular totales sumando todos los montos de los 5 socios
     total_uyu = (
         (data.agustina_uyu or 0) +
@@ -152,7 +158,7 @@ def crear_distribucion(db: Session, data: DistribucionCreate):
         tipo_cambio=data.tipo_cambio,
         monto_uyu=total_uyu,
         monto_usd=total_usd,
-        area_id=area_gastos.id,
+        area_id=None,  # DISTRIBUCION no necesita área
         localidad=Localidad[data.localidad.upper().replace(" ", "_")],
         descripcion="Distribución de utilidades"
     )

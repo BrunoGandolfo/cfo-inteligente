@@ -115,8 +115,9 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
             conversacion_id = data.conversation_id
             logger.info(f"Continuando conversación {conversacion_id}")
             
-            # Obtener contexto de mensajes previos (últimos 10)
-            contexto = ConversacionService.obtener_contexto(db, conversacion_id, limite=10)
+            # Obtener contexto de mensajes previos (últimos 20)
+            # Límite aumentado a 20 mensajes (10 intercambios) para análisis complejos
+            contexto = ConversacionService.obtener_contexto(db, conversacion_id, limite=20)
             logger.info(f"Contexto cargado: {len(contexto)} mensajes previos")
         else:
             # Crear nueva conversación INMEDIATAMENTE (antes de generar SQL)

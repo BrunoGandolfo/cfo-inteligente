@@ -4,16 +4,8 @@ import { formatDateTime, deriveTipoCambio } from '../../utils/formatters';
 
 export function OperationDetails({ open, onClose, op }) {
   if (!op) return null;
-  const AREAS_MAP = {
-    'd3aff49c-748c-4d1d-bc47-cdda1cfb913d': 'Jurídica',
-    '53ba7821-8836-4e74-ad56-a288d290881d': 'Notarial',
-    '14700c01-3b3d-49c6-8e2e-f3ebded1b1bb': 'Contable',
-    '11c64c64-c7f6-4e85-9c26-b577c3d7a5b7': 'Recuperación',
-    'b11006d3-6cfc-4766-9201-ab56274401a6': 'Gastos Generales',
-    '651dfb5c-15d8-41e2-8339-785b137f44f2': 'Otros'
-  };
   const tc = deriveTipoCambio(op);
-  const areaNombre = AREAS_MAP[op.area_id] || 'Sin área';
+  const areaNombre = op.area?.nombre || 'Sin área';
   return (
     <Modal open={open} onClose={onClose} title="Detalle de Operación">
       <div className="grid grid-cols-2 gap-4 mb-6">

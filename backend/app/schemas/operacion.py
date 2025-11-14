@@ -1,8 +1,9 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, field_validator
 from datetime import date
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
+from app.models.operacion import TipoOperacion
 
 class OperacionBase(BaseModel):
     fecha: date
@@ -18,7 +19,7 @@ class OperacionBase(BaseModel):
 class IngresoCreate(OperacionBase):
     monto_original: Decimal
     moneda_original: str  # UYU o USD
-    area_id: UUID
+    area_id: UUID  # Obligatorio para INGRESO
     cliente: Optional[str] = None
     cliente_telefono: Optional[str] = None
     descripcion: Optional[str] = None
@@ -28,11 +29,21 @@ class IngresoCreate(OperacionBase):
         if v <= 0:
             raise ValueError('El monto debe ser positivo')
         return v
+    
+    @validator('area_id')
+    def area_obligatoria_ingreso(cls, v):
+        """
+        Regla de negocio: INGRESO debe tener área asignada.
+        Filosofía DHH: Validación explícita en el lugar correcto.
+        """
+        if v is None:
+            raise ValueError('INGRESO debe tener área asignada')
+        return v
 
 class GastoCreate(OperacionBase):
     monto_original: Decimal
     moneda_original: str  # UYU o USD
-    area_id: UUID
+    area_id: UUID  # Obligatorio para GASTO
     proveedor: Optional[str] = None
     proveedor_telefono: Optional[str] = None
     descripcion: Optional[str] = None
@@ -41,6 +52,16 @@ class GastoCreate(OperacionBase):
     def monto_positivo(cls, v):
         if v <= 0:
             raise ValueError('El monto debe ser positivo')
+        return v
+    
+    @validator('area_id')
+    def area_obligatoria_gasto(cls, v):
+        """
+        Regla de negocio: GASTO debe tener área asignada.
+        Filosofía DHH: Validación explícita en el lugar correcto.
+        """
+        if v is None:
+            raise ValueError('GASTO debe tener área asignada')
         return v
 
 class RetiroCreate(OperacionBase):

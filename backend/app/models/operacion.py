@@ -31,7 +31,7 @@ class Operacion(Base):
     tipo_cambio = Column(Numeric(10, 4), nullable=False)
     monto_uyu = Column(Numeric(15, 2), nullable=False)
     monto_usd = Column(Numeric(15, 2), nullable=False)
-    area_id = Column(UUID(as_uuid=True), ForeignKey("areas.id"), nullable=False)
+    area_id = Column(UUID(as_uuid=True), ForeignKey("areas.id"), nullable=True)
     localidad = Column(Enum(Localidad), nullable=False)
     descripcion = Column(String(500))
     cliente = Column(String(200))

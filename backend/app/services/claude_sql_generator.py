@@ -183,6 +183,29 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
        AND o.fecha >= ...
    - Esto garantiza que: SUM(por_socio) = total_general
 
+12. DISTRIBUCIONES CON FILTROS TEMPORALES (CRÍTICO):
+   - PROBLEMA IDENTIFICADO: LEFT JOIN con filtros temporales en ON causa errores del 49%
+   - Para consultas de distribuciones filtradas por año/mes/período:
+     * Empezar FROM distribuciones_detalle (NO desde socios)
+     * Usar INNER JOIN (NO LEFT JOIN) para relacionar con operaciones
+     * Filtros temporales SIEMPRE en WHERE cláusula (NUNCA en ON cláusula)
+   - LEFT JOIN solo si la pregunta EXPLÍCITAMENTE pide incluir socios SIN distribuciones
+   - Ejemplo CORRECTO "distribuciones por socio en 2024":
+     SELECT s.nombre, SUM(dd.monto_uyu) as total
+     FROM distribuciones_detalle dd
+     INNER JOIN operaciones o ON dd.operacion_id = o.id
+     INNER JOIN socios s ON dd.socio_id = s.id
+     WHERE o.tipo_operacion = 'DISTRIBUCION'
+       AND o.deleted_at IS NULL
+       AND EXTRACT(YEAR FROM o.fecha) = 2024
+     GROUP BY s.nombre
+   - Ejemplo INCORRECTO (NO HACER - suma años incorrectos):
+     FROM socios s
+     LEFT JOIN distribuciones_detalle dd ON s.id = dd.socio_id
+     LEFT JOIN operaciones o ON dd.operacion_id = o.id
+       AND EXTRACT(YEAR FROM o.fecha) = 2024  -- ❌ Filtro en ON incluye otros años
+   - Causa del error: LEFT JOIN mantiene filas sin match, sumando distribuciones de todos los años
+
 EJEMPLO COMPLETO - DISTRIBUCIONES CON TOTAL:
 Pregunta: "¿Cuánto se distribuyó en los últimos 3 meses por socio?"
 
