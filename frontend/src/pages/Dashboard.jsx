@@ -31,6 +31,12 @@ function Dashboard() {
   const { operacionesAll, refetch } = useOperations(refreshKey);
   const { operaciones: chartData, loading: chartLoading } = useChartData();
 
+  // Helper function para obtener nombre del mes actual
+  const getCurrentMonthName = () => {
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return months[new Date().getMonth()];
+  };
+
   // 🔍 DIAGNÓSTICO Dashboard
   console.log('🏠 DASHBOARD - Estado actual:');
   console.log('  refreshKey:', refreshKey);
@@ -80,7 +86,7 @@ function Dashboard() {
               variant="ingreso"
               title="Registrar Ingreso"
               description="Facturación, cobros y ventas del estudio"
-              lastActivity="$1.234.567 - 2 Nov"
+              lastActivity={`${getCurrentMonthName()} ${new Date().getFullYear()}: ${formatMoney(ingresosVal, moneda)}`}
               shortcut="⌘ + 1"
               icon={TrendingUp}
               onClick={() => setShowIngreso(true)}
@@ -92,7 +98,7 @@ function Dashboard() {
               variant="gasto"
               title="Registrar Gasto"
               description="Gastos operativos, servicios y honorarios"
-              lastActivity="$456.890 - 3 Nov"
+              lastActivity={`${getCurrentMonthName()} ${new Date().getFullYear()}: ${formatMoney(gastosVal, moneda)}`}
               shortcut="⌘ + 2"
               icon={TrendingDown}
               onClick={() => setShowGasto(true)}
@@ -102,9 +108,9 @@ function Dashboard() {
             
             <OperationButton
               variant="retiro"
-              title="Retiro de Socios"
+              title="Retiro de Empresa"
               description="Retiros vinculados a operaciones de la empresa"
-              lastActivity="$789.012 - 28 Oct"
+              lastActivity="Se realiza a fin de mes"
               shortcut="⌘ + 3"
               icon={Wallet}
               onClick={() => setShowRetiro(true)}
@@ -116,7 +122,7 @@ function Dashboard() {
               variant="distribucion"
               title="Distribución de Utilidades"
               description="Distribución mensual de utilidades entre socios"
-              lastActivity="$3.456.789 - 1 Oct"
+              lastActivity="Se realiza a fin de mes"
               shortcut="⌘ + 4"
               icon={Users}
               onClick={() => setShowDistrib(true)}
