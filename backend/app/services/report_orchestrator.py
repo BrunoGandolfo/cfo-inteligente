@@ -191,8 +191,11 @@ class ReportOrchestrator:
             # Obtener histórico para proyecciones si está activado
             historico_mensual = None
             if request.options.incluir_proyecciones:
-                historico_mensual = self.repo.get_ingresos_mensuales_historico(meses=12)
-                logger.info(f"✓ Histórico mensual: {len(historico_mensual)} meses")
+                historico_mensual = self.repo.get_ingresos_mensuales_historico(
+                    fecha_fin_reporte=fecha_fin,
+                    meses=12
+                )
+                logger.info(f"✓ Histórico obtenido: {len(historico_mensual)} meses hasta {fecha_fin}")
             
             # ═══════════════════════════════════════════════════════════════
             # PASO 4: VALIDAR DATOS
@@ -241,23 +244,50 @@ class ReportOrchestrator:
                 logger.info("PASO 7: Generando insights con IA")
                 try:
                     duracion_dias = (fecha_fin - fecha_inicio).days + 1
+                    
+                    # Calcular métricas de comparación si disponibles
+                    metricas_comparacion = None
+                    if operaciones_comparacion:
+                        logger.info("  → Calculando métricas de comparación para insights")
+                        comp_aggregator = MetricsAggregator(
+                            operaciones=operaciones_comparacion,
+                            fecha_inicio=fecha_inicio_comp,
+                            fecha_fin=fecha_fin_comp
+                        )
+                        metricas_comparacion = comp_aggregator.aggregate_all()
+                        logger.info(f"  ✓ Métricas comparación calculadas")
+                    
+                    # Generar insights con Claude
                     insights = self.insights_orchestrator.generate_all(
                         metricas=metricas,
                         duracion_dias=duracion_dias,
                         tiene_comparacion=bool(operaciones_comparacion),
-                        metricas_comparacion=None,  # TODO: Si necesario
+                        metricas_comparacion=metricas_comparacion,
                         timeout=30,
                         usar_ia=True
                     )
-                    logger.info("✓ Insights generados")
+                    
+                    # Validar que insights no estén vacíos
+                    if not insights or len(insights) == 0:
+                        logger.warning("  ⚠️ Claude retornó insights vacíos")
+                        raise ValueError("Insights vacíos")
+                    
+                    logger.info(f"✓ Insights generados con IA: {len(insights)} insights")
                     
                     # Check si usó fallback
                     if insights.get('_generated_by') == 'fallback':
                         warnings.append("Insights generados sin IA (fallback)")
                         
                 except Exception as e:
-                    logger.warning(f"Error generando insights: {e}")
-                    warnings.append(f"Insights no disponibles: {str(e)}")
+                    logger.error(f"  ❌ Error generando insights con IA: {e}")
+                    logger.warning("  → Usando insights algorítmicos de fallback")
+                    
+                    # Generar insights sin IA (fallback robusto)
+                    insights = self._generate_fallback_insights(metricas, duracion_dias)
+                    
+                    warnings.append(
+                        f"Insights generados algorítmicamente (Claude API: {str(e)[:100]})"
+                    )
             else:
                 logger.info("PASO 7: Insights IA desactivados")
             
@@ -538,4 +568,35 @@ class ReportOrchestrator:
                 logger.warning(f"No se pudo eliminar directorio temporal: {e}")
         
         self.temp_dir = None
+    
+    def _generate_fallback_insights(
+        self, 
+        metricas: Dict[str, Any], 
+        duracion_dias: int
+    ) -> Dict[str, str]:
+        """
+        Genera insights algorítmicos cuando Claude falla.
+        
+        Args:
+            metricas: Dict con métricas calculadas
+            duracion_dias: Duración del período
+            
+        Returns:
+            Dict con insights generados sin IA
+        """
+        from app.services.ai.fallback_generator import (
+            generate_operativo_fallback,
+            generate_estrategico_fallback
+        )
+        
+        logger.info(f"  → Generando fallback para período de {duracion_dias} días")
+        
+        if duracion_dias <= 45:
+            insights = generate_operativo_fallback(metricas)
+            logger.info("  → Fallback operativo generado")
+        else:
+            insights = generate_estrategico_fallback(metricas)
+            logger.info("  → Fallback estratégico generado")
+        
+        return insights
 

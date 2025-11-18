@@ -46,10 +46,10 @@ def parse_insights_response(response: str) -> Dict[str, str]:
     try:
         parsed = json.loads(response)
         if isinstance(parsed, dict):
-            logger.info(f"JSON parseado directamente: {len(parsed)} keys")
+            logger.info(f"✓ JSON parseado directamente: {len(parsed)} keys")
             return parsed
-    except json.JSONDecodeError:
-        pass
+    except json.JSONDecodeError as e:
+        logger.debug(f"No es JSON directo: {str(e)[:100]}")
     
     # INTENTO 2: JSON en markdown (```json ... ```)
     json_match = re.search(
@@ -63,10 +63,10 @@ def parse_insights_response(response: str) -> Dict[str, str]:
         try:
             parsed = json.loads(json_str)
             if isinstance(parsed, dict):
-                logger.info(f"JSON parseado desde markdown: {len(parsed)} keys")
+                logger.info(f"✓ JSON parseado desde markdown: {len(parsed)} keys")
                 return parsed
         except json.JSONDecodeError as e:
-            logger.warning(f"JSON en markdown inválido: {e}")
+            logger.debug(f"JSON en markdown inválido: {str(e)[:100]}")
     
     # INTENTO 3: Buscar JSON en cualquier parte del texto
     # A veces Claude envuelve JSON en texto explicativo
@@ -79,10 +79,10 @@ def parse_insights_response(response: str) -> Dict[str, str]:
             json_str = response[start:end]
             parsed = json.loads(json_str)
             if isinstance(parsed, dict):
-                logger.info(f"JSON encontrado en texto: {len(parsed)} keys")
+                logger.info(f"✓ JSON encontrado en texto: {len(parsed)} keys")
                 return parsed
-    except (json.JSONDecodeError, ValueError):
-        pass
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.debug(f"No se pudo extraer JSON del texto: {str(e)[:100]}")
     
     # INTENTO 4: Parsear como texto plano (fallback)
     logger.warning("No se pudo parsear JSON, intentando extracción de texto")

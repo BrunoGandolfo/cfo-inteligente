@@ -8,7 +8,7 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from pathlib import Path
 from datetime import datetime
 from decimal import Decimal
@@ -16,9 +16,16 @@ import os
 import base64
 
 from app.services.pdf.template_renderer import TemplateRenderer
-from app.services.pdf.pdf_compiler import PDFCompiler
+from app.services.pdf.pdf_compiler_playwright import PlaywrightPDFCompiler
 from app.core.logger import get_logger
 from app.core.exceptions import PDFGenerationError
+from app.utils.narrative_builder import (
+    build_revenue_commentary,
+    build_expense_commentary,
+    build_margin_commentary,
+    build_area_commentary
+)
+from app.services.analytics.variance_detector import VarianceDetector
 
 logger = get_logger(__name__)
 
@@ -74,9 +81,9 @@ class ReportBuilder:
         
         # Componentes (Composition)
         self.renderer = TemplateRenderer(self.templates_dir)
-        self.compiler = PDFCompiler()
+        self.compiler = PlaywrightPDFCompiler()
         
-        logger.info(f"ReportBuilder inicializado: templates={self.templates_dir}, output={self.output_dir}")
+        logger.info(f"ReportBuilder inicializado con Playwright: templates={self.templates_dir}, output={self.output_dir}")
     
     def build(
         self,
@@ -122,10 +129,27 @@ class ReportBuilder:
             metricas = self._convert_decimals_to_float(metricas)
             
             # ═══════════════════════════════════════════════════════════════
-            # PASO 1: PREPARAR CONTEXTO
+            # PASO 1: DETECTAR VARIANZAS (si hay comparación)
             # ═══════════════════════════════════════════════════════════════
             
-            context = self._prepare_context(metricas, charts_paths, insights)
+            variances_criticas = []
+            if metricas.get('tiene_comparacion'):
+                logger.info("Detectando variaciones significativas...")
+                # Necesitamos recalcular métricas del período anterior
+                # Por ahora, usar None (mejora futura: recibir como parámetro)
+                # La detección se hará solo con las variaciones ya calculadas
+                detector = VarianceDetector(threshold_percent=10.0, threshold_margin_pp=5.0)
+                # Como no tenemos metricas_anterior completas, crear dict mínimo
+                metricas_anterior_proxy = self._build_anterior_proxy(metricas)
+                if metricas_anterior_proxy:
+                    variances_criticas = detector.detect_variances(metricas, metricas_anterior_proxy)
+                    logger.info(f"✓ Variaciones detectadas: {len(variances_criticas)}")
+            
+            # ═══════════════════════════════════════════════════════════════
+            # PASO 2: PREPARAR CONTEXTO
+            # ═══════════════════════════════════════════════════════════════
+            
+            context = self._prepare_context(metricas, charts_paths, insights, variances_criticas)
             
             logger.debug(f"Contexto preparado: {len(context)} variables")
             
@@ -202,7 +226,8 @@ class ReportBuilder:
         self,
         metricas: Dict[str, Any],
         charts_paths: Optional[Dict[str, str]],
-        insights: Optional[Dict[str, str]]
+        insights: Optional[Dict[str, str]],
+        variances: Optional[List[Dict]] = None
     ) -> Dict[str, Any]:
         """
         Prepara contexto completo para template.
@@ -238,6 +263,9 @@ class ReportBuilder:
             
             # Comparación
             'tiene_comparacion': metricas.get('tiene_comparacion', False),
+            'variacion_mom_ingresos': metricas.get('variacion_mom_ingresos'),
+            'variacion_mom_gastos': metricas.get('variacion_mom_gastos'),
+            'variacion_mom_rentabilidad': metricas.get('variacion_mom_rentabilidad'),
             
             # Logo
             'logo_base64': logo_base64,
@@ -250,6 +278,16 @@ class ReportBuilder:
             
             # Insights
             'insights': insights or {},
+            
+            # Commentary narrativo
+            'revenue_commentary': build_revenue_commentary(metricas),
+            'expense_commentary': build_expense_commentary(metricas),
+            'margin_commentary': build_margin_commentary(metricas),
+            'area_commentary': build_area_commentary(metricas),
+            
+            # Variance analysis
+            'variances_criticas': variances or [],
+            'threshold_percent': 10.0,  # Para mostrar en template
             
             # Datos preparados para componentes
             'metrics': self._prepare_summary_metrics(metricas),
@@ -427,6 +465,45 @@ class ReportBuilder:
             'keywords': 'CFO, Finanzas, Reporte, Análisis, Conexión Consultora',
             'creator': 'Sistema CFO Inteligente - Conexión Consultora',
             'producer': 'WeasyPrint + PyPDF'
+        }
+    
+    def _build_anterior_proxy(self, metricas: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Construye dict proxy de métricas anteriores usando variaciones.
+        
+        Args:
+            metricas: Métricas actuales con variaciones calculadas
+            
+        Returns:
+            Dict con métricas anteriores reconstruidas o None
+        """
+        var_ingresos = metricas.get('variacion_mom_ingresos')
+        var_gastos = metricas.get('variacion_mom_gastos')
+        
+        if var_ingresos is None and var_gastos is None:
+            return None
+        
+        # Reconstruir valores anteriores usando variación
+        ingresos_actual = metricas.get('ingresos_uyu', 0)
+        gastos_actual = metricas.get('gastos_uyu', 0)
+        margen_neto_actual = metricas.get('margen_neto', 0)
+        
+        # Si variacion = (actual - anterior) / anterior * 100
+        # Entonces: anterior = actual / (1 + variacion/100)
+        ingresos_anterior = ingresos_actual / (1 + var_ingresos/100) if var_ingresos else ingresos_actual
+        gastos_anterior = gastos_actual / (1 + var_gastos/100) if var_gastos else gastos_actual
+        
+        var_margen = metricas.get('variacion_mom_rentabilidad', 0)
+        margen_neto_anterior = margen_neto_actual - var_margen
+        
+        return {
+            'ingresos_uyu': ingresos_anterior,
+            'gastos_uyu': gastos_anterior,
+            'margen_neto': margen_neto_anterior,
+            'porcentaje_ingresos_por_area': metricas.get('porcentaje_ingresos_por_area', {}),
+            'variacion_mom_ingresos': var_ingresos,
+            'variacion_mom_gastos': var_gastos,
+            'variacion_mom_rentabilidad': var_margen
         }
     
     def _generate_filename(self, metricas: Dict[str, Any]) -> str:

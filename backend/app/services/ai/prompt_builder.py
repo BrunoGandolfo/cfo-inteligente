@@ -64,12 +64,21 @@ RESTRICCIONES:
 ✅ SÍ da recomendaciones tácticas
 ✅ SÍ compara con benchmarks si aplica
 
-FORMATO DE SALIDA (JSON):
+FORMATO DE SALIDA - INSTRUCCIÓN CRÍTICA:
+Responde ÚNICAMENTE con JSON válido.
+❌ NO agregues texto antes del JSON
+❌ NO agregues texto después del JSON  
+❌ NO uses bloques markdown (```json)
+✅ Inicia tu respuesta DIRECTAMENTE con {{
+✅ Termina tu respuesta DIRECTAMENTE con }}
+
 {{
   "insight_1": "Texto del insight 1 (max 120 palabras)",
   "insight_2": "Texto del insight 2 (max 120 palabras)",
   "insight_3": "Texto del insight 3 (max 120 palabras)"
 }}
+
+VALIDACIÓN: Tu respuesta completa debe poder parsearse con json.loads()
 
 TONO: Profesional, directo, cuantitativo.
 IDIOMA: Español uruguayo.
@@ -131,13 +140,22 @@ RESTRICCIONES:
 ✅ SÍ menciona implicaciones de mediano plazo
 ✅ SÍ sugiere ajustes estratégicos
 
-FORMATO DE SALIDA (JSON):
+FORMATO DE SALIDA - INSTRUCCIÓN CRÍTICA:
+Responde ÚNICAMENTE con JSON válido.
+❌ NO agregues texto antes del JSON
+❌ NO agregues texto después del JSON  
+❌ NO uses bloques markdown (```json)
+✅ Inicia tu respuesta DIRECTAMENTE con {{
+✅ Termina tu respuesta DIRECTAMENTE con }}
+
 {{
   "tendencia": "Insight de tendencia (max 100 palabras)",
   "patron": "Insight de patrón (max 100 palabras)",
   "oportunidad": "Insight de oportunidad (max 100 palabras)",
   "riesgo": "Insight de riesgo (max 100 palabras)"
 }}
+
+VALIDACIÓN: Tu respuesta completa debe poder parsearse con json.loads()
 
 TONO: Analítico, estratégico, orientado a decisiones.
 IDIOMA: Español uruguayo.
@@ -212,12 +230,21 @@ RESTRICCIONES:
 ✅ SÍ evalúa si cambio es sostenible
 ✅ SÍ recomienda acciones basadas en tendencia
 
-FORMATO DE SALIDA (JSON):
+FORMATO DE SALIDA - INSTRUCCIÓN CRÍTICA:
+Responde ÚNICAMENTE con JSON válido.
+❌ NO agregues texto antes del JSON
+❌ NO agregues texto después del JSON  
+❌ NO uses bloques markdown (```json)
+✅ Inicia tu respuesta DIRECTAMENTE con {{
+✅ Termina tu respuesta DIRECTAMENTE con }}
+
 {{
   "cambio_principal": "Insight principal (max 120 palabras)",
   "evaluacion": "Evaluación del cambio (max 100 palabras)",
   "recomendacion": "Recomendación basada en cambio (max 100 palabras)"
 }}
+
+VALIDACIÓN: Tu respuesta completa debe poder parsearse con json.loads()
 
 TONO: Analítico, explicativo, orientado a acción.
 IDIOMA: Español uruguayo.
