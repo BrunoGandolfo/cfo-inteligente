@@ -61,7 +61,9 @@ class MetricsAggregator:
         fecha_inicio: date,
         fecha_fin: date,
         operaciones_comparacion: Optional[List[Operacion]] = None,
-        historico_mensual: Optional[List[Decimal]] = None
+        historico_mensual: Optional[List[Decimal]] = None,
+        operaciones_yoy: Optional[List[Operacion]] = None,
+        operaciones_qoq: Optional[List[Operacion]] = None
     ):
         """
         Constructor.
@@ -78,6 +80,8 @@ class MetricsAggregator:
         self.fecha_fin = fecha_fin
         self.operaciones_comparacion = operaciones_comparacion or []
         self.historico_mensual = historico_mensual or []
+        self.operaciones_yoy = operaciones_yoy or []
+        self.operaciones_qoq = operaciones_qoq or []
         
         self.logger = logger
     
@@ -164,6 +168,23 @@ class MetricsAggregator:
             comparacion_ratios = comp_ratios_calc.calculate()
         
         # ═══════════════════════════════════════════════════════════════
+        # PASO 3B: COMPARACIONES YoY y QoQ (si hay datos)
+        # ═══════════════════════════════════════════════════════════════
+        
+        totals_yoy = None
+        totals_qoq = None
+        
+        if self.operaciones_yoy:
+            self.logger.info("Calculando métricas YoY")
+            yoy_totals_calc = TotalsCalculator(self.operaciones_yoy)
+            totals_yoy = yoy_totals_calc.calculate()
+        
+        if self.operaciones_qoq:
+            self.logger.info("Calculando métricas QoQ")
+            qoq_totals_calc = TotalsCalculator(self.operaciones_qoq)
+            totals_qoq = qoq_totals_calc.calculate()
+        
+        # ═══════════════════════════════════════════════════════════════
         # PASO 4: TRENDS (depende de totals + ratios + comparación)
         # ═══════════════════════════════════════════════════════════════
         
@@ -173,7 +194,9 @@ class MetricsAggregator:
             ratios,
             comparacion_totals=comparacion_totals,
             comparacion_ratios=comparacion_ratios,
-            historico_mensual=self.historico_mensual
+            historico_mensual=self.historico_mensual,
+            totals_yoy=totals_yoy,
+            totals_qoq=totals_qoq
         )
         trends = trends_calc.calculate()
         

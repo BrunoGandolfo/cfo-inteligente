@@ -72,7 +72,7 @@ class DonutChart(BaseChart):
     
     def create_figure(self) -> go.Figure:
         """
-        Crea figura de Plotly con gráfico de dona.
+        Crea figura de Plotly con gráfico de dona profesional.
         
         Returns:
             go.Figure configurada con donut
@@ -81,8 +81,12 @@ class DonutChart(BaseChart):
         values = self.data['values']
         colors = self.data.get('colors', self.EXTENDED_PALETTE[:len(labels)])
         
-        # Tamaño del hueco (0.5 = 50% = donut moderno)
-        hole_size = self.config.get('hole_size', 0.5)
+        # Tamaño del hueco (0.4 = 40% = balance profesional)
+        hole_size = self.config.get('hole_size', 0.4)
+        
+        # Explode del segmento principal (destacar líder)
+        max_idx = values.index(max(values)) if values else 0
+        pull = [0.1 if i == max_idx else 0 for i in range(len(values))]
         
         # Calcular porcentajes para labels
         total = sum(values)
@@ -92,7 +96,7 @@ class DonutChart(BaseChart):
             values=values,
             marker=dict(
                 colors=colors,
-                line=dict(color='white', width=3)
+                line=dict(color='white', width=2)
             ),
             
             # Configuración de texto
@@ -104,13 +108,16 @@ class DonutChart(BaseChart):
                 family=self.FONT_FAMILY
             ),
             
-            # Hover
+            # Hover mejorado
             hovertemplate='<b>%{label}</b><br>' +
                           'Monto: $%{value:,.0f}<br>' +
                           'Porcentaje: %{percent}<extra></extra>',
             
-            # Hueco central (hace que sea donut)
-            hole=hole_size
+            # Hueco central (donut profesional)
+            hole=hole_size,
+            
+            # Explode del segmento líder
+            pull=pull
         )])
         
         # ═══════════════════════════════════════════════════════════════

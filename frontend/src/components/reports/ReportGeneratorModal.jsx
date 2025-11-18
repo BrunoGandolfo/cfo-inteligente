@@ -20,6 +20,7 @@ export const ReportGeneratorModal = ({ isOpen, onClose }) => {
     error,
     reportMetadata,
     generateReport,
+    previewReport,
     reset
   } = useReportGenerator();
 
@@ -61,6 +62,45 @@ export const ReportGeneratorModal = ({ isOpen, onClose }) => {
       await generateReport(config);
     } catch (err) {
       console.error('Error:', err);
+    }
+  };
+
+  const handlePreview = async () => {
+    const config = {
+      period: {
+        tipo: periodType,
+        ...(periodType === 'custom' && {
+          fecha_inicio: customStartDate,
+          fecha_fin: customEndDate
+        })
+      },
+      comparison: comparisonEnabled ? {
+        activo: true,
+        tipo: comparisonType
+      } : null,
+      options: {
+        incluir_proyecciones: includeProjections,
+        incluir_insights_ia: includeAIInsights,
+        incluir_escenarios: includeScenarios,
+        formato: format,
+        paleta: palette
+      }
+    };
+
+    try {
+      const metadata = await previewReport(config);
+      alert(
+        `Vista Previa del Reporte\n\n` +
+        `Archivo: ${metadata.metadata?.filename || 'Reporte_CFO.pdf'}\n` +
+        `Páginas estimadas: ${metadata.metadata?.pages || 'N/A'}\n` +
+        `Período: ${metadata.metadata?.period_label || periodType}\n` +
+        `Comparación: ${metadata.metadata?.has_comparison ? 'Sí' : 'No'}\n` +
+        `Proyecciones: ${metadata.metadata?.has_projections ? 'Sí' : 'No'}\n` +
+        `Insights IA: ${metadata.metadata?.has_ai_insights ? 'Sí' : 'No'}`
+      );
+    } catch (err) {
+      console.error('Error en preview:', err);
+      alert('Error obteniendo vista previa: ' + (err.message || 'Error desconocido'));
     }
   };
 
@@ -281,6 +321,13 @@ export const ReportGeneratorModal = ({ isOpen, onClose }) => {
               className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50"
             >
               Cerrar
+            </button>
+            <button
+              onClick={handlePreview}
+              disabled={isGenerating}
+              className="px-6 py-2 border border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition disabled:opacity-50"
+            >
+              Vista Previa
             </button>
             <button
               onClick={handleGenerate}

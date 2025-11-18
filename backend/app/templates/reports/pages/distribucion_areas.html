@@ -50,20 +50,22 @@
     </table>
     {% endif %}
     
-    {# Gráficos de distribución lado a lado #}
-    <div class="row mt-20">
-        <div class="col-6">
+    {# Gráficos de distribución lado a lado (grande y profesional) #}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin: 40px 0;">
+        <div style="text-align: center;">
             {% if area_donut_chart_path %}
-            {% set title = 'Distribución por Área' %}
-            {% set chart_path = area_donut_chart_path %}
-            {% include 'reports/components/chart.html' %}
+            <h3 style="margin-bottom: 20px; font-size: 18px; color: #374151;">Distribución por Área</h3>
+            <img src="{{ area_donut_chart_path }}" 
+                 alt="Distribución por Área"
+                 style="width: 100%; max-width: 650px; height: auto; display: block; margin: 0 auto;">
             {% endif %}
         </div>
-        <div class="col-6">
+        <div style="text-align: center;">
             {% if localidad_donut_chart_path %}
-            {% set title = 'Distribución por Localidad' %}
-            {% set chart_path = localidad_donut_chart_path %}
-            {% include 'reports/components/chart.html' %}
+            <h3 style="margin-bottom: 20px; font-size: 18px; color: #374151;">Distribución por Localidad</h3>
+            <img src="{{ localidad_donut_chart_path }}" 
+                 alt="Distribución por Localidad"
+                 style="width: 100%; max-width: 650px; height: auto; display: block; margin: 0 auto;">
             {% endif %}
         </div>
     </div>

@@ -151,9 +151,10 @@ class PlaywrightPDFCompiler:
         metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """
-        Wrapper síncrono para compile_async.
+        Wrapper síncrono que ejecuta Playwright en thread separado.
         
-        Permite usar PlaywrightPDFCompiler como drop-in replacement de PDFCompiler.
+        Evita conflicto con event loop de FastAPI usando ThreadPoolExecutor.
+        Drop-in replacement compatible con PDFCompiler.
         
         Args:
             html_content: String con HTML completo
@@ -163,8 +164,58 @@ class PlaywrightPDFCompiler:
         Returns:
             Ruta del PDF generado
         """
-        # Ejecutar versión async en loop
-        return asyncio.run(self.compile_async(html_content, output_path, metadata))
+        from concurrent.futures import ThreadPoolExecutor
+        
+        def _run_in_thread():
+            """Ejecuta Playwright en thread sin event loop."""
+            from playwright.sync_api import sync_playwright
+            
+            try:
+                # Crear archivo HTML temporal
+                temp_html = Path(output_path).parent / f"temp_{Path(output_path).stem}.html"
+                temp_html.write_text(html_content, encoding='utf-8')
+                
+                logger.info(f"Compilando PDF con Playwright (thread): {output_path}")
+                
+                with sync_playwright() as p:
+                    browser = p.chromium.launch(
+                        headless=True,
+                        args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+                    )
+                    page = browser.new_page()
+                    page.goto(f'file://{temp_html.absolute()}')
+                    
+                    page.pdf(
+                        path=str(output_path),
+                        format='A4',
+                        margin={
+                            'top': '1.5cm',
+                            'right': '1cm',
+                            'bottom': '1.5cm',
+                            'left': '1cm'
+                        },
+                        print_background=True,
+                        display_header_footer=False
+                    )
+                    
+                    browser.close()
+                
+                # Limpiar temporal
+                if temp_html.exists():
+                    temp_html.unlink()
+                
+                logger.info(f"✓ PDF generado: {output_path}")
+                return str(output_path)
+                
+            except Exception as e:
+                logger.error(f"Error compilando PDF: {e}", exc_info=True)
+                raise PDFGenerationError(f"Playwright failed: {str(e)}")
+        
+        # Ejecutar en thread pool para evitar conflicto con event loop
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_run_in_thread)
+            result = future.result(timeout=120)  # 2 minutos timeout
+            return result
     
     def _build_header_template(self, metadata: Optional[Dict[str, Any]]) -> str:
         """

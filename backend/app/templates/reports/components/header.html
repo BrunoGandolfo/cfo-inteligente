@@ -1,13 +1,15 @@
-{# Component: Report Header con logo y título #}
-<div class="report-header">
+{# Component: Report Header Big 4 Professional #}
+<div class="report-header" style="display: flex; justify-content: space-between; align-items: center; padding: 25px 0; border-bottom: 4px solid #4472C4;">
     <div class="logo-container">
-        <img src="data:image/png;base64,{{ logo_base64 }}" style="height: 32px; width: auto; opacity: 0.9;" alt="Conexión Consultora" />
+        <img src="data:image/png;base64,{{ logo_base64 }}" 
+             style="height: 100px !important; width: auto; vertical-align: middle; opacity: 0.98;" 
+             alt="Conexión Consultora" />
     </div>
     
-    <div class="header-info">
-        <h1>{{ report_title | default('Reporte Ejecutivo CFO') }}</h1>
-        <div class="subtitle">{{ period_label }}</div>
-        <div class="text-sm text-muted" style="margin-top: 5px;">
+    <div class="header-info" style="text-align: right;">
+        <h1 style="font-size: 60px; line-height: 100px; margin: 0; font-weight: 800; color: #2B3E6B;">{{ report_title | default('Reporte Ejecutivo CFO') }}</h1>
+        <div style="font-size: 20px; color: #4B5563; margin-top: 5px; font-weight: 600;">{{ period_label }}</div>
+        <div style="font-size: 14px; color: #6B7280; margin-top: 3px;">
             Generado: {{ generated_at.strftime('%d/%m/%Y %H:%M') }}
         </div>
     </div>

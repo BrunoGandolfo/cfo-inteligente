@@ -9,7 +9,7 @@ Fecha: Octubre 2025
 """
 
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 import base64
 import tempfile
@@ -197,6 +197,26 @@ class ReportOrchestrator:
                 )
                 logger.info(f"✓ Histórico obtenido: {len(historico_mensual)} meses hasta {fecha_fin}")
             
+            # Obtener operaciones YoY si el período es comparable
+            operaciones_yoy = None
+            operaciones_qoq = None
+            
+            if self._is_period_comparable_yoy(fecha_inicio, fecha_fin):
+                try:
+                    fecha_inicio_yoy = fecha_inicio.replace(year=fecha_inicio.year - 1)
+                    fecha_fin_yoy = fecha_fin.replace(year=fecha_fin.year - 1)
+                    
+                    operaciones_yoy = self.repo.get_by_period(fecha_inicio_yoy, fecha_fin_yoy)
+                    logger.info(f"✓ Operaciones YoY: {len(operaciones_yoy)}")
+                except ValueError:
+                    logger.warning("No se pudo calcular período YoY (edge case fechas)")
+            
+            if self._is_period_comparable_qoq(fecha_inicio, fecha_fin):
+                fecha_inicio_qoq, fecha_fin_qoq = self._get_quarter_before(fecha_inicio, fecha_fin)
+                if fecha_inicio_qoq and fecha_fin_qoq:
+                    operaciones_qoq = self.repo.get_by_period(fecha_inicio_qoq, fecha_fin_qoq)
+                    logger.info(f"✓ Operaciones QoQ: {len(operaciones_qoq)}")
+            
             # ═══════════════════════════════════════════════════════════════
             # PASO 4: VALIDAR DATOS
             # ═══════════════════════════════════════════════════════════════
@@ -221,7 +241,9 @@ class ReportOrchestrator:
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin,
                 operaciones_comparacion=operaciones_comparacion,
-                historico_mensual=historico_mensual
+                historico_mensual=historico_mensual,
+                operaciones_yoy=operaciones_yoy,
+                operaciones_qoq=operaciones_qoq
             )
             
             metricas = aggregator.aggregate_all()
@@ -352,13 +374,6 @@ class ReportOrchestrator:
         Returns:
             Dict con paths a gráficos generados
         """
-        # Configuración ESTANDARIZADA de dimensiones de gráficos
-        CHART_CONFIG = {
-            'principal': {'width': 800, 'height': 450},   # Waterfall, Line temporal
-            'secundario': {'width': 700, 'height': 400},  # Donuts (áreas, localidades)
-            'detalle': {'width': 900, 'height': 500}      # Bar clientes, Pareto
-        }
-        
         # Crear directorio temporal
         self.temp_dir = tempfile.mkdtemp(prefix='report_charts_')
         logger.debug(f"Directorio temporal: {self.temp_dir}")
@@ -386,7 +401,7 @@ class ReportOrchestrator:
                 'waterfall',
                 waterfall_data,
                 f'{self.temp_dir}/waterfall.png',
-                {'title': 'Flujo de Rentabilidad (UYU)', **CHART_CONFIG['principal']}
+                {'title': 'Flujo de Rentabilidad (UYU)'}
             )
             charts_paths['waterfall_chart_path'] = waterfall_path
             logger.debug(f"✓ Waterfall generado: {waterfall_path}")
@@ -412,7 +427,7 @@ class ReportOrchestrator:
                         'donut',
                         donut_areas_data,
                         f'{self.temp_dir}/donut_areas.png',
-                        {'title': 'Distribución de Ingresos por Área', **CHART_CONFIG['secundario']}
+                        {'title': 'Distribución de Ingresos por Área'}
                     )
                     charts_paths['area_donut_chart_path'] = donut_areas_path
                     logger.info(f"✅ Donut áreas generado exitosamente: {donut_areas_path}")
@@ -442,7 +457,7 @@ class ReportOrchestrator:
                         'donut',
                         donut_loc_data,
                         f'{self.temp_dir}/donut_localidades.png',
-                        {'title': 'Distribución por Localidad', **CHART_CONFIG['secundario']}
+                        {'title': 'Distribución por Localidad'}
                     )
                     charts_paths['localidad_donut_chart_path'] = donut_loc_path
                     logger.info(f"✅ Donut localidades generado exitosamente: {donut_loc_path}")
@@ -475,13 +490,13 @@ class ReportOrchestrator:
                         {
                             'labels': meses,  # API correcta: 'labels' en vez de 'x'
                             'series': [       # API correcta: 'series' en vez de 'y_series'
-                                {'name': 'Ingresos', 'values': ingresos_mes, 'color': '#3B82F6'},
-                                {'name': 'Gastos', 'values': gastos_mes, 'color': '#EF4444'},
-                                {'name': 'Utilidad', 'values': utilidad_mes, 'color': '#10B981'}
+                                {'name': 'Ingresos', 'values': ingresos_mes, 'color': '#5B9BD5'},
+                                {'name': 'Gastos', 'values': gastos_mes, 'color': '#E74C3C'},
+                                {'name': 'Utilidad', 'values': utilidad_mes, 'color': '#70AD47'}
                             ]
                         },
                         f'{self.temp_dir}/line_temporal.png',
-                        {'title': f'Evolución Temporal ({len(meses)} meses)', **CHART_CONFIG['principal']}
+                        {'title': f'Evolución Temporal ({len(meses)} meses)'}
                     )
                     charts_paths['line_temporal_chart_path'] = line_temporal_path
                     logger.info(f"✅ Line chart temporal generado: {line_temporal_path}")
@@ -510,12 +525,12 @@ class ReportOrchestrator:
                                 {
                                     'name': 'Facturación',
                                     'values': [c.get('facturacion', 0) for c in top_10],  # Key correcta: 'facturacion'
-                                    'color': '#3B82F6'
+                                    'color': '#5B9BD5'
                                 }
                             ]
                         },
                         f'{self.temp_dir}/bar_top_clientes.png',
-                        {'title': 'Top 10 Clientes por Facturación', **CHART_CONFIG['detalle']}
+                        {'title': 'Top 10 Clientes por Facturación', 'orientation': 'h', 'sort_by_value': True}
                     )
                     charts_paths['bar_top_clientes_chart_path'] = bar_clientes_path
                     logger.info(f"✅ Bar chart Top 10 generado: {bar_clientes_path}")
@@ -599,4 +614,60 @@ class ReportOrchestrator:
             logger.info("  → Fallback estratégico generado")
         
         return insights
+    
+    def _is_period_comparable_yoy(self, fecha_inicio: date, fecha_fin: date) -> bool:
+        """
+        Verifica si el período es comparable YoY (mes/trimestre/año completo).
+        
+        Args:
+            fecha_inicio: Fecha inicio del período
+            fecha_fin: Fecha fin del período
+            
+        Returns:
+            True si es mes completo, trimestre completo o año completo
+        """
+        from calendar import monthrange
+        
+        # Mes completo
+        if fecha_inicio.day == 1:
+            ultimo_dia = monthrange(fecha_fin.year, fecha_fin.month)[1]
+            if fecha_fin.day == ultimo_dia and fecha_inicio.month == fecha_fin.month:
+                return True
+        
+        # Trimestre completo (inicia en ene/abr/jul/oct y dura 3 meses)
+        if fecha_inicio.day == 1 and fecha_inicio.month in [1, 4, 7, 10]:
+            if fecha_fin.day in [31, 30] and (fecha_fin.month - fecha_inicio.month) == 2:
+                return True
+        
+        # Año completo
+        if fecha_inicio == date(fecha_inicio.year, 1, 1) and \
+           fecha_fin == date(fecha_fin.year, 12, 31):
+            return True
+        
+        return False
+    
+    def _is_period_comparable_qoq(self, fecha_inicio: date, fecha_fin: date) -> bool:
+        """Verifica si el período es un trimestre completo"""
+        if fecha_inicio.day == 1 and fecha_inicio.month in [1, 4, 7, 10]:
+            if fecha_fin.day in [31, 30] and (fecha_fin.month - fecha_inicio.month) == 2:
+                return True
+        return False
+    
+    def _get_quarter_before(self, fecha_inicio: date, fecha_fin: date):
+        """Calcula el trimestre anterior"""
+        # Determinar trimestre actual
+        if fecha_inicio.month == 1:
+            # Q1 → Q4 año anterior
+            return date(fecha_inicio.year - 1, 10, 1), date(fecha_inicio.year - 1, 12, 31)
+        elif fecha_inicio.month == 4:
+            # Q2 → Q1
+            return date(fecha_inicio.year, 1, 1), date(fecha_inicio.year, 3, 31)
+        elif fecha_inicio.month == 7:
+            # Q3 → Q2
+            return date(fecha_inicio.year, 4, 1), date(fecha_inicio.year, 6, 30)
+        elif fecha_inicio.month == 10:
+            # Q4 → Q3
+            return date(fecha_inicio.year, 7, 1), date(fecha_inicio.year, 9, 30)
+        
+        return None, None
 

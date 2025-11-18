@@ -1,0 +1,113 @@
+{# Página: Análisis de Variaciones #}
+{% include 'reports/components/header.html' %}
+
+<div class="section">
+    <h2 class="section-title">Análisis de Variaciones Significativas</h2>
+    
+    <p class="mb-20 text-muted">
+        Se destacan las variaciones superiores al 10% que requieren atención de la gerencia.
+    </p>
+    
+    {% if variances_criticas and variances_criticas|length > 0 %}
+    <table>
+        <thead>
+            <tr style="background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);">
+                <th style="width: 120px;">Métrica</th>
+                <th class="text-right">Período Anterior</th>
+                <th class="text-right">Período Actual</th>
+                <th class="text-right">Variación</th>
+                <th>Explicación</th>
+                <th style="width: 120px;">Acción Requerida</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for var in variances_criticas %}
+            <tr style="{% if var.severidad == 'CRÍTICO' %}background: #FEF3C7;{% endif %}">
+                <td class="font-semibold">
+                    {% if var.severidad == 'CRÍTICO' %}
+                    <span style="color: var(--danger);">⚠️</span>
+                    {% endif %}
+                    {{ var.metrica }}
+                </td>
+                
+                <td class="text-right">
+                    {% if var.tipo == 'margin' %}
+                        {{ var.valor_anterior | format_percentage }}
+                    {% else %}
+                        {{ var.valor_anterior | format_currency }}
+                    {% endif %}
+                </td>
+                
+                <td class="text-right font-semibold">
+                    {% if var.tipo == 'margin' %}
+                        {{ var.valor_actual | format_percentage }}
+                    {% else %}
+                        {{ var.valor_actual | format_currency }}
+                    {% endif %}
+                </td>
+                
+                <td class="text-right">
+                    <div class="{% if var.direccion == 'favorable' %}text-success{% else %}text-danger{% endif %} font-bold">
+                        {% if var.variacion_pct > 0 %}+{% endif %}{{ var.variacion_pct | format_percentage }}{% if var.tipo == 'margin' %}pp{% else %}%{% endif %}
+                    </div>
+                    <div class="text-xs text-muted">
+                        {% if var.tipo != 'margin' %}
+                            ({% if var.delta_absoluto > 0 %}+{% endif %}{{ var.delta_absoluto | format_currency }})
+                        {% endif %}
+                    </div>
+                </td>
+                
+                <td class="text-sm" style="line-height: 1.6;">
+                    {{ var.explicacion }}
+                </td>
+                
+                <td class="text-center">
+                    {% if var.severidad == 'CRÍTICO' %}
+                    <span class="badge badge-danger" style="display: block; margin: 2px 0;">{{ var.severidad }}</span>
+                    {% elif var.severidad == 'ALTO' %}
+                    <span class="badge badge-warning" style="display: block; margin: 2px 0;">{{ var.severidad }}</span>
+                    {% else %}
+                    <span class="badge" style="display: block; margin: 2px 0;">{{ var.severidad }}</span>
+                    {% endif %}
+                    <div class="text-xs text-muted" style="margin-top: 5px;">{{ var.accion }}</div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {# Summary card #}
+    <div class="card mt-20" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border-left: 4px solid var(--primary);">
+        <h3 class="section-subtitle">Resumen de Variaciones</h3>
+        <p style="line-height: 1.8;">
+            Se identificaron <strong>{{ variances_criticas|length }} variaciones significativas</strong> en el período.
+            
+            {% set criticas = variances_criticas | selectattr('severidad', 'equalto', 'CRÍTICO') | list %}
+            {% set altas = variances_criticas | selectattr('severidad', 'equalto', 'ALTO') | list %}
+            
+            {% if criticas|length > 0 %}
+            <span style="color: var(--danger); font-weight: 600;">{{ criticas|length }} requieren atención inmediata</span>
+            {% if altas|length > 0 %} y {% endif %}
+            {% endif %}
+            
+            {% if altas|length > 0 %}
+            <span style="color: var(--warning); font-weight: 600;">{{ altas|length }} deben monitorearse</span>
+            {% endif %}
+            de cerca.
+        </p>
+    </div>
+    
+    {% else %}
+    <div class="card text-center" style="padding: 40px; background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);">
+        <div style="font-size: 48pt; margin-bottom: 20px;">✅</div>
+        <h3 class="section-subtitle">Sin Variaciones Significativas</h3>
+        <p class="text-muted" style="line-height: 1.8;">
+            No se detectaron variaciones superiores al {{ threshold_percent }}% entre períodos.
+            El desempeño se mantiene estable y dentro de parámetros esperados.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="page-break"></div>
+

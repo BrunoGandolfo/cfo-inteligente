@@ -62,11 +62,31 @@ class LineChart(BaseChart):
                 )
     
     def create_figure(self) -> go.Figure:
-        """Crea figura de Plotly con líneas de serie temporal"""
+        """Crea figura de Plotly con líneas de serie temporal profesionales"""
         fig = go.Figure()
         
         labels = self.data['labels']
         series_list = self.data['series']
+        
+        # Agregar área sombreada para primera serie (si configurado)
+        if self.config.get('show_area', True) and len(series_list) > 0:
+            serie_principal = series_list[0]
+            color_principal = serie_principal.get('color', self.EXTENDED_PALETTE[0])
+            
+            # Convertir hex a rgba
+            import re
+            hex_color = color_principal.lstrip('#')
+            r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+            
+            fig.add_trace(go.Scatter(
+                x=labels,
+                y=serie_principal['values'],
+                fill='tozeroy',
+                fillcolor=f'rgba({r}, {g}, {b}, 0.1)',
+                line=dict(width=0),
+                showlegend=False,
+                hoverinfo='skip'
+            ))
         
         # Agregar cada serie como línea
         for i, serie in enumerate(series_list):
@@ -93,6 +113,17 @@ class LineChart(BaseChart):
                               f"{serie['name']}: " + 
                               '%{y:,.0f}<extra></extra>'
             ))
+        
+        # Guardar figura para poder agregar anotaciones
+        self.figure = fig
+        
+        # Agregar anotaciones automáticas si está configurado
+        if self.config.get('annotate', True) and len(series_list) > 0:
+            self.add_value_annotations(
+                trace_index=1 if self.config.get('show_area', True) else 0,
+                highlight_max=True,
+                highlight_avg=True
+            )
         
         return fig
 

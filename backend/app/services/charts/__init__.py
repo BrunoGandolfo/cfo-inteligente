@@ -15,6 +15,9 @@ from app.services.charts.waterfall_chart import WaterfallChart
 from app.services.charts.donut_chart import DonutChart
 from app.services.charts.combo_chart import ComboChart
 from app.services.charts.heatmap_chart import HeatmapChart
+from app.services.charts.gauge_chart import GaugeChart
+from app.services.charts.treemap_chart import TreemapChart
+from app.services.charts.funnel_chart import FunnelChart
 from app.services.charts.chart_factory import ChartFactory
 
 __all__ = [
@@ -26,5 +29,8 @@ __all__ = [
     'DonutChart',
     'ComboChart',
     'HeatmapChart',
+    'GaugeChart',
+    'TreemapChart',
+    'FunnelChart',
     'ChartFactory'
 ]

@@ -39,48 +39,63 @@
     </div>
     
     {% if tiene_comparacion %}
-    <div class="mt-20">
-        <h3 class="section-subtitle">Comparación con Período Anterior</h3>
-        <div class="card" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);">
-            <div class="row">
-                <div class="col-4 text-center">
-                    <div class="text-sm text-muted mb-10">Variación Ingresos</div>
-                    <div class="text-lg font-bold">
+    <div style="margin-top: 60px; padding: 40px; background: #F8F9FA; border-radius: 12px; border-left: 6px solid #4472C4;">
+        <h3 style="font-size: 28px; font-weight: 700; color: #2B3E6B; margin-bottom: 30px;">Comparación con Período Anterior</h3>
+        
+        <table style="width: 100%; border-collapse: collapse; font-size: 18px;">
+            <thead>
+                <tr style="background: #4472C4; color: white;">
+                    <th style="padding: 16px; text-align: left; font-weight: 600;">Métrica</th>
+                    <th style="padding: 16px; text-align: right;">Período Anterior</th>
+                    <th style="padding: 16px; text-align: right;">Período Actual</th>
+                    <th style="padding: 16px; text-align: center; width: 150px;">Variación</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background: white;">
+                    <td style="padding: 16px; font-weight: 600;">Ingresos</td>
+                    <td style="padding: 16px; text-align: right;">{{ (ingresos_uyu / (1 + variacion_mom_ingresos/100)) | format_currency if variacion_mom_ingresos else '—' }}</td>
+                    <td style="padding: 16px; text-align: right; font-weight: 700;">{{ ingresos_uyu | format_currency }}</td>
+                    <td style="padding: 16px; text-align: center;">
                         {% if variacion_mom_ingresos > 0 %}
-                        <span class="text-success">↗ {{ variacion_mom_ingresos | format_percentage }}</span>
+                        <span style="color: #70AD47; font-weight: 700; font-size: 20px;">↗ {{ variacion_mom_ingresos | format_percentage }}%</span>
                         {% elif variacion_mom_ingresos < 0 %}
-                        <span class="text-danger">↘ {{ variacion_mom_ingresos | format_percentage }}</span>
+                        <span style="color: #E74C3C; font-weight: 700; font-size: 20px;">↘ {{ variacion_mom_ingresos | format_percentage }}%</span>
                         {% else %}
-                        <span>→ 0%</span>
+                        <span style="font-size: 20px;">→ 0%</span>
                         {% endif %}
-                    </div>
-                </div>
-                <div class="col-4 text-center">
-                    <div class="text-sm text-muted mb-10">Variación Gastos</div>
-                    <div class="text-lg font-bold">
+                    </td>
+                </tr>
+                <tr style="background: #F8F9FA;">
+                    <td style="padding: 16px; font-weight: 600;">Gastos</td>
+                    <td style="padding: 16px; text-align: right;">{{ (gastos_uyu / (1 + variacion_mom_gastos/100)) | format_currency if variacion_mom_gastos else '—' }}</td>
+                    <td style="padding: 16px; text-align: right; font-weight: 700;">{{ gastos_uyu | format_currency }}</td>
+                    <td style="padding: 16px; text-align: center;">
                         {% if variacion_mom_gastos > 0 %}
-                        <span class="text-danger">↗ {{ variacion_mom_gastos | format_percentage }}</span>
+                        <span style="color: #E74C3C; font-weight: 700; font-size: 20px;">↗ {{ variacion_mom_gastos | format_percentage }}%</span>
                         {% elif variacion_mom_gastos < 0 %}
-                        <span class="text-success">↘ {{ variacion_mom_gastos | format_percentage }}</span>
+                        <span style="color: #70AD47; font-weight: 700; font-size: 20px;">↘ {{ variacion_mom_gastos | format_percentage }}%</span>
                         {% else %}
-                        <span>→ 0%</span>
+                        <span style="font-size: 20px;">→ 0%</span>
                         {% endif %}
-                    </div>
-                </div>
-                <div class="col-4 text-center">
-                    <div class="text-sm text-muted mb-10">Variación Rentabilidad</div>
-                    <div class="text-lg font-bold">
+                    </td>
+                </tr>
+                <tr style="background: white;">
+                    <td style="padding: 16px; font-weight: 600;">Rentabilidad Neta</td>
+                    <td style="padding: 16px; text-align: right;">{{ (rentabilidad_neta - variacion_mom_rentabilidad) | format_percentage if variacion_mom_rentabilidad else '—' }}</td>
+                    <td style="padding: 16px; text-align: right; font-weight: 700;">{{ rentabilidad_neta | format_percentage }}</td>
+                    <td style="padding: 16px; text-align: center;">
                         {% if variacion_mom_rentabilidad > 0 %}
-                        <span class="text-success">↗ {{ variacion_mom_rentabilidad | format_percentage }}pp</span>
+                        <span style="color: #70AD47; font-weight: 700; font-size: 20px;">↗ {{ variacion_mom_rentabilidad | format_percentage }}pp</span>
                         {% elif variacion_mom_rentabilidad < 0 %}
-                        <span class="text-danger">↘ {{ variacion_mom_rentabilidad | format_percentage }}pp</span>
+                        <span style="color: #E74C3C; font-weight: 700; font-size: 20px;">↘ {{ variacion_mom_rentabilidad | format_percentage }}pp</span>
                         {% else %}
-                        <span>→ 0pp</span>
+                        <span style="font-size: 20px;">→ 0pp</span>
                         {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
     {% endif %}
 </div>

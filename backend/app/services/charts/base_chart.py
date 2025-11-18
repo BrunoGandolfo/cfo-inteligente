@@ -43,35 +43,40 @@ class BaseChart(ABC):
     # CONFIGURACIÓN CORPORATIVA
     # ═══════════════════════════════════════════════════════════════
     
-    # Paleta de colores (consistente con dashboard)
+    # Paleta corporativa Conexión Consultora (del logo institucional)
     COLORS = {
-        'primary': '#3B82F6',      # Azul principal
-        'success': '#10B981',      # Verde (ingresos)
-        'danger': '#EF4444',       # Rojo (gastos)
-        'warning': '#F59E0B',      # Ámbar (alertas)
-        'secondary': '#8B5CF6',    # Violeta (secundario)
-        'gray': '#6B7280',         # Gris (neutro)
+        'primary': '#5B9BD5',        # Azul claro institucional
+        'primary_dark': '#4472C4',   # Azul medio institucional
+        'primary_darker': '#2B3E6B', # Navy oscuro institucional
+        'success': '#70AD47',        # Verde institucional
+        'success_dark': '#5A8C3A',   # Verde oscuro
+        'danger': '#E74C3C',         # Rojo institucional
+        'warning': '#F39C12',        # Ámbar cálido
+        'secondary': '#8B5CF6',      # Violeta (mantener)
+        'gray': '#7F8C8D',           # Gris neutro
     }
     
-    # Paleta extendida para gráficos con muchas categorías
+    # Paleta extendida corporativa para gráficos con muchas categorías
     EXTENDED_PALETTE = [
-        '#10B981',  # Verde
-        '#3B82F6',  # Azul
-        '#EF4444',  # Rojo
-        '#F59E0B',  # Ámbar
+        '#5B9BD5',  # Azul institucional
+        '#70AD47',  # Verde institucional
+        '#4472C4',  # Azul medio
+        '#E74C3C',  # Rojo institucional
+        '#F39C12',  # Ámbar
         '#8B5CF6',  # Violeta
-        '#EC4899',  # Rosa
+        '#42A5F5',  # Azul claro
+        '#66BB6A',  # Verde claro
     ]
     
-    # Tipografía
-    FONT_FAMILY = 'Arial, sans-serif'
-    FONT_SIZE_TITLE = 18
-    FONT_SIZE_AXIS = 12
-    FONT_SIZE_LEGEND = 11
+    # Tipografía moderna profesional
+    FONT_FAMILY = "'Inter', 'Segoe UI', 'Roboto', -apple-system, sans-serif"
+    FONT_SIZE_TITLE = 20
+    FONT_SIZE_AXIS = 13
+    FONT_SIZE_LEGEND = 12
     
-    # Dimensiones (en píxeles)
-    WIDTH_DEFAULT = 800
-    HEIGHT_DEFAULT = 500
+    # Dimensiones (en píxeles) - Optimizado para 300 DPI en PDF A4
+    WIDTH_DEFAULT = 1400  # 300 DPI × 8.27" / 3 (con scale=3 → 4200px)
+    HEIGHT_DEFAULT = 925   # 300 DPI × 5.51" / 3 (con scale=3 → 2775px)
     DPI = 300  # Alta calidad para impresión
     
     # Márgenes
@@ -162,6 +167,9 @@ class BaseChart(ABC):
         if not self.figure:
             return
         
+        # Forzar template limpio (elimina TODOS los defaults de Plotly)
+        self.figure.update_layout(template='plotly_white')
+        
         self.figure.update_layout(
             title={
                 'text': self.title,
@@ -194,17 +202,33 @@ class BaseChart(ABC):
             )
         )
         
-        # Grid sutil
+        # Grid casi invisible (estilo Big 4)
         self.figure.update_xaxes(
             showgrid=True,
-            gridwidth=1,
-            gridcolor='#E5E7EB'  # Gray-200
+            gridwidth=0.3,
+            gridcolor='rgba(229, 231, 235, 0.2)',  # Casi invisible
+            griddash='solid',
+            zeroline=True,
+            zerolinewidth=1,
+            zerolinecolor='rgba(107, 114, 128, 0.2)',
+            showline=True,
+            linewidth=1,
+            linecolor='#E5E7EB',
+            mirror=False
         )
         
         self.figure.update_yaxes(
             showgrid=True,
-            gridwidth=1,
-            gridcolor='#E5E7EB'
+            gridwidth=0.3,
+            gridcolor='rgba(229, 231, 235, 0.2)',
+            griddash='solid',
+            zeroline=True,
+            zerolinewidth=1,
+            zerolinecolor='rgba(107, 114, 128, 0.2)',
+            showline=True,
+            linewidth=1,
+            linecolor='#E5E7EB',
+            mirror=False
         )
     
     def save(self, output_path: str) -> str:
@@ -234,10 +258,97 @@ class BaseChart(ABC):
             format='png',
             width=self.width,
             height=self.height,
-            scale=2  # 2x para alta resolución
+            scale=3  # 3x para calidad offset printing (450 DPI efectivo)
         )
         
         return str(path)
+    
+    def add_value_annotations(
+        self,
+        trace_index: int = 0,
+        highlight_max: bool = True,
+        highlight_min: bool = False,
+        highlight_avg: bool = False
+    ) -> None:
+        """
+        Agrega anotaciones automáticas de valores clave.
+        
+        Args:
+            trace_index: Índice del trace a anotar
+            highlight_max: Anotar valor máximo
+            highlight_min: Anotar valor mínimo
+            highlight_avg: Agregar línea de promedio
+        """
+        if not self.figure or not self.figure.data:
+            return
+        
+        trace = self.figure.data[trace_index]
+        values = list(trace.y)
+        labels = list(trace.x) if hasattr(trace, 'x') else list(range(len(values)))
+        
+        if not values:
+            return
+        
+        # Máximo
+        if highlight_max:
+            max_val = max(values)
+            max_idx = values.index(max_val)
+            
+            self.figure.add_annotation(
+                x=labels[max_idx],
+                y=max_val,
+                text=f"Máximo<br>{self.format_currency(max_val)}",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1,
+                arrowwidth=2,
+                arrowcolor=self.COLORS['success'],
+                ax=0,
+                ay=-40,
+                font=dict(size=10, color=self.COLORS['success'], weight='bold'),
+                bgcolor='white',
+                bordercolor=self.COLORS['success'],
+                borderwidth=2,
+                borderpad=4
+            )
+        
+        # Mínimo
+        if highlight_min:
+            min_val = min(values)
+            min_idx = values.index(min_val)
+            
+            if max_idx != min_idx:  # Solo si no es el mismo punto
+                self.figure.add_annotation(
+                    x=labels[min_idx],
+                    y=min_val,
+                    text=f"Mínimo<br>{self.format_currency(min_val)}",
+                    showarrow=True,
+                    arrowhead=2,
+                    arrowsize=1,
+                    arrowwidth=2,
+                    arrowcolor=self.COLORS['danger'],
+                    ax=0,
+                    ay=40,
+                    font=dict(size=10, color=self.COLORS['danger'], weight='bold'),
+                    bgcolor='white',
+                    bordercolor=self.COLORS['danger'],
+                    borderwidth=2,
+                    borderpad=4
+                )
+        
+        # Línea de promedio
+        if highlight_avg:
+            avg_val = sum(values) / len(values)
+            self.figure.add_hline(
+                y=avg_val,
+                line_dash="dash",
+                line_width=1,
+                line_color=self.COLORS['gray'],
+                annotation_text=f"Promedio: {self.format_currency(avg_val)}",
+                annotation_position="right",
+                annotation_font_size=9,
+                annotation_font_color=self.COLORS['gray']
+            )
     
     # ═══════════════════════════════════════════════════════════════
     # HELPERS

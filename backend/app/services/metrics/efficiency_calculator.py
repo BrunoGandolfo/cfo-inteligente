@@ -93,13 +93,12 @@ class EfficiencyCalculator(BaseCalculator):
         
         Returns:
             Dict con conteos:
-            - cantidad_operaciones: Total de todas las operaciones
+            - cantidad_operaciones: Operaciones operativas (ingresos + gastos)
             - cantidad_ingresos: Solo ingresos
             - cantidad_gastos: Solo gastos
         """
         cantidad_ingresos = 0
         cantidad_gastos = 0
-        cantidad_total = len(self.operaciones)
         
         for op in self.operaciones:
             if op.tipo_operacion == TipoOperacion.INGRESO:
@@ -108,7 +107,7 @@ class EfficiencyCalculator(BaseCalculator):
                 cantidad_gastos += 1
         
         return {
-            'cantidad_operaciones': cantidad_total,
+            'cantidad_operaciones': cantidad_ingresos + cantidad_gastos,
             'cantidad_ingresos': cantidad_ingresos,
             'cantidad_gastos': cantidad_gastos
         }

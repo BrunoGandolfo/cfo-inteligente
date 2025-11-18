@@ -54,7 +54,9 @@ class TrendsCalculator(BaseCalculator):
         ratios: Dict[str, Any],
         comparacion_totals: Optional[Dict[str, Decimal]] = None,
         comparacion_ratios: Optional[Dict[str, Any]] = None,
-        historico_mensual: Optional[List[Decimal]] = None
+        historico_mensual: Optional[List[Decimal]] = None,
+        totals_yoy: Optional[Dict[str, Decimal]] = None,
+        totals_qoq: Optional[Dict[str, Decimal]] = None
     ):
         """
         Constructor con Dependency Injection.
@@ -74,6 +76,8 @@ class TrendsCalculator(BaseCalculator):
         self.comparacion_totals = comparacion_totals
         self.comparacion_ratios = comparacion_ratios
         self.historico_mensual = historico_mensual or []
+        self.totals_yoy = totals_yoy
+        self.totals_qoq = totals_qoq
     
     def calculate(self) -> Dict[str, Any]:
         """
@@ -82,13 +86,24 @@ class TrendsCalculator(BaseCalculator):
         Returns:
             Dict con hasta 6 métricas (algunas pueden ser None si no hay datos)
         """
+        # Calcular proyección completa
+        proyeccion = self._calc_proyeccion_3m()
+        
         return {
             'variacion_mom_ingresos': self._calc_variacion_mom_ingresos(),
             'variacion_mom_gastos': self._calc_variacion_mom_gastos(),
             'variacion_mom_rentabilidad': self._calc_variacion_mom_rentabilidad(),
+            'variacion_yoy_ingresos': self._calc_variacion_yoy_ingresos(),
+            'variacion_yoy_gastos': self._calc_variacion_yoy_gastos(),
+            'variacion_qoq_ingresos': self._calc_variacion_qoq_ingresos(),
             'promedio_movil_3m': self._calc_promedio_movil(window=3),
             'promedio_movil_6m': self._calc_promedio_movil(window=6),
-            'proyeccion_proximos_3m': self._calc_proyeccion_3m()
+            'proyeccion_proximos_3m': proyeccion['promedio'] if proyeccion else None,
+            'proyeccion_proximos_3m_upper': proyeccion['upper'] if proyeccion else None,
+            'proyeccion_proximos_3m_lower': proyeccion['lower'] if proyeccion else None,
+            'proyeccion_r2_score': proyeccion['r2_score'] if proyeccion else None,
+            'proyeccion_tendencia_mensual': proyeccion['slope'] if proyeccion else None,
+            'proyeccion_meses_historico': proyeccion['meses_historico'] if proyeccion else None
         }
     
     def get_metric_names(self) -> List[str]:
@@ -99,7 +114,12 @@ class TrendsCalculator(BaseCalculator):
             'variacion_mom_rentabilidad',
             'promedio_movil_3m',
             'promedio_movil_6m',
-            'proyeccion_proximos_3m'
+            'proyeccion_proximos_3m',
+            'proyeccion_proximos_3m_upper',
+            'proyeccion_proximos_3m_lower',
+            'proyeccion_r2_score',
+            'proyeccion_tendencia_mensual',
+            'proyeccion_meses_historico'
         ]
     
     # ═══════════════════════════════════════════════════════════════
@@ -171,6 +191,63 @@ class TrendsCalculator(BaseCalculator):
         # Diferencia absoluta (no porcentual)
         return margen_actual - margen_anterior
     
+    def _calc_variacion_yoy_ingresos(self) -> Optional[float]:
+        """
+        Calcula variación Year-over-Year de ingresos.
+        
+        Returns:
+            Float con variación en % (ej: 15.5 = +15.5%)
+            None si no hay datos YoY
+        """
+        if not self.totals_yoy:
+            return None
+        
+        actual = float(self.totals['ingresos_uyu'])
+        anterior = float(self.totals_yoy['ingresos_uyu'])
+        
+        if anterior == 0:
+            return None
+        
+        return ((actual - anterior) / anterior) * 100
+    
+    def _calc_variacion_yoy_gastos(self) -> Optional[float]:
+        """
+        Calcula variación Year-over-Year de gastos.
+        
+        Returns:
+            Float con variación en %
+            None si no hay datos YoY
+        """
+        if not self.totals_yoy:
+            return None
+        
+        actual = float(self.totals['gastos_uyu'])
+        anterior = float(self.totals_yoy['gastos_uyu'])
+        
+        if anterior == 0:
+            return None
+        
+        return ((actual - anterior) / anterior) * 100
+    
+    def _calc_variacion_qoq_ingresos(self) -> Optional[float]:
+        """
+        Calcula variación Quarter-over-Quarter de ingresos.
+        
+        Returns:
+            Float con variación en %
+            None si no hay datos QoQ
+        """
+        if not self.totals_qoq:
+            return None
+        
+        actual = float(self.totals['ingresos_uyu'])
+        anterior = float(self.totals_qoq['ingresos_uyu'])
+        
+        if anterior == 0:
+            return None
+        
+        return ((actual - anterior) / anterior) * 100
+    
     def _calc_promedio_movil(self, window: int) -> Optional[float]:
         """
         Calcula promedio móvil de ingresos.
@@ -197,21 +274,21 @@ class TrendsCalculator(BaseCalculator):
         
         return None
     
-    def _calc_proyeccion_3m(self) -> Optional[float]:
+    def _calc_proyeccion_3m(self) -> Optional[Dict[str, Any]]:
         """
         Calcula proyección de ingresos para próximos 3 meses usando regresión lineal.
         
         Requiere al menos 3 meses de histórico para calcular tendencia.
         
         Returns:
-            Float con promedio proyectado de próximos 3 meses
+            Dict con proyección completa (promedio, upper, lower, r2, slope, meses)
             None si no hay suficiente histórico
             
         Método:
             1. Usa histórico mensual como serie temporal
             2. Aplica regresión lineal (scipy)
-            3. Proyecta próximos 3 valores
-            4. Retorna promedio de los 3
+            3. Proyecta próximos 3 valores con intervalos de confianza
+            4. Retorna dict completo para visualización de escenarios
         """
         if not self.historico_mensual or len(self.historico_mensual) < 3:
             return None
@@ -231,8 +308,15 @@ class TrendsCalculator(BaseCalculator):
                 confidence_level=0.95
             )
             
-            # Retornar promedio de próximos 3 meses
-            return sum(y_pred) / len(y_pred)
+            # Retornar dict completo (no solo promedio)
+            return {
+                'promedio': sum(y_pred) / len(y_pred),
+                'upper': sum(y_upper) / len(y_upper),
+                'lower': sum(y_lower) / len(y_lower),
+                'r2_score': r2,
+                'slope': slope,  # Tendencia mensual
+                'meses_historico': n
+            }
             
         except Exception:
             # Si regresión falla (datos insuficientes, etc), retornar None

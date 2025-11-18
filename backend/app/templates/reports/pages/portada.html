@@ -1,17 +1,20 @@
 {# Página 1: Portada del reporte #}
 <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 80vh; text-align: center;">
-    {# Logo grande #}
-    <div style="margin-bottom: 60px;">
-        <img src="data:image/png;base64,{{ logo_base64 }}" style="height: 60px; width: auto; opacity: 0.95;" alt="Conexión Consultora" />
+    {# Logo gigante estilo Big 4 #}
+    <div style="margin-bottom: 40px;">
+        <img src="data:image/png;base64,{{ logo_base64 }}" style="height: 200px; width: auto; opacity: 0.98;" alt="Conexión Consultora" />
     </div>
     
+    {# Barra corporativa decorativa #}
+    <div style="height: 8px; width: 300px; background: linear-gradient(90deg, #4472C4, #70AD47); margin: 20px auto 50px; border-radius: 4px;"></div>
+    
     {# Título principal #}
-    <h1 style="font-size: 36pt; font-weight: 700; color: var(--primary); margin-bottom: 20px;">
+    <h1 style="font-size: 56px; font-weight: 700; color: var(--primary-dark); margin-bottom: 20px;">
         Reporte Ejecutivo CFO
     </h1>
     
     {# Período #}
-    <div style="font-size: 20pt; color: var(--gray-600); margin-bottom: 40px;">
+    <div style="font-size: 32px; color: var(--gray-600); margin-bottom: 40px; font-weight: 500;">
         {{ period_label }}
     </div>
     
@@ -20,31 +23,23 @@
         {{ fecha_inicio.strftime('%d/%m/%Y') }} - {{ fecha_fin.strftime('%d/%m/%Y') }}
     </div>
     
-    {# KPIs destacados en portada #}
-    <div class="row" style="width: 100%; max-width: 700px; margin-top: 40px;">
-        <div class="col-3">
-            <div style="padding: 20px; background: var(--gray-50); border-radius: 10px;">
-                <div class="text-sm text-muted mb-10">Ingresos</div>
-                <div class="text-lg font-bold text-primary">{{ ingresos_uyu | format_currency(short=True) }}</div>
-            </div>
+    {# KPIs destacados en portada - Grid centrado #}
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; max-width: 1200px; margin: 40px auto; width: 90%;">
+        <div style="padding: 40px; background: linear-gradient(135deg, #4472C4 0%, #2B3E6B 100%); border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center;">
+            <div style="font-size: 22px; opacity: 0.9; margin-bottom: 12px; font-weight: 500;">Ingresos</div>
+            <div style="font-size: 38px; font-weight: 800; letter-spacing: -0.5px;">{{ ingresos_uyu | format_currency(short=True) }}</div>
         </div>
-        <div class="col-3">
-            <div style="padding: 20px; background: var(--gray-50); border-radius: 10px;">
-                <div class="text-sm text-muted mb-10">Margen</div>
-                <div class="text-lg font-bold text-success">{{ rentabilidad_neta | format_percentage }}</div>
-            </div>
+        <div style="padding: 40px; background: linear-gradient(135deg, #70AD47 0%, #5A8C3A 100%); border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center;">
+            <div style="font-size: 22px; opacity: 0.9; margin-bottom: 12px; font-weight: 500;">Margen</div>
+            <div style="font-size: 38px; font-weight: 800; letter-spacing: -0.5px;">{{ rentabilidad_neta | format_percentage }}</div>
         </div>
-        <div class="col-3">
-            <div style="padding: 20px; background: var(--gray-50); border-radius: 10px;">
-                <div class="text-sm text-muted mb-10">Resultado</div>
-                <div class="text-lg font-bold text-primary">{{ utilidad_neta_uyu | format_currency(short=True) }}</div>
-            </div>
+        <div style="padding: 40px; background: #FFFFFF; border-radius: 12px; border: 3px solid #4472C4; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
+            <div style="font-size: 22px; color: #4B5563; margin-bottom: 12px; font-weight: 600;">Resultado</div>
+            <div style="font-size: 38px; font-weight: 800; color: #4472C4; letter-spacing: -0.5px;">{{ utilidad_neta_uyu | format_currency(short=True) }}</div>
         </div>
-        <div class="col-3">
-            <div style="padding: 20px; background: var(--gray-50); border-radius: 10px;">
-                <div class="text-sm text-muted mb-10">Operaciones</div>
-                <div class="text-lg font-bold">{{ cantidad_operaciones }}</div>
-            </div>
+        <div style="padding: 40px; background: #FFFFFF; border-radius: 12px; border: 3px solid #4472C4; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
+            <div style="font-size: 22px; color: #4B5563; margin-bottom: 12px; font-weight: 600;">Operaciones</div>
+            <div style="font-size: 38px; font-weight: 800; color: #2B3E6B; letter-spacing: -0.5px;">{{ cantidad_operaciones }}</div>
         </div>
     </div>
     

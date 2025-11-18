@@ -19,6 +19,9 @@ from .waterfall_chart import WaterfallChart
 from .donut_chart import DonutChart
 from .combo_chart import ComboChart
 from .heatmap_chart import HeatmapChart
+from .gauge_chart import GaugeChart
+from .treemap_chart import TreemapChart
+from .funnel_chart import FunnelChart
 
 
 class ChartFactory:
@@ -41,7 +44,10 @@ class ChartFactory:
         'waterfall': WaterfallChart,
         'donut': DonutChart,
         'combo': ComboChart,
-        'heatmap': HeatmapChart
+        'heatmap': HeatmapChart,
+        'gauge': GaugeChart,
+        'treemap': TreemapChart,
+        'funnel': FunnelChart
     }
     
     @classmethod

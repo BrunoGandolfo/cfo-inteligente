@@ -86,7 +86,7 @@ class WaterfallChart(BaseChart):
         values = self.data['values']
         measures = self.data['measures']
         
-        # Crear figura waterfall
+        # Crear figura waterfall con gradientes profesionales
         fig = go.Figure(go.Waterfall(
             name="Flujo",
             orientation="v",
@@ -94,57 +94,59 @@ class WaterfallChart(BaseChart):
             y=values,
             measure=measures,
             
-            # Colores por tipo
+            # Colores por tipo profesionales
             increasing={
                 'marker': {
-                    'color': self.COLORS['success'],  # Verde para ingresos
-                    'line': {'color': 'white', 'width': 2}
+                    'color': self.COLORS['success'],
+                    'line': {'color': 'rgba(255, 255, 255, 0.8)', 'width': 2}
                 }
             },
             decreasing={
                 'marker': {
-                    'color': self.COLORS['danger'],  # Rojo para gastos
-                    'line': {'color': 'white', 'width': 2}
+                    'color': self.COLORS['danger'],
+                    'line': {'color': 'rgba(255, 255, 255, 0.8)', 'width': 2}
                 }
             },
             totals={
                 'marker': {
-                    'color': self.COLORS['primary'],  # Azul para totales
-                    'line': {'color': 'white', 'width': 2}
+                    'color': self.COLORS['primary'],
+                    'line': {'color': 'rgba(255, 255, 255, 0.8)', 'width': 2}
                 }
             },
             
-            # Conectores
+            # Conectores sutiles
             connector={
                 'line': {
-                    'color': self.COLORS['gray'],
-                    'width': 2,
+                    'color': 'rgba(209, 213, 219, 0.5)',  # Gris muy sutil
+                    'width': 1,
                     'dash': 'dot'
                 }
             },
             
-            # Textos sobre barras
+            # Textos sobre barras - posicionamiento inteligente
             text=[self._format_value_text(v) for v in values],
-            textposition="outside",
-            textfont={'size': 12, 'color': '#1F2937'},
+            textposition="auto",
+            textfont={'size': 13, 'color': '#1F2937', 'family': self.FONT_FAMILY},
             
-            # Hover info
+            # Hover info mejorado
             hovertemplate='<b>%{x}</b><br>' +
                           'Monto: $%{y:,.0f}<extra></extra>'
         ))
         
-        # Configuración de ejes
+        # Configuración de ejes profesional
         fig.update_yaxes(
             title_text="Monto (UYU)",
-            title_font={'size': 14},
+            title_font={'size': 14, 'family': self.FONT_FAMILY},
+            showgrid=False,  # Sin grid en waterfall (limpio)
             zeroline=True,
-            zerolinewidth=2,
-            zerolinecolor='#E5E7EB'
+            zerolinewidth=1,
+            zerolinecolor='rgba(107, 114, 128, 0.2)'
         )
         
         fig.update_xaxes(
             title_text="",
-            tickangle=-45
+            tickangle=-45,
+            showgrid=False  # Sin grid en waterfall
         )
         
         return fig

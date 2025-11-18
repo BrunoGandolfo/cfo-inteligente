@@ -172,29 +172,35 @@ class OperationsRepository(BaseRepository[Operacion]):
     
     def get_ingresos_mensuales_historico(
         self,
+        fecha_fin_reporte: date,
         meses: int = 12
     ) -> List[float]:
         """
         Obtiene histórico de ingresos mensuales para proyecciones.
         
         Args:
-            meses: Cantidad de meses hacia atrás
+            fecha_fin_reporte: Fecha fin del reporte (punto de referencia)
+            meses: Cantidad de meses hacia atrás desde fecha_fin_reporte
             
         Returns:
-            Lista de ingresos mensuales (últimos N meses)
-            [mes_mas_viejo, ..., mes_mas_reciente]
+            Lista de ingresos mensuales (últimos N meses ANTES del fin del reporte)
             
         Ejemplo:
-            >>> historico = repo.get_ingresos_mensuales_historico(meses=6)
+            >>> historico = repo.get_ingresos_mensuales_historico(
+            ...     fecha_fin_reporte=date(2025, 10, 31),
+            ...     meses=6
+            ... )
             >>> print(historico)
             [100000.0, 120000.0, 115000.0, 130000.0, 125000.0, 140000.0]
         """
-        from datetime import datetime, timedelta
+        from datetime import timedelta
         from decimal import Decimal
         
-        # Calcular fecha inicio (N meses atrás)
-        fecha_fin = datetime.now().date()
+        # Calcular fecha inicio (N meses atrás desde fecha_fin_reporte)
+        fecha_fin = fecha_fin_reporte
         fecha_inicio = fecha_fin - timedelta(days=meses * 31)  # Aproximado
+        
+        logger.info(f"Query histórico: {fecha_inicio} a {fecha_fin} ({meses} meses)")
         
         # Query agrupado por mes
         query = self.db.query(
@@ -219,7 +225,7 @@ class OperationsRepository(BaseRepository[Operacion]):
             for r in resultados
         ]
         
-        logger.debug(f"Histórico mensual: {len(ingresos_mensuales)} meses")
+        logger.info(f"✓ Histórico: {len(ingresos_mensuales)} meses | Total: ${sum(ingresos_mensuales):,.0f}")
         
         return ingresos_mensuales
     
