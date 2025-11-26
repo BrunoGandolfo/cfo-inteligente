@@ -16,5 +16,20 @@
     {% endif %}
 </div>
 
+{# Evolución Temporal - Sección separada para evitar corte #}
+{% if line_temporal_chart_path %}
+<div class="section" style="page-break-before: always;">
+    <h2 class="section-title">Evolución Temporal</h2>
+    <p style="color: #6B7280; margin-bottom: 20px;">
+        Tendencia de Ingresos, Gastos y Utilidad durante los últimos 12 meses
+    </p>
+    
+    <div class="chart-container">
+        <img src="{{ line_temporal_chart_path }}" 
+             alt="Evolución Temporal"
+             style="width: 95%; max-width: 95%; height: auto;">
+    </div>
+</div>
 <div class="page-break"></div>
+{% endif %}
 
