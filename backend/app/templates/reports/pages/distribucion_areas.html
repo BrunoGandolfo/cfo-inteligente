@@ -4,6 +4,13 @@
 <div class="section">
     <h2 class="section-title">Distribución por Áreas y Localidades</h2>
     
+    {# Commentary narrativo #}
+    {% if area_commentary %}
+    <div class="commentary-box" style="background: #F0F8FF; padding: 20px; margin-bottom: 25px; border-left: 4px solid #4472C4; border-radius: 8px;">
+        <p style="font-size: 18px; line-height: 1.6; color: #1F2937;">{{ area_commentary }}</p>
+    </div>
+    {% endif %}
+    
     {# Distribución por área #}
     <h3 class="section-subtitle">Ingresos por Área</h3>
     {% if ingresos_por_area %}
@@ -70,4 +77,6 @@
         </div>
     </div>
 </div>
+
+<div class="page-break"></div>
 
