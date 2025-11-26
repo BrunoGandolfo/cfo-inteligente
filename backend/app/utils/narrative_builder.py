@@ -50,7 +50,7 @@ def build_revenue_commentary(metricas: Dict[str, Any]) -> str:
         if abs(var_mom) > 5:
             parrafos.append(
                 f"Los ingresos del período totalizaron {format_currency(ingresos)}, "
-                f"registrando {calificativo} del {format_percentage(abs(var_mom))}% "
+                f"registrando {calificativo} del {format_percentage(abs(var_mom))} "
                 f"respecto al período anterior, resultado {emocion} para el estudio."
             )
         else:
@@ -77,7 +77,7 @@ def build_revenue_commentary(metricas: Dict[str, Any]) -> str:
         
         parrafos.append(
             f"El área {area_nombre} representa {concentracion} con el "
-            f"{format_percentage(area_pct)}% de los ingresos totales."
+            f"{format_percentage(area_pct)} de los ingresos totales."
         )
     
     # Párrafo 3: Eficiencia operativa
@@ -119,7 +119,7 @@ def build_expense_commentary(metricas: Dict[str, Any]) -> str:
     
     parrafos.append(
         f"Los gastos operativos totalizaron {format_currency(gastos)}, "
-        f"representando el {format_percentage(ratio_gastos)}% de los ingresos, "
+        f"representando el {format_percentage(ratio_gastos)} de los ingresos, "
         f"indicando {eficiencia}."
     )
     
@@ -127,12 +127,12 @@ def build_expense_commentary(metricas: Dict[str, Any]) -> str:
     if var_mom is not None and abs(var_mom) > 10:
         if var_mom > 0:
             parrafos.append(
-                f"Se observa un incremento del {format_percentage(var_mom)}% en gastos "
+                f"Se observa un incremento del {format_percentage(var_mom)} en gastos "
                 f"respecto al período anterior, que debe monitorearse."
             )
         else:
             parrafos.append(
-                f"Los gastos disminuyeron {format_percentage(abs(var_mom))}% "
+                f"Los gastos disminuyeron {format_percentage(abs(var_mom))} "
                 f"vs período anterior, reflejando mejoras en eficiencia operativa."
             )
     
@@ -149,19 +149,18 @@ def build_margin_commentary(metricas: Dict[str, Any]) -> str:
     Returns:
         String con narrativa profesional
     """
-    margen_operativo = metricas.get('margen_operativo', 0)
-    margen_neto = metricas.get('margen_neto', 0)
-    resultado_neto = metricas.get('resultado_neto_uyu', 0)
+    rentabilidad_neta = metricas.get('rentabilidad_neta', 0)
+    utilidad_neta = metricas.get('utilidad_neta_uyu', 0)
     var_margen = metricas.get('variacion_mom_rentabilidad')
     
     # Calificación del margen
-    if margen_neto > 60:
+    if rentabilidad_neta > 60:
         calificacion = "excepcional"
         benchmark = "superando ampliamente estándares de la industria"
-    elif margen_neto > 40:
+    elif rentabilidad_neta > 40:
         calificacion = "sólido"
         benchmark = "ubicándose por encima del promedio del sector"
-    elif margen_neto > 20:
+    elif rentabilidad_neta > 20:
         calificacion = "aceptable"
         benchmark = "alineado con estándares de mercado"
     else:
@@ -169,9 +168,9 @@ def build_margin_commentary(metricas: Dict[str, Any]) -> str:
         benchmark = "requiriendo acciones para mejorar rentabilidad"
     
     texto = (
-        f"El margen neto del período alcanzó {format_percentage(margen_neto)}%, "
+        f"La rentabilidad neta del período alcanzó {format_percentage(rentabilidad_neta)}, "
         f"nivel {calificacion} {benchmark}. "
-        f"Esto se traduce en un resultado neto de {format_currency(resultado_neto)}."
+        f"Esto se traduce en una utilidad neta de {format_currency(utilidad_neta)}."
     )
     
     # Evolución del margen
@@ -224,11 +223,11 @@ def build_area_commentary(metricas: Dict[str, Any]) -> str:
     
     texto = (
         f"El área {area_nombre} lidera la generación de ingresos con "
-        f"{format_percentage(area_pct)}% del total, evidenciando {concentracion}. "
+        f"{format_percentage(area_pct)} del total, evidenciando {concentracion}. "
     )
     
     if area_rent > 0:
-        texto += f"Esta área presenta una rentabilidad de {format_percentage(area_rent)}%. "
+        texto += f"Esta área presenta una rentabilidad de {format_percentage(area_rent)}. "
     
     texto += f"Recomendación estratégica: {riesgo}."
     
@@ -240,7 +239,7 @@ def build_area_commentary(metricas: Dict[str, Any]) -> str:
             segunda_pct = areas_sorted[1][1]
             texto += (
                 f" La segunda área en importancia es {segunda_area} "
-                f"con {format_percentage(segunda_pct)}% de participación."
+                f"con {format_percentage(segunda_pct)} de participación."
             )
     
     return texto
