@@ -58,9 +58,9 @@
                     <td style="padding: 16px; text-align: right; font-weight: 700;">{{ ingresos_uyu | format_currency }}</td>
                     <td style="padding: 16px; text-align: center;">
                         {% if variacion_mom_ingresos > 0 %}
-                        <span style="color: #70AD47; font-weight: 700; font-size: 20px;">↗ {{ variacion_mom_ingresos | format_percentage }}%</span>
+                        <span style="color: #70AD47; font-weight: 700; font-size: 20px;">↗ {{ variacion_mom_ingresos | format_percentage }}</span>
                         {% elif variacion_mom_ingresos < 0 %}
-                        <span style="color: #E74C3C; font-weight: 700; font-size: 20px;">↘ {{ variacion_mom_ingresos | format_percentage }}%</span>
+                        <span style="color: #E74C3C; font-weight: 700; font-size: 20px;">↘ {{ variacion_mom_ingresos | format_percentage }}</span>
                         {% else %}
                         <span style="font-size: 20px;">→ 0%</span>
                         {% endif %}
@@ -72,9 +72,9 @@
                     <td style="padding: 16px; text-align: right; font-weight: 700;">{{ gastos_uyu | format_currency }}</td>
                     <td style="padding: 16px; text-align: center;">
                         {% if variacion_mom_gastos > 0 %}
-                        <span style="color: #E74C3C; font-weight: 700; font-size: 20px;">↗ {{ variacion_mom_gastos | format_percentage }}%</span>
+                        <span style="color: #E74C3C; font-weight: 700; font-size: 20px;">↗ {{ variacion_mom_gastos | format_percentage }}</span>
                         {% elif variacion_mom_gastos < 0 %}
-                        <span style="color: #70AD47; font-weight: 700; font-size: 20px;">↘ {{ variacion_mom_gastos | format_percentage }}%</span>
+                        <span style="color: #70AD47; font-weight: 700; font-size: 20px;">↘ {{ variacion_mom_gastos | format_percentage }}</span>
                         {% else %}
                         <span style="font-size: 20px;">→ 0%</span>
                         {% endif %}
@@ -96,6 +96,61 @@
                 </tr>
             </tbody>
         </table>
+    </div>
+    {% endif %}
+    
+    {# Comparaciones YoY y QoQ (si disponibles) #}
+    {% if variacion_yoy_ingresos or variacion_qoq_ingresos %}
+    <div style="margin-top: 40px;">
+        <h3 class="section-subtitle">Comparaciones Anuales y Trimestrales</h3>
+        
+        <div class="row" style="gap: 30px;">
+            {% if variacion_yoy_ingresos %}
+            <div class="col-6">
+                <div class="card" style="background: #F0FDF4; border-left: 4px solid #70AD47;">
+                    <h4 style="font-size: 22px; font-weight: 700; margin-bottom: 15px; color: #2B3E6B;">Year-over-Year (YoY)</h4>
+                    <table style="width: 100%; font-size: 16px;">
+                        <tr style="border-bottom: 1px solid #E5E7EB;">
+                            <td style="padding: 10px 0; font-weight: 600;">Ingresos</td>
+                            <td style="padding: 10px 0; text-align: right; font-weight: 700;">
+                                <span style="color: {% if variacion_yoy_ingresos > 0 %}#70AD47{% else %}#E74C3C{% endif %};">
+                                    {% if variacion_yoy_ingresos > 0 %}↗{% else %}↘{% endif %} {{ variacion_yoy_ingresos | format_percentage }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% if variacion_yoy_gastos %}
+                        <tr>
+                            <td style="padding: 10px 0; font-weight: 600;">Gastos</td>
+                            <td style="padding: 10px 0; text-align: right; font-weight: 700;">
+                                <span style="color: {% if variacion_yoy_gastos < 0 %}#70AD47{% else %}#E74C3C{% endif %};">
+                                    {% if variacion_yoy_gastos > 0 %}↗{% else %}↘{% endif %} {{ variacion_yoy_gastos | format_percentage }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if variacion_qoq_ingresos %}
+            <div class="col-6">
+                <div class="card" style="background: #EFF6FF; border-left: 4px solid #4472C4;">
+                    <h4 style="font-size: 22px; font-weight: 700; margin-bottom: 15px; color: #2B3E6B;">Quarter-over-Quarter (QoQ)</h4>
+                    <table style="width: 100%; font-size: 16px;">
+                        <tr>
+                            <td style="padding: 10px 0; font-weight: 600;">Ingresos</td>
+                            <td style="padding: 10px 0; text-align: right; font-weight: 700;">
+                                <span style="color: {% if variacion_qoq_ingresos > 0 %}#70AD47{% else %}#E74C3C{% endif %};">
+                                    {% if variacion_qoq_ingresos > 0 %}↗{% else %}↘{% endif %} {{ variacion_qoq_ingresos | format_percentage }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 </div>
