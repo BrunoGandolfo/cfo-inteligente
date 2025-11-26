@@ -86,9 +86,9 @@
                     <td style="padding: 16px; text-align: right; font-weight: 700;">{{ rentabilidad_neta | format_percentage }}</td>
                     <td style="padding: 16px; text-align: center;">
                         {% if variacion_mom_rentabilidad > 0 %}
-                        <span style="color: #70AD47; font-weight: 700; font-size: 20px;">↗ {{ variacion_mom_rentabilidad | format_percentage }}pp</span>
+                        <span style="color: #70AD47; font-weight: 700; font-size: 20px;">↗ {{ variacion_mom_rentabilidad | format_percentage(include_symbol=False) }}pp</span>
                         {% elif variacion_mom_rentabilidad < 0 %}
-                        <span style="color: #E74C3C; font-weight: 700; font-size: 20px;">↘ {{ variacion_mom_rentabilidad | format_percentage }}pp</span>
+                        <span style="color: #E74C3C; font-weight: 700; font-size: 20px;">↘ {{ variacion_mom_rentabilidad | format_percentage(include_symbol=False) }}pp</span>
                         {% else %}
                         <span style="font-size: 20px;">→ 0pp</span>
                         {% endif %}

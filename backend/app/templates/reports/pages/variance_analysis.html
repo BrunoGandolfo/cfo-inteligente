@@ -48,7 +48,7 @@
                 
                 <td class="text-right">
                     <div class="{% if var.direccion == 'favorable' %}text-success{% else %}text-danger{% endif %} font-bold">
-                        {% if var.variacion_pct > 0 %}+{% endif %}{{ var.variacion_pct | format_percentage }}{% if var.tipo == 'margin' %}pp{% else %}%{% endif %}
+                        {% if var.variacion_pct > 0 %}+{% endif %}{{ var.variacion_pct | format_percentage(include_symbol=False) }}{% if var.tipo == 'margin' %}pp{% else %}%{% endif %}
                     </div>
                     <div class="text-xs text-muted">
                         {% if var.tipo != 'margin' %}
