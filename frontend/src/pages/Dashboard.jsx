@@ -14,8 +14,13 @@ import { useChartData } from '../hooks/useChartData';
 import ActiveFilters from '../components/filters/ActiveFilters';
 import { FileText, TrendingUp, TrendingDown, Wallet, Users } from 'lucide-react';
 import OperationButton from '../components/operations/OperationButton';
+import ColaboradorView from '../components/ColaboradorView';
 
 function Dashboard() {
+  // Verificar si el usuario es socio (solo socios ven el dashboard completo)
+  const esSocio = localStorage.getItem('esSocio') === 'true';
+
+  // Todos los hooks DEBEN estar antes de cualquier return condicional
   const [showIngreso, setShowIngreso] = useState(false);
   const [showGasto, setShowGasto] = useState(false);
   const [showRetiro, setShowRetiro] = useState(false);
@@ -26,12 +31,14 @@ function Dashboard() {
   const [loadingRetiro, setLoadingRetiro] = useState(false);
   const [loadingDistrib, setLoadingDistrib] = useState(false);
 
-  // Verificar si el usuario es socio (solo socios pueden hacer retiros y distribuciones)
-  const esSocio = localStorage.getItem('esSocio') === 'true';
-
   const { loading, metricas, filtros, refreshKey } = useMetrics();
   const { operacionesAll, refetch } = useOperations(refreshKey);
   const { operaciones: chartData, loading: chartLoading } = useChartData();
+
+  // Si no es socio, mostrar vista simplificada de colaborador
+  if (!esSocio) {
+    return <ColaboradorView />;
+  }
 
   // Helper function para obtener nombre del mes actual
   const getCurrentMonthName = () => {
@@ -82,7 +89,7 @@ function Dashboard() {
               <span className="inline xl:hidden">Reporte</span>
             </button>
           </div>
-          <div className={`grid grid-cols-1 md:grid-cols-2 ${esSocio ? 'xl:grid-cols-4' : 'xl:grid-cols-2'} gap-4 xl:gap-5`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-5">
             
             <OperationButton
               variant="ingreso"
@@ -108,33 +115,29 @@ function Dashboard() {
               disabled={loadingGasto}
             />
             
-            {esSocio && (
-              <OperationButton
-                variant="retiro"
-                title="Retiro de Empresa"
-                description="Retiros vinculados a operaciones de la empresa"
-                lastActivity="Se realiza a fin de mes"
-                shortcut="⌘ + 3"
-                icon={Wallet}
-                onClick={() => setShowRetiro(true)}
-                loading={loadingRetiro}
-                disabled={loadingRetiro}
-              />
-            )}
+            <OperationButton
+              variant="retiro"
+              title="Retiro de Empresa"
+              description="Retiros vinculados a operaciones de la empresa"
+              lastActivity="Se realiza a fin de mes"
+              shortcut="⌘ + 3"
+              icon={Wallet}
+              onClick={() => setShowRetiro(true)}
+              loading={loadingRetiro}
+              disabled={loadingRetiro}
+            />
             
-            {esSocio && (
-              <OperationButton
-                variant="distribucion"
-                title="Distribución de Utilidades"
-                description="Distribución mensual de utilidades entre socios"
-                lastActivity="Se realiza a fin de mes"
-                shortcut="⌘ + 4"
-                icon={Users}
-                onClick={() => setShowDistrib(true)}
-                loading={loadingDistrib}
-                disabled={loadingDistrib}
-              />
-            )}
+            <OperationButton
+              variant="distribucion"
+              title="Distribución de Utilidades"
+              description="Distribución mensual de utilidades entre socios"
+              lastActivity="Se realiza a fin de mes"
+              shortcut="⌘ + 4"
+              icon={Users}
+              onClick={() => setShowDistrib(true)}
+              loading={loadingDistrib}
+              disabled={loadingDistrib}
+            />
             
           </div>
         </div>
