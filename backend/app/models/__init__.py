@@ -5,6 +5,7 @@ from app.models.distribucion import DistribucionDetalle
 from app.models.usuario import Usuario
 from app.models.cliente import Cliente
 from app.models.proveedor import Proveedor
+from app.models.conversacion import Conversacion, Mensaje
 
 __all__ = [
     "Area",
@@ -16,5 +17,7 @@ __all__ = [
     "DistribucionDetalle",
     "Usuario",
     "Cliente",
-    "Proveedor"
+    "Proveedor",
+    "Conversacion",
+    "Mensaje"
 ]

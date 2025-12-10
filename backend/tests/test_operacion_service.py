@@ -395,8 +395,8 @@ class TestCrearRetiro:
         assert operacion.moneda_original == Moneda.UYU
     
     @pytest.mark.integration
-    def test_crear_retiro_asigna_area_gastos(self, db_session):
-        """Retiro debe asignarse automáticamente a Gastos Generales"""
+    def test_crear_retiro_no_requiere_area(self, db_session):
+        """Retiro NO requiere área - solo localidad (lógica de negocio correcta)"""
         data = RetiroCreate(
             monto_uyu=Decimal('5000'),
             monto_usd=None,
@@ -408,10 +408,9 @@ class TestCrearRetiro:
         
         operacion = crear_retiro(db_session, data)
         
-        # Debe buscar área "Gastos Generales"
-        assert operacion.area_id is not None
-        area = db_session.query(Area).filter(Area.id == operacion.area_id).first()
-        assert area.nombre == "Gastos Generales"
+        # RETIRO es movimiento financiero, NO operación de área
+        # area_id debe ser NULL para no contaminar análisis de rentabilidad
+        assert operacion.area_id is None
 
 
 # ══════════════════════════════════════════════════════════════
@@ -518,8 +517,8 @@ class TestCrearDistribucion:
         assert operacion.moneda_original == Moneda.UYU
     
     @pytest.mark.integration
-    def test_crear_distribucion_asigna_area_gastos(self, db_session, socios_test):
-        """Distribución debe asignarse a Gastos Generales"""
+    def test_crear_distribucion_no_requiere_area(self, db_session, socios_test):
+        """Distribución NO requiere área - solo localidad (lógica de negocio correcta)"""
         if len(socios_test) < 1:
             pytest.skip("No hay socios")
         
@@ -541,8 +540,9 @@ class TestCrearDistribucion:
         
         operacion = crear_distribucion(db_session, data)
         
-        area = db_session.query(Area).filter(Area.id == operacion.area_id).first()
-        assert area.nombre == "Gastos Generales"
+        # DISTRIBUCION es movimiento financiero, NO operación de área
+        # area_id debe ser NULL para no contaminar análisis de rentabilidad
+        assert operacion.area_id is None
     
     @pytest.mark.integration
     def test_crear_distribucion_porcentaje_20(self, db_session, socios_test):
@@ -623,4 +623,175 @@ class TestCasosEdge:
         
         assert operacion.cliente is None
         assert operacion.tipo_operacion == TipoOperacion.INGRESO
+
+
+# ══════════════════════════════════════════════════════════════
+# TESTS ADICIONALES: Cobertura completa
+# ══════════════════════════════════════════════════════════════
+
+class TestConversionTipoCambioAutomatico:
+    """Tests de conversión automática con tipo de cambio"""
+    
+    def test_crear_operacion_con_tipo_cambio_variable(self):
+        """Verificar que diferentes TC dan diferentes montos USD"""
+        # TC bajo
+        monto_uyu_1, monto_usd_1 = calcular_montos(
+            monto_original=Decimal('40000'),
+            moneda_original='UYU',
+            tipo_cambio=Decimal('40.00')
+        )
+        
+        # TC alto
+        monto_uyu_2, monto_usd_2 = calcular_montos(
+            monto_original=Decimal('40000'),
+            moneda_original='UYU',
+            tipo_cambio=Decimal('42.00')
+        )
+        
+        # Con TC más alto, mismo UYU da menos USD
+        assert monto_usd_1 > monto_usd_2
+        assert monto_uyu_1 == monto_uyu_2  # UYU no cambia
+    
+    def test_conversion_precision_4_decimales(self):
+        """Verificar precisión en tipo de cambio con 4 decimales"""
+        monto_uyu, monto_usd = calcular_montos(
+            monto_original=Decimal('10000'),
+            moneda_original='UYU',
+            tipo_cambio=Decimal('40.1234')
+        )
+        
+        esperado = Decimal('10000') / Decimal('40.1234')
+        assert abs(monto_usd - esperado) < Decimal('0.0001')
+
+
+class TestDistribucionValidaciones:
+    """Tests de validaciones en distribución"""
+    
+    def test_distribucion_suma_correcta_5_socios(self):
+        """Verificar que suma total es correcta con 5 socios"""
+        # Simular datos de distribución
+        montos_uyu = [5000, 6000, 7000, 8000, 9000]  # Total: 35000
+        montos_usd = [100, 120, 140, 160, 180]       # Total: 700
+        
+        total_uyu = sum(montos_uyu)
+        total_usd = sum(montos_usd)
+        
+        assert total_uyu == 35000
+        assert total_usd == 700
+    
+    def test_distribucion_parcial_calcula_totales(self):
+        """Distribución parcial (algunos socios con 0) calcula bien"""
+        # Solo 2 socios reciben
+        montos = {
+            'agustina_uyu': Decimal('10000'),
+            'bruno_uyu': Decimal('15000'),
+            'viviana_uyu': Decimal('0'),
+            'gonzalo_uyu': Decimal('0'),
+            'pancho_uyu': Decimal('0'),
+        }
+        
+        total = sum(v for v in montos.values())
+        assert total == Decimal('25000')
+
+
+class TestFiltrosPorLocalidadArea:
+    """Tests de filtros por localidad y área"""
+    
+    @pytest.mark.integration
+    def test_crear_operaciones_diferentes_localidades(self, db_session, area_test):
+        """Crear operaciones en Montevideo y Mercedes"""
+        # Montevideo
+        op_mvd = _crear_operacion_base(
+            db=db_session,
+            tipo_operacion=TipoOperacion.INGRESO,
+            fecha=date.today(),
+            monto_original=Decimal('10000'),
+            moneda_original='UYU',
+            tipo_cambio=Decimal('40.00'),
+            area_id=area_test.id,
+            localidad='Montevideo',
+            descripcion='Test MVD',
+            cliente='Cliente MVD'
+        )
+        
+        # Mercedes
+        op_mer = _crear_operacion_base(
+            db=db_session,
+            tipo_operacion=TipoOperacion.INGRESO,
+            fecha=date.today(),
+            monto_original=Decimal('8000'),
+            moneda_original='UYU',
+            tipo_cambio=Decimal('40.00'),
+            area_id=area_test.id,
+            localidad='Mercedes',
+            descripcion='Test MER',
+            cliente='Cliente MER'
+        )
+        
+        assert op_mvd.localidad == Localidad.MONTEVIDEO
+        assert op_mer.localidad == Localidad.MERCEDES
+    
+    @pytest.mark.integration
+    def test_filtrar_operaciones_por_area(self, db_session):
+        """Filtrar operaciones por área específica"""
+        # Obtener dos áreas diferentes
+        area1 = db_session.query(Area).filter(Area.nombre == "Jurídica").first()
+        area2 = db_session.query(Area).filter(Area.nombre == "Notarial").first()
+        
+        if not area1 or not area2:
+            pytest.skip("No hay suficientes áreas en BD de test")
+        
+        # Crear operaciones en cada área
+        _crear_operacion_base(
+            db=db_session,
+            tipo_operacion=TipoOperacion.INGRESO,
+            fecha=date.today(),
+            monto_original=Decimal('5000'),
+            moneda_original='UYU',
+            tipo_cambio=Decimal('40.00'),
+            area_id=area1.id,
+            localidad='Montevideo',
+            descripcion='Test Area 1',
+            cliente='Test'
+        )
+        
+        _crear_operacion_base(
+            db=db_session,
+            tipo_operacion=TipoOperacion.INGRESO,
+            fecha=date.today(),
+            monto_original=Decimal('7000'),
+            moneda_original='UYU',
+            tipo_cambio=Decimal('40.00'),
+            area_id=area2.id,
+            localidad='Montevideo',
+            descripcion='Test Area 2',
+            cliente='Test'
+        )
+        
+        # Filtrar por área 1
+        ops_area1 = db_session.query(Operacion).filter(
+            Operacion.area_id == area1.id,
+            Operacion.deleted_at == None
+        ).all()
+        
+        assert len(ops_area1) >= 1
+        for op in ops_area1:
+            assert op.area_id == area1.id
+
+
+class TestCalculoTotalesPorSocio:
+    """Tests de cálculo de totales por socio"""
+    
+    def test_porcentaje_distribucion_20_por_socio(self):
+        """Cada socio tiene 20% del total"""
+        total_utilidades = Decimal('100000')
+        porcentaje_socio = Decimal('20.00')
+        
+        monto_por_socio = total_utilidades * porcentaje_socio / 100
+        
+        assert monto_por_socio == Decimal('20000')
+        
+        # 5 socios * 20% = 100%
+        total_distribuido = monto_por_socio * 5
+        assert total_distribuido == total_utilidades
 

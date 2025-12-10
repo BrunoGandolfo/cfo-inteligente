@@ -18,15 +18,15 @@ class QueryFallback:
         """
         p = pregunta.lower()
         
-        # RENTABILIDAD
-        if any(x in p for x in ["rentabilidad este mes", "rentabilidad del mes", "cuál es la rentabilidad"]):
-            return "SELECT ((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rentabilidad FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE)"
-        
+        # RENTABILIDAD (patrones específicos ANTES de generales)
         if "rentabilidad por área" in p or "rentabilidad de cada área" in p:
             return "SELECT a.nombre,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rent FROM operaciones o JOIN areas a ON a.id=o.area_id WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY a.nombre ORDER BY rent DESC"
         
         if "rentabilidad por localidad" in p:
             return "SELECT o.localidad,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rent FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY o.localidad ORDER BY rent DESC"
+        
+        if any(x in p for x in ["rentabilidad este mes", "rentabilidad del mes", "cuál es la rentabilidad"]):
+            return "SELECT ((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rentabilidad FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE)"
         
         # COMPARACIONES GEOGRÁFICAS
         if any(x in p for x in ["mercedes vs montevideo", "mercedes montevideo", "comparar mercedes", "comparación mercedes"]):
