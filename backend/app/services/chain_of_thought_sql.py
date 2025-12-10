@@ -19,6 +19,7 @@ from typing import Dict, Any
 
 from app.core.logger import get_logger
 from app.core.constants import KEYWORDS_TEMPORALES
+from app.services.ai.ai_orchestrator import AIOrchestrator
 
 logger = get_logger(__name__)
 
@@ -144,14 +145,19 @@ INSTRUCCIONES:
 Genera ÚNICAMENTE el SQL query:"""
         
         try:
-            response = claude_gen.client.messages.create(
-                model="claude-sonnet-4-5-20250929",
+            # Usar AIOrchestrator con fallback automático
+            orchestrator = AIOrchestrator()
+            sql_generado = orchestrator.complete(
+                prompt=prompt_enriquecido,
                 max_tokens=1500,
-                temperature=0.0,
-                messages=[{"role": "user", "content": prompt_enriquecido}]
+                temperature=0.0
             )
             
-            sql_generado = response.content[0].text.strip()
+            if not sql_generado:
+                logger.error("AIOrchestrator retornó None en Chain-of-Thought")
+                return "ERROR: Todos los proveedores de IA fallaron"
+            
+            sql_generado = sql_generado.strip()
             
             # Limpiar si viene con markdown
             if sql_generado.startswith("```"):

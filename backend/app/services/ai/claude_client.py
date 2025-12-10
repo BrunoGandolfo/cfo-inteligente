@@ -1,11 +1,13 @@
 """
-ClaudeClient - Wrapper para Anthropic API
+ClaudeClient - Wrapper para IA con fallback multi-proveedor
 
-Cliente robusto con manejo de errores, timeouts y rate limits.
-Reutilizable fuera de este proyecto.
+Usa AIOrchestrator internamente para fallback automático:
+Claude → OpenAI → Gemini
+
+Mantiene compatibilidad con código existente.
 
 Autor: Sistema CFO Inteligente
-Fecha: Octubre 2025
+Fecha: Diciembre 2025
 """
 
 import os
@@ -20,16 +22,18 @@ logger = get_logger(__name__)
 
 class ClaudeClient:
     """
-    Wrapper profesional para Anthropic API.
+    Wrapper de IA con fallback multi-proveedor.
     
-    RESPONSABILIDAD: Solo comunicación con Claude.
-    REUTILIZABLE: Puede usarse en otros proyectos.
+    Usa AIOrchestrator internamente para fallback automático:
+    1. Claude (Anthropic)
+    2. OpenAI
+    3. Gemini (Google)
     
     Features:
-    - Manejo robusto de errores
-    - Timeout configurable
-    - Logging de requests
-    - Retry logic (opcional)
+    - Fallback automático entre proveedores
+    - Timeout configurable por proveedor
+    - Logging detallado
+    - Compatibilidad hacia atrás (misma firma de métodos)
     
     Configuración:
     - API Key desde env var ANTHROPIC_API_KEY
@@ -52,6 +56,9 @@ class ClaudeClient:
     MODEL_OPUS_4 = "claude-opus-4-20250514"
     MODEL_HAIKU_4 = "claude-4-haiku-20250514"
     
+    # Singleton del orchestrator (compartido entre instancias)
+    _orchestrator = None
+    
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -59,26 +66,35 @@ class ClaudeClient:
     ):
         """
         Constructor.
+        Inicializa AIOrchestrator para fallback multi-proveedor.
         
         Args:
-            api_key: API key de Anthropic (si None, usa env var)
-            model: Modelo a usar (default: Sonnet 4)
+            api_key: API key de Anthropic (ignorado, usa config)
+            model: Modelo preferido (para logging)
             
         Raises:
-            ValueError: Si api_key no está disponible
+            ValueError: Si ningún proveedor de IA está disponible
         """
-        self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
+        self.model = model
         
-        if not self.api_key:
+        # Inicializar AIOrchestrator (singleton para reutilizar conexiones)
+        if ClaudeClient._orchestrator is None:
+            try:
+                from app.services.ai.ai_orchestrator import AIOrchestrator
+                ClaudeClient._orchestrator = AIOrchestrator()
+                logger.info("ClaudeClient: AIOrchestrator inicializado con fallback multi-proveedor")
+            except Exception as e:
+                logger.warning(f"ClaudeClient: No se pudo inicializar AIOrchestrator: {e}")
+                ClaudeClient._orchestrator = None
+        
+        # Verificar que hay al menos un proveedor disponible
+        if ClaudeClient._orchestrator and not ClaudeClient._orchestrator.is_available():
             raise ValueError(
-                "ANTHROPIC_API_KEY no encontrada. "
-                "Define variable de entorno o pasa api_key al constructor."
+                "Ningún proveedor de IA disponible. "
+                "Configura al menos una API key: ANTHROPIC_API_KEY, OPENAI_API_KEY o GOOGLE_AI_KEY"
             )
         
-        self.model = model
-        self.client = anthropic.Anthropic(api_key=self.api_key)
-        
-        logger.info(f"ClaudeClient inicializado con modelo: {self.model}")
+        logger.info(f"ClaudeClient inicializado (modelo preferido: {self.model})")
     
     def complete(
         self,
@@ -89,7 +105,9 @@ class ClaudeClient:
         system_prompt: Optional[str] = None
     ) -> str:
         """
-        Llama a Claude API con prompt.
+        Genera respuesta usando fallback multi-proveedor.
+        
+        Intenta: Claude → OpenAI → Gemini
         
         Args:
             prompt: Prompt de usuario
@@ -99,66 +117,35 @@ class ClaudeClient:
             system_prompt: Prompt de sistema (opcional)
             
         Returns:
-            String con respuesta de Claude
+            String con respuesta
             
         Raises:
-            APITimeoutError: Si excede timeout
-            RateLimitError: Si excede rate limit
-            APIConnectionError: Si hay problema de conexión
-            Exception: Otros errores
+            Exception: Si todos los proveedores fallan
             
-        Nota:
-            El caller debe manejar estas excepciones (generators lo hacen).
+        Nota: Con fallback, es menos probable que falle completamente.
         """
         logger.info(
-            f"Llamando Claude API: model={self.model}, "
+            f"ClaudeClient.complete(): "
             f"temp={temperature}, max_tokens={max_tokens}, timeout={timeout}s"
         )
-        logger.debug(f"Prompt length: {len(prompt)} chars")
         
-        try:
-            # Construir mensaje
-            messages = [{"role": "user", "content": prompt}]
+        # Usar AIOrchestrator con fallback automático
+        if ClaudeClient._orchestrator:
+            response_text = ClaudeClient._orchestrator.complete(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                timeout=timeout
+            )
             
-            # Kwargs para API
-            api_kwargs = {
-                "model": self.model,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "messages": messages,
-                "timeout": timeout
-            }
-            
-            # Agregar system prompt si existe
-            if system_prompt:
-                api_kwargs["system"] = system_prompt
-            
-            # Llamar API
-            message = self.client.messages.create(**api_kwargs)
-            
-            # Extraer texto
-            response_text = message.content[0].text
-            
-            logger.info(f"Claude API respondió: {len(response_text)} chars")
-            logger.debug(f"Response preview: {response_text[:200]}...")
-            
-            return response_text
-            
-        except APITimeoutError as e:
-            logger.error(f"Claude API timeout después de {timeout}s: {e}")
-            raise
-            
-        except RateLimitError as e:
-            logger.error(f"Claude API rate limit excedido: {e}")
-            raise
-            
-        except APIConnectionError as e:
-            logger.error(f"Claude API error de conexión: {e}")
-            raise
-            
-        except Exception as e:
-            logger.error(f"Claude API error inesperado: {type(e).__name__}: {e}")
-            raise
+            if response_text:
+                return response_text
+            else:
+                # Todos los proveedores fallaron
+                raise Exception("Todos los proveedores de IA fallaron (Claude, OpenAI, Gemini)")
+        else:
+            raise ValueError("AIOrchestrator no inicializado - sin proveedores de IA")
     
     def complete_with_retry(
         self,
@@ -170,7 +157,7 @@ class ClaudeClient:
         system_prompt: Optional[str] = None
     ) -> str:
         """
-        Llama a Claude API con reintentos automáticos.
+        Genera respuesta con reintentos (fallback ya incluido en cada intento).
         
         Útil para manejar errores transitorios (red, rate limits temporales).
         
@@ -183,7 +170,7 @@ class ClaudeClient:
             system_prompt: Prompt de sistema (opcional)
             
         Returns:
-            String con respuesta de Claude
+            String con respuesta
             
         Raises:
             Exception: Si todos los reintentos fallan
@@ -204,8 +191,7 @@ class ClaudeClient:
                     system_prompt=system_prompt
                 )
                 
-            except (APIConnectionError, RateLimitError) as e:
-                # Errores recuperables
+            except Exception as e:
                 last_error = e
                 logger.warning(f"Intento {attempt} falló: {e}")
                 
@@ -217,16 +203,6 @@ class ClaudeClient:
                 else:
                     logger.error(f"Todos los intentos fallaron")
                     raise last_error
-                    
-            except APITimeoutError as e:
-                # Timeout no es recuperable con retry (mismo timeout)
-                logger.error(f"Timeout no recuperable: {e}")
-                raise
-                
-            except Exception as e:
-                # Otros errores no son recuperables
-                logger.error(f"Error no recuperable: {e}")
-                raise
         
         # Si llegamos aquí, todos los intentos fallaron
         raise last_error
@@ -236,12 +212,18 @@ class ClaudeClient:
         Retorna información del modelo actual.
         
         Returns:
-            Dict con info del modelo
+            Dict con info del modelo y proveedores disponibles
         """
-        return {
+        info = {
             "model": self.model,
             "is_sonnet": "sonnet" in self.model.lower(),
             "is_opus": "opus" in self.model.lower(),
-            "is_haiku": "haiku" in self.model.lower()
+            "is_haiku": "haiku" in self.model.lower(),
+            "fallback_enabled": ClaudeClient._orchestrator is not None
         }
-
+        
+        # Agregar proveedores disponibles si hay orchestrator
+        if ClaudeClient._orchestrator:
+            info["available_providers"] = ClaudeClient._orchestrator.get_available_providers()
+        
+        return info

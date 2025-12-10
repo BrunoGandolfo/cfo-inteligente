@@ -1,24 +1,21 @@
 """
-Generador de SQL usando Claude Sonnet 4.5 como modelo principal
-Mayor precisión y determinismo que GPT-3.5
+Generador de SQL con fallback multi-proveedor (Claude → OpenAI → Gemini)
+Usa AIOrchestrator para mayor resiliencia
 """
-
-import anthropic
-import os
-from dotenv import load_dotenv
 
 from app.core.logger import get_logger
 from app.core.constants import CLAUDE_MODEL, CLAUDE_MAX_TOKENS, CLAUDE_TEMPERATURE
-
-load_dotenv()
+from app.services.ai.ai_orchestrator import AIOrchestrator
 
 logger = get_logger(__name__)
 
 
 class ClaudeSQLGenerator:
     """
-    Usa Claude Sonnet 4.5 para generar SQL directamente
-    Más preciso y determinístico que Vanna+GPT-3.5
+    Generador de SQL con fallback multi-proveedor.
+    
+    Usa AIOrchestrator para fallback automático:
+    Claude → OpenAI → Gemini
     """
     
     DDL_CONTEXT = """
@@ -246,15 +243,12 @@ IMPORTANTE: Si una query viola alguna de estas reglas, usar approach alternativo
 """
     
     def __init__(self):
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY no encontrada en .env")
-        
-        self.client = anthropic.Anthropic(api_key=api_key)
+        self._orchestrator = AIOrchestrator()
+        logger.info("ClaudeSQLGenerator inicializado con AIOrchestrator")
     
     def generar_sql(self, pregunta: str, contexto: list = None) -> str:
         """
-        Genera SQL usando Claude Sonnet 4.5 con memoria de conversación
+        Genera SQL usando IA con fallback multi-proveedor y memoria de conversación
         
         Args:
             pregunta: Pregunta del usuario en lenguaje natural
@@ -283,29 +277,31 @@ INSTRUCCIONES:
 
 Genera ÚNICAMENTE el SQL query:"""
         
-        # Construir mensajes para Claude
-        mensajes = []
+        # Construir prompt completo incluyendo contexto previo
+        prompt_completo = prompt_sistema + f"\n\nPREGUNTA: {pregunta}"
         
-        # Agregar contexto de conversación si existe
+        # Si hay contexto previo, agregarlo al prompt
         if contexto:
+            contexto_str = "\n\nCONTEXTO DE CONVERSACIÓN PREVIA:\n"
             for msg in contexto:
-                mensajes.append(msg)
-        
-        # Agregar pregunta actual
-        mensajes.append({
-            "role": "user",
-            "content": f"{prompt_sistema}\n\nPREGUNTA: {pregunta}"
-        })
+                role = "Usuario" if msg["role"] == "user" else "Asistente"
+                content = msg['content'][:500] if len(msg['content']) > 500 else msg['content']
+                contexto_str += f"{role}: {content}\n"
+            prompt_completo = prompt_sistema + contexto_str + f"\n\nPREGUNTA ACTUAL: {pregunta}"
 
         try:
-            response = self.client.messages.create(
-                model=CLAUDE_MODEL,
+            # Usar AIOrchestrator con fallback automático
+            sql_generado = self._orchestrator.complete(
+                prompt=prompt_completo,
                 max_tokens=CLAUDE_MAX_TOKENS,
-                temperature=CLAUDE_TEMPERATURE,
-                messages=mensajes
+                temperature=CLAUDE_TEMPERATURE
             )
             
-            sql_generado = response.content[0].text.strip()
+            if not sql_generado:
+                logger.error("AIOrchestrator retornó None - todos los proveedores fallaron")
+                return "ERROR: Todos los proveedores de IA fallaron"
+            
+            sql_generado = sql_generado.strip()
             
             # Limpiar si viene con markdown
             if sql_generado.startswith("```"):
@@ -316,6 +312,5 @@ Genera ÚNICAMENTE el SQL query:"""
             return sql_generado
             
         except Exception as e:
-            logger.error(f"Error en Claude SQL Generator: {e}", exc_info=True)
+            logger.error(f"Error en SQL Generator: {e}", exc_info=True)
             return f"ERROR: {str(e)}"
-

@@ -1,44 +1,37 @@
 """
-InsightGenerator - Genera insights usando Claude Sonnet 4.5
+InsightGenerator - Genera insights usando IA con fallback multi-proveedor
 
-Integra con Claude API para generar análisis inteligentes y variados.
+Usa AIOrchestrator para fallback automático: Claude → OpenAI → Gemini
 Usa temperatura controlada (0.2-0.3) para variabilidad sin sacrificar calidad.
 
 Autor: Sistema CFO Inteligente
-Fecha: Octubre 2025
+Fecha: Diciembre 2025
 """
 
-import anthropic
-import os
 import json
 from typing import Dict, Any, List
-from dotenv import load_dotenv
 
 from app.core.logger import get_logger
-from app.core.constants import CLAUDE_MODEL
-
-load_dotenv()
+from app.services.ai.ai_orchestrator import AIOrchestrator
 
 logger = get_logger(__name__)
 
 
 class InsightGenerator:
     """
-    Generador de insights financieros usando Claude Sonnet 4.5.
+    Generador de insights financieros con fallback multi-proveedor.
     
     Características:
     - Temperatura 0.2-0.3 para variabilidad controlada
     - Fuerza respuesta JSON estructurada
     - Manejo robusto de errores
-    - Fallback a insights básicos si Claude falla
+    - Fallback automático: Claude → OpenAI → Gemini
+    - Fallback a insights básicos si todos los proveedores fallan
     """
     
     def __init__(self):
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY no encontrada en .env")
-        
-        self.client = anthropic.Anthropic(api_key=api_key.strip())
+        self._orchestrator = AIOrchestrator()
+        logger.info("InsightGenerator inicializado con AIOrchestrator")
     
     def generate_insights(
         self, 
@@ -47,7 +40,7 @@ class InsightGenerator:
         temperature: float = 0.2
     ) -> List[Dict[str, str]]:
         """
-        Genera insights usando Claude Sonnet 4.5.
+        Genera insights usando IA con fallback multi-proveedor.
         
         Args:
             context_string: Contexto formateado con métricas e histórico
@@ -70,14 +63,16 @@ class InsightGenerator:
         prompt = self._build_prompt(context_string, num_insights)
         
         try:
-            response = self.client.messages.create(
-                model=CLAUDE_MODEL,
+            # Usar AIOrchestrator con fallback automático
+            insights_text = self._orchestrator.complete(
+                prompt=prompt,
                 max_tokens=2000,
-                temperature=temperature,
-                messages=[{"role": "user", "content": prompt}]
+                temperature=temperature
             )
             
-            insights_text = response.content[0].text.strip()
+            if not insights_text:
+                logger.warning("AIOrchestrator retornó None - usando fallback")
+                return self._generate_fallback_insights(context_string)
             
             # Parsear JSON
             insights = self._parse_insights(insights_text)
@@ -91,7 +86,7 @@ class InsightGenerator:
             return self._generate_fallback_insights(context_string)
     
     def _build_prompt(self, context_string: str, num_insights: int) -> str:
-        """Construye prompt para Claude"""
+        """Construye prompt para IA"""
         return f"""Eres un analista financiero senior de Conexión Consultora.
 
 {context_string}
@@ -107,10 +102,14 @@ REGLAS CRÍTICAS:
 5. SÉ preciso: "aumentó 23%" mejor que "aumentó considerablemente"
 6. VARÍA el lenguaje: no repitas estructuras de frases
 7. PRIORIZA insights accionables
+8. USA EXACTAMENTE los valores proporcionados, NO recalcules ni estimes
+9. ANTES de generar alertas sobre umbrales, VERIFICA los valores reales del período
+10. NO generes alertas hipotéticas si los datos reales no las justifican
+11. Si el Ratio Distribución/Utilidad es menor a 50%, NO alertes sobre descapitalización
 
 TIPOS DE INSIGHTS (variar):
 - tendencia: Patrones de crecimiento/decrecimiento
-- alerta: Situaciones que requieren atención
+- alerta: Situaciones que requieren atención (SOLO si datos lo justifican)
 - destacado: Logros o hitos significativos
 - oportunidad: Áreas de mejora identificadas
 
@@ -130,7 +129,7 @@ FORMATO DE SALIDA (JSON estricto):
 GENERA {num_insights} INSIGHTS AHORA (solo JSON, sin texto adicional):"""
     
     def _parse_insights(self, text: str) -> List[Dict[str, str]]:
-        """Parsea respuesta de Claude a JSON"""
+        """Parsea respuesta de IA a JSON"""
         # Limpiar markdown si existe
         text = text.replace("```json", "").replace("```", "").strip()
         
@@ -153,8 +152,8 @@ GENERA {num_insights} INSIGHTS AHORA (solo JSON, sin texto adicional):"""
             raise
     
     def _generate_fallback_insights(self, context_string: str) -> List[Dict[str, str]]:
-        """Genera insights básicos si Claude falla"""
-        logger.warning("Usando insights fallback (Claude falló)")
+        """Genera insights básicos si todos los proveedores de IA fallan"""
+        logger.warning("Usando insights fallback (todos los proveedores fallaron)")
         
         return [
             {
@@ -164,4 +163,3 @@ GENERA {num_insights} INSIGHTS AHORA (solo JSON, sin texto adicional):"""
                 'relevancia': 'media'
             }
         ]
-

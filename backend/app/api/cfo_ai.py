@@ -18,24 +18,14 @@ from pydantic import BaseModel
 from typing import Optional, List
 from uuid import UUID
 import json
-import anthropic
-from dotenv import load_dotenv
 from app.services.conversacion_service import ConversacionService
 from app.schemas.conversacion import ConversacionListResponse, ConversacionResponse
-
-# Cargar variables de entorno (fallback por si acaso)
-load_dotenv()
+from app.services.ai.ai_orchestrator import AIOrchestrator
 
 router = APIRouter()
 
-# FIX: Limpiar la API key por si viene con saltos de línea o duplicada
-api_key_limpia = settings.anthropic_api_key.strip()
-if '\n' in api_key_limpia or len(api_key_limpia) > 108:
-    # Si está duplicada, tomar solo la primera parte
-    api_key_limpia = api_key_limpia.split('\n')[0].strip()[:108]
-
-# Cliente de Anthropic para Claude Sonnet 4.5 (respuestas narrativas)
-client = anthropic.Anthropic(api_key=api_key_limpia)
+# AIOrchestrator para respuestas narrativas (fallback multi-proveedor)
+_orchestrator = AIOrchestrator()
 
 # Generador de SQL con Claude Sonnet 4.5 (modelo principal)
 claude_sql_gen = ClaudeSQLGenerator()
@@ -81,17 +71,19 @@ INSTRUCCIONES:
 
 Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
         
-        logger.info("Generando narrativa con Claude Sonnet 4.5")
+        logger.info("Generando narrativa con AIOrchestrator (fallback multi-proveedor)")
         
-        message = client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+        respuesta = _orchestrator.complete(
+            prompt=prompt,
             max_tokens=250,
-            messages=[{"role": "user", "content": prompt}]
+            temperature=0.3
         )
         
-        respuesta = message.content[0].text
-        logger.info(f"Narrativa generada exitosamente ({len(respuesta)} chars)")
+        if not respuesta:
+            logger.error("AIOrchestrator retornó None - usando fallback de datos crudos")
+            return f"Resultado: {json.dumps(datos, indent=2, ensure_ascii=False, default=str)}"
         
+        logger.info(f"Narrativa generada exitosamente ({len(respuesta)} chars)")
         return respuesta
         
     except Exception as e:
