@@ -313,3 +313,149 @@ class TestCasosEdge:
             # Debe haber llamado API (no usó cache inválido)
             assert mock_get.called
 
+
+# ══════════════════════════════════════════════════════════════
+# TESTS ADICIONALES: Cobertura completa
+# ══════════════════════════════════════════════════════════════
+
+class TestCacheFuncionamiento:
+    """Tests adicionales del funcionamiento del cache"""
+    
+    @patch('requests.get')
+    def test_cache_se_actualiza_con_valores_api(self, mock_get):
+        """Cache se actualiza con valores exactos de la API"""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "compra": 41.15,
+            "venta": 41.65
+        }
+        mock_get.return_value = mock_response
+        
+        resultado = obtener_tipo_cambio_actual()
+        
+        # Verificar que cache tiene los valores exactos
+        assert tipo_cambio_service._cache["compra"] == 41.15
+        assert tipo_cambio_service._cache["venta"] == 41.65
+        assert tipo_cambio_service._cache["promedio"] == 41.40  # (41.15 + 41.65) / 2
+    
+    @patch('requests.get')
+    def test_cache_valido_dentro_24_horas(self, mock_get):
+        """Cache válido dentro de 24 horas no llama API"""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"compra": 40.00, "venta": 40.50}
+        mock_get.return_value = mock_response
+        
+        # Primera llamada
+        obtener_tipo_cambio_actual()
+        assert mock_get.call_count == 1
+        
+        # Simular que pasaron 23 horas (aún válido)
+        tipo_cambio_service._cache["timestamp"] = datetime.now() - timedelta(hours=23)
+        
+        # Segunda llamada - debe usar cache
+        obtener_tipo_cambio_actual()
+        assert mock_get.call_count == 1  # No aumentó
+
+
+class TestFallbackCuandoAPIFalla:
+    """Tests adicionales del mecanismo de fallback"""
+    
+    @patch('requests.get')
+    def test_fallback_mantiene_valores_consistentes(self, mock_get):
+        """Valores fallback son consistentes entre llamadas"""
+        mock_get.side_effect = requests.exceptions.Timeout()
+        
+        resultado1 = obtener_tipo_cambio_actual()
+        
+        # Limpiar cache para forzar otra llamada
+        tipo_cambio_service._cache["timestamp"] = None
+        
+        resultado2 = obtener_tipo_cambio_actual()
+        
+        # Valores fallback deben ser iguales
+        assert resultado1["compra"] == resultado2["compra"]
+        assert resultado1["venta"] == resultado2["venta"]
+        assert resultado1["promedio"] == resultado2["promedio"]
+    
+    @patch('requests.get')
+    def test_fallback_fuente_indica_fallback(self, mock_get):
+        """Cuando usa fallback, fuente debe indicarlo"""
+        mock_get.side_effect = Exception("API error")
+        
+        resultado = obtener_tipo_cambio_actual()
+        
+        assert resultado["fuente"] == "fallback"
+
+
+class TestConversionUYUaUSD:
+    """Tests de conversión de moneda usando tipo de cambio"""
+    
+    @patch('requests.get')
+    def test_conversion_con_tc_real(self, mock_get):
+        """Conversión usando TC obtenido de API"""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"compra": 40.00, "venta": 40.50}
+        mock_get.return_value = mock_response
+        
+        resultado = obtener_tipo_cambio_actual()
+        tc_promedio = resultado["promedio"]
+        
+        # Convertir 40,250 UYU a USD
+        monto_uyu = 40250
+        monto_usd = monto_uyu / tc_promedio
+        
+        # Con TC 40.25, debería dar ~1000 USD
+        assert abs(monto_usd - 1000) < 1
+    
+    def test_conversion_formula_correcta(self):
+        """Verificar fórmula de conversión"""
+        # UYU a USD: monto_uyu / tc
+        monto_uyu = 80500
+        tc = 40.25
+        
+        monto_usd = monto_uyu / tc
+        assert abs(monto_usd - 2000) < 1
+        
+        # USD a UYU: monto_usd * tc
+        monto_usd_orig = 1500
+        monto_uyu_calc = monto_usd_orig * tc
+        
+        assert monto_uyu_calc == 60375
+
+
+class TestRobustezAPI:
+    """Tests de robustez ante diferentes respuestas de API"""
+    
+    @patch('requests.get')
+    def test_api_lenta_usa_timeout(self, mock_get):
+        """Verifica que se usa timeout en llamada API"""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"compra": 40.00, "venta": 40.50}
+        mock_get.return_value = mock_response
+        
+        obtener_tipo_cambio_actual()
+        
+        # Verificar que se pasó timeout
+        args, kwargs = mock_get.call_args
+        assert "timeout" in kwargs
+        assert kwargs["timeout"] > 0
+    
+    @patch('requests.get')
+    def test_multiples_errores_consecutivos_usan_fallback(self, mock_get):
+        """Múltiples errores consecutivos usan fallback"""
+        mock_get.side_effect = [
+            requests.exceptions.Timeout(),
+            requests.exceptions.ConnectionError(),
+            Exception("Unknown error")
+        ]
+        
+        # Todas deben retornar fallback
+        for _ in range(3):
+            tipo_cambio_service._cache["timestamp"] = None  # Forzar nueva llamada
+            resultado = obtener_tipo_cambio_actual()
+            assert resultado["fuente"] == "fallback"
+
