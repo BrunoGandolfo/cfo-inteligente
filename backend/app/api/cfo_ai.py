@@ -1,11 +1,12 @@
 """
 Router API para CFO Inteligente - Conecta Vanna con ejecución
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.logger import get_logger
+from app.core.security import get_current_user
 from app.services.cfo_ai_service import ejecutar_consulta_cfo
 
 logger = get_logger(__name__)
@@ -21,6 +22,7 @@ import json
 from app.services.conversacion_service import ConversacionService
 from app.schemas.conversacion import ConversacionListResponse, ConversacionResponse
 from app.services.ai.ai_orchestrator import AIOrchestrator
+from app.models import Usuario
 
 router = APIRouter()
 
@@ -93,7 +95,7 @@ Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
         return f"Resultado: {json.dumps(datos, indent=2, ensure_ascii=False, default=str)}"
 
 @router.post("/ask")
-def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
+def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     """
     Endpoint que recibe pregunta en español y retorna datos con memoria de conversación
     """
@@ -114,15 +116,9 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
         else:
             # Crear nueva conversación INMEDIATAMENTE (antes de generar SQL)
             titulo = ConversacionService.generar_titulo(data.pregunta)
-            from app.models.usuario import Usuario
-            usuario = db.query(Usuario).filter(Usuario.email == "bgandolfo@cgmasociados.com").first()
-            
-            if usuario:
-                conversacion = ConversacionService.crear_conversacion(db, usuario.id, titulo)
-                conversacion_id = conversacion.id
-                logger.info(f"Nueva conversación creada: {conversacion_id}")
-            else:
-                logger.warning("Usuario bgandolfo@cgmasociados.com no encontrado - continuando sin memoria")
+            conversacion = ConversacionService.crear_conversacion(db, current_user.id, titulo)
+            conversacion_id = conversacion.id
+            logger.info(f"Nueva conversación creada: {conversacion_id}")
         
         # Guardar pregunta del usuario AHORA (antes de generar SQL para tener historial completo)
         if conversacion_id:
@@ -274,17 +270,11 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db)):
 @router.get("/conversaciones", response_model=List[ConversacionListResponse])
 def listar_conversaciones(
     db: Session = Depends(get_db),
-    limit: int = 50
+    limit: int = 50,
+    current_user: Usuario = Depends(get_current_user)
 ):
-    """Lista las conversaciones del usuario (por ahora hardcoded a Bruno)"""
-    # TODO: Usar current_user cuando auth esté completo
-    from app.models.usuario import Usuario
-    usuario = db.query(Usuario).filter(Usuario.email == "bgandolfo@cgmasociados.com").first()
-    
-    if not usuario:
-        return []
-    
-    conversaciones = ConversacionService.listar_conversaciones(db, usuario.id, limit)
+    """Lista las conversaciones del usuario autenticado"""
+    conversaciones = ConversacionService.listar_conversaciones(db, current_user.id, limit)
     
     return [
         {
@@ -300,16 +290,19 @@ def listar_conversaciones(
 @router.get("/conversaciones/{conversacion_id}", response_model=ConversacionResponse)
 def obtener_conversacion(
     conversacion_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
-    """Obtiene una conversación completa con todos sus mensajes"""
-    # TODO: Validar propiedad cuando auth esté completo
+    """Obtiene una conversación completa con todos sus mensajes (solo del usuario)"""
     from app.models.conversacion import Conversacion
     conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id).first()
     
     if not conversacion:
-        from fastapi import HTTPException
         raise HTTPException(404, "Conversación no encontrada")
+    
+    # Validar que la conversación pertenezca al usuario
+    if conversacion.usuario_id != current_user.id:
+        raise HTTPException(403, "No tienes acceso a esta conversación")
     
     return conversacion
 
@@ -317,15 +310,19 @@ def obtener_conversacion(
 @router.delete("/conversaciones/{conversacion_id}")
 def eliminar_conversacion(
     conversacion_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
-    """Elimina una conversación (y sus mensajes por CASCADE)"""
+    """Elimina una conversación del usuario (y sus mensajes por CASCADE)"""
     from app.models.conversacion import Conversacion
     conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id).first()
     
     if not conversacion:
-        from fastapi import HTTPException
         raise HTTPException(404, "Conversación no encontrada")
+    
+    # Validar que la conversación pertenezca al usuario
+    if conversacion.usuario_id != current_user.id:
+        raise HTTPException(403, "No tienes acceso a esta conversación")
     
     db.delete(conversacion)
     db.commit()
