@@ -1,84 +1,89 @@
 {# 
-  Master Template: Reporte Ejecutivo CFO - 10 páginas
+  Master Template: Reporte Ejecutivo CFO - Big 4 Professional
   
-  Este template incluye todas las páginas del reporte en secuencia.
-  Se usa como entrada para WeasyPrint para generar el PDF completo.
+  Este template incluye páginas condicionalmente según disponibilidad de datos.
+  Solo renderiza secciones con contenido real.
 #}
 {% extends "reports/base_layout.html" %}
 
 {% block content %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 1: PORTADA
+   PÁGINA 1: PORTADA (siempre se incluye)
    ═══════════════════════════════════════════════════════════════ #}
 {% include 'reports/pages/portada.html' %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 2: RESUMEN EJECUTIVO
+   PÁGINA 2: RESUMEN EJECUTIVO (siempre se incluye)
    ═══════════════════════════════════════════════════════════════ #}
 {% include 'reports/pages/resumen_ejecutivo.html' %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 2B: ANÁLISIS DE VARIACIONES (si hay comparación y variaciones >10%)
+   PÁGINA 2B: ANÁLISIS DE VARIACIONES (solo si hay variaciones críticas)
    ═══════════════════════════════════════════════════════════════ #}
 {% if variances_criticas and variances_criticas|length > 0 %}
 {% include 'reports/pages/variance_analysis.html' %}
 {% endif %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 3: MÉTRICAS PRINCIPALES
+   PÁGINA 3: MÉTRICAS PRINCIPALES (solo si hay KPIs o charts)
    ═══════════════════════════════════════════════════════════════ #}
+{% if kpis and kpis|length > 0 or waterfall_chart_path %}
 {% include 'reports/pages/metricas_principales.html' %}
+{% endif %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 4: ANÁLISIS DE INGRESOS
+   PÁGINA 4: ANÁLISIS DE INGRESOS (solo si hay ingresos)
    ═══════════════════════════════════════════════════════════════ #}
+{% if ingresos_uyu and ingresos_uyu > 0 %}
 {% include 'reports/pages/analisis_ingresos.html' %}
+{% endif %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 5: ANÁLISIS DE GASTOS
+   PÁGINA 5: ANÁLISIS DE GASTOS (solo si hay gastos)
    ═══════════════════════════════════════════════════════════════ #}
+{% if gastos_uyu and gastos_uyu > 0 %}
 {% include 'reports/pages/analisis_gastos.html' %}
+{% endif %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 6: RENTABILIDAD
+   PÁGINA 6: RENTABILIDAD (solo si hay datos de rentabilidad)
    ═══════════════════════════════════════════════════════════════ #}
+{% if rentabilidad_neta is defined %}
 {% include 'reports/pages/rentabilidad.html' %}
+{% endif %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 7: DISTRIBUCIÓN POR ÁREAS Y LOCALIDADES
+   PÁGINA 7: DISTRIBUCIÓN POR ÁREAS (solo si hay datos por área)
    ═══════════════════════════════════════════════════════════════ #}
+{% if ingresos_por_area and ingresos_por_area|length > 0 %}
 {% include 'reports/pages/distribucion_areas.html' %}
+{% endif %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 7B: ANÁLISIS POR LOCALIDADES
+   PÁGINA 7B: ANÁLISIS POR LOCALIDADES (solo si hay datos por localidad)
    ═══════════════════════════════════════════════════════════════ #}
+{% if ingresos_por_localidad and ingresos_por_localidad|length > 0 %}
 {% include 'reports/pages/analisis_localidades.html' %}
+{% endif %}
 
 {# ═══════════════════════════════════════════════════════════════
-   SECCIÓN CLIENTES: ANÁLISIS DE CARTERA (TEMPORALMENTE DESACTIVADA)
-   Requiere implementar módulo de Clientes con cliente_id en operaciones
+   PÁGINA 8: PROYECCIONES Y TENDENCIAS (solo si hay proyecciones)
    ═══════════════════════════════════════════════════════════════ #}
-{# 
-{% include 'reports/pages/top_clientes.html' %}
-{% include 'reports/pages/pareto_clientes.html' %}
-{% include 'reports/pages/distribucion_clientes.html' %}
-#}
-
-{# ═══════════════════════════════════════════════════════════════
-   PÁGINA 11: PROYECCIONES Y TENDENCIAS
-   ═══════════════════════════════════════════════════════════════ #}
+{% if proyeccion_ingresos_3m or proyeccion_gastos_3m %}
 {% include 'reports/pages/proyecciones.html' %}
+{% endif %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 9: INSIGHTS Y RECOMENDACIONES (IA)
+   PÁGINA 9: INSIGHTS Y RECOMENDACIONES (solo si hay insights IA)
    ═══════════════════════════════════════════════════════════════ #}
+{% if insights and insights|length > 0 %}
 {% include 'reports/pages/insights_ia.html' %}
+{% endif %}
 
 {# ═══════════════════════════════════════════════════════════════
-   PÁGINA 10: CONCLUSIONES Y PRÓXIMOS PASOS
+   PÁGINA 10: CONCLUSIONES (siempre se incluye como cierre)
    ═══════════════════════════════════════════════════════════════ #}
 {% include 'reports/pages/conclusiones.html' %}
 
 {% endblock %}
-

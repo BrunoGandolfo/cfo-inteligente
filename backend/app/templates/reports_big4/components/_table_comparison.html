@@ -1,0 +1,26 @@
+{# Tabla comparativa con columnas: Métrica | Anterior | Actual | Var #}
+<table class="table">
+    <thead>
+        <tr>
+            <th class="table-header">{{ col_metrica | default('MÉTRICA') }}</th>
+            <th class="table-header table-number">{{ col_anterior | default('ANTERIOR') }}</th>
+            <th class="table-header table-number">{{ col_actual | default('ACTUAL') }}</th>
+            <th class="table-header table-number">{{ col_var | default('VAR.') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row.metrica }}</td>
+            <td class="table-number">{{ row.anterior | format_currency_short }}</td>
+            <td class="table-number">{{ row.actual | format_currency_short }}</td>
+            <td class="table-number {% if row.variacion >= 0 %}positive{% else %}negative{% endif %}">
+                {{ '+' if row.variacion >= 0 else '' }}{{ row.variacion | format_percent }}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+

@@ -244,3 +244,68 @@ def build_area_commentary(metricas: Dict[str, Any]) -> str:
     
     return texto
 
+
+def build_executive_summary(metricas: Dict[str, Any]) -> str:
+    """
+    Genera párrafo de resumen ejecutivo para la página principal.
+    
+    Args:
+        metricas: Dict con métricas calculadas
+        
+    Returns:
+        String con 3-4 oraciones de síntesis ejecutiva
+    """
+    ingresos = metricas.get('ingresos_uyu', 0)
+    gastos = metricas.get('gastos_uyu', 0)
+    utilidad = metricas.get('utilidad_neta_uyu', 0)
+    rentabilidad = metricas.get('rentabilidad_neta', 0)
+    period_label = metricas.get('period_label', 'el período')
+    var_mom = metricas.get('variacion_mom_ingresos')
+    area_lider = metricas.get('area_lider', {})
+    
+    parrafos = []
+    
+    # Oración 1: Resultado general
+    if rentabilidad >= 30:
+        calificativo = "un desempeño financiero excelente"
+    elif rentabilidad >= 15:
+        calificativo = "resultados financieros saludables"
+    elif rentabilidad >= 0:
+        calificativo = "márgenes moderados que requieren optimización"
+    else:
+        calificativo = "resultados que demandan atención inmediata"
+    
+    parrafos.append(
+        f"Durante {period_label}, la empresa registró {calificativo} "
+        f"con ingresos de {format_currency(ingresos)} y una rentabilidad neta de {format_percentage(rentabilidad)}."
+    )
+    
+    # Oración 2: Resultado neto
+    if utilidad > 0:
+        parrafos.append(
+            f"El resultado neto fue positivo con una utilidad de {format_currency(utilidad)}, "
+            f"después de gastos operativos de {format_currency(gastos)}."
+        )
+    else:
+        parrafos.append(
+            f"El resultado neto fue negativo por {format_currency(abs(utilidad))}, "
+            f"con gastos operativos de {format_currency(gastos)} que superaron los ingresos."
+        )
+    
+    # Oración 3: Tendencia (si hay variación)
+    if var_mom is not None:
+        if var_mom > 10:
+            parrafos.append(f"Los ingresos muestran un crecimiento del {format_percentage(var_mom)} respecto al período anterior, indicando una tendencia positiva.")
+        elif var_mom < -10:
+            parrafos.append(f"Los ingresos disminuyeron {format_percentage(abs(var_mom))} respecto al período anterior, requiriendo análisis de causas.")
+        else:
+            parrafos.append(f"Los ingresos se mantienen estables con una variación del {format_percentage(var_mom)} respecto al período anterior.")
+    
+    # Oración 4: Área líder
+    if area_lider and area_lider.get('nombre'):
+        parrafos.append(
+            f"El área {area_lider.get('nombre')} lidera la facturación con "
+            f"{format_percentage(area_lider.get('porcentaje', 0))} del total de ingresos."
+        )
+    
+    return " ".join(parrafos)

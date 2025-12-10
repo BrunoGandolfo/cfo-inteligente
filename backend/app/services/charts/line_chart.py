@@ -68,8 +68,9 @@ class LineChart(BaseChart):
         labels = self.data['labels']
         series_list = self.data['series']
         
-        # Agregar área sombreada para primera serie (si configurado)
-        if self.config.get('show_area', True) and len(series_list) > 0:
+        # Área sombreada DESACTIVADA por defecto (estilo reporte impreso)
+        # Solo activar explícitamente con config['show_area'] = True
+        if self.config.get('show_area', False) and len(series_list) > 0:
             serie_principal = series_list[0]
             color_principal = serie_principal.get('color', self.EXTENDED_PALETTE[0])
             
@@ -88,7 +89,7 @@ class LineChart(BaseChart):
                 hoverinfo='skip'
             ))
         
-        # Agregar cada serie como línea
+        # Agregar cada serie como línea limpia (estilo editorial)
         for i, serie in enumerate(series_list):
             color = serie.get('color', self.EXTENDED_PALETTE[i % len(self.EXTENDED_PALETTE)])
             
@@ -99,13 +100,13 @@ class LineChart(BaseChart):
                 name=serie['name'],
                 line=dict(
                     color=color,
-                    width=3
+                    width=2.5  # Línea más fina, estilo editorial
                 ),
                 marker=dict(
-                    size=8,
+                    size=6,  # Markers más pequeños
                     color=color,
                     line=dict(
-                        width=2,
+                        width=1,
                         color='white'
                     )
                 ),

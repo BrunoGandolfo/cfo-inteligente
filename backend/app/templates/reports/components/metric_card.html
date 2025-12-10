@@ -5,9 +5,9 @@
     {% if change %}
     <div class="change">
         {% if change > 0 %}
-        <span class="text-success">↗ {{ change | format_percentage }}</span>
+        <span class="text-success">+{{ change | format_percentage }}</span>
         {% elif change < 0 %}
-        <span class="text-danger">↘ {{ change | format_percentage }}</span>
+        <span class="text-danger">{{ change | format_percentage }}</span>
         {% else %}
         <span>→ {{ change | format_percentage }}</span>
         {% endif %}

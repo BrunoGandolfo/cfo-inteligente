@@ -25,16 +25,20 @@
             <tr style="{% if var.severidad == 'CRÍTICO' %}background: #FEF3C7;{% endif %}">
                 <td class="font-semibold">
                     {% if var.severidad == 'CRÍTICO' %}
-                    <span style="color: var(--danger);">⚠️</span>
+                    <span style="color: var(--danger);">ALERTA</span>
                     {% endif %}
                     {{ var.metrica }}
                 </td>
                 
                 <td class="text-right">
-                    {% if var.tipo == 'margin' %}
-                        {{ var.valor_anterior | format_percentage }}
+                    {% if var.valor_anterior is not none %}
+                        {% if var.tipo == 'margin' %}
+                            {{ var.valor_anterior | format_percentage }}
+                        {% else %}
+                            {{ var.valor_anterior | format_currency }}
+                        {% endif %}
                     {% else %}
-                        {{ var.valor_anterior | format_currency }}
+                        <span class="text-muted">Sin Datos</span>
                     {% endif %}
                 </td>
                 
@@ -99,7 +103,7 @@
     
     {% else %}
     <div class="card text-center" style="padding: 40px; background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);">
-        <div style="font-size: 48pt; margin-bottom: 20px;">✅</div>
+        <div style="font-size: 24pt; margin-bottom: 20px; color: var(--success); font-weight: 700;">OK</div>
         <h3 class="section-subtitle">Sin Variaciones Significativas</h3>
         <p class="text-muted" style="line-height: 1.8;">
             No se detectaron variaciones superiores al {{ threshold_percent }}% entre períodos.

@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.schemas.report.request import ReportRequest
 from app.repositories.operations_repository import OperationsRepository
+from app.models import TipoOperacion
 from app.services.validators.request_validator import validate_request
 from app.services.validators.data_validator import validate_sufficient_data, validate_data_quality
 from app.services.metrics.metrics_aggregator import MetricsAggregator
@@ -250,6 +251,19 @@ class ReportOrchestrator:
             logger.info(f"✓ Métricas calculadas: {len(metricas)} métricas")
             
             # ═══════════════════════════════════════════════════════════════
+            # PASO 5B: OBTENER TOP 10 OPERACIONES
+            # ═══════════════════════════════════════════════════════════════
+            
+            logger.info("PASO 5B: Obteniendo Top 10 operaciones")
+            top_10_ingresos = self.repo.get_top_operaciones(
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                tipo_operacion=TipoOperacion.INGRESO,
+                limit=10
+            )
+            logger.info(f"✓ Top 10 ingresos obtenidos: {len(top_10_ingresos)}")
+            
+            # ═══════════════════════════════════════════════════════════════
             # PASO 6: GENERAR GRÁFICOS
             # ═══════════════════════════════════════════════════════════════
             
@@ -316,6 +330,9 @@ class ReportOrchestrator:
             # ═══════════════════════════════════════════════════════════════
             # PASO 8: COMPILAR PDF
             # ═══════════════════════════════════════════════════════════════
+            
+            # Agregar top 10 ingresos al contexto de métricas
+            metricas['top_10_ingresos'] = top_10_ingresos
             
             logger.info("PASO 8: Compilando PDF")
             result = self.report_builder.build(
@@ -475,7 +492,8 @@ class ReportOrchestrator:
             gastos_mes = metricas.get('gastos_por_mes', [])
             meses = metricas.get('meses', [])
             
-            if meses and len(meses) > 0 and len(ingresos_mes) > 0:
+            # BUG #5: Mínimo 3 puntos para mostrar tendencia significativa
+            if meses and len(meses) >= 3 and len(ingresos_mes) >= 3:
                 logger.info("🔍 Generando line chart temporal...")
                 try:
                     # Calcular utilidad por mes
@@ -484,6 +502,9 @@ class ReportOrchestrator:
                         ing = ingresos_mes[i] if i < len(ingresos_mes) else 0
                         gas = gastos_mes[i] if i < len(gastos_mes) else 0
                         utilidad_mes.append(ing - gas)
+                    
+                    # Texto singular/plural correcto
+                    meses_texto = "1 mes" if len(meses) == 1 else f"{len(meses)} meses"
                     
                     line_temporal_path = ChartFactory.create_and_save(
                         'line',
@@ -496,14 +517,14 @@ class ReportOrchestrator:
                             ]
                         },
                         f'{self.temp_dir}/line_temporal.png',
-                        {'title': f'Evolución Temporal ({len(meses)} meses)'}
+                        {'title': f'Evolución Temporal ({meses_texto})'}
                     )
                     charts_paths['line_temporal_chart_path'] = line_temporal_path
                     logger.info(f"✅ Line chart temporal generado: {line_temporal_path}")
                 except Exception as e:
                     logger.warning(f"⚠️ Error generando line temporal: {e}")
             else:
-                logger.info("⚠️ No hay datos temporales, saltando line chart")
+                logger.info(f"⚠️ Datos insuficientes para tendencia ({len(meses) if meses else 0} meses, mínimo 3)")
             
             # ═══════════════════════════════════════════════════════════════
             # 5. BAR CHART - Top 10 Clientes por Facturación

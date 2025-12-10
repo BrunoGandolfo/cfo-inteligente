@@ -4,13 +4,18 @@ Reports Endpoints - API para generación de reportes
 Define endpoints REST para sistema de reportes PDF.
 
 Autor: Sistema CFO Inteligente
-Fecha: Octubre 2025
+Fecha: Noviembre 2025
 """
 
+from datetime import datetime, date
+from typing import Optional
+from io import BytesIO
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from pathlib import Path
+from pydantic import BaseModel, Field
 
 from app.schemas.report.request import ReportRequest
 from app.schemas.report.response import ReportResponse, ReportMetadata
@@ -29,6 +34,28 @@ from app.core.exceptions import InvalidDateRangeError, InsufficientDataError, PD
 logger = get_logger(__name__)
 
 router = APIRouter(tags=["reports"])
+
+
+# ═══════════════════════════════════════════════════════════════
+# SCHEMAS PARA P&L LOCALIDAD
+# ═══════════════════════════════════════════════════════════════
+
+class PnLLocalidadRequest(BaseModel):
+    """Request para reporte P&L por Localidad."""
+    fecha_inicio: date = Field(..., description="Fecha inicio del período (YYYY-MM-DD)")
+    fecha_fin: date = Field(..., description="Fecha fin del período (YYYY-MM-DD)")
+    comparar_con_anterior: bool = Field(default=True, description="Incluir comparación con período anterior")
+    incluir_narrativas_ia: bool = Field(default=True, description="Generar narrativas con Claude")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "fecha_inicio": "2025-11-01",
+                "fecha_fin": "2025-11-30",
+                "comparar_con_anterior": True,
+                "incluir_narrativas_ia": True
+            }
+        }
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -254,7 +281,97 @@ async def health_check() -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════
-# IMPORTAR datetime SI ES NECESARIO
+# ENDPOINT: P&L POR LOCALIDAD
 # ═══════════════════════════════════════════════════════════════
 
-from datetime import datetime
+@router.post(
+    "/pnl-localidad",
+    response_class=StreamingResponse,
+    summary="Generar Reporte P&L por Localidad",
+    description="""
+    Genera reporte PDF comparativo de P&L entre Montevideo y Mercedes.
+    
+    Incluye:
+    - Resumen ejecutivo con KPIs consolidados
+    - Detalle por localidad (ingresos, gastos, extracciones)
+    - Narrativas generadas por Claude Sonnet 4.5 (opcional)
+    - Comparación con período anterior (opcional)
+    - Página de conclusiones y recomendaciones
+    
+    Formato: 4 páginas en A4, estilo Big 4 Consulting.
+    """
+)
+async def generate_pnl_localidad_report(
+    request: PnLLocalidadRequest,
+    db: Session = Depends(get_db)
+) -> StreamingResponse:
+    """
+    Genera reporte P&L por Localidad en PDF.
+    
+    Args:
+        request: PnLLocalidadRequest con fechas y opciones
+        db: Session inyectada por Depends
+        
+    Returns:
+        StreamingResponse con PDF generado
+        
+    Raises:
+        HTTPException 400: Si fechas inválidas
+        HTTPException 500: Si falla generación
+    """
+    logger.info(f"Request: POST /api/reports/pnl-localidad [{request.fecha_inicio} - {request.fecha_fin}]")
+    
+    try:
+        # Validar rango de fechas
+        if request.fecha_fin < request.fecha_inicio:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="fecha_fin debe ser mayor o igual a fecha_inicio"
+            )
+        
+        # Generar datos con PnLLocalidadGenerator
+        from app.services.report_data.generators.pnl_localidad_generator import PnLLocalidadGenerator
+        
+        generator = PnLLocalidadGenerator(db)
+        datos = generator.generate(
+            fecha_inicio=request.fecha_inicio,
+            fecha_fin=request.fecha_fin,
+            comparar_con_anterior=request.comparar_con_anterior,
+            incluir_narrativas=request.incluir_narrativas_ia
+        )
+        
+        # Generar PDF con WeasyPrint
+        from app.services.pdf.weasyprint_generator import PDFGenerator
+        from pathlib import Path
+        
+        templates_dir = Path(__file__).parent.parent.parent / "templates" / "reports_big4"
+        pdf_gen = PDFGenerator(templates_dir=str(templates_dir))
+        pdf_bytes = pdf_gen.generar_pdf_desde_template(
+            template_name="reports/pnl_localidad.html",
+            datos=datos
+        )
+        
+        # Generar nombre de archivo
+        periodo = datos['metadata']['periodo_label'].replace(' ', '_').replace('/', '-')
+        filename = f"PnL_Localidad_{periodo}.pdf"
+        
+        logger.info(f"PDF generado: {filename} ({len(pdf_bytes):,} bytes)")
+        
+        return StreamingResponse(
+            BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "X-Report-Period": datos['metadata']['periodo_label'],
+                "X-Has-Narrativas": str(request.incluir_narrativas_ia)
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generando P&L Localidad: {type(e).__name__}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generando reporte: {str(e)}"
+        )

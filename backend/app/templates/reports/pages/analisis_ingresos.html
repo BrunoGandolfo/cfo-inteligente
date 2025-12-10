@@ -27,6 +27,53 @@
     {% set chart_path = ingresos_pie_chart_path %}
     {% include 'reports/components/chart.html' %}
     {% endif %}
+    
+    {# Top 10 Operaciones Más Grandes #}
+    {% if top_10_ingresos and top_10_ingresos|length > 0 %}
+    <h3 class="section-subtitle" style="margin-top: 40px;">Top 10 Operaciones de Mayor Monto</h3>
+    
+    <table style="width: 100%; font-size: 16px; margin-top: 20px;">
+        <thead>
+            <tr style="background: #4472C4; color: white;">
+                <th style="padding: 12px; text-align: center; width: 40px;">#</th>
+                <th style="padding: 12px;">Fecha</th>
+                <th style="padding: 12px;">Concepto</th>
+                <th style="padding: 12px;">Área</th>
+                <th style="padding: 12px; text-align: right;">Monto</th>
+                <th style="padding: 12px; text-align: center;">% del Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for op in top_10_ingresos %}
+            <tr style="{% if loop.index % 2 == 0 %}background: #F8F9FA;{% else %}background: white;{% endif %}">
+                <td style="padding: 10px; text-align: center; font-weight: 700; color: #4472C4;">{{ loop.index }}</td>
+                <td style="padding: 10px;">{{ op.fecha.strftime('%d/%m/%Y') }}</td>
+                <td style="padding: 10px; font-size: 15px;">{{ op.concepto }}</td>
+                <td style="padding: 10px;">{{ op.area }}</td>
+                <td style="padding: 10px; text-align: right; font-weight: 700;">{{ op.monto_uyu | format_currency }}</td>
+                <td style="padding: 10px; text-align: center;">
+                    <span style="background: #E3F2FD; padding: 4px 8px; border-radius: 4px; font-weight: 600;">
+                        {{ (op.monto_uyu / ingresos_uyu * 100) | round(2) }}%
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr style="background: #F0F9FF; font-weight: 700;">
+                <td colspan="4" style="padding: 12px;">Total Top 10</td>
+                <td style="padding: 12px; text-align: right;">{{ (top_10_ingresos | sum(attribute='monto_uyu')) | format_currency }}</td>
+                <td style="padding: 12px; text-align: center;">
+                    {{ ((top_10_ingresos | sum(attribute='monto_uyu')) / ingresos_uyu * 100) | round(2) }}%
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+    
+    <p style="margin-top: 15px; font-size: 15px; color: #6B7280; font-style: italic;">
+        Las 10 operaciones más grandes representan el {{ ((top_10_ingresos | sum(attribute='monto_uyu')) / ingresos_uyu * 100) | round(1) }}% del total de ingresos del período.
+    </p>
+    {% endif %}
 </div>
 
 <div class="page-break"></div>

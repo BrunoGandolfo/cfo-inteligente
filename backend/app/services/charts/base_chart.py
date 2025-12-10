@@ -44,35 +44,36 @@ class BaseChart(ABC):
     # ═══════════════════════════════════════════════════════════════
     
     # Paleta corporativa Conexión Consultora (del logo institucional)
+    # TAREA 3: Paleta muted Big 4
     COLORS = {
-        'primary': '#5B9BD5',        # Azul claro institucional
-        'primary_dark': '#4472C4',   # Azul medio institucional
-        'primary_darker': '#2B3E6B', # Navy oscuro institucional
-        'success': '#70AD47',        # Verde institucional
-        'success_dark': '#5A8C3A',   # Verde oscuro
-        'danger': '#E74C3C',         # Rojo institucional
-        'warning': '#F39C12',        # Ámbar cálido
-        'secondary': '#8B5CF6',      # Violeta (mantener)
-        'gray': '#7F8C8D',           # Gris neutro
+        'primary': '#1E3A5F',        # Azul oscuro corporativo
+        'primary_dark': '#0F1F33',   # Azul muy oscuro
+        'primary_darker': '#0A1422', # Navy profundo
+        'success': '#047857',        # Verde apagado
+        'success_dark': '#065F46',   # Verde oscuro
+        'danger': '#B91C1C',         # Rojo apagado
+        'warning': '#B45309',        # Ámbar apagado
+        'secondary': '#4F46E5',      # Indigo
+        'gray': '#6B7280',           # Gris medio
     }
     
     # Paleta extendida corporativa para gráficos con muchas categorías
     EXTENDED_PALETTE = [
-        '#5B9BD5',  # Azul institucional
-        '#70AD47',  # Verde institucional
-        '#4472C4',  # Azul medio
-        '#E74C3C',  # Rojo institucional
-        '#F39C12',  # Ámbar
-        '#8B5CF6',  # Violeta
-        '#42A5F5',  # Azul claro
-        '#66BB6A',  # Verde claro
+        '#1E3A5F',  # Azul corporativo
+        '#047857',  # Verde apagado
+        '#B91C1C',  # Rojo apagado
+        '#B45309',  # Ámbar apagado
+        '#4F46E5',  # Indigo
+        '#6B7280',  # Gris medio
+        '#374151',  # Gris oscuro
+        '#1F2937',  # Gris muy oscuro
     ]
     
-    # Tipografía moderna profesional
-    FONT_FAMILY = "'Inter', 'Segoe UI', 'Roboto', -apple-system, sans-serif"
-    FONT_SIZE_TITLE = 20
-    FONT_SIZE_AXIS = 13
-    FONT_SIZE_LEGEND = 12
+    # Tipografía moderna profesional - TAREA 7: Tamaños mínimos para legibilidad PDF
+    FONT_FAMILY = "'Inter', 'Helvetica Neue', Arial, sans-serif"
+    FONT_SIZE_TITLE = 22
+    FONT_SIZE_AXIS = 14
+    FONT_SIZE_LEGEND = 14
     
     # Dimensiones (en píxeles) - Optimizado para 300 DPI en PDF A4
     WIDTH_DEFAULT = 1400  # 300 DPI × 8.27" / 3 (con scale=3 → 4200px)
@@ -163,72 +164,75 @@ class BaseChart(ABC):
     # ═══════════════════════════════════════════════════════════════
     
     def _apply_corporate_layout(self) -> None:
-        """Aplica layout y estilos corporativos a la figura"""
+        """
+        Aplica tema corporativo estilo reporte impreso ejecutivo.
+        
+        Diseño Big 4: limpio, profesional, sin estética de dashboard web.
+        """
         if not self.figure:
             return
         
-        # Forzar template limpio (elimina TODOS los defaults de Plotly)
+        # Forzar template limpio
         self.figure.update_layout(template='plotly_white')
         
+        # Layout corporativo estilo reporte impreso
         self.figure.update_layout(
-            title={
-                'text': self.title,
-                'font': {
-                    'family': self.FONT_FAMILY,
-                    'size': self.FONT_SIZE_TITLE,
-                    'color': '#1F2937'  # Gray-800
-                },
-                'x': 0.5,  # Centrado
-                'xanchor': 'center'
-            },
-            font={
-                'family': self.FONT_FAMILY,
-                'size': self.FONT_SIZE_AXIS,
-                'color': '#4B5563'  # Gray-600
-            },
+            title=dict(
+                text=self.title or "",
+                font=dict(
+                    family=self.FONT_FAMILY,
+                    size=16,
+                    color='#1E3A5F'
+                ),
+                x=0.01,  # Alineado a la izquierda (estilo editorial)
+                xanchor='left'
+            ),
+            font=dict(
+                family=self.FONT_FAMILY,
+                size=12,
+                color='#374151'
+            ),
             plot_bgcolor='white',
             paper_bgcolor='white',
-            margin=self.MARGIN,
+            colorway=self.EXTENDED_PALETTE,
+            margin=dict(t=60, r=40, b=60, l=60),
             width=self.width,
             height=self.height,
             showlegend=self.config.get('showlegend', True),
             legend=dict(
                 orientation="h",
-                yanchor="bottom",
-                y=-0.2,
-                xanchor="center",
                 x=0.5,
-                font=dict(size=self.FONT_SIZE_LEGEND)
+                xanchor="center",
+                y=-0.15,
+                yanchor="top",
+                bgcolor="rgba(255,255,255,0)",
+                font=dict(size=10)
+            ),
+            hoverlabel=dict(
+                bgcolor="white",
+                font_size=11
             )
         )
         
-        # Grid casi invisible (estilo Big 4)
+        # Eje X: línea base, SIN grid (estilo reporte impreso)
         self.figure.update_xaxes(
-            showgrid=True,
-            gridwidth=0.3,
-            gridcolor='rgba(229, 231, 235, 0.2)',  # Casi invisible
-            griddash='solid',
-            zeroline=True,
-            zerolinewidth=1,
-            zerolinecolor='rgba(107, 114, 128, 0.2)',
+            showgrid=False,
             showline=True,
-            linewidth=1,
             linecolor='#E5E7EB',
-            mirror=False
+            linewidth=1,
+            tickfont=dict(size=11),
+            title_font=dict(size=12)
         )
         
+        # Eje Y: grid sutil, SIN línea lateral
         self.figure.update_yaxes(
             showgrid=True,
-            gridwidth=0.3,
-            gridcolor='rgba(229, 231, 235, 0.2)',
-            griddash='solid',
-            zeroline=True,
-            zerolinewidth=1,
-            zerolinecolor='rgba(107, 114, 128, 0.2)',
-            showline=True,
-            linewidth=1,
-            linecolor='#E5E7EB',
-            mirror=False
+            gridcolor='#F3F4F6',
+            gridwidth=0.5,
+            showline=False,
+            tickfont=dict(size=11),
+            title_font=dict(size=12),
+            tickformat=","
         )
     
     def save(self, output_path: str) -> str:

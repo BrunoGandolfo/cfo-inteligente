@@ -11,6 +11,12 @@ export default function Home() {
     remember: false
   });
   const [loading, setLoading] = useState(false);
+  const [registerData, setRegisterData] = useState({
+    nombre: '',
+    usuario: '',
+    password: ''
+  });
+  const [registerLoading, setRegisterLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,12 +39,36 @@ export default function Home() {
     }
   };
 
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setRegisterLoading(true);
+    
+    const emailCompleto = `${registerData.usuario}@grupoconexion.uy`;
+    
+    try {
+      await axios.post('http://localhost:8000/api/auth/register', {
+        nombre: registerData.nombre,
+        email: emailCompleto,
+        password: registerData.password
+      });
+      
+      toast.success('Cuenta creada exitosamente. Ya puedes iniciar sesión.');
+      setRegisterData({ nombre: '', usuario: '', password: '' });
+      setActiveTab('login');
+    } catch (error) {
+      const message = error.response?.data?.detail || 'Error al crear la cuenta';
+      toast.error(message);
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Header */}
       <header className="border-b border-slate-800/50 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
-          <img src="/logo-conexion.png" alt="Conexión" className="h-20" />
+          <div></div>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
@@ -98,14 +128,14 @@ export default function Home() {
                 Iniciar Sesión
               </button>
               <button
-                onClick={() => setActiveTab('first')}
+                onClick={() => setActiveTab('register')}
                 className={`pb-2 px-1 text-sm font-medium transition ${
-                  activeTab === 'first' 
+                  activeTab === 'register' 
                     ? 'text-white border-b-2 border-blue-500' 
                     : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                Primer Acceso
+                Registrarse
               </button>
             </div>
 
@@ -163,29 +193,66 @@ export default function Home() {
                 </button>
               </form>
             ) : (
-              <div className="space-y-4 text-slate-300">
-                <p className="text-lg font-medium">¿Primera vez en el sistema?</p>
-                <p className="text-slate-400">
-                  Para obtener tus credenciales de acceso, contacta al administrador del sistema:
-                </p>
-                <div className="bg-slate-800/50 rounded-lg p-4 space-y-2">
-                  <p className="text-sm">
-                    <span className="text-slate-500">Email:</span>{' '}
-                    <span className="text-white">admin@conexionconsultora.uy</span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="text-slate-500">Teléfono:</span>{' '}
-                    <span className="text-white">+598 99 123 456</span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="text-slate-500">Horario:</span>{' '}
-                    <span className="text-white">Lun-Vie 9:00 - 18:00</span>
-                  </p>
+              <form onSubmit={handleRegister} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Nombre completo
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    placeholder="Juan Pérez"
+                    value={registerData.nombre}
+                    onChange={(e) => setRegisterData({...registerData, nombre: e.target.value})}
+                  />
                 </div>
-                <p className="text-xs text-slate-500">
-                  Solo usuarios autorizados pueden acceder al sistema.
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Usuario
+                  </label>
+                  <div className="flex">
+                    <input
+                      type="text"
+                      required
+                      className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-l-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                      placeholder="tu.usuario"
+                      value={registerData.usuario}
+                      onChange={(e) => setRegisterData({...registerData, usuario: e.target.value.toLowerCase().replace(/\s/g, '')})}
+                    />
+                    <span className="px-4 py-3 bg-slate-700 border border-slate-600 border-l-0 rounded-r-lg text-slate-400 text-sm flex items-center">
+                      @grupoconexion.uy
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Contraseña
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    placeholder="••••••••"
+                    value={registerData.password}
+                    onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={registerLoading}
+                  className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-lg hover:from-green-700 hover:to-green-800 transition disabled:opacity-50"
+                >
+                  {registerLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
+                </button>
+
+                <p className="text-xs text-center text-slate-500">
+                  Al registrarte, ingresarás como colaborador. Un administrador puede ascenderte a socio.
                 </p>
-              </div>
+              </form>
             )}
           </div>
         </div>

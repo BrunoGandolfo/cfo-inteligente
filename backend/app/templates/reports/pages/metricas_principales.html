@@ -9,7 +9,7 @@
     {% include 'reports/components/kpi_table.html' %}
     {% else %}
     <div class="card" style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 20px; margin-bottom: 20px;">
-        <p style="color: #92400E; margin: 0;">⚠️ <strong>Datos de KPIs no disponibles</strong> - Verificar período seleccionado</p>
+        <p style="color: #92400E; margin: 0;"><strong>ATENCIÓN: Datos de KPIs no disponibles</strong> - Verificar período seleccionado</p>
     </div>
     {% endif %}
     
@@ -21,7 +21,7 @@
     {% include 'reports/components/chart.html' %}
     {% else %}
     <div class="card" style="background: #FEE2E2; border-left: 4px solid #EF4444; padding: 20px;">
-        <p style="color: #991B1B; margin: 0;">⚠️ <strong>Gráfico de flujo no generado</strong> - Verificar log del servidor</p>
+        <p style="color: #991B1B; margin: 0;"><strong>ATENCIÓN: Gráfico de flujo no generado</strong> - Verificar log del servidor</p>
     </div>
     {% endif %}
 </div>

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from app.core.database import get_db
 from app.models import Usuario
-from app.core.security import verify_password, create_access_token
+from app.core.security import verify_password, create_access_token, hash_password
 
 router = APIRouter()
 
@@ -16,6 +16,16 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
     nombre: str
     es_socio: bool
+
+# === REGISTRO ===
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    nombre: str
+    password: str
+
+class RegisterResponse(BaseModel):
+    message: str
+    email: str
 
 @router.post("/login", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
@@ -43,4 +53,43 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         access_token=access_token,
         nombre=usuario.nombre,
         es_socio=usuario.es_socio
+    )
+
+# Lista de prefijos de email autorizados como socios
+SOCIOS_AUTORIZADOS = ["aborio", "falgorta", "vcaresani", "gtaborda"]
+
+@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    """
+    Registrar nuevo usuario.
+    Si el prefijo del email está en SOCIOS_AUTORIZADOS → es_socio=True
+    Cualquier otro → es_socio=False (colaborador)
+    """
+    # Verificar que el email no exista
+    existing = db.query(Usuario).filter(Usuario.email == request.email).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ya existe un usuario con ese email"
+        )
+    
+    # Determinar rol según prefijo del email
+    prefijo_email = request.email.split("@")[0].lower()
+    es_socio = prefijo_email in SOCIOS_AUTORIZADOS
+    
+    # Crear usuario
+    nuevo_usuario = Usuario(
+        email=request.email,
+        nombre=request.nombre,
+        password_hash=hash_password(request.password),
+        es_socio=es_socio,
+        activo=True
+    )
+    
+    db.add(nuevo_usuario)
+    db.commit()
+    
+    return RegisterResponse(
+        message=f"Usuario registrado exitosamente como {'socio' if es_socio else 'colaborador'}",
+        email=request.email
     )

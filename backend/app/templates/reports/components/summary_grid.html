@@ -16,9 +16,9 @@
             {% if metric.variacion %}
             <div class="text-sm">
                 {% if metric.variacion > 0 %}
-                <span class="text-success">↗ {{ metric.variacion | format_percentage }}</span>
+                <span class="text-success">+{{ metric.variacion | format_percentage }}</span>
                 {% elif metric.variacion < 0 %}
-                <span class="text-danger">↘ {{ metric.variacion | format_percentage }}</span>
+                <span class="text-danger">{{ metric.variacion | format_percentage }}</span>
                 {% else %}
                 <span class="text-muted">→ 0%</span>
                 {% endif %}

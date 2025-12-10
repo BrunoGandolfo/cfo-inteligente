@@ -23,7 +23,8 @@ from app.utils.narrative_builder import (
     build_revenue_commentary,
     build_expense_commentary,
     build_margin_commentary,
-    build_area_commentary
+    build_area_commentary,
+    build_executive_summary
 )
 from app.services.analytics.variance_detector import VarianceDetector
 
@@ -284,6 +285,7 @@ class ReportBuilder:
             'expense_commentary': build_expense_commentary(metricas),
             'margin_commentary': build_margin_commentary(metricas),
             'area_commentary': build_area_commentary(metricas),
+            'narrativa_resumen': build_executive_summary(metricas),
             
             # Variance analysis
             'variances_criticas': variances or [],

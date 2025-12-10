@@ -8,7 +8,7 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from typing import List, Optional
+from typing import Dict, List, Optional, Any
 from datetime import date
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, func
@@ -228,6 +228,48 @@ class OperationsRepository(BaseRepository[Operacion]):
         logger.info(f"✓ Histórico: {len(ingresos_mensuales)} meses | Total: ${sum(ingresos_mensuales):,.0f}")
         
         return ingresos_mensuales
+    
+    def get_top_operaciones(
+        self,
+        fecha_inicio: date,
+        fecha_fin: date,
+        tipo_operacion: TipoOperacion = TipoOperacion.INGRESO,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Obtiene top N operaciones de mayor monto en período.
+        
+        Args:
+            fecha_inicio: Fecha inicio del período
+            fecha_fin: Fecha fin del período
+            tipo_operacion: Tipo de operación a filtrar
+            limit: Cantidad máxima de operaciones
+            
+        Returns:
+            Lista de dicts con datos de operaciones
+        """
+        operaciones = self.db.query(Operacion).filter(
+            Operacion.deleted_at.is_(None),
+            Operacion.tipo_operacion == tipo_operacion,
+            Operacion.fecha >= fecha_inicio,
+            Operacion.fecha <= fecha_fin
+        ).options(
+            joinedload(Operacion.area)
+        ).order_by(
+            Operacion.monto_uyu.desc()
+        ).limit(limit).all()
+        
+        return [
+            {
+                'fecha': op.fecha,
+                'concepto': op.descripcion[:60] if op.descripcion else 'Sin descripción',
+                'area': op.area.nombre if op.area else 'Sin área',
+                'monto_uyu': float(op.monto_uyu),
+                'monto_usd': float(op.monto_usd),
+                'moneda_original': op.moneda_original.value if op.moneda_original else 'UYU'
+            }
+            for op in operaciones
+        ]
     
     def get_by_tipo(
         self,

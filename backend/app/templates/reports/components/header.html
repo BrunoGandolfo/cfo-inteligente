@@ -1,17 +1,53 @@
-{# Component: Report Header Big 4 Professional #}
-<div class="report-header" style="display: flex; justify-content: space-between; align-items: center; padding: 25px 0; border-bottom: 4px solid #4472C4;">
-    <div class="logo-container">
+{# Component: Report Header - Logo izquierda, Texto derecha (Big 4 Style) #}
+<header class="page-header">
+    <div class="header-left">
         <img src="data:image/png;base64,{{ logo_base64 }}" 
-             style="height: 100px !important; width: auto; vertical-align: middle; opacity: 0.98;" 
-             alt="Conexión Consultora" />
+             alt="Conexión Consultora" 
+             class="header-logo" />
     </div>
-    
-    <div class="header-info" style="text-align: right;">
-        <h1 style="font-size: 60px; line-height: 100px; margin: 0; font-weight: 800; color: #2B3E6B;">{{ report_title | default('Reporte Ejecutivo CFO') }}</h1>
-        <div style="font-size: 20px; color: #4B5563; margin-top: 5px; font-weight: 600;">{{ period_label }}</div>
-        <div style="font-size: 14px; color: #6B7280; margin-top: 3px;">
-            Generado: {{ generated_at.strftime('%d/%m/%Y %H:%M') }}
-        </div>
+    <div class="header-right">
+        <div class="header-title">{{ report_title | default('Reporte Ejecutivo CFO') }}</div>
+        <div class="header-subtitle">{{ period_label }}</div>
+        <div class="header-meta">Generado: {{ generated_at.strftime('%d/%m/%Y') }}</div>
     </div>
-</div>
+</header>
 
+<style>
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 2px solid #1E3A5F;
+    margin-bottom: 24px;
+}
+
+.header-left .header-logo {
+    height: 40px;
+    width: auto;
+}
+
+.header-right {
+    text-align: right;
+}
+
+.header-title {
+    font-size: 18pt;
+    font-weight: 600;
+    color: #1E3A5F;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.header-subtitle {
+    font-size: 12pt;
+    color: #374151;
+    margin-top: 4px;
+}
+
+.header-meta {
+    font-size: 9pt;
+    color: #6B7280;
+    margin-top: 2px;
+}
+</style>

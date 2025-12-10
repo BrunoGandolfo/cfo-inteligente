@@ -25,20 +25,24 @@
             </td>
             {% if tiene_comparacion %}
             <td class="text-right text-muted">
-                {% if kpi.tipo == 'currency' %}
-                    {{ kpi.valor_anterior | format_currency }}
-                {% elif kpi.tipo == 'percentage' %}
-                    {{ kpi.valor_anterior | format_percentage }}
+                {% if kpi.valor_anterior is not none %}
+                    {% if kpi.tipo == 'currency' %}
+                        {{ kpi.valor_anterior | format_currency }}
+                    {% elif kpi.tipo == 'percentage' %}
+                        {{ kpi.valor_anterior | format_percentage }}
+                    {% else %}
+                        {{ kpi.valor_anterior }}
+                    {% endif %}
                 {% else %}
-                    {{ kpi.valor_anterior }}
+                    <span class="text-muted">Sin Datos</span>
                 {% endif %}
             </td>
             <td class="text-right">
                 {% if kpi.variacion %}
                     {% if kpi.variacion > 0 %}
-                    <span class="badge badge-success">↗ {{ kpi.variacion | format_percentage }}</span>
+                    <span class="badge badge-success">+{{ kpi.variacion | format_percentage }}</span>
                     {% elif kpi.variacion < 0 %}
-                    <span class="badge badge-danger">↘ {{ kpi.variacion | format_percentage }}</span>
+                    <span class="badge badge-danger">{{ kpi.variacion | format_percentage }}</span>
                     {% else %}
                     <span class="badge">→ 0%</span>
                     {% endif %}

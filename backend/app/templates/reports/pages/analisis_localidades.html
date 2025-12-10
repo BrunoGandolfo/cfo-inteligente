@@ -25,11 +25,11 @@
                 <td class="text-right font-bold">{{ data.ratio_porcentaje | format_percentage }}</td>
                 <td>
                     {% if data.estado == 'PRUDENTE' %}
-                    <span class="badge badge-success">✅ Prudente</span>
+                    <span class="badge badge-success">Prudente</span>
                     {% elif data.estado == 'MODERADO' %}
-                    <span class="badge badge-warning">⚠️ Moderado</span>
+                    <span class="badge badge-warning">Moderado</span>
                     {% elif data.estado == 'ALTO_RIESGO' %}
-                    <span class="badge badge-danger">⚠️ Alto Riesgo</span>
+                    <span class="badge badge-danger">Alto Riesgo</span>
                     {% elif data.estado == 'DESCAPITALIZANDO' %}
                     <span class="badge badge-danger">🚨 Descapitalizando</span>
                     {% endif %}
@@ -44,9 +44,9 @@
     <div class="card mt-20" style="background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%); border-left: 4px solid var(--primary);">
         <h3 class="section-subtitle">Interpretación del Ratio</h3>
         <ul style="margin-left: 20px; line-height: 2;">
-            <li>< 50%: ✅ Prudente - Acumulando capital</li>
-            <li>50-80%: ⚠️ Moderado - Monitorear</li>
-            <li>> 80%: ⚠️ Alto riesgo - Distribuyendo mucho</li>
+            <li>Menor a 50%: Prudente - Acumulando capital</li>
+            <li>50-80%: Moderado - Monitorear</li>
+            <li>Mayor a 80%: Alto riesgo - Distribuyendo mucho</li>
             <li>> 100%: 🚨 Descapitalizando - Distribuyendo más de lo ganado</li>
         </ul>
     </div>
