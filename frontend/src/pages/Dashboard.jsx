@@ -26,6 +26,9 @@ function Dashboard() {
   const [loadingRetiro, setLoadingRetiro] = useState(false);
   const [loadingDistrib, setLoadingDistrib] = useState(false);
 
+  // Verificar si el usuario es socio (solo socios pueden hacer retiros y distribuciones)
+  const esSocio = localStorage.getItem('esSocio') === 'true';
+
   const { loading, metricas, filtros, refreshKey } = useMetrics();
   const { operacionesAll, refetch } = useOperations(refreshKey);
   const { operaciones: chartData, loading: chartLoading } = useChartData();
@@ -79,7 +82,7 @@ function Dashboard() {
               <span className="inline xl:hidden">Reporte</span>
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-5">
+          <div className={`grid grid-cols-1 md:grid-cols-2 ${esSocio ? 'xl:grid-cols-4' : 'xl:grid-cols-2'} gap-4 xl:gap-5`}>
             
             <OperationButton
               variant="ingreso"
@@ -105,29 +108,33 @@ function Dashboard() {
               disabled={loadingGasto}
             />
             
-            <OperationButton
-              variant="retiro"
-              title="Retiro de Empresa"
-              description="Retiros vinculados a operaciones de la empresa"
-              lastActivity="Se realiza a fin de mes"
-              shortcut="⌘ + 3"
-              icon={Wallet}
-              onClick={() => setShowRetiro(true)}
-              loading={loadingRetiro}
-              disabled={loadingRetiro}
-            />
+            {esSocio && (
+              <OperationButton
+                variant="retiro"
+                title="Retiro de Empresa"
+                description="Retiros vinculados a operaciones de la empresa"
+                lastActivity="Se realiza a fin de mes"
+                shortcut="⌘ + 3"
+                icon={Wallet}
+                onClick={() => setShowRetiro(true)}
+                loading={loadingRetiro}
+                disabled={loadingRetiro}
+              />
+            )}
             
-            <OperationButton
-              variant="distribucion"
-              title="Distribución de Utilidades"
-              description="Distribución mensual de utilidades entre socios"
-              lastActivity="Se realiza a fin de mes"
-              shortcut="⌘ + 4"
-              icon={Users}
-              onClick={() => setShowDistrib(true)}
-              loading={loadingDistrib}
-              disabled={loadingDistrib}
-            />
+            {esSocio && (
+              <OperationButton
+                variant="distribucion"
+                title="Distribución de Utilidades"
+                description="Distribución mensual de utilidades entre socios"
+                lastActivity="Se realiza a fin de mes"
+                shortcut="⌘ + 4"
+                icon={Users}
+                onClick={() => setShowDistrib(true)}
+                loading={loadingDistrib}
+                disabled={loadingDistrib}
+              />
+            )}
             
           </div>
         </div>

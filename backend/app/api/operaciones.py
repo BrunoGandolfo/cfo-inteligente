@@ -96,10 +96,14 @@ def crear_gasto(data: GastoCreate, db: Session = Depends(get_db), current_user: 
 
 @router.post("/retiro")
 def crear_retiro(data: RetiroCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
+    if not current_user.es_socio:
+        raise HTTPException(status_code=403, detail="Solo socios pueden registrar retiros")
     return operacion_service.crear_retiro(db, data)
 
 @router.post("/distribucion")
 def crear_distribucion(data: DistribucionCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
+    if not current_user.es_socio:
+        raise HTTPException(status_code=403, detail="Solo socios pueden registrar distribuciones")
     return operacion_service.crear_distribucion(db, data)
 
 @router.patch("/{operacion_id}")
