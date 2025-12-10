@@ -20,6 +20,7 @@ from uuid import UUID
 from app.core.database import get_db
 from app.core.logger import get_logger
 from app.core.config import settings
+from app.core.security import get_current_user
 from app.services.conversacion_service import ConversacionService
 from app.services.sql_router import generar_sql_inteligente
 from app.services.cfo_ai_service import ejecutar_consulta_cfo
@@ -29,6 +30,7 @@ from app.services.sql_post_processor import SQLPostProcessor
 from app.services.claude_sql_generator import ClaudeSQLGenerator
 from pydantic import BaseModel
 from typing import Optional
+from app.models import Usuario
 
 logger = get_logger(__name__)
 
@@ -64,7 +66,8 @@ def sse_format(event: str, data: dict | str) -> str:
 @router.post("/ask-stream")
 def preguntar_cfo_stream(
     data: PreguntaCFOStream,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Endpoint con streaming SSE para respuestas palabra por palabra
@@ -97,19 +100,10 @@ def preguntar_cfo_stream(
                 yield sse_format("status", {"message": "Iniciando nueva conversación..."})
                 
                 titulo = ConversacionService.generar_titulo(data.pregunta)
-                from app.models.usuario import Usuario
-                usuario = db.query(Usuario).filter(
-                    Usuario.email == "bgandolfo@cgmasociados.com"
-                ).first()
-                
-                if usuario:
-                    conversacion = ConversacionService.crear_conversacion(db, usuario.id, titulo)
-                    conversacion_id = conversacion.id
-                    logger.info(f"Stream: Nueva conversación creada - {conversacion_id}")
-                    yield sse_format("conversation_id", {"id": str(conversacion_id)})
-                else:
-                    logger.warning("Stream: Usuario no encontrado - continuando sin memoria")
-                    yield sse_format("warning", {"message": "Continuando sin memoria persistente"})
+                conversacion = ConversacionService.crear_conversacion(db, current_user.id, titulo)
+                conversacion_id = conversacion.id
+                logger.info(f"Stream: Nueva conversación creada - {conversacion_id}")
+                yield sse_format("conversation_id", {"id": str(conversacion_id)})
             
             # Guardar pregunta del usuario
             if conversacion_id:
@@ -279,4 +273,3 @@ Genera SOLO la respuesta, sin preámbulos ni explicaciones adicionales."""
             "Access-Control-Allow-Origin": "*"
         }
     )
-
