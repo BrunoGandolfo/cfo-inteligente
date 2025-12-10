@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from app.core.database import get_db
 from app.models import Usuario
-from app.core.security import verify_password, create_access_token, hash_password
+from app.core.security import verify_password, create_access_token, hash_password, get_current_user
 
 router = APIRouter()
 
@@ -26,6 +26,14 @@ class RegisterRequest(BaseModel):
 class RegisterResponse(BaseModel):
     message: str
     email: str
+
+# === CAMBIO DE CONTRASEÑA ===
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+class ChangePasswordResponse(BaseModel):
+    message: str
 
 @router.post("/login", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
@@ -93,3 +101,34 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         message=f"Usuario registrado exitosamente como {'socio' if es_socio else 'colaborador'}",
         email=request.email
     )
+
+
+@router.post("/change-password", response_model=ChangePasswordResponse)
+async def change_password(
+    request: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Cambiar contraseña del usuario autenticado.
+    Requiere la contraseña actual para verificación.
+    """
+    # Verificar contraseña actual
+    if not verify_password(request.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Contraseña actual incorrecta"
+        )
+    
+    # Validar que la nueva contraseña sea diferente
+    if request.current_password == request.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nueva contraseña debe ser diferente a la actual"
+        )
+    
+    # Hashear y guardar nueva contraseña
+    current_user.password_hash = hash_password(request.new_password)
+    db.commit()
+    
+    return ChangePasswordResponse(message="Contraseña actualizada correctamente")
