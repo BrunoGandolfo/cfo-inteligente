@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import date
 from app.core.database import get_db
-from app.models import Operacion, TipoOperacion, Area, Localidad
+from app.core.security import get_current_user
+from app.models import Operacion, TipoOperacion, Area, Localidad, Usuario
 
 router = APIRouter()
 
@@ -14,7 +15,8 @@ def dashboard_report(
     fecha_hasta: date = Query(...),
     localidad: str | None = Query(None),  # "Montevideo" | "Mercedes" | None | "Todas"
     moneda_vista: str = Query("UYU"),     # "UYU" | "USD"
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     filtros = [
         Operacion.fecha >= fecha_desde,
@@ -82,5 +84,3 @@ def dashboard_report(
             "moneda_vista": moneda_vista,
         },
     }
-
-

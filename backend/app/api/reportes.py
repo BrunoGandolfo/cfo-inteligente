@@ -4,7 +4,8 @@ from sqlalchemy import and_
 from datetime import date, timedelta
 from typing import Tuple
 from app.core.database import get_db
-from app.models import Operacion, TipoOperacion, Area, Localidad
+from app.core.security import get_current_user
+from app.models import Operacion, TipoOperacion, Area, Localidad, Usuario
 
 router = APIRouter()
 
@@ -24,7 +25,8 @@ def _calcular_rango_mes(mes: int, anio: int) -> Tuple[date, date]:
 def resumen_mensual(
     mes: int = None,
     anio: int = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """Resumen del mes actual o especificado"""
     if not mes or not anio:
@@ -69,7 +71,8 @@ def resumen_mensual(
 def reporte_por_area(
     mes: int = None,
     anio: int = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """Distribución de operaciones por área"""
     if not mes or not anio:
@@ -109,7 +112,8 @@ def reporte_por_area(
 def calcular_rentabilidad(
     mes: int = None,
     anio: int = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """Cálculo de rentabilidad (margen sobre ingresos)"""
     if not mes or not anio:
@@ -159,7 +163,8 @@ def operaciones_para_graficos(
     fecha_desde: date = Query(...),
     fecha_hasta: date = Query(...),
     localidad: str | None = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Retorna operaciones filtradas para visualización en gráficos.

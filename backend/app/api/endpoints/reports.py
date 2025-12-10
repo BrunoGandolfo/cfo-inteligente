@@ -29,7 +29,9 @@ from app.core.dependencies import (
     get_report_builder
 )
 from app.core.logger import get_logger
+from app.core.security import get_current_user
 from app.core.exceptions import InvalidDateRangeError, InsufficientDataError, PDFGenerationError
+from app.models import Usuario
 
 logger = get_logger(__name__)
 
@@ -81,7 +83,8 @@ async def generate_dynamic_report(
     request: ReportRequest,
     db: Session = Depends(get_db),
     insights_orch: InsightsOrchestrator = Depends(get_insights_orchestrator),
-    report_builder: ReportBuilder = Depends(get_report_builder)
+    report_builder: ReportBuilder = Depends(get_report_builder),
+    current_user: Usuario = Depends(get_current_user)
 ) -> FileResponse:
     """
     Genera reporte PDF dinámico.
@@ -185,7 +188,8 @@ async def generate_dynamic_report(
 )
 async def preview_report(
     request: ReportRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ) -> ReportResponse:
     """
     Preview de reporte sin generar PDF.
@@ -249,7 +253,7 @@ async def preview_report(
 
 
 # ═══════════════════════════════════════════════════════════════
-# ENDPOINT: HEALTH CHECK
+# ENDPOINT: HEALTH CHECK (PÚBLICO)
 # ═══════════════════════════════════════════════════════════════
 
 @router.get(
@@ -303,7 +307,8 @@ async def health_check() -> dict:
 )
 async def generate_pnl_localidad_report(
     request: PnLLocalidadRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ) -> StreamingResponse:
     """
     Genera reporte P&L por Localidad en PDF.
