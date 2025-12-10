@@ -6,11 +6,13 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.operacion import Operacion
 from app.models.area import Area
 from app.models.socio import Socio
 from app.models.cliente import Cliente
 from app.models.proveedor import Proveedor
+from app.models import Usuario
 from app.schemas.operacion import (
     IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
 )
@@ -25,7 +27,8 @@ router = APIRouter()
 @router.get("/")
 def get_operaciones(
     db: Session = Depends(get_db),
-    limit: int = Query(20, ge=1, le=100)
+    limit: int = Query(20, ge=1, le=100),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """Listar operaciones con todos los campos necesarios"""
     operaciones = db.query(Operacion)\
@@ -61,7 +64,8 @@ def get_operaciones(
 @router.patch("/{operacion_id}/anular")
 def anular_operacion(
     operacion_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """Anular operación (soft delete)"""
     try:
@@ -83,26 +87,27 @@ def anular_operacion(
     return {"message": "Operación anulada"}
 
 @router.post("/ingreso")
-def crear_ingreso(data: IngresoCreate, db: Session = Depends(get_db)):
+def crear_ingreso(data: IngresoCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     return operacion_service.crear_ingreso(db, data)
 
 @router.post("/gasto")  
-def crear_gasto(data: GastoCreate, db: Session = Depends(get_db)):
+def crear_gasto(data: GastoCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     return operacion_service.crear_gasto(db, data)
 
 @router.post("/retiro")
-def crear_retiro(data: RetiroCreate, db: Session = Depends(get_db)):
+def crear_retiro(data: RetiroCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     return operacion_service.crear_retiro(db, data)
 
 @router.post("/distribucion")
-def crear_distribucion(data: DistribucionCreate, db: Session = Depends(get_db)):
+def crear_distribucion(data: DistribucionCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     return operacion_service.crear_distribucion(db, data)
 
 @router.patch("/{operacion_id}")
 def actualizar_operacion(
     operacion_id: str,
     data: dict,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """Actualizar operación existente"""
     from app.models import Moneda, Localidad
@@ -182,7 +187,7 @@ def actualizar_operacion(
     return {"message": "Operación actualizada correctamente", "id": str(operacion.id)}
 
 @router.get("/clientes/buscar")
-def buscar_clientes(q: str = "", db: Session = Depends(get_db)):
+def buscar_clientes(q: str = "", db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     clientes = db.query(Cliente).filter(
         Cliente.nombre.ilike(f"%{q}%")
     ).limit(10).all()
@@ -190,7 +195,7 @@ def buscar_clientes(q: str = "", db: Session = Depends(get_db)):
     return [{"id": str(c.id), "nombre": c.nombre} for c in clientes]
 
 @router.get("/proveedores/buscar")
-def buscar_proveedores(q: str = "", db: Session = Depends(get_db)):
+def buscar_proveedores(q: str = "", db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     proveedores = db.query(Proveedor).filter(
         Proveedor.nombre.ilike(f"%{q}%")
     ).limit(10).all()
