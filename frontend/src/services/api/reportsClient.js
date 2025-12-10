@@ -2,14 +2,13 @@
  * Reports API Client
  * 
  * Cliente HTTP para endpoints de reportes.
+ * Usa axiosClient centralizado con interceptores de auth.
  * 
  * @author Sistema CFO Inteligente
  * @date Octubre 2025
  */
 
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:8000';
+import axiosClient from './axiosClient';
 
 /**
  * Cliente de API de reportes.
@@ -26,8 +25,8 @@ export const reportsClient = {
    */
   async generateDynamicReport(config) {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/reports/pdf/dinamico`,
+      const response = await axiosClient.post(
+        '/api/reports/pdf/dinamico',
         config,
         {
           responseType: 'blob', // Importante para PDF
@@ -64,8 +63,8 @@ export const reportsClient = {
    */
   async previewReport(config) {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/reports/preview`,
+      const response = await axiosClient.post(
+        '/api/reports/preview',
         config
       );
       return response.data;
@@ -83,7 +82,7 @@ export const reportsClient = {
    */
   async healthCheck() {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/reports/health`);
+      const response = await axiosClient.get('/api/reports/health');
       return response.data;
 
     } catch (error) {
@@ -127,4 +126,3 @@ export const reportsClient = {
     }
   }
 };
-

@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { X, FileText } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useMetrics } from '../../hooks/useMetrics';
 import OperationsTable from './OperationsTable';

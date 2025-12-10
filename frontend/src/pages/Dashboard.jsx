@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import axios from 'axios';
 import MetricsGrid from '../components/metrics/MetricsGrid';
 import ModalIngreso from '../components/ModalIngreso';
 import ModalGasto from '../components/ModalGasto';

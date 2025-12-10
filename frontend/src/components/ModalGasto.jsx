@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../services/api/axiosClient';
 import toast from 'react-hot-toast';
 import ModalBase from './shared/ModalBase';
 
@@ -50,7 +50,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
 
   const cargarTipoCambio = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/tipo-cambio/venta');
+      const response = await axiosClient.get('/api/tipo-cambio/venta');
       setFormData(prev => ({ ...prev, tipo_cambio: response.data.valor.toString() }));
     } catch {
       setFormData(prev => ({ ...prev, tipo_cambio: '40.50' }));
@@ -75,10 +75,10 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
       };
 
       if (editMode) {
-        await axios.patch(`http://localhost:8000/api/operaciones/${editMode.id}`, dataToSend);
+        await axiosClient.patch(`/api/operaciones/${editMode.id}`, dataToSend);
         toast.success('✅ Gasto actualizado correctamente');
       } else {
-        await axios.post('http://localhost:8000/api/operaciones/gasto', dataToSend);
+        await axiosClient.post('/api/operaciones/gasto', dataToSend);
         toast.success('✅ Gasto registrado correctamente');
       }
       
