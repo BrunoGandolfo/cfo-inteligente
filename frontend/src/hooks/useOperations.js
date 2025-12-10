@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
+import axiosClient from '../services/api/axiosClient';
 import { isAfter, isBefore, parseISO } from 'date-fns';
 import { useFilters } from './useFilters';
 import toast from 'react-hot-toast';
@@ -12,7 +12,7 @@ export function useOperations(refreshKey) {
   const fetchOperaciones = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get('http://localhost:8000/api/operaciones', { params: { limit: 50 } });
+      const { data } = await axiosClient.get('/api/operaciones', { params: { limit: 50 } });
       setOperaciones(data || []);
     } finally {
       setLoading(false);
@@ -50,7 +50,7 @@ export function useOperations(refreshKey) {
     const confirmacion = window.confirm('¿Estás seguro de anular esta operación? Esta acción no se puede deshacer.');
     if (!confirmacion) return;
     try {
-      await axios.patch(`http://localhost:8000/api/operaciones/${id}/anular`);
+      await axiosClient.patch(`/api/operaciones/${id}/anular`);
       toast.success('Operación anulada correctamente');
       fetchOperaciones();
     } catch (error) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosClient from '../services/api/axiosClient';
 import { formatISO } from 'date-fns';
 import { useFilters } from './useFilters';
 
@@ -20,7 +20,7 @@ export function useMetrics() {
           localidad: localidad === 'Todas' ? undefined : localidad,
           moneda_vista: monedaVista
         };
-        const { data } = await axios.get('http://localhost:8000/api/reportes/dashboard', { params });
+        const { data } = await axiosClient.get('/api/reportes/dashboard', { params });
         setMetricas(data.metricas);
         setFiltros(data.filtros_aplicados);
         setRefreshKey(k => k + 1);

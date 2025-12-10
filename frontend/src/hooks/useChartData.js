@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosClient from '../services/api/axiosClient';
 import { formatISO } from 'date-fns';
 import { useFilters } from './useFilters';
 
@@ -17,7 +17,7 @@ export function useChartData() {
           fecha_hasta: formatISO(to, { representation: 'date' }),
           localidad: localidad === 'Todas' ? undefined : localidad
         };
-        const { data } = await axios.get('http://localhost:8000/api/reportes/operaciones-grafico', { params });
+        const { data } = await axiosClient.get('/api/reportes/operaciones-grafico', { params });
         setOperaciones(data.operaciones || []);
       } catch (error) {
         console.error('Error fetching chart data:', error);
