@@ -29,7 +29,8 @@ export default function Home() {
       });
       
       localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('userName', formData.email.split('@')[0]);
+      localStorage.setItem('userName', response.data.nombre);
+      localStorage.setItem('esSocio', String(response.data.es_socio).toLowerCase());
       
       toast.success('Bienvenido al sistema');
       window.location.href = '/dashboard';
