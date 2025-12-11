@@ -18,7 +18,7 @@ import ColaboradorView from '../components/ColaboradorView';
 
 function Dashboard() {
   // Verificar si el usuario es socio (solo socios ven el dashboard completo)
-  const esSocio = localStorage.getItem('esSocio') === 'true';
+  const esSocio = localStorage.getItem('esSocio')?.toLowerCase() === 'true';
 
   // Todos los hooks DEBEN estar antes de cualquier return condicional
   const [showIngreso, setShowIngreso] = useState(false);

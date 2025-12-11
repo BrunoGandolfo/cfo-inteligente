@@ -481,3 +481,4 @@ class TestConversacionServiceIntegration:
         assert mock_db.add.call_count == 3  # 1 conv + 2 msgs
         assert mock_db.commit.call_count == 3
 
+

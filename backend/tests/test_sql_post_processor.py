@@ -320,3 +320,4 @@ Note: Make sure to run this in production."""
             # Debería haber limpiado las explicaciones
             assert "Note:" not in resultado or "SELECT" in resultado
 
+

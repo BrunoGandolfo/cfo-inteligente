@@ -677,3 +677,4 @@ class TestDatosConsistencia:
         assert op_cargada.area is not None
         assert op_cargada.area.nombre == "Notarial"
 
+

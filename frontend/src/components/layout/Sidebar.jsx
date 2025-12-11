@@ -3,7 +3,11 @@ import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
 export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onReportsToggle }) {
-  const items = [
+  // Verificar si el usuario es socio
+  const esSocio = localStorage.getItem('esSocio') === 'true';
+
+  // Items completos para socios
+  const allItems = [
     { key: 'Dashboard', icon: Home, label: 'Dashboard' },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
     { key: 'Reportes', icon: BarChart3, label: 'Reportes', action: onReportsToggle },
@@ -11,6 +15,12 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onRep
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
     { key: 'Configuración', icon: Settings, label: 'Configuración' },
   ];
+
+  // Colaboradores solo ven Dashboard
+  const items = esSocio 
+    ? allItems 
+    : allItems.filter(item => item.key === 'Dashboard');
+
   return (
     <aside className="hidden lg:flex lg:flex-col w-[250px] shrink-0 border-r bg-white dark:bg-slate-900 dark:border-slate-800 pt-16">
       <nav className="p-2 space-y-1">
@@ -50,5 +60,3 @@ Sidebar.propTypes = {
   onReportsToggle: PropTypes.func
 };
 export default Sidebar;
-
-

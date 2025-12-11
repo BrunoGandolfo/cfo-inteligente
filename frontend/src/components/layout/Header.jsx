@@ -15,6 +15,9 @@ export function Header() {
   const [now, setNow] = useState(new Date());
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   
+  // Verificar si el usuario es socio (colaboradores no ven filtros)
+  const esSocio = localStorage.getItem('esSocio') === 'true';
+  
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(id);
@@ -72,40 +75,45 @@ export function Header() {
                 <span className="hidden lg:inline text-gray-900 dark:text-white">{hora}</span>
               </div>
               
-              <div className="h-8 w-px bg-gray-300 dark:bg-slate-700 shrink-0"></div>
-              
-              {/* Botón FILTROS (visible hasta 2XL) */}
-              <button
-                onClick={() => setIsFilterDrawerOpen(!isFilterDrawerOpen)}
-                className="flex 2xl:hidden items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-blue-400 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors shrink-0"
-                aria-label="Abrir filtros"
-                aria-expanded={isFilterDrawerOpen}
-              >
-                <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Filtros</span>
-                {activeFiltersCount > 0 && (
-                  <span className="px-1.5 py-0.5 text-xs font-bold text-white bg-blue-600 dark:bg-blue-500 rounded-full">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </button>
-              
-              {/* Filtros INLINE (solo visible en 2XL+) */}
-              <div className="hidden 2xl:flex items-center gap-3 min-w-0">
-                <MonedaToggle />
-                <DateRangePicker 
-                  from={from} 
-                  to={to} 
-                  onFrom={(d) => { setFrom(d); apply(); }} 
-                  onTo={(d) => { setTo(d); apply(); }}
-                  compact={false}
-                />
-                <LocalityFilter 
-                  value={localidad} 
-                  onChange={(v) => { setLocalidad(v); apply(); }}
-                  compact={false}
-                />
-              </div>
+              {/* Solo mostrar filtros si es socio */}
+              {esSocio && (
+                <>
+                  <div className="h-8 w-px bg-gray-300 dark:bg-slate-700 shrink-0"></div>
+                  
+                  {/* Botón FILTROS (visible hasta 2XL) */}
+                  <button
+                    onClick={() => setIsFilterDrawerOpen(!isFilterDrawerOpen)}
+                    className="flex 2xl:hidden items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-blue-400 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors shrink-0"
+                    aria-label="Abrir filtros"
+                    aria-expanded={isFilterDrawerOpen}
+                  >
+                    <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Filtros</span>
+                    {activeFiltersCount > 0 && (
+                      <span className="px-1.5 py-0.5 text-xs font-bold text-white bg-blue-600 dark:bg-blue-500 rounded-full">
+                        {activeFiltersCount}
+                      </span>
+                    )}
+                  </button>
+                  
+                  {/* Filtros INLINE (solo visible en 2XL+) */}
+                  <div className="hidden 2xl:flex items-center gap-3 min-w-0">
+                    <MonedaToggle />
+                    <DateRangePicker 
+                      from={from} 
+                      to={to} 
+                      onFrom={(d) => { setFrom(d); apply(); }} 
+                      onTo={(d) => { setTo(d); apply(); }}
+                      compact={false}
+                    />
+                    <LocalityFilter 
+                      value={localidad} 
+                      onChange={(v) => { setLocalidad(v); apply(); }}
+                      compact={false}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -145,23 +153,23 @@ export function Header() {
         </div>
       </header>
       
-      {/* FilterDrawer Component */}
-      <FilterDrawer
-        isOpen={isFilterDrawerOpen}
-        onClose={() => setIsFilterDrawerOpen(false)}
-        from={from}
-        to={to}
-        localidad={localidad}
-        setFrom={setFrom}
-        setTo={setTo}
-        setLocalidad={setLocalidad}
-        apply={apply}
-        onClearFilters={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
+      {/* FilterDrawer Component - Solo para socios */}
+      {esSocio && (
+        <FilterDrawer
+          isOpen={isFilterDrawerOpen}
+          onClose={() => setIsFilterDrawerOpen(false)}
+          from={from}
+          to={to}
+          localidad={localidad}
+          setFrom={setFrom}
+          setTo={setTo}
+          setLocalidad={setLocalidad}
+          apply={apply}
+          onClearFilters={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      )}
     </>
   );
 }
 export default Header;
-
-

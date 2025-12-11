@@ -15,11 +15,21 @@ function Login() {
         password
       });
       
+      // 🔍 DEBUG TEMPORAL - BORRAR DESPUÉS
+      console.log('🔑 === LOGIN DEBUG ===');
+      console.log('🔑 response.data completo:', JSON.stringify(response.data, null, 2));
+      console.log('🔑 es_socio valor:', response.data.es_socio);
+      console.log('🔑 es_socio tipo:', typeof response.data.es_socio);
+      console.log('🔑 String(es_socio).toLowerCase():', String(response.data.es_socio).toLowerCase());
+
       // Guardar token y datos del usuario
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('userName', response.data.nombre);
-      localStorage.setItem('esSocio', response.data.es_socio);
+      localStorage.setItem('esSocio', String(response.data.es_socio).toLowerCase());
       
+      // 🔍 DEBUG TEMPORAL - BORRAR DESPUÉS
+      console.log('🔑 localStorage esSocio guardado:', localStorage.getItem('esSocio'));
+
       // Redirigir a dashboard
       toast.success('Bienvenido al sistema');
       window.location.href = '/dashboard';
