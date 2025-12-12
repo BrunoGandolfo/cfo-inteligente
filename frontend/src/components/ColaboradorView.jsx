@@ -6,8 +6,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { ArrowUpCircle, ArrowDownCircle, CalendarCheck } from 'lucide-react';
 import axiosClient from '../services/api/axiosClient';
 import ModalIngreso from './ModalIngreso';
@@ -19,9 +17,6 @@ function ColaboradorView() {
   const [showIngreso, setShowIngreso] = useState(false);
   const [showGasto, setShowGasto] = useState(false);
   const [fraseMotivacional, setFraseMotivacional] = useState('');
-  
-  const userName = localStorage.getItem('userName') || 'Colaborador';
-  const fechaHoy = format(new Date(), "EEEE, d 'de' MMMM yyyy", { locale: es });
 
   // Fetch frase motivacional personalizada
   useEffect(() => {
@@ -65,17 +60,7 @@ function ColaboradorView() {
   }).length;
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] flex flex-col items-center justify-start py-8 px-4">
-      {/* Saludo - centrado */}
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Bienvenido, {userName}
-        </h1>
-        <p className="text-sm mt-1 capitalize text-gray-500 dark:text-gray-400">
-          {fechaHoy}
-        </p>
-      </div>
-
+    <div className="min-h-[calc(100vh-5rem)] flex flex-col items-center justify-start pt-6 pb-8 px-4">
       {/* Tarjetas de acción - centradas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 w-full max-w-2xl">
         {/* Tarjeta Ingreso */}
