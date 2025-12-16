@@ -65,3 +65,4 @@ Responde SOLO con la frase, sin comillas ni explicación."""
         print(f"Error generando frase: {e}")
         return {"frase": "¡A seguir registrando con excelencia!"}
 
+
