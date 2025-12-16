@@ -18,8 +18,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.services.report_data import MonthlyAggregator
+from app.core.config import settings
 
-TEST_DATABASE_URL = "postgresql://cfo_user:cfo_pass@localhost/cfo_inteligente"
+TEST_DATABASE_URL = settings.database_url
 
 
 @pytest.fixture(scope="function")

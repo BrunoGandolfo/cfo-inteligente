@@ -33,7 +33,8 @@ from app.services.validador_sql import ValidadorSQL
 # CONFIGURACIÓN DE BD DE TEST
 # ══════════════════════════════════════════════════════════════
 
-TEST_DATABASE_URL = "postgresql://cfo_user:cfo_pass@localhost/cfo_inteligente"
+from app.core.config import settings
+TEST_DATABASE_URL = settings.database_url
 
 @pytest.fixture(scope="function")
 def db_session():

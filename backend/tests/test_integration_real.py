@@ -35,8 +35,9 @@ from app.core.security import hash_password
 # CONFIGURACIÓN DE BD DE TEST
 # ══════════════════════════════════════════════════════════════
 
-# URL de BD de test (separada de producción)
-SQLALCHEMY_TEST_URL = "postgresql://cfo_user:cfo_pass@localhost/cfo_test"
+from app.core.config import settings
+# URL de BD de test desde settings
+SQLALCHEMY_TEST_URL = settings.database_test_url or settings.database_url
 
 engine = create_engine(SQLALCHEMY_TEST_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

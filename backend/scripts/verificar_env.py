@@ -78,10 +78,10 @@ else:
 ANTHROPIC_API_KEY=sk-ant-api03-tu_key_aqui
 OPENAI_API_KEY=sk-tu_key_aqui
 
-# Database
-DATABASE_URL=postgresql://cfo_user:cfo_pass@localhost:5432/cfo_inteligente
-POSTGRES_USER=cfo_user
-POSTGRES_PASSWORD=cfo_pass
+# Database (reemplazar con credenciales reales)
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
+POSTGRES_USER=your_user
+POSTGRES_PASSWORD=your_password
 POSTGRES_DB=cfo_inteligente
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
@@ -97,10 +97,10 @@ POSTGRES_PORT=5432
 ANTHROPIC_API_KEY=sk-ant-api03-REEMPLAZAR_CON_TU_KEY
 OPENAI_API_KEY=sk-REEMPLAZAR_CON_TU_KEY
 
-# Database PostgreSQL
-DATABASE_URL=postgresql://cfo_user:cfo_pass@localhost:5432/cfo_inteligente
-POSTGRES_USER=cfo_user
-POSTGRES_PASSWORD=cfo_pass
+# Database PostgreSQL (reemplazar con credenciales reales)
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/cfo_inteligente
+POSTGRES_USER=your_user
+POSTGRES_PASSWORD=your_password
 POSTGRES_DB=cfo_inteligente
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432

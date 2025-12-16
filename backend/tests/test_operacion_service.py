@@ -36,7 +36,8 @@ from app.models import Operacion, TipoOperacion, Moneda, Localidad, Area, Socio,
 # FIXTURES
 # ══════════════════════════════════════════════════════════════
 
-TEST_DATABASE_URL = "postgresql://cfo_user:cfo_pass@localhost/cfo_inteligente"
+from app.core.config import settings
+TEST_DATABASE_URL = settings.database_url
 
 @pytest.fixture(scope="function")
 def db_session():

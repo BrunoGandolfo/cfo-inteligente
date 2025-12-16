@@ -6,11 +6,13 @@ para poder probar el CFO AI con datos actuales
 from sqlalchemy import create_engine, text
 from datetime import datetime
 import sys
+sys.path.insert(0, '/home/brunogandolfo/cfo-inteligente/backend')
+from app.core.config import settings
 
 def cargar_datos_octubre():
     """Copia datos de un mes histórico a octubre 2025"""
     
-    engine = create_engine('postgresql://cfo_user:cfo_pass@localhost/cfo_inteligente')
+    engine = create_engine(settings.database_url)
     
     print("\n" + "=" * 80)
     print(" 📅 CARGANDO DATOS EN OCTUBRE 2025 ".center(80))

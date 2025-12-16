@@ -3,6 +3,9 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 
+# Importar settings para DATABASE_URL dinámica
+from app.core.config import settings
+
 # Importar Base y modelos
 from app.core.database import Base
 from app.models import *
@@ -10,6 +13,9 @@ from app.models import *
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Configurar URL dinámicamente desde settings
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 target_metadata = Base.metadata
 

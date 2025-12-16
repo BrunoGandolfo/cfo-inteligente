@@ -9,9 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import vanna
 from vanna.remote import VannaDefault
-
-# Configuración
-DB_CONNECTION = "postgresql://cfo_user:cfo_password@localhost:5432/cfo_inteligente"
+from app.core.config import settings
 
 print("=== ENTRENAMIENTO DE VANNA AI ===")
 print("Configurando Vanna con los datos de Conexión Consultora")
@@ -19,7 +17,14 @@ print("-" * 50)
 
 # Inicializar Vanna con modelo local (sin API key por ahora)
 vn = VannaDefault(model='conexion-cfo', api_key='demo')
-vn.connect_to_postgres(host='localhost', dbname='cfo_inteligente', user='cfo_user', password='cfo_password', port=5432)
+# Conexión usando settings (credenciales desde .env)
+vn.connect_to_postgres(
+    host=settings.postgres_host or 'localhost',
+    dbname=settings.postgres_db or 'cfo_inteligente',
+    user=settings.postgres_user,
+    password=settings.postgres_password,
+    port=int(settings.postgres_port or 5432)
+)
 
 print("✓ Conexión a PostgreSQL establecida")
 

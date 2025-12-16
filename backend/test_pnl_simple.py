@@ -15,9 +15,10 @@ from datetime import date
 from sqlalchemy import create_engine, text
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
+from app.core.config import settings
 
-# Configuración DB
-DATABASE_URL = "postgresql://cfo_user:cfo_pass@localhost/cfo_inteligente"
+# Configuración DB desde settings
+DATABASE_URL = settings.database_url
 
 
 def format_currency_short(value):
