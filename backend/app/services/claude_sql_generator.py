@@ -141,11 +141,15 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
 8. FILTROS TEMPORALES POR DEFECTO (SOLO si NO hay año explícito):
    - IMPORTANTE: Si el usuario menciona un año (2024, 2023, etc.), usar REGLA 7, NO esta regla
    - Esta regla SOLO aplica cuando la pregunta NO menciona ningún año específico
-   - Si NO especifica período: filtrar por año actual (2025)
-   - Ejemplos donde SÍ aplica esta regla: "¿Cuánto facturamos?", "rentabilidad", "gastos del mes"
-   - Ejemplos donde NO aplica (usar regla 7): "facturación 2024", "gastos 2023", "comparar años"
-   - Usar: WHERE DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
-   - SOLO omitir filtro temporal si pregunta dice "histórico", "todos los años", "desde inicio"
+   - EXCEPCIÓN TOTAL/ACUMULADO (PRIORIDAD ALTA):
+     * Si el usuario menciona "total", "acumulado", "histórico", "todos los años", "desde el inicio", "desde 2024", "completo" → NO aplicar filtro de año
+     * Devolver datos de TODOS los períodos disponibles
+     * Ejemplos: "facturación total", "gastos acumulados", "ingresos históricos", "total desde 2024"
+   - Si NO especifica período Y NO menciona "total/acumulado/histórico": filtrar por año actual (2025)
+   - Ejemplos donde SÍ aplica filtro 2025: "¿Cuánto facturamos este año?", "rentabilidad mensual", "gastos del mes"
+   - Ejemplos donde NO aplica filtro (devolver TODO): "facturación total", "total acumulado", "histórico completo"
+   - Usar para año actual: WHERE DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
+   - Usar para total histórico: SIN filtro de año (devolver todos los registros)
 
 9. CONVERSIONES DE MONEDA EN AGREGACIONES:
    - Para totales en USD: usar SUM(monto_usd) SIN filtrar por moneda_original
