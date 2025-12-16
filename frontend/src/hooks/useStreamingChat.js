@@ -11,11 +11,19 @@ export function useStreamingChat() {
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const textareaRef = useRef(null);
   const abortControllerRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }, 50);
   }, []);
 
   const sendMessage = useCallback(async (message) => {
@@ -32,6 +40,7 @@ export function useStreamingChat() {
       timestamp: new Date()
     };
     setMessages(prev => [...prev, userMsg]);
+    scrollToBottom();
 
     // Crear mensaje assistant vacío para ir llenando
     const assistantMsgId = Date.now();
@@ -42,6 +51,7 @@ export function useStreamingChat() {
       timestamp: new Date(),
       streaming: true
     }]);
+    scrollToBottom();
 
     try {
       // AbortController para cancelar stream si es necesario
@@ -125,7 +135,8 @@ export function useStreamingChat() {
                   : msg
               ));
               
-              // Sin delay aquí - el backend ya controla la velocidad
+              // Auto-scroll durante streaming
+              scrollToBottom();
             } 
             else if (eventType === 'done') {
               const parsed = JSON.parse(dataStr);
@@ -176,7 +187,7 @@ export function useStreamingChat() {
       setIsTyping(false);
       abortControllerRef.current = null;
     }
-  }, [conversationId, isTyping]);
+  }, [conversationId, isTyping, scrollToBottom]);
 
   const clearHistory = useCallback(() => {
     setMessages([]);
@@ -198,6 +209,7 @@ export function useStreamingChat() {
     isTyping,
     conversationId,
     messagesEndRef,
+    messagesContainerRef,
     textareaRef,
     sendMessage,
     clearHistory,

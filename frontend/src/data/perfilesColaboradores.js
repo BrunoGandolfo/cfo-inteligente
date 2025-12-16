@@ -20,3 +20,4 @@ export const getPerfilByEmail = (email) => {
   return perfilesColaboradores[email?.toLowerCase()] || null;
 };
 
+
