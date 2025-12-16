@@ -20,9 +20,6 @@ export function useOperations(refreshKey) {
   };
 
   const filtered = useMemo(() => {
-    console.log('🔍 useOperations - Filtrado en cliente:');
-    console.log('  Total operaciones (sin filtrar):', operaciones?.length || 0);
-    console.log('  Filtros activos - from:', from, 'to:', to, 'localidad:', localidad);
     
     const result = (operaciones || []).filter(op => {
       const d = parseISO(op.fecha);
@@ -30,18 +27,13 @@ export function useOperations(refreshKey) {
       const locOk = localidad === 'Todas' || (op.localidad ? op.localidad === localidad : true);
       
       if (!inRange) {
-        console.log(`    ❌ Excluida por fecha: ${op.fecha} (fuera de rango ${from.toISOString()} - ${to.toISOString()})`);
       }
       if (!locOk) {
-        console.log(`    ❌ Excluida por localidad: ${op.localidad} (filtro: ${localidad})`);
       }
       
       return inRange && locOk;
     });
     
-    console.log('  Resultado filtrado:', result.length, 'operaciones');
-    console.log('  Primeras 3 filtradas:', result.slice(0, 3).map(op => ({ fecha: op.fecha, localidad: op.localidad })));
-    console.log('');
     
     return result;
   }, [operaciones, from, to, localidad]);

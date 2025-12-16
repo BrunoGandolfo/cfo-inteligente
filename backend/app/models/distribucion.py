@@ -3,7 +3,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 class DistribucionDetalle(Base):
     __tablename__ = "distribuciones_detalle"
@@ -14,7 +17,7 @@ class DistribucionDetalle(Base):
     monto_uyu = Column(Numeric(15, 2), nullable=False)
     monto_usd = Column(Numeric(15, 2), nullable=False)
     porcentaje = Column(Numeric(5, 2), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     
     # Relaciones
     operacion = relationship("Operacion", backref="distribuciones")

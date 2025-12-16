@@ -8,10 +8,6 @@ export function OperationsTable({ refresh, onOpenDetails, onEdit }) {
   const { operacionesAll: operaciones, loading, anular } = useOperations(refresh);
   
   // 🔍 DIAGNÓSTICO OperationsTable
-  console.log('📋 OPERATIONS TABLE:');
-  console.log('  refresh prop:', refresh);
-  console.log('  operaciones (sin filtrar):', operaciones?.length || 0);
-  console.log('  loading:', loading);
   
   return (
     <section className="px-6 mb-8">

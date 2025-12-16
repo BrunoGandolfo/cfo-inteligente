@@ -2,7 +2,7 @@
 Schemas para actualización de operaciones - Sistema CFO Inteligente
 Permite editar operaciones manteniendo auditoría (updated_at)
 """
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from datetime import date
 from decimal import Decimal
 from typing import Optional
@@ -20,13 +20,15 @@ class IngresoUpdate(BaseModel):
     tipo_cambio: Optional[Decimal] = None
     descripcion: Optional[str] = None
     
-    @validator('fecha')
+    @field_validator('fecha')
+    @classmethod
     def fecha_no_futura(cls, v):
         if v and v > date.today():
             raise ValueError('La fecha no puede ser futura')
         return v
     
-    @validator('monto_original')
+    @field_validator('monto_original')
+    @classmethod
     def monto_positivo(cls, v):
         if v is not None and v <= 0:
             raise ValueError('El monto debe ser positivo')
@@ -44,13 +46,15 @@ class GastoUpdate(BaseModel):
     tipo_cambio: Optional[Decimal] = None
     descripcion: Optional[str] = None
     
-    @validator('fecha')
+    @field_validator('fecha')
+    @classmethod
     def fecha_no_futura(cls, v):
         if v and v > date.today():
             raise ValueError('La fecha no puede ser futura')
         return v
     
-    @validator('monto_original')
+    @field_validator('monto_original')
+    @classmethod
     def monto_positivo(cls, v):
         if v is not None and v <= 0:
             raise ValueError('El monto debe ser positivo')
@@ -66,7 +70,8 @@ class RetiroUpdate(BaseModel):
     tipo_cambio: Optional[Decimal] = None
     descripcion: Optional[str] = None
     
-    @validator('fecha')
+    @field_validator('fecha')
+    @classmethod
     def fecha_no_futura(cls, v):
         if v and v > date.today():
             raise ValueError('La fecha no puede ser futura')

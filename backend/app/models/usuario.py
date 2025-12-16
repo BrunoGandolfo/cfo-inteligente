@@ -3,7 +3,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 class Usuario(Base):
     __tablename__ = "usuarios"
@@ -14,8 +17,8 @@ class Usuario(Base):
     password_hash = Column(String(255), nullable=False)
     es_socio = Column(Boolean, default=False)  # True = socio, False = operador
     activo = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relaciones
     conversaciones = relationship("Conversacion", back_populates="usuario", cascade="all, delete-orphan")

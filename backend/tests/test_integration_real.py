@@ -617,7 +617,7 @@ class TestDatosConsistencia:
     
     def test_soft_delete_operacion(self, db_session, setup_datos_base):
         """Soft delete marca deleted_at pero no borra"""
-        from datetime import datetime
+        from datetime import datetime, timezone, timezone
         
         area = setup_datos_base["areas"]["Jurídica"]
         
@@ -640,7 +640,7 @@ class TestDatosConsistencia:
         op_id = operacion.id
         
         # Soft delete
-        operacion.deleted_at = datetime.utcnow()
+        operacion.deleted_at = datetime.now(timezone.utc)
         db_session.commit()
         
         # Verificar que sigue en BD pero con deleted_at

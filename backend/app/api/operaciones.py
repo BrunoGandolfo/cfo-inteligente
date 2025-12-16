@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 from app.core.database import get_db
@@ -81,7 +81,7 @@ def anular_operacion(
     if not operacion:
         raise HTTPException(status_code=404, detail="Operación no encontrada")
     
-    operacion.deleted_at = datetime.utcnow()
+    operacion.deleted_at = datetime.now(timezone.utc)
     db.commit()
     
     return {"message": "Operación anulada"}
@@ -184,7 +184,7 @@ def actualizar_operacion(
         operacion.monto_uyu = monto_uyu
         operacion.monto_usd = monto_usd
     
-    operacion.updated_at = datetime.utcnow()
+    operacion.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(operacion)
     

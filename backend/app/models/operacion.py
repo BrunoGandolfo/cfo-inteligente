@@ -3,8 +3,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 import enum
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 class TipoOperacion(enum.Enum):
     INGRESO = "ingreso"
@@ -37,8 +40,8 @@ class Operacion(Base):
     cliente = Column(String(200))
     proveedor = Column(String(200))
     deleted_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relaciones
     area = relationship("Area", backref="operaciones")

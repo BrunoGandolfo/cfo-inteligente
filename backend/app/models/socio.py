@@ -2,7 +2,10 @@ from sqlalchemy import Column, String, Boolean, DateTime, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from app.core.database import Base
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 class Socio(Base):
     __tablename__ = "socios"
@@ -11,5 +14,5 @@ class Socio(Base):
     nombre = Column(String(100), nullable=False, unique=True)
     porcentaje_participacion = Column(Numeric(5, 2), nullable=False)  # Ej: 20.00
     activo = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)

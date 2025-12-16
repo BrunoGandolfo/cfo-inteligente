@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models.conversacion import Conversacion, Mensaje
 from app.models.usuario import Usuario
@@ -57,7 +57,7 @@ class ConversacionService:
         # Actualizar timestamp de conversación
         conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id).first()
         if conversacion:
-            conversacion.updated_at = datetime.utcnow()
+            conversacion.updated_at = datetime.now(timezone.utc)
         
         db.commit()
         db.refresh(mensaje)

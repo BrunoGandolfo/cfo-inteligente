@@ -2,7 +2,10 @@ from sqlalchemy import Column, String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from app.core.database import Base
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 class Proveedor(Base):
     __tablename__ = "proveedores"
@@ -11,5 +14,5 @@ class Proveedor(Base):
     nombre = Column(String(200), nullable=False, unique=True)
     telefono = Column(String(50), nullable=True)
     activo = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)

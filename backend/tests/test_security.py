@@ -14,7 +14,7 @@ Fecha: Diciembre 2025
 
 import pytest
 from unittest.mock import patch, Mock
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from jose import jwt
 
 from app.core.security import hash_password, verify_password, create_access_token
@@ -239,7 +239,7 @@ class TestCreateAccessToken:
         mock_settings.access_token_expire_minutes = 60  # 1 hora
         
         data = {"sub": "user123"}
-        ahora = datetime.utcnow()
+        ahora = datetime.now(timezone.utc)
         
         # Act
         token = create_access_token(data)

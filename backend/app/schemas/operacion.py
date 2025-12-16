@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from datetime import date
 from decimal import Decimal
 from typing import Optional
@@ -10,7 +10,8 @@ class OperacionBase(BaseModel):
     tipo_cambio: Decimal
     localidad: str  # Montevideo o Mercedes
     
-    @validator('fecha')
+    @field_validator('fecha')
+    @classmethod
     def fecha_no_futura(cls, v):
         if v > date.today():
             raise ValueError('La fecha no puede ser futura')
@@ -24,13 +25,15 @@ class IngresoCreate(OperacionBase):
     cliente_telefono: Optional[str] = None
     descripcion: Optional[str] = None
     
-    @validator('monto_original')
+    @field_validator('monto_original')
+    @classmethod
     def monto_positivo(cls, v):
         if v <= 0:
             raise ValueError('El monto debe ser positivo')
         return v
     
-    @validator('area_id')
+    @field_validator('area_id')
+    @classmethod
     def area_obligatoria_ingreso(cls, v):
         """
         Regla de negocio: INGRESO debe tener área asignada.
@@ -48,13 +51,15 @@ class GastoCreate(OperacionBase):
     proveedor_telefono: Optional[str] = None
     descripcion: Optional[str] = None
     
-    @validator('monto_original')
+    @field_validator('monto_original')
+    @classmethod
     def monto_positivo(cls, v):
         if v <= 0:
             raise ValueError('El monto debe ser positivo')
         return v
     
-    @validator('area_id')
+    @field_validator('area_id')
+    @classmethod
     def area_obligatoria_gasto(cls, v):
         """
         Regla de negocio: GASTO debe tener área asignada.
@@ -69,13 +74,15 @@ class RetiroCreate(OperacionBase):
     monto_usd: Optional[Decimal] = None
     descripcion: Optional[str] = None
     
-    @validator('monto_usd')
-    def al_menos_un_monto(cls, v, values):
-        if not v and not values.get('monto_uyu'):
+    @model_validator(mode='after')
+    def al_menos_un_monto(self):
+        if not self.monto_uyu and not self.monto_usd:
             raise ValueError('Debe ingresar al menos un monto (UYU o USD)')
-        if v and v <= 0:
-            raise ValueError('El monto debe ser positivo')
-        return v
+        if self.monto_usd and self.monto_usd <= 0:
+            raise ValueError('El monto USD debe ser positivo')
+        if self.monto_uyu and self.monto_uyu <= 0:
+            raise ValueError('El monto UYU debe ser positivo')
+        return self
 
 class SocioDistribucion(BaseModel):
     socio_nombre: str  # Agustina, Viviana, Gonzalo, Pancho, Bruno

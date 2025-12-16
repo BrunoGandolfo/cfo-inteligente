@@ -115,15 +115,12 @@ export function useStreamingChat() {
               const parsed = JSON.parse(dataStr);
               const newConvId = parsed.id;
               setConversationId(newConvId);
-              console.log('🆕 Nueva conversación SSE:', newConvId);
             } 
             else if (eventType === 'status') {
               const parsed = JSON.parse(dataStr);
-              console.log('📊 Status:', parsed.message);
             } 
             else if (eventType === 'sql') {
               const parsed = JSON.parse(dataStr);
-              console.log('🔍 SQL generado:', parsed.query);
             } 
             else if (eventType === 'token') {
               // Token de texto - agregar tal cual (backend ya acumula palabras completas)
@@ -150,7 +147,6 @@ export function useStreamingChat() {
               
               if (parsed.conversation_id) {
                 setConversationId(parsed.conversation_id);
-                console.log('✅ Stream completado - Conversación:', parsed.conversation_id);
               }
             } 
             else if (eventType === 'error') {
@@ -172,7 +168,6 @@ export function useStreamingChat() {
 
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.log('Stream cancelado por usuario');
       } else {
         console.error('Error en streaming:', error);
         toast.error('Error al procesar la pregunta');

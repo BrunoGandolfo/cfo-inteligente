@@ -15,7 +15,7 @@ Fecha: Diciembre 2025
 import pytest
 from unittest.mock import Mock, MagicMock, patch
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone, timezone
 
 from app.services.conversacion_service import ConversacionService
 
@@ -50,8 +50,8 @@ def mock_conversacion(usuario_id, conversacion_id):
     conv.id = conversacion_id
     conv.usuario_id = usuario_id
     conv.titulo = "Conversación de prueba"
-    conv.created_at = datetime.utcnow()
-    conv.updated_at = datetime.utcnow()
+    conv.created_at = datetime.now(timezone.utc)
+    conv.updated_at = datetime.now(timezone.utc)
     return conv
 
 
@@ -64,7 +64,7 @@ def mock_mensaje(conversacion_id):
     msg.rol = "user"
     msg.contenido = "Contenido de prueba"
     msg.sql_generado = None
-    msg.created_at = datetime.utcnow()
+    msg.created_at = datetime.now(timezone.utc)
     return msg
 
 
@@ -454,7 +454,7 @@ class TestConversacionServiceIntegration:
         mock_db.refresh = Mock()
         mock_conversacion = Mock()
         mock_conversacion.id = uuid4()
-        mock_conversacion.updated_at = datetime.utcnow()
+        mock_conversacion.updated_at = datetime.now(timezone.utc)
         
         mock_db.query.return_value.filter.return_value.first.return_value = mock_conversacion
         
