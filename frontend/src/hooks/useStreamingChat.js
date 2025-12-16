@@ -64,7 +64,7 @@ export function useStreamingChat() {
         ...(conversationId && { conversation_id: conversationId })
       };
 
-      const response = await fetch('http://localhost:8000/api/cfo/ask-stream', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/cfo/ask-stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

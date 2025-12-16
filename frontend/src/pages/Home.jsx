@@ -23,7 +23,7 @@ export default function Home() {
     setLoading(true);
     
     try {
-      const response = await axios.post('http://localhost:8000/api/auth/login', {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         email: formData.email,
         password: formData.password
       });
@@ -47,7 +47,7 @@ export default function Home() {
     const emailCompleto = `${registerData.usuario}@grupoconexion.uy`;
     
     try {
-      await axios.post('http://localhost:8000/api/auth/register', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
         nombre: registerData.nombre,
         email: emailCompleto,
         password: registerData.password
