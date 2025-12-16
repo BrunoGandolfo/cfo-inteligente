@@ -67,12 +67,22 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 SOCIOS_AUTORIZADOS = ["aborio", "falgorta", "vcaresani", "gtaborda"]
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
-def register(request: RegisterRequest, db: Session = Depends(get_db)):
+def register(
+    request: RegisterRequest, 
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
     """
     Registrar nuevo usuario.
-    Si el prefijo del email está en SOCIOS_AUTORIZADOS → es_socio=True
-    Cualquier otro → es_socio=False (colaborador)
+    SOLO SOCIOS pueden crear nuevos usuarios.
     """
+    # Verificar que el usuario actual sea socio
+    if not current_user.es_socio:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los socios pueden crear usuarios"
+        )
+    
     # Verificar que el email no exista
     existing = db.query(Usuario).filter(Usuario.email == request.email).first()
     if existing:
