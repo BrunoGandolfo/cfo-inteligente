@@ -31,6 +31,7 @@ from app.core.constants import (
 
 # Imports de los generadores SQL
 from app.services.claude_sql_generator import ClaudeSQLGenerator
+from app.services.query_fallback import QueryFallback
 
 # Logger para este módulo
 logger = get_logger(__name__)
@@ -415,6 +416,27 @@ class SQLRouter:
         debug_info = {'timestamp': datetime.now().isoformat()}
         
         logger.info(f"SQL Router procesando pregunta: '{pregunta[:70]}'")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FASE 0: CONSULTAR QUERY FALLBACK PRIMERO (GARANTIZADO)
+        # ═══════════════════════════════════════════════════════════════
+        
+        sql_fallback = QueryFallback.get_query_for(pregunta)
+        
+        if sql_fallback:
+            tiempo_total = time.time() - inicio_total
+            logger.info(f"SQL Router usando QueryFallback para: '{pregunta[:50]}'")
+            
+            return {
+                'sql': sql_fallback,
+                'metodo': 'query_fallback',
+                'exito': True,
+                'tiempo_total': tiempo_total,
+                'tiempos': tiempos,
+                'intentos': {'claude': 0, 'vanna': 0, 'total': 0},
+                'error': None,
+                'debug': {'fallback_usado': True}
+            }
         
         # ═══════════════════════════════════════════════════════════════
         # FASE 1: INTENTAR CON CLAUDE SONNET 4.5 (PRIMARY)

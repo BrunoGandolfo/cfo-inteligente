@@ -20,7 +20,7 @@ class QueryFallback:
         
         # RENTABILIDAD (patrones específicos ANTES de generales)
         if "rentabilidad por área" in p or "rentabilidad de cada área" in p:
-            return "SELECT a.nombre,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rent FROM operaciones o JOIN areas a ON a.id=o.area_id WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY a.nombre ORDER BY rent DESC"
+            return "SELECT a.nombre,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rent FROM operaciones o JOIN areas a ON a.id=o.area_id WHERE o.deleted_at IS NULL AND a.nombre NOT IN ('Gastos Generales','Otros') AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY a.nombre ORDER BY rent DESC"
         
         if "rentabilidad por localidad" in p:
             return "SELECT o.localidad,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rent FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY o.localidad ORDER BY rent DESC"
@@ -31,6 +31,13 @@ class QueryFallback:
         # COMPARACIONES GEOGRÁFICAS
         if any(x in p for x in ["mercedes vs montevideo", "mercedes montevideo", "comparar mercedes", "comparación mercedes"]):
             return "SELECT o.localidad,SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ing,SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END) AS gas FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY o.localidad ORDER BY ing DESC"
+        
+        # RETIROS POR LOCALIDAD
+        if "retiro" in p and "mercedes" in p:
+            return "SELECT SUM(monto_uyu) AS total_uyu, SUM(monto_usd) AS total_usd, COUNT(*) AS cantidad FROM operaciones WHERE tipo_operacion='RETIRO' AND localidad='MERCEDES' AND deleted_at IS NULL AND DATE_TRUNC('year',fecha)=DATE_TRUNC('year',CURRENT_DATE)"
+        
+        if "retiro" in p and "montevideo" in p:
+            return "SELECT SUM(monto_uyu) AS total_uyu, SUM(monto_usd) AS total_usd, COUNT(*) AS cantidad FROM operaciones WHERE tipo_operacion='RETIRO' AND localidad='MONTEVIDEO' AND deleted_at IS NULL AND DATE_TRUNC('year',fecha)=DATE_TRUNC('year',CURRENT_DATE)"
         
         # CÓMO VENIMOS
         if "cómo venimos" in p or "como venimos" in p or "cómo vamos" in p:

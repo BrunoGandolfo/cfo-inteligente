@@ -441,6 +441,50 @@ class ValidadorSQL:
             'problemas': problemas,
             'sugerencia_fallback': sugerencia
         }
+    
+    @staticmethod
+    def validar_sintaxis_basica(sql: str) -> Dict[str, Any]:
+        """
+        Detecta errores de sintaxis comunes ANTES de ejecutar SQL
+        
+        Más rápido que esperar error de PostgreSQL.
+        Detecta: JOINs incompletos, paréntesis desbalanceados, CTEs vacíos.
+        
+        Args:
+            sql: SQL a validar
+            
+        Returns:
+            {'valido': bool, 'problemas': List[str]}
+        """
+        problemas = []
+        sql_upper = sql.upper()
+        
+        # FULL sin JOIN completo
+        if 'FULL' in sql_upper and 'FULL OUTER JOIN' not in sql_upper and 'FULL JOIN' not in sql_upper:
+            problemas.append("FULL keyword sin JOIN completo")
+        
+        # Paréntesis desbalanceados
+        if sql.count('(') != sql.count(')'):
+            problemas.append(f"Paréntesis desbalanceados: {sql.count('(')} abiertos, {sql.count(')')} cerrados")
+        
+        # CTE vacío
+        if 'AS ()' in sql or 'AS ( )' in sql:
+            problemas.append("CTE con cuerpo vacío detectado")
+        
+        # JOIN sin ON o USING
+        joins = ['LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'FULL JOIN', 'FULL OUTER JOIN']
+        for join_type in joins:
+            if join_type in sql_upper:
+                idx = sql_upper.find(join_type)
+                # Buscar en los próximos 150 caracteres si hay ON o USING
+                siguiente = sql_upper[idx:idx+150]
+                if ' ON ' not in siguiente and ' USING' not in siguiente:
+                    problemas.append(f"{join_type} sin cláusula ON o USING")
+        
+        return {
+            'valido': len(problemas) == 0,
+            'problemas': problemas
+        }
 
 
 # ══════════════════════════════════════════════════════════════

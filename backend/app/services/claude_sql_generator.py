@@ -128,14 +128,26 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
    - Verificar que estás proyectando desde datos del año actual
    - Ejemplo: EXTRACT(MONTH FROM CURRENT_DATE) para mes actual
 
-7. FILTROS TEMPORALES POR DEFECTO:
-   - Si la pregunta NO especifica período temporal: SIEMPRE filtrar por año actual (2025)
-   - Ejemplos: "¿Cuánto facturamos?", "¿Qué porcentaje es USD?", "rentabilidad" sin período
-   - Usar: WHERE fecha >= '2025-01-01' AND fecha < '2026-01-01'
-   - O mejor: WHERE DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
+7. AÑOS EXPLÍCITOS - MÁXIMA PRIORIDAD (CRÍTICO):
+   - Si el usuario menciona un año específico (2024, 2023, 2022, etc.), USAR ESE AÑO EXACTO
+   - Esta regla tiene PRIORIDAD ABSOLUTA sobre cualquier filtro por defecto
+   - NO sustituir el año especificado por el año actual bajo ninguna circunstancia
+   - Ejemplos:
+     * "facturación 2024" → WHERE EXTRACT(YEAR FROM fecha) = 2024
+     * "gastos 2024" → WHERE fecha >= '2024-01-01' AND fecha < '2025-01-01'
+     * "comparar 2024 vs 2025" → usar ambos años explícitamente
+   - Si dice "año anterior" o "año pasado": EXTRACT(YEAR FROM CURRENT_DATE) - 1
+
+8. FILTROS TEMPORALES POR DEFECTO (SOLO si NO hay año explícito):
+   - IMPORTANTE: Si el usuario menciona un año (2024, 2023, etc.), usar REGLA 7, NO esta regla
+   - Esta regla SOLO aplica cuando la pregunta NO menciona ningún año específico
+   - Si NO especifica período: filtrar por año actual (2025)
+   - Ejemplos donde SÍ aplica esta regla: "¿Cuánto facturamos?", "rentabilidad", "gastos del mes"
+   - Ejemplos donde NO aplica (usar regla 7): "facturación 2024", "gastos 2023", "comparar años"
+   - Usar: WHERE DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
    - SOLO omitir filtro temporal si pregunta dice "histórico", "todos los años", "desde inicio"
 
-8. CONVERSIONES DE MONEDA EN AGREGACIONES:
+9. CONVERSIONES DE MONEDA EN AGREGACIONES:
    - Para totales en USD: usar SUM(monto_usd) SIN filtrar por moneda_original
    - Para totales en UYU: usar SUM(monto_uyu) SIN filtrar por moneda_original
    - Las columnas monto_usd y monto_uyu YA contienen TODO convertido
@@ -144,7 +156,7 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
    - Ejemplo CORRECTO: "Facturación en USD" = SUM(monto_usd)
    - Ejemplo INCORRECTO: SUM(CASE WHEN moneda_original='USD' THEN monto_usd ELSE 0 END)
 
-9. PERÍODOS RODANTES VS TRIMESTRES:
+10. PERÍODOS RODANTES VS TRIMESTRES:
    - "últimos X meses" = ventana RODANTE desde mes actual hacia atrás
    - NUNCA usar DATE_TRUNC('quarter') para "últimos X meses"
    - Usar: fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL 'X months'
@@ -155,7 +167,7 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
    - Ejemplo CORRECTO "trimestre actual":
      WHERE DATE_TRUNC('quarter', fecha) = DATE_TRUNC('quarter', CURRENT_DATE)
 
-10. UNION ALL CON FILA DE TOTAL:
+11. UNION ALL CON FILA DE TOTAL:
    - Para mostrar TOTAL al final después de UNION ALL: usa columna auxiliar de ordenamiento
    - Agrega columna 'orden' a cada SELECT: 0 para filas normales, 1 para TOTAL
    - Luego ordena por: ORDER BY orden, socio
@@ -166,7 +178,7 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
        SELECT 1 AS orden, socio, total_uyu, total_usd FROM total_general
      ) t ORDER BY orden, socio
 
-11. TOTALES DE DISTRIBUCIONES:
+12. TOTALES DE DISTRIBUCIONES:
    - Para totales de distribuciones: SIEMPRE sumar distribuciones_detalle.monto_uyu
    - NUNCA sumar operaciones.monto_uyu para totales (puede tener redondeo)
    - operaciones.monto_uyu = total de la operación (referencial)
@@ -180,7 +192,7 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
        AND o.fecha >= ...
    - Esto garantiza que: SUM(por_socio) = total_general
 
-12. DISTRIBUCIONES CON FILTROS TEMPORALES (CRÍTICO):
+13. DISTRIBUCIONES CON FILTROS TEMPORALES (CRÍTICO):
    - PROBLEMA IDENTIFICADO: LEFT JOIN con filtros temporales en ON causa errores del 49%
    - Para consultas de distribuciones filtradas por año/mes/período:
      * Empezar FROM distribuciones_detalle (NO desde socios)
@@ -238,6 +250,58 @@ FROM (
     SELECT * FROM total_general
 ) t
 ORDER BY orden, socio;
+
+14. RENTABILIDAD POR ÁREA - EXCLUSIONES (CRÍTICO):
+   - Para preguntas de "rentabilidad por área" o "rentabilidad de cada área": EXCLUIR áreas no productivas
+   - 'Gastos Generales': centro de costos operativos (alquiler, servicios), NO genera ingresos
+   - 'Otros': categoría residual para ingresos varios, distorsiona análisis
+   - SIEMPRE agregar filtro: AND a.nombre NOT IN ('Gastos Generales', 'Otros')
+   - Ejemplo CORRECTO "rentabilidad por área":
+     SELECT a.nombre, 
+            ((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)
+             -SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))
+            /NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rentabilidad
+     FROM operaciones o
+     JOIN areas a ON a.id = o.area_id
+     WHERE o.deleted_at IS NULL
+       AND a.nombre NOT IN ('Gastos Generales', 'Otros')
+       AND DATE_TRUNC('month', o.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+     GROUP BY a.nombre
+     ORDER BY rentabilidad DESC
+
+15. RETIROS vs DISTRIBUCIONES (CONCEPTOS DIFERENTES - CRÍTICO):
+   - RETIRO (tipo_operacion='RETIRO'): Salida de dinero de la EMPRESA (caja)
+     * Se consulta SOLO en tabla operaciones
+     * Tiene localidad (MERCEDES/MONTEVIDEO)
+     * Campos: monto_uyu, monto_usd
+     * Ejemplo: "retiros en Mercedes" → WHERE tipo_operacion='RETIRO' AND localidad='MERCEDES'
+   
+   - DISTRIBUCIÓN (tipo_operacion='DISTRIBUCION'): Reparto de UTILIDADES a los SOCIOS
+     * Se consulta en distribuciones_detalle (JOIN con operaciones)
+     * Tiene socio_id (los 5 socios: Bruno, Agustina, Viviana, Gonzalo, Pancho)
+     * Campos: monto_uyu, monto_usd POR SOCIO
+     * Ejemplo: "cuánto recibió Bruno" → distribuciones_detalle WHERE socio.nombre='Bruno'
+   
+   - NUNCA confundir estos conceptos:
+     * "retiros de la empresa" → operaciones WHERE tipo_operacion='RETIRO'
+     * "distribuciones a socios" / "cuánto recibió [socio]" → distribuciones_detalle
+     * "retiros en Mercedes" → ES RETIRO de empresa, NO distribución
+     * "cuánto retiró Bruno" → ES DISTRIBUCIÓN a socio, NO retiro de empresa
+
+16. COMPLEJIDAD SQL (EVITAR ERRORES DE SINTAXIS):
+   - EVITAR FULL OUTER JOIN - propenso a errores de sintaxis y truncamiento
+   - Para comparaciones temporales (ej: "Q4 2024 vs Q4 2025"):
+     * Usar 2 CTEs separados, uno por período
+     * Luego LEFT JOIN por columna de agrupación
+     * Estructura recomendada:
+       WITH periodo1 AS (SELECT area, SUM(monto) as total FROM ... WHERE fecha BETWEEN '2024-10-01' AND '2024-12-31' GROUP BY area),
+            periodo2 AS (SELECT area, SUM(monto) as total FROM ... WHERE fecha BETWEEN '2025-10-01' AND '2025-12-31' GROUP BY area)
+       SELECT COALESCE(p1.area, p2.area) as area, p1.total as total_2024, p2.total as total_2025
+       FROM periodo1 p1
+       LEFT JOIN periodo2 p2 ON p1.area = p2.area
+   - Máximo 3 CTEs por query
+   - Si la query supera 40 líneas, simplificar el approach
+   - SIEMPRE verificar que cada JOIN tenga su cláusula ON
 
 IMPORTANTE: Si una query viola alguna de estas reglas, usar approach alternativo más seguro.
 """
