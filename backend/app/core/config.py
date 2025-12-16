@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # Security
     secret_key: str
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = 480
     
     # Environment
     environment: str = "development"

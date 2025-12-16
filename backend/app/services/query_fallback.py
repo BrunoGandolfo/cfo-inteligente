@@ -18,6 +18,11 @@ class QueryFallback:
         """
         p = pregunta.lower()
         
+        # Si menciona año específico, dejar que Claude maneje (más preciso)
+        import re
+        if re.search(r'\b(2024|2025|2023|2022)\b', p):
+            return None
+        
         # RENTABILIDAD (patrones específicos ANTES de generales)
         if "rentabilidad por área" in p or "rentabilidad de cada área" in p:
             return "SELECT a.nombre,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rent FROM operaciones o JOIN areas a ON a.id=o.area_id WHERE o.deleted_at IS NULL AND a.nombre NOT IN ('Gastos Generales','Otros') AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY a.nombre ORDER BY rent DESC"

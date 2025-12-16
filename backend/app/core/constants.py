@@ -55,7 +55,7 @@ MAX_TIPO_CAMBIO = 50
 # ══════════════════════════════════════════════════════════════
 
 # Claude Sonnet 4.5
-CLAUDE_MAX_TOKENS = 1500
+CLAUDE_MAX_TOKENS = 4000
 CLAUDE_TEMPERATURE = 0.0  # Determinístico
 CLAUDE_TIMEOUT_SECONDS = 600
 
