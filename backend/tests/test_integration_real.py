@@ -678,3 +678,4 @@ class TestDatosConsistencia:
         assert op_cargada.area.nombre == "Notarial"
 
 
+

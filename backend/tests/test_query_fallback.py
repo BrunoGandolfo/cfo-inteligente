@@ -286,3 +286,4 @@ class TestEstructuraSQL:
             assert "ORDER BY" in sql
 
 
+
