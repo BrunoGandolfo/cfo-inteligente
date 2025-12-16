@@ -16,17 +16,24 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
     descripcion: ''
   });
   
-  // Áreas productivas + Gastos Generales (área residual para gastos)
-  // "Otros" es SOLO para INGRESOS, no para GASTOS
-  const [areas] = useState([
-    { id: 'd3aff49c-748c-4d1d-bc47-cdda1cfb913d', nombre: 'Jurídica' },
-    { id: '53ba7821-8836-4e74-ad56-a288d290881d', nombre: 'Notarial' },
-    { id: '14700c01-3b3d-49c6-8e2e-f3ebded1b1bb', nombre: 'Contable' },
-    { id: '11c64c64-c7f6-4e85-9c26-b577c3d7a5b7', nombre: 'Recuperación' },
-    { id: 'b11006d3-6cfc-4766-9201-ab56274401a6', nombre: 'Gastos Generales' }
-  ]);
-  
+  // Áreas cargadas desde API (excluye "Otros" para gastos)
+  const [areas, setAreas] = useState([]);
   const [localLoading, setLocalLoading] = useState(false);
+
+  // Cargar áreas desde API
+  useEffect(() => {
+    const cargarAreas = async () => {
+      try {
+        const response = await axiosClient.get('/api/catalogos/areas');
+        // Filtrar: gastos NO usan "Otros"
+        const areasGasto = response.data.filter(a => a.nombre !== 'Otros');
+        setAreas(areasGasto);
+      } catch (error) {
+        console.error('Error cargando áreas:', error);
+      }
+    };
+    cargarAreas();
+  }, []);
 
   useEffect(() => {
     if (isOpen) {

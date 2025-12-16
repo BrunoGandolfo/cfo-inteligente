@@ -16,17 +16,24 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
     descripcion: ''
   });
   
-  // Áreas productivas que generan ingresos + Otros
-  // Filosofía DHH: Convención explícita sobre configuración
-  const [areas] = useState([
-    { id: 'd3aff49c-748c-4d1d-bc47-cdda1cfb913d', nombre: 'Jurídica' },
-    { id: '53ba7821-8836-4e74-ad56-a288d290881d', nombre: 'Notarial' },
-    { id: '14700c01-3b3d-49c6-8e2e-f3ebded1b1bb', nombre: 'Contable' },
-    { id: '11c64c64-c7f6-4e85-9c26-b577c3d7a5b7', nombre: 'Recuperación' },
-    { id: '651dfb5c-15d8-41e2-8339-785b137f44f2', nombre: 'Otros' }
-  ]);
-  
+  // Áreas cargadas desde API (excluye Gastos Generales para ingresos)
+  const [areas, setAreas] = useState([]);
   const [localLoading, setLocalLoading] = useState(false);
+
+  // Cargar áreas desde API
+  useEffect(() => {
+    const cargarAreas = async () => {
+      try {
+        const response = await axiosClient.get('/api/catalogos/areas');
+        // Filtrar: ingresos NO usan "Gastos Generales"
+        const areasIngreso = response.data.filter(a => a.nombre !== 'Gastos Generales');
+        setAreas(areasIngreso);
+      } catch (error) {
+        console.error('Error cargando áreas:', error);
+      }
+    };
+    cargarAreas();
+  }, []);
 
   useEffect(() => {
     if (isOpen) {

@@ -44,6 +44,9 @@ app.include_router(cfo_streaming_router, prefix="/api/cfo", tags=["cfo-streaming
 from app.api.frases_motivacionales import router as frases_router
 app.include_router(frases_router)
 
+from app.api.catalogos import router as catalogos_router
+app.include_router(catalogos_router, prefix="/api/catalogos", tags=["catalogos"])
+
 try:
     from app.api.endpoints import reports as reports_endpoints
     app.include_router(reports_endpoints.router, prefix="/api/reports", tags=["reports"])
