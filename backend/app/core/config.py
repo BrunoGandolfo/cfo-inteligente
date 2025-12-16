@@ -4,7 +4,7 @@ from pydantic import Field
 class Settings(BaseSettings):
     # Database
     database_url: str
-    database_test_url: str = ""
+    test_database_url: str = Field(default="postgresql://cfo_user:cfo_pass@localhost/cfo_test", alias="TEST_DATABASE_URL")
     
     # Security
     secret_key: str
