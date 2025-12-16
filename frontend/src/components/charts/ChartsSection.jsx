@@ -1,6 +1,5 @@
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
 import Card from '../ui/Card';
-import { AREAS } from '../../utils/constants';
 
 const COLORS = ['#10B981', '#EF4444', '#3B82F6', '#8B5CF6', '#F59E0B'];
 
@@ -165,8 +164,7 @@ function prepareAreaData(operaciones) {
   
   const areas = {};
   ingresos.forEach(op => {
-    const areaId = op.area_id || (op.area ? op.area.id : null);
-    const areaName = AREAS[areaId] || 'Otros';
+    const areaName = op.area?.nombre || 'Sin Área';
     areas[areaName] = (areas[areaName] || 0) + Number(op.monto_uyu || 0);
   });
   
