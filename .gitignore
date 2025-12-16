@@ -42,3 +42,4 @@ Thumbs.db
 backend/chroma_db/
 ANALISIS_FORENSE_PDF_COMPLETO.md
 backend/output/
+*.pdf
