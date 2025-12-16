@@ -43,7 +43,7 @@ class AIOrchestrator:
     # Modelos por proveedor
     CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
     OPENAI_MODEL = "gpt-3.5-turbo"
-    GEMINI_MODEL = "gemini-1.5-flash"
+    GEMINI_MODEL = "gemini-2.0-flash"
     
     # Timeout por proveedor (segundos)
     DEFAULT_TIMEOUT = 30

@@ -711,7 +711,7 @@ class TestAIOrchestatorModels:
         """Gemini debe usar el modelo configurado"""
         from app.services.ai.ai_orchestrator import AIOrchestrator
         
-        assert AIOrchestrator.GEMINI_MODEL == "gemini-1.5-flash"
+        assert AIOrchestrator.GEMINI_MODEL == "gemini-2.0-flash"
     
     def test_default_timeout_es_30_segundos(self):
         """Timeout por defecto debe ser 30 segundos"""
