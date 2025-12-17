@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, extract
 
 from app.core.logger import get_logger
-from app.models.operacion import Operacion
+from app.models.operacion import Operacion, TipoOperacion
 from app.models.area import Area
 from app.models.socio import Socio
 from app.models.distribucion import DistribucionDetalle
@@ -227,14 +227,14 @@ class ReportDataAggregator:
             cantidad = row.cantidad or 0
             total_ops += cantidad
             
-            tipo = str(row.tipo_operacion).upper()
-            if tipo == "INGRESO":
+            # Comparar directamente con el Enum
+            if row.tipo_operacion == TipoOperacion.INGRESO:
                 ingresos = total
-            elif tipo == "GASTO":
+            elif row.tipo_operacion == TipoOperacion.GASTO:
                 gastos = total
-            elif tipo == "RETIRO":
+            elif row.tipo_operacion == TipoOperacion.RETIRO:
                 retiros = total
-            elif tipo == "DISTRIBUCION":
+            elif row.tipo_operacion == TipoOperacion.DISTRIBUCION:
                 distribuciones = total
         
         # Calcular resultado y rentabilidad
@@ -324,7 +324,7 @@ class ReportDataAggregator:
             Area, Operacion.area_id == Area.id
         ).filter(
             *base_filters,
-            Operacion.tipo_operacion.in_(["INGRESO", "GASTO"])
+            Operacion.tipo_operacion.in_([TipoOperacion.INGRESO, TipoOperacion.GASTO])
         ).group_by(
             Area.nombre,
             Operacion.tipo_operacion
@@ -338,11 +338,10 @@ class ReportDataAggregator:
                 areas[area_nombre] = {"ingresos": 0.0, "gastos": 0.0, "resultado": 0.0, "rentabilidad": 0.0}
             
             total = self._to_float(row.total)
-            tipo = str(row.tipo_operacion).upper()
             
-            if tipo == "INGRESO":
+            if row.tipo_operacion == TipoOperacion.INGRESO:
                 areas[area_nombre]["ingresos"] = round(total, 2)
-            elif tipo == "GASTO":
+            elif row.tipo_operacion == TipoOperacion.GASTO:
                 areas[area_nombre]["gastos"] = round(total, 2)
         
         # Calcular resultado y rentabilidad por área
@@ -371,7 +370,7 @@ class ReportDataAggregator:
             func.sum(Operacion.monto_uyu).label("total")
         ).filter(
             *base_filters,
-            Operacion.tipo_operacion.in_(["INGRESO", "GASTO", "RETIRO"])
+            Operacion.tipo_operacion.in_([TipoOperacion.INGRESO, TipoOperacion.GASTO, TipoOperacion.RETIRO])
         ).group_by(
             Operacion.localidad,
             Operacion.tipo_operacion
@@ -389,13 +388,12 @@ class ReportDataAggregator:
                 continue
                 
             total = self._to_float(row.total)
-            tipo = str(row.tipo_operacion).upper()
             
-            if tipo == "INGRESO":
+            if row.tipo_operacion == TipoOperacion.INGRESO:
                 localidades[loc]["ingresos"] = round(total, 2)
-            elif tipo == "GASTO":
+            elif row.tipo_operacion == TipoOperacion.GASTO:
                 localidades[loc]["gastos"] = round(total, 2)
-            elif tipo == "RETIRO":
+            elif row.tipo_operacion == TipoOperacion.RETIRO:
                 localidades[loc]["retiros"] = round(total, 2)
         
         # Calcular resultado y rentabilidad
@@ -423,7 +421,7 @@ class ReportDataAggregator:
             Operacion, DistribucionDetalle.operacion_id == Operacion.id
         ).filter(
             Operacion.deleted_at.is_(None),
-            Operacion.tipo_operacion == "DISTRIBUCION",
+            Operacion.tipo_operacion == TipoOperacion.DISTRIBUCION,
             Operacion.fecha >= periodo.fecha_inicio,
             Operacion.fecha <= periodo.fecha_fin
         ).group_by(
@@ -453,7 +451,7 @@ class ReportDataAggregator:
             func.sum(Operacion.monto_uyu).label("total")
         ).filter(
             *base_filters,
-            Operacion.tipo_operacion.in_(["INGRESO", "GASTO"])
+            Operacion.tipo_operacion.in_([TipoOperacion.INGRESO, TipoOperacion.GASTO])
         ).group_by(
             extract('year', Operacion.fecha),
             extract('month', Operacion.fecha),
@@ -485,11 +483,10 @@ class ReportDataAggregator:
                 }
             
             total = self._to_float(row.total)
-            tipo = str(row.tipo_operacion).upper()
             
-            if tipo == "INGRESO":
+            if row.tipo_operacion == TipoOperacion.INGRESO:
                 meses_data[key]["ingresos"] = round(total, 2)
-            elif tipo == "GASTO":
+            elif row.tipo_operacion == TipoOperacion.GASTO:
                 meses_data[key]["gastos"] = round(total, 2)
         
         # Calcular resultado y rentabilidad por mes
@@ -515,7 +512,7 @@ class ReportDataAggregator:
             func.count(Operacion.id).label("operaciones")
         ).filter(
             Operacion.deleted_at.is_(None),
-            Operacion.tipo_operacion == "INGRESO",
+            Operacion.tipo_operacion == TipoOperacion.INGRESO,
             Operacion.fecha >= periodo.fecha_inicio,
             Operacion.fecha <= periodo.fecha_fin,
             Operacion.cliente.isnot(None),
@@ -548,7 +545,7 @@ class ReportDataAggregator:
             func.count(Operacion.id).label("operaciones")
         ).filter(
             Operacion.deleted_at.is_(None),
-            Operacion.tipo_operacion == "GASTO",
+            Operacion.tipo_operacion == TipoOperacion.GASTO,
             Operacion.fecha >= periodo.fecha_inicio,
             Operacion.fecha <= periodo.fecha_fin,
             Operacion.proveedor.isnot(None),
