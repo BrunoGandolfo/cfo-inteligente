@@ -44,8 +44,6 @@ def generar_respuesta_narrativa(pregunta: str, datos: list, sql_generado: str) -
         # === LOGS DE DIAGNÓSTICO ===
         logger.debug("Iniciando generar_respuesta_narrativa()")
         
-        # Verificar configuración
-        logger.debug(f"API Key presente: {bool(api_key_limpia)}, longitud: {len(api_key_limpia)}")
         logger.debug(f"Datos recibidos: {len(datos)} filas para pregunta: {pregunta[:60]}")
         
         # Formatear datos de manera legible
