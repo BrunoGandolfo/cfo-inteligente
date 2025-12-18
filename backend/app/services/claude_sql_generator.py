@@ -323,6 +323,28 @@ ORDER BY orden, socio;
    - Si la query supera 40 líneas, simplificar el approach
    - SIEMPRE verificar que cada JOIN tenga su cláusula ON
 
+17. ORDER BY DESPUÉS DE UNION/UNION ALL (RESTRICCIÓN PostgreSQL):
+   - PostgreSQL NO permite expresiones CASE, funciones o cálculos en ORDER BY después de UNION
+   - Error típico: "invalid UNION/INTERSECT/EXCEPT ORDER BY clause"
+   - SOLO se puede ordenar por:
+     a) Nombre de columna literal del SELECT
+     b) Número de posición de columna (1, 2, 3...)
+     c) Alias de columna definido en los SELECTs
+   - Para comparaciones por año (2024 vs 2025) con distribuciones:
+     * Usar columna auxiliar 'orden' numérica en cada SELECT
+     * Ordenar por: ORDER BY orden, nombre_columna
+   - Ejemplo CORRECTO (comparar distribuciones 2024 vs 2025):
+     WITH d2024 AS (...), d2025 AS (...)
+     SELECT * FROM (
+       SELECT 0 AS orden, socio, total_2024, total_2025 FROM comparacion
+       UNION ALL
+       SELECT 1 AS orden, 'TOTAL', SUM(total_2024), SUM(total_2025) FROM comparacion
+     ) t ORDER BY orden, socio
+   - Ejemplo INCORRECTO (genera error):
+     SELECT ... UNION ALL SELECT ...
+     ORDER BY CASE WHEN socio = 'TOTAL' THEN 1 ELSE 0 END  -- ❌ CASE no permitido
+   - Alternativa simple: Usar subquery para ordenar ANTES del UNION
+
 IMPORTANTE: Si una query viola alguna de estas reglas, usar approach alternativo más seguro.
 """
     
