@@ -5,7 +5,6 @@ from uuid import UUID
 from datetime import datetime, timezone
 
 from app.models.conversacion import Conversacion, Mensaje
-from app.models.usuario import Usuario
 
 
 class ConversacionService:

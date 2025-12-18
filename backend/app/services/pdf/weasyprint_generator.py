@@ -5,11 +5,9 @@ Basado en: ESPECIFICACION_TECNICA_REPORTE_BIG4.md (Secciones 10-13)
 Stack: WeasyPrint + Jinja2 + FastAPI
 """
 
-from weasyprint import HTML, CSS
-from weasyprint.text.fonts import FontConfiguration
+from weasyprint import HTML
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
-import tempfile
 import logging
 
 logger = logging.getLogger(__name__)

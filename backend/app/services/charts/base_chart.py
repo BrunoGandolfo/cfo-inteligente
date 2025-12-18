@@ -19,9 +19,8 @@ Fecha: Octubre 2025
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 from app.core.logger import get_logger
 
@@ -149,7 +148,6 @@ class BaseChart(ABC):
         Valida que self.data tiene la estructura correcta.
         Debe lanzar ValueError si datos son inválidos.
         """
-        pass
     
     @abstractmethod
     def create_figure(self) -> go.Figure:
@@ -157,7 +155,6 @@ class BaseChart(ABC):
         Crea la figura de Plotly con los datos.
         Retorna go.Figure configurada.
         """
-        pass
     
     # ═══════════════════════════════════════════════════════════════
     # MÉTODOS CONCRETOS

@@ -1,23 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
-from typing import List, Optional
 from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.operacion import Operacion
-from app.models.area import Area
-from app.models.socio import Socio
 from app.models.cliente import Cliente
 from app.models.proveedor import Proveedor
 from app.models import Usuario
 from app.schemas.operacion import (
     IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
-)
-from app.schemas.operacion_update import (
-    IngresoUpdate, GastoUpdate, RetiroUpdate
 )
 from app.services import operacion_service
 import uuid

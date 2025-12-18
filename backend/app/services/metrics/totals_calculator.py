@@ -10,7 +10,7 @@ Fecha: Octubre 2025
 
 from typing import List, Dict, Any
 from decimal import Decimal
-from app.models import Operacion, TipoOperacion
+from app.models import TipoOperacion
 from app.services.metrics.base_calculator import BaseCalculator
 
 

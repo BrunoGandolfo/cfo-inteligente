@@ -1,6 +1,4 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.usuario import Usuario
 import anthropic

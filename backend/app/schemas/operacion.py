@@ -3,7 +3,6 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
-from app.models.operacion import TipoOperacion
 
 class OperacionBase(BaseModel):
     fecha: date

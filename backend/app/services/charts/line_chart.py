@@ -7,7 +7,6 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from typing import Dict, Any, List
 import plotly.graph_objects as go
 
 from .base_chart import BaseChart
@@ -75,7 +74,6 @@ class LineChart(BaseChart):
             color_principal = serie_principal.get('color', self.EXTENDED_PALETTE[0])
             
             # Convertir hex a rgba
-            import re
             hex_color = color_principal.lstrip('#')
             r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
             

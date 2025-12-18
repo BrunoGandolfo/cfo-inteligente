@@ -50,19 +50,22 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture(scope="function")
 def db_session():
     """
-    Crea todas las tablas, ejecuta el test, y limpia después.
-    Scope=function para aislamiento entre tests.
+    Proporciona sesión de BD de test con rollback para aislamiento.
+    NO elimina tablas - usa rollback para mantener schema intacto.
     """
-    # Crear tablas
+    # Crear tablas si no existen (idempotente)
     Base.metadata.create_all(bind=engine)
     
-    db = TestingSessionLocal()
+    connection = engine.connect()
+    transaction = connection.begin()
+    db = TestingSessionLocal(bind=connection)
+    
     try:
         yield db
     finally:
         db.close()
-        # Limpiar tablas después del test
-        Base.metadata.drop_all(bind=engine)
+        transaction.rollback()
+        connection.close()
 
 
 @pytest.fixture

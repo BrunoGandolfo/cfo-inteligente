@@ -8,13 +8,11 @@ Fecha: Noviembre 2025
 """
 
 from datetime import datetime, date
-from typing import Optional
 from io import BytesIO
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
-from pathlib import Path
 from pydantic import BaseModel, Field
 
 from app.schemas.report.request import ReportRequest

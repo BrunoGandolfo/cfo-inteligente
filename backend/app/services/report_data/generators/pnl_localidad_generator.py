@@ -5,10 +5,9 @@ Incluye narrativas generadas por Claude Sonnet 4.5
 """
 
 from datetime import date, timedelta
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
-from decimal import Decimal
 import json
 import re
 

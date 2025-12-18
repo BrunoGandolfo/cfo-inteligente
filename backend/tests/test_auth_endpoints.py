@@ -30,13 +30,25 @@ from app.core.security import hash_password
 @pytest.fixture
 def client():
     """Cliente de FastAPI con BD mockeada usando dependency_overrides"""
+    from app.core.security import get_current_user
+    from app.models import Usuario
+    
     # Mock de sesión de BD
     mock_db = Mock()
+    
+    # Mock de usuario autenticado (para endpoints que requieren auth)
+    mock_user = Mock(spec=Usuario)
+    mock_user.id = "e85916c0-898a-46e0-84a5-c9c2ff92eaea"
+    mock_user.email = "admin@conexion.uy"
+    mock_user.nombre = "Admin"
+    mock_user.es_socio = True
+    mock_user.activo = True
     
     def override_get_db():
         return mock_db
     
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = lambda: mock_user
     
     with TestClient(app) as test_client:
         yield test_client, mock_db

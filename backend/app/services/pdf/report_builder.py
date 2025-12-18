@@ -12,7 +12,6 @@ from typing import Dict, Any, Optional, List
 from pathlib import Path
 from datetime import datetime
 from decimal import Decimal
-import os
 import base64
 
 from app.services.pdf.template_renderer import TemplateRenderer

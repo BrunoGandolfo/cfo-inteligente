@@ -46,7 +46,6 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             Entidad o None si no existe
         """
-        pass
     
     @abstractmethod
     def get_all(self, limit: int = 100, offset: int = 0) -> List[T]:
@@ -60,7 +59,6 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             Lista de entidades
         """
-        pass
     
     @abstractmethod
     def count(self, **filters) -> int:
@@ -73,5 +71,4 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             Cantidad de registros
         """
-        pass
 

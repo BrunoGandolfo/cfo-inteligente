@@ -4,7 +4,7 @@ Usa AIOrchestrator para mayor resiliencia
 """
 
 from app.core.logger import get_logger
-from app.core.constants import CLAUDE_MODEL, CLAUDE_MAX_TOKENS, CLAUDE_TEMPERATURE
+from app.core.constants import CLAUDE_MAX_TOKENS, CLAUDE_TEMPERATURE
 from app.services.ai.ai_orchestrator import AIOrchestrator
 
 logger = get_logger(__name__)

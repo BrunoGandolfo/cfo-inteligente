@@ -28,7 +28,6 @@ from app.services.ai.insights_orchestrator import InsightsOrchestrator
 from app.services.pdf.report_builder import ReportBuilder
 from app.utils.date_resolver import resolve_period, get_comparison_period
 from app.core.logger import get_logger
-from app.core.exceptions import PDFGenerationError, InsufficientDataError
 
 logger = get_logger(__name__)
 

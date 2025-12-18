@@ -28,26 +28,38 @@ from app.main import app
 ARCHIVO_PREGUNTAS = Path(__file__).parent.parent / "scripts" / "preguntas_reales_test.txt"
 
 @pytest.fixture(scope="module")
-def client_api():
-    """Cliente de FastAPI para tests E2E"""
-    return TestClient(app)
+def mock_user():
+    """Usuario mockeado para tests E2E - usa ID real de BD para evitar FK errors"""
+    from app.models import Usuario
+    user = Mock(spec=Usuario)
+    # Usar un ID de usuario REAL de la BD para evitar errores de FK
+    user.id = "e85916c0-898a-46e0-84a5-c9c2ff92eaea"  # agustina@conexion.uy
+    user.email = "agustina@conexion.uy"
+    user.nombre = "Agustina"
+    user.es_socio = True
+    user.activo = True
+    return user
+
+@pytest.fixture(scope="module")
+def client_api(mock_user):
+    """Cliente de FastAPI para tests E2E con autenticación mockeada"""
+    from app.core.security import get_current_user
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    yield TestClient(app)
+    app.dependency_overrides.clear()
 
 @pytest.fixture
 def mock_claude_apis():
     """Mock de ambos usos de Claude (SQL + Narrativa)"""
     with patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql') as mock_sql:
-        with patch('app.api.cfo_ai.client') as mock_narrativa:
+        with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
             # Configurar mock SQL (retorna SQL válido genérico)
             mock_sql.return_value = "SELECT SUM(monto_uyu) as total FROM operaciones WHERE deleted_at IS NULL"
             
-            # Configurar mock narrativa
-            mock_message = Mock()
-            mock_content = Mock()
-            mock_content.text = "Respuesta generada por Claude"
-            mock_message.content = [mock_content]
-            mock_narrativa.messages.create.return_value = mock_message
+            # Configurar mock AIOrchestrator narrativo
+            mock_orchestrator.return_value = "Respuesta generada por Claude"
             
-            yield {'sql': mock_sql, 'narrativa': mock_narrativa}
+            yield {'sql': mock_sql, 'orchestrator': mock_orchestrator}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -123,12 +135,8 @@ class TestCasosErrorGraves:
             WHERE s.nombre = 'Bruno'
             """
             
-            with patch('app.api.cfo_ai.client') as mock_narrativa:
-                mock_message = Mock()
-                mock_content = Mock()
-                mock_content.text = "Bruno recibió $90K"
-                mock_message.content = [mock_content]
-                mock_narrativa.messages.create.return_value = mock_message
+            with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
+                mock_orchestrator.return_value = "Bruno recibió $90K"
                 
                 response = client_api.post("/api/cfo/ask", json={
                     "pregunta": "¿Cuánto recibió Bruno en distribuciones este año?"
@@ -157,12 +165,8 @@ class TestCasosErrorGraves:
             """
             mock_gen.return_value = sql_incorrecto
             
-            with patch('app.api.cfo_ai.client') as mock_narrativa:
-                mock_message = Mock()
-                mock_content = Mock()
-                mock_content.text = "93% de facturación es en USD"
-                mock_message.content = [mock_content]
-                mock_narrativa.messages.create.return_value = mock_message
+            with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
+                mock_orchestrator.return_value = "93% de facturación es en USD"
                 
                 response = client_api.post("/api/cfo/ask", json={
                     "pregunta": "¿Qué porcentaje de facturación es en USD?"
@@ -189,12 +193,8 @@ class TestCasosErrorGraves:
             """
             mock_gen.return_value = sql_hardcodeado
             
-            with patch('app.api.cfo_ai.client') as mock_narrativa:
-                mock_message = Mock()
-                mock_content = Mock()
-                mock_content.text = "Proyección: $10.4M"
-                mock_message.content = [mock_content]
-                mock_narrativa.messages.create.return_value = mock_message
+            with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
+                mock_orchestrator.return_value = "Proyección: $10.4M"
                 
                 response = client_api.post("/api/cfo/ask", json={
                     "pregunta": "Proyección fin de año basado en últimos 8 meses"
@@ -217,12 +217,8 @@ class TestCasosErrorGraves:
             SELECT nombre FROM areas ORDER BY ingresos DESC LIMIT 1
             """
             
-            with patch('app.api.cfo_ai.client') as mock_narrativa:
-                mock_message = Mock()
-                mock_content = Mock()
-                mock_content.text = "El área más rentable es Jurídica"
-                mock_message.content = [mock_content]
-                mock_narrativa.messages.create.return_value = mock_message
+            with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
+                mock_orchestrator.return_value = "El área más rentable es Jurídica"
                 
                 response = client_api.post("/api/cfo/ask", json={
                     "pregunta": "¿Cuáles son las mejores áreas?"
@@ -244,12 +240,8 @@ class TestCasosErrorGraves:
             SELECT localidad FROM operaciones LIMIT 1
             """
             
-            with patch('app.api.cfo_ai.client') as mock_narrativa:
-                mock_message = Mock()
-                mock_content = Mock()
-                mock_content.text = "La única oficina es Montevideo"  # Falso, hay 2
-                mock_message.content = [mock_content]
-                mock_narrativa.messages.create.return_value = mock_message
+            with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
+                mock_orchestrator.return_value = "La única oficina es Montevideo"  # Falso, hay 2
                 
                 response = client_api.post("/api/cfo/ask", json={
                     "pregunta": "¿En qué oficina operamos?"
@@ -272,12 +264,8 @@ class TestCasosErrorGraves:
             SELECT 'TOTAL', SUM(monto) FROM operaciones
             """
             
-            with patch('app.api.cfo_ai.client') as mock_narrativa:
-                mock_message = Mock()
-                mock_content = Mock()
-                mock_content.text = "Resumen de operaciones"
-                mock_message.content = [mock_content]
-                mock_narrativa.messages.create.return_value = mock_message
+            with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
+                mock_orchestrator.return_value = "Resumen de operaciones"
                 
                 response = client_api.post("/api/cfo/ask", json={
                     "pregunta": "Resumen total de operaciones"
@@ -299,12 +287,8 @@ class TestCasosErrorGraves:
             SELECT SUM(monto) / 8 * 4 as proyeccion FROM operaciones
             """
             
-            with patch('app.api.cfo_ai.client') as mock_narrativa:
-                mock_message = Mock()
-                mock_content = Mock()
-                mock_content.text = "Proyección incorrecta"
-                mock_message.content = [mock_content]
-                mock_narrativa.messages.create.return_value = mock_message
+            with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
+                mock_orchestrator.return_value = "Proyección incorrecta"
                 
                 response = client_api.post("/api/cfo/ask", json={
                     "pregunta": "Proyección considerando meses restantes"
@@ -357,12 +341,8 @@ class TestCasosErrorGraves:
             WHERE fecha >= '2024-01-01' AND fecha < '2025-01-01'
             """
             
-            with patch('app.api.cfo_ai.client') as mock_narrativa:
-                mock_message = Mock()
-                mock_content = Mock()
-                mock_content.text = "Facturación del año"
-                mock_message.content = [mock_content]
-                mock_narrativa.messages.create.return_value = mock_message
+            with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
+                mock_orchestrator.return_value = "Facturación del año"
                 
                 response = client_api.post("/api/cfo/ask", json={
                     "pregunta": "¿Cómo vamos en el año?"

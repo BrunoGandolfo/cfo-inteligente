@@ -82,4 +82,3 @@ def obtener_tipo_cambio_bcu() -> Optional[float]:
     """
     # Ver investigación: código 2225 para USD billete
     # Endpoint: https://cotizaciones.bcu.gub.uy/wscotizaciones/servlet/awsbcucotizaciones
-    pass

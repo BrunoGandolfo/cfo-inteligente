@@ -10,8 +10,8 @@ Fecha: Octubre 2025
 
 from typing import Dict, List, Optional, Any
 from datetime import date
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, func
+from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 
 from app.repositories.base_repository import BaseRepository
 from app.models import Operacion, TipoOperacion, Localidad

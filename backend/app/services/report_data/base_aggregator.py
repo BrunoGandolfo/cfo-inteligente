@@ -16,12 +16,11 @@ Fecha: Octubre 2025
 
 from abc import ABC, abstractmethod
 from datetime import date, datetime, timedelta
-from decimal import Decimal
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, func
+from sqlalchemy import and_
 
-from app.models import Operacion, TipoOperacion, Area, Socio
+from app.models import Operacion, TipoOperacion
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -117,7 +116,6 @@ class BaseAggregator(ABC):
     @abstractmethod
     def get_period_type(self) -> str:
         """Retorna tipo de período: 'weekly', 'monthly', 'quarterly', 'yearly'"""
-        pass
     
     @abstractmethod
     def validate_period(self, start_date: date, end_date: date) -> None:
@@ -125,7 +123,6 @@ class BaseAggregator(ABC):
         Valida que el período sea correcto para este tipo de agregador.
         Debe lanzar ValueError si el período no es válido.
         """
-        pass
     
     @abstractmethod
     def calculate_period_specific_metrics(
@@ -142,7 +139,6 @@ class BaseAggregator(ABC):
         - Quarterly: meses del trimestre, comparación con Q anterior
         - Yearly: trimestres, comparación YoY
         """
-        pass
     
     # ═══════════════════════════════════════════════════════════════
     # MÉTODOS CONCRETOS (Reutilizables, pueden sobreescribirse)

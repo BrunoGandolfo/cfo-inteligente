@@ -11,7 +11,6 @@ Fecha: Octubre 2025
 from typing import Optional, Dict, Any
 from pathlib import Path
 from datetime import datetime
-import tempfile
 
 from weasyprint import HTML, CSS
 from weasyprint.text.fonts import FontConfiguration

@@ -52,11 +52,27 @@ def db_session():
 
 
 @pytest.fixture(scope="function")
-def client_api():
+def mock_user():
+    """Usuario mockeado para tests - usa ID real de BD para evitar FK errors"""
+    from app.models import Usuario
+    user = Mock(spec=Usuario)
+    # Usar un ID de usuario REAL de la BD para evitar errores de FK
+    user.id = "e85916c0-898a-46e0-84a5-c9c2ff92eaea"  # agustina@conexion.uy
+    user.email = "agustina@conexion.uy"
+    user.nombre = "Agustina"
+    user.es_socio = True
+    user.activo = True
+    return user
+
+@pytest.fixture(scope="function")
+def client_api(mock_user):
     """
-    Fixture que proporciona cliente de FastAPI
+    Fixture que proporciona cliente de FastAPI con autenticación mockeada
     """
-    return TestClient(app)
+    from app.core.security import get_current_user
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    yield TestClient(app)
+    app.dependency_overrides.clear()
 
 
 # ══════════════════════════════════════════════════════════════
@@ -139,35 +155,42 @@ class TestEndpointCFOAsk:
     """Tests end-to-end del endpoint principal"""
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
-    @patch('app.api.cfo_ai.client')
-    def test_endpoint_pregunta_simple(self, mock_client, mock_claude_gen, client_api):
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_endpoint_pregunta_simple(self, mock_orchestrator, mock_claude_gen, client_api):
         """Endpoint con pregunta simple debe retornar respuesta"""
         # Arrange
         mock_claude_gen.return_value = "SELECT COUNT(*) as total FROM operaciones WHERE deleted_at IS NULL"
         
-        # Mock Claude narrativo
-        mock_message = Mock()
-        mock_content = Mock()
-        mock_content.text = "Hay 2,290 operaciones en total."
-        mock_message.content = [mock_content]
-        mock_client.messages.create.return_value = mock_message
+        # Mock AIOrchestrator narrativo
+        mock_orchestrator.return_value = "Hay 2,290 operaciones en total."
         
         # Act
         response = client_api.post("/api/cfo/ask", json={
             "pregunta": "¿Cuántas operaciones hay?"
         })
         
-        # Assert
+        # Assert - Respuesta básica
         assert response.status_code == 200
         data = response.json()
         assert data['status'] == 'success'
         assert 'respuesta' in data
         assert 'sql_generado' in data
         assert 'metadata' in data
+        
+        # Verificar que se llamó al orchestrator con parámetros correctos
+        mock_orchestrator.assert_called_once()
+        call_kwargs = mock_orchestrator.call_args.kwargs
+        assert 'prompt' in call_kwargs, "El orchestrator debe recibir un prompt"
+        assert '¿Cuántas operaciones hay?' in call_kwargs['prompt'], "El prompt debe contener la pregunta"
+        assert call_kwargs.get('max_tokens', 0) > 0, "max_tokens debe ser positivo"
+        assert 0 <= call_kwargs.get('temperature', 1) <= 1, "temperature debe estar entre 0 y 1"
+        
+        # Verificar que la respuesta contiene contenido relevante
+        assert len(data['respuesta']) > 10, "Respuesta demasiado corta"
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
-    @patch('app.api.cfo_ai.client')
-    def test_endpoint_pregunta_compleja(self, mock_client, mock_claude_gen, client_api):
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_endpoint_pregunta_compleja(self, mock_orchestrator, mock_claude_gen, client_api):
         """Endpoint con pregunta compleja (rentabilidad)"""
         # Arrange
         sql_rentabilidad = """
@@ -182,23 +205,28 @@ class TestEndpointCFOAsk:
         """
         mock_claude_gen.return_value = sql_rentabilidad
         
-        # Mock narrativa
-        mock_message = Mock()
-        mock_content = Mock()
-        mock_content.text = "La rentabilidad del mes es del 33.47%"
-        mock_message.content = [mock_content]
-        mock_client.messages.create.return_value = mock_message
+        # Mock AIOrchestrator narrativo
+        mock_orchestrator.return_value = "La rentabilidad del mes es del 33.47%"
         
         # Act
         response = client_api.post("/api/cfo/ask", json={
             "pregunta": "¿Cuál es la rentabilidad de este mes?"
         })
         
-        # Assert
+        # Assert - Respuesta básica
         assert response.status_code == 200
         data = response.json()
         assert data['status'] == 'success'
         assert 'rentabilidad' in data['respuesta'].lower() or '%' in data['respuesta']
+        
+        # Verificar que se llamó al orchestrator correctamente
+        mock_orchestrator.assert_called_once()
+        call_kwargs = mock_orchestrator.call_args.kwargs
+        assert 'prompt' in call_kwargs
+        assert 'rentabilidad' in call_kwargs['prompt'].lower(), "El prompt debe contener la pregunta sobre rentabilidad"
+        
+        # Verificar que la respuesta tiene formato de porcentaje
+        assert '%' in data['respuesta'], "Respuesta sobre rentabilidad debe incluir porcentaje"
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
     def test_endpoint_sql_invalido(self, mock_claude_gen, client_api):
@@ -225,12 +253,8 @@ class TestEndpointCFOAsk:
         with patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql') as mock_gen:
             mock_gen.return_value = "SELECT 1 as numero"
             
-            with patch('app.api.cfo_ai.client') as mock_client:
-                mock_message = Mock()
-                mock_content = Mock()
-                mock_content.text = "El número es 1"
-                mock_message.content = [mock_content]
-                mock_client.messages.create.return_value = mock_message
+            with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
+                mock_orchestrator.return_value = "El número es 1"
                 
                 # Act
                 response = client_api.post("/api/cfo/ask", json={
@@ -396,19 +420,15 @@ class TestFlujoCompletoEndToEnd:
     """Tests del flujo completo con mínimo mocking"""
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
-    @patch('app.api.cfo_ai.client')
-    def test_flujo_completo_pregunta_facturacion(self, mock_narrativa, mock_sql_gen, client_api):
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_flujo_completo_pregunta_facturacion(self, mock_orchestrator, mock_sql_gen, client_api):
         """Flujo completo: Pregunta → SQL → BD → Narrativa → Response"""
         # Arrange
         sql = "SELECT SUM(monto_uyu) as total FROM operaciones WHERE tipo_operacion='INGRESO' AND deleted_at IS NULL"
         mock_sql_gen.return_value = sql
         
-        # Mock narrativa
-        mock_message = Mock()
-        mock_content = Mock()
-        mock_content.text = "Facturamos $X en total"
-        mock_message.content = [mock_content]
-        mock_narrativa.messages.create.return_value = mock_message
+        # Mock AIOrchestrator narrativo
+        mock_orchestrator.return_value = "Facturamos $X en total"
         
         # Act
         response = client_api.post("/api/cfo/ask", json={
@@ -427,18 +447,15 @@ class TestFlujoCompletoEndToEnd:
         assert 'total' in data['datos_raw'][0]
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
-    @patch('app.api.cfo_ai.client')
-    def test_flujo_con_validacion_pre_sql(self, mock_narrativa, mock_sql_gen, client_api):
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_flujo_con_validacion_pre_sql(self, mock_orchestrator, mock_sql_gen, client_api):
         """Validación pre-SQL debe ejecutarse en el flujo"""
         # Arrange - SQL sin filtro temporal (debería detectarse)
         sql_sin_filtro = "SELECT SUM(monto_uyu) FROM operaciones WHERE deleted_at IS NULL"
         mock_sql_gen.return_value = sql_sin_filtro
         
-        mock_message = Mock()
-        mock_content = Mock()
-        mock_content.text = "Facturamos $X en total"
-        mock_message.content = [mock_content]
-        mock_narrativa.messages.create.return_value = mock_message
+        # Mock AIOrchestrator narrativo
+        mock_orchestrator.return_value = "Facturamos $X en total"
         
         # Act
         response = client_api.post("/api/cfo/ask", json={
@@ -453,18 +470,15 @@ class TestFlujoCompletoEndToEnd:
         assert data['status'] in ['success', 'error']
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
-    @patch('app.api.cfo_ai.client')
-    def test_flujo_con_chain_of_thought(self, mock_narrativa, mock_sql_gen, client_api):
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_flujo_con_chain_of_thought(self, mock_orchestrator, mock_sql_gen, client_api):
         """Pregunta temporal debe activar Chain-of-Thought"""
         # Arrange
         sql_proyeccion = "SELECT SUM(monto_uyu) / 8 * 12 as proyeccion FROM operaciones"
         mock_sql_gen.return_value = sql_proyeccion
         
-        mock_message = Mock()
-        mock_content = Mock()
-        mock_content.text = "La proyección es de $X"
-        mock_message.content = [mock_content]
-        mock_narrativa.messages.create.return_value = mock_message
+        # Mock AIOrchestrator narrativo
+        mock_orchestrator.return_value = "La proyección es de $X"
         
         # Act
         response = client_api.post("/api/cfo/ask", json={
@@ -842,8 +856,8 @@ class TestCasosCriticos:
     """Tests de casos críticos que fallaron en testing manual"""
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
-    @patch('app.api.cfo_ai.client')
-    def test_caso_retiros_por_socio(self, mock_narrativa, mock_sql_gen, client_api):
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_caso_retiros_por_socio(self, mock_orchestrator, mock_sql_gen, client_api):
         """Caso crítico: ¿Qué socio retiró más plata?"""
         # Arrange
         sql = """
@@ -858,11 +872,8 @@ class TestCasosCriticos:
         """
         mock_sql_gen.return_value = sql
         
-        mock_message = Mock()
-        mock_content = Mock()
-        mock_content.text = "Bruno retiró $X en total"
-        mock_message.content = [mock_content]
-        mock_narrativa.messages.create.return_value = mock_message
+        # Mock AIOrchestrator narrativo
+        mock_orchestrator.return_value = "Bruno retiró $X en total"
         
         # Act
         response = client_api.post("/api/cfo/ask", json={
@@ -876,8 +887,8 @@ class TestCasosCriticos:
         assert data['status'] in ['success', 'error']
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
-    @patch('app.api.cfo_ai.client')
-    def test_caso_comparacion_año_anterior(self, mock_narrativa, mock_sql_gen, client_api):
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_caso_comparacion_año_anterior(self, mock_orchestrator, mock_sql_gen, client_api):
         """Caso crítico: ¿Mejoramos respecto al año pasado?"""
         # Arrange
         sql = """
@@ -892,11 +903,8 @@ class TestCasosCriticos:
         """
         mock_sql_gen.return_value = sql
         
-        mock_message = Mock()
-        mock_content = Mock()
-        mock_content.text = "Sí, mejoramos en facturación"
-        mock_message.content = [mock_content]
-        mock_narrativa.messages.create.return_value = mock_message
+        # Mock AIOrchestrator narrativo
+        mock_orchestrator.return_value = "Sí, mejoramos en facturación"
         
         # Act
         response = client_api.post("/api/cfo/ask", json={
@@ -938,8 +946,8 @@ class TestCasosCriticos:
             assert row2[0] is None or row2[0] >= 0
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
-    @patch('app.api.cfo_ai.client')
-    def test_caso_estamos_creciendo(self, mock_narrativa, mock_sql_gen, client_api):
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_caso_estamos_creciendo(self, mock_orchestrator, mock_sql_gen, client_api):
         """Caso: ¿Estamos creciendo o bajando?"""
         # Arrange
         sql = """
@@ -961,11 +969,8 @@ class TestCasosCriticos:
         """
         mock_sql_gen.return_value = sql
         
-        mock_message = Mock()
-        mock_content = Mock()
-        mock_content.text = "La tendencia es positiva, estamos creciendo"
-        mock_message.content = [mock_content]
-        mock_narrativa.messages.create.return_value = mock_message
+        # Mock AIOrchestrator narrativo
+        mock_orchestrator.return_value = "La tendencia es positiva, estamos creciendo"
         
         # Act
         response = client_api.post("/api/cfo/ask", json={
@@ -974,6 +979,176 @@ class TestCasosCriticos:
         
         # Assert
         assert response.status_code == 200
+
+
+# ══════════════════════════════════════════════════════════════
+# TESTS DE FALLBACK - Verificar comportamiento cuando la IA falla
+# ══════════════════════════════════════════════════════════════
+
+@pytest.mark.integration
+class TestCFOAIFallback:
+    """Tests para verificar comportamiento cuando la IA falla"""
+    
+    @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_fallback_cuando_orchestrator_retorna_none(self, mock_orchestrator, mock_claude_gen, client_api):
+        """Verificar que el sistema funciona aunque la IA falle"""
+        # Arrange - Simular SQL válido pero IA que falla
+        mock_claude_gen.return_value = "SELECT COUNT(*) as total FROM operaciones WHERE deleted_at IS NULL"
+        mock_orchestrator.return_value = None  # IA falla
+        
+        # Act
+        response = client_api.post("/api/cfo/ask", json={
+            "pregunta": "¿Cuántas operaciones hay?"
+        })
+        
+        # Assert - El endpoint debe responder aunque la IA falle
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Debe haber alguna respuesta (fallback con datos crudos)
+        assert 'respuesta' in data or 'error' in data
+        
+        # Si hay respuesta, debe contener datos (el fallback muestra JSON crudo)
+        if data.get('status') == 'success':
+            assert len(data.get('respuesta', '')) > 0, "Debe haber respuesta aunque sea fallback"
+    
+    @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_fallback_cuando_orchestrator_lanza_excepcion(self, mock_orchestrator, mock_claude_gen, client_api):
+        """Verificar manejo de excepciones de la IA"""
+        # Arrange
+        mock_claude_gen.return_value = "SELECT COUNT(*) as total FROM operaciones WHERE deleted_at IS NULL"
+        mock_orchestrator.side_effect = Exception("API rate limit exceeded")
+        
+        # Act
+        response = client_api.post("/api/cfo/ask", json={
+            "pregunta": "¿Cuántas operaciones hay?"
+        })
+        
+        # Assert - No debe explotar, debe manejar el error gracefully
+        assert response.status_code in [200, 500, 503], "Debe responder con código válido"
+        data = response.json()
+        
+        # Debe indicar error o tener respuesta de fallback
+        assert 'error' in data or 'respuesta' in data
+    
+    @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_respuesta_no_es_vacia_nunca(self, mock_orchestrator, mock_claude_gen, client_api):
+        """La respuesta nunca debe ser vacía cuando hay datos"""
+        # Arrange
+        mock_claude_gen.return_value = "SELECT SUM(monto_uyu) as total FROM operaciones WHERE deleted_at IS NULL"
+        mock_orchestrator.return_value = "Respuesta válida con contenido suficiente."
+        
+        # Act
+        response = client_api.post("/api/cfo/ask", json={
+            "pregunta": "¿Cuánto facturamos?"
+        })
+        
+        # Assert
+        assert response.status_code == 200
+        data = response.json()
+        respuesta = data.get('respuesta', '')
+        
+        assert len(respuesta) > 10, f"Respuesta demasiado corta: '{respuesta}'"
+
+
+# ══════════════════════════════════════════════════════════════
+# TESTS DE CONTENIDO - Verificar que respuestas tienen sentido
+# ══════════════════════════════════════════════════════════════
+
+@pytest.mark.integration
+class TestCFOAIContenido:
+    """Tests para verificar que las respuestas tienen contenido válido"""
+    
+    @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_respuesta_facturacion_contiene_monto(self, mock_orchestrator, mock_claude_gen, client_api):
+        """Una pregunta sobre facturación debe retornar montos"""
+        # Arrange
+        mock_claude_gen.return_value = "SELECT SUM(monto_uyu) as total FROM operaciones WHERE tipo_operacion = 'INGRESO'"
+        mock_orchestrator.return_value = "La facturación total es de $12,340,659.99 UYU"
+        
+        # Act
+        response = client_api.post("/api/cfo/ask", json={
+            "pregunta": "¿Cuánto facturamos en 2025?"
+        })
+        
+        # Assert
+        data = response.json()
+        respuesta = data.get('respuesta', '')
+        
+        # Debe contener símbolo de moneda o números
+        tiene_moneda = '$' in respuesta or 'UYU' in respuesta or 'USD' in respuesta
+        tiene_numeros = any(c.isdigit() for c in respuesta)
+        
+        assert tiene_moneda or tiene_numeros, \
+            f"Respuesta sobre facturación debe incluir montos: {respuesta}"
+    
+    @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_respuesta_rentabilidad_contiene_porcentaje(self, mock_orchestrator, mock_claude_gen, client_api):
+        """Una pregunta sobre rentabilidad debe retornar porcentaje"""
+        # Arrange
+        mock_claude_gen.return_value = "SELECT (ingresos-gastos)/ingresos*100 as rentabilidad FROM ..."
+        mock_orchestrator.return_value = "La rentabilidad del período es **68.30%**"
+        
+        # Act
+        response = client_api.post("/api/cfo/ask", json={
+            "pregunta": "¿Cuál es la rentabilidad?"
+        })
+        
+        # Assert
+        data = response.json()
+        respuesta = data.get('respuesta', '')
+        
+        # Debe contener porcentaje
+        assert '%' in respuesta, \
+            f"Respuesta sobre rentabilidad debe incluir porcentaje: {respuesta}"
+    
+    @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_sql_generado_se_incluye_en_response(self, mock_orchestrator, mock_claude_gen, client_api):
+        """El SQL generado debe incluirse en la respuesta para auditoría"""
+        # Arrange
+        sql_esperado = "SELECT COUNT(*) as total FROM operaciones WHERE deleted_at IS NULL"
+        mock_claude_gen.return_value = sql_esperado
+        mock_orchestrator.return_value = "Hay 2,391 operaciones."
+        
+        # Act
+        response = client_api.post("/api/cfo/ask", json={
+            "pregunta": "¿Cuántas operaciones hay?"
+        })
+        
+        # Assert
+        data = response.json()
+        
+        assert 'sql_generado' in data, "Response debe incluir sql_generado"
+        assert data['sql_generado'] is not None, "sql_generado no debe ser None"
+        assert 'SELECT' in data['sql_generado'].upper(), "Debe ser SQL válido"
+    
+    @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
+    @patch('app.api.cfo_ai._orchestrator.complete')
+    def test_metadata_incluye_informacion_util(self, mock_orchestrator, mock_claude_gen, client_api):
+        """La metadata debe incluir información útil para debugging"""
+        # Arrange
+        mock_claude_gen.return_value = "SELECT 1"
+        mock_orchestrator.return_value = "Respuesta de prueba"
+        
+        # Act
+        response = client_api.post("/api/cfo/ask", json={
+            "pregunta": "Test de metadata"
+        })
+        
+        # Assert
+        data = response.json()
+        
+        assert 'metadata' in data, "Response debe incluir metadata"
+        metadata = data['metadata']
+        
+        # Verificar campos útiles de metadata
+        assert 'metodo_generacion_sql' in metadata, "metadata debe indicar método de generación SQL"
 
 
 # ══════════════════════════════════════════════════════════════

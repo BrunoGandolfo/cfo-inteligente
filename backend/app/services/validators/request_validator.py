@@ -8,8 +8,7 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from datetime import date, timedelta
-from typing import Optional
+from datetime import date
 
 from app.schemas.report.request import ReportRequest
 from app.core.exceptions import InvalidDateRangeError

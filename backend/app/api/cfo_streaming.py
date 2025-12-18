@@ -8,11 +8,10 @@ Autor: Sistema CFO Inteligente
 Fecha: Noviembre 2025
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from anthropic import Anthropic
-import os
 import json
 from typing import Generator
 from uuid import UUID

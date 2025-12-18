@@ -9,7 +9,6 @@ Fecha: Octubre 2025
 """
 
 from typing import Dict, Any, Type
-from pathlib import Path
 
 from .base_chart import BaseChart
 from .line_chart import LineChart

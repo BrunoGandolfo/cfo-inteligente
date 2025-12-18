@@ -10,7 +10,6 @@ Fecha: Octubre 2025
 
 from typing import List, Dict, Any, Optional
 from decimal import Decimal
-from datetime import date
 from app.models import Operacion
 from app.services.metrics.base_calculator import BaseCalculator
 from app.utils.stats_calculator import (

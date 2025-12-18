@@ -10,10 +10,7 @@ Autor: Sistema CFO Inteligente
 Fecha: Diciembre 2025
 """
 
-import os
 from typing import Optional
-import anthropic
-from anthropic import APITimeoutError, APIConnectionError, RateLimitError
 
 from app.core.logger import get_logger
 

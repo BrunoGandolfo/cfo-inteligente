@@ -302,7 +302,6 @@ def check_dependencies() -> Dict[str, bool]:
     status['anthropic_api_key'] = bool(os.getenv('ANTHROPIC_API_KEY'))
     
     # Check templates directory
-    import os
     from pathlib import Path
     backend_dir = Path(__file__).parent.parent
     templates_dir = backend_dir / 'templates'

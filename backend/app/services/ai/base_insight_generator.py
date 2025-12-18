@@ -60,7 +60,6 @@ class BaseInsightGenerator(ABC):
         - Prohibiciones (frases genéricas)
         - Obligaciones (números específicos)
         """
-        pass
     
     @abstractmethod
     def parse_response(self, response: str) -> Dict[str, str]:
@@ -78,7 +77,6 @@ class BaseInsightGenerator(ABC):
         - JSON con markdown (```json ... ```)
         - Texto plano (fallback)
         """
-        pass
     
     @abstractmethod
     def get_fallback(self, metricas: Dict[str, Any]) -> Dict[str, str]:
@@ -97,7 +95,6 @@ class BaseInsightGenerator(ABC):
         - Rate limit
         - Usuario desactiva insights IA
         """
-        pass
     
     def generate(
         self, 

@@ -9,7 +9,7 @@ Fecha: Noviembre 2025
 """
 
 from typing import List, Dict, Any
-from app.utils.formatters import format_currency, format_percentage
+from app.utils.formatters import format_percentage
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)

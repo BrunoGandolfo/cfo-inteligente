@@ -56,7 +56,6 @@ class BaseCalculator(ABC):
                 ...
             }
         """
-        pass
     
     @abstractmethod
     def get_metric_names(self) -> List[str]:
@@ -74,5 +73,4 @@ class BaseCalculator(ABC):
         Ejemplo:
             ['ingresos_uyu', 'gastos_uyu', 'retiros_uyu', ...]
         """
-        pass
 

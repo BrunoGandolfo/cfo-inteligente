@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import Operacion, TipoOperacion, Moneda, Localidad, DistribucionDetalle, Area, Socio
+from app.models import Operacion, TipoOperacion, Moneda, Localidad, DistribucionDetalle, Socio
 from app.schemas.operacion import IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
 from decimal import Decimal
 from typing import Optional

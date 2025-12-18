@@ -8,7 +8,6 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from typing import Dict, Any, List
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
