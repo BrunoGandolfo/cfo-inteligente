@@ -28,6 +28,7 @@ from app.services.validador_sql import ValidadorSQL
 from app.services.chain_of_thought_sql import ChainOfThoughtSQL, generar_con_chain_of_thought
 from app.services.sql_post_processor import SQLPostProcessor
 from app.services.claude_sql_generator import ClaudeSQLGenerator
+from app.services.validador_canonico import validar_respuesta_cfo
 from pydantic import BaseModel
 from typing import Optional
 from app.models import Usuario
@@ -251,6 +252,21 @@ Genera la respuesta:"""
             
             # Guardar respuesta completa
             respuesta_final = "".join(respuesta_completa)
+            
+            # ═══════════════════════════════════════════════════════════
+            # FASE 5.5: VALIDACIÓN CANÓNICA
+            # ═══════════════════════════════════════════════════════════
+            
+            validacion_canonica = validar_respuesta_cfo(db, data.pregunta, respuesta_final, datos)
+            
+            if validacion_canonica.get('advertencia'):
+                # Enviar advertencia como tokens adicionales
+                advertencia = validacion_canonica['advertencia']
+                yield sse_format("token", advertencia)
+                respuesta_final += advertencia
+                logger.warning(f"Stream: Validación canónica agregó advertencia para '{validacion_canonica['query_canonica']}'")
+            elif validacion_canonica.get('validado'):
+                logger.info(f"Stream: Validación canónica OK - {validacion_canonica['query_canonica']}")
             
             if conversacion_id:
                 ConversacionService.agregar_mensaje(

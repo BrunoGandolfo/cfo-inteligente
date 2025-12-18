@@ -14,6 +14,7 @@ from app.services.sql_post_processor import SQLPostProcessor
 from app.services.claude_sql_generator import ClaudeSQLGenerator
 from app.services.sql_router import generar_sql_inteligente
 from app.services.validador_sql import validar_resultado_sql
+from app.services.validador_canonico import validar_respuesta_cfo
 from app.services.chain_of_thought_sql import ChainOfThoughtSQL, generar_con_chain_of_thought
 from pydantic import BaseModel
 from typing import Optional, List
@@ -224,6 +225,15 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db), current_user
                 sql_generado
             )
             
+            # === VALIDACIÓN CANÓNICA ===
+            validacion_canonica = validar_respuesta_cfo(db, data.pregunta, respuesta_narrativa, resultado['data'])
+            
+            if validacion_canonica.get('advertencia'):
+                respuesta_narrativa += validacion_canonica['advertencia']
+                logger.warning(f"Validación canónica agregó advertencia para '{validacion_canonica['query_canonica']}'")
+            elif validacion_canonica.get('validado'):
+                logger.info(f"Validación canónica OK - {validacion_canonica['query_canonica']}")
+            
             # === GUARDAR RESPUESTA DEL ASSISTANT ===
             if conversacion_id:
                 ConversacionService.agregar_mensaje(
@@ -244,7 +254,13 @@ def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db), current_user
                     "intentos_sql": resultado_sql['intentos']['total'],
                     "tiempos_detalle": resultado_sql['tiempos'],
                     "post_procesamiento": sql_procesado_info.get('modificado', False),
-                    "contexto_mensajes": len(contexto)  # NUEVO
+                    "contexto_mensajes": len(contexto),
+                    "validacion_canonica": {
+                        "aplicada": validacion_canonica.get('validado', False),
+                        "query": validacion_canonica.get('query_canonica'),
+                        "diferencia_pct": validacion_canonica.get('diferencia_porcentual'),
+                        "dentro_tolerancia": validacion_canonica.get('dentro_tolerancia')
+                    }
                 }
             }
         else:
