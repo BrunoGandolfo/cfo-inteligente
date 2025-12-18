@@ -51,10 +51,6 @@ class PieChart(BaseChart):
         values = self.data['values']
         colors = self.data.get('colors', self.EXTENDED_PALETTE[:len(labels)])
         
-        # Calcular porcentajes
-        total = sum(values)
-        percentages = [(v/total*100) if total > 0 else 0 for v in values]
-        
         fig = go.Figure(data=[go.Pie(
             labels=labels,
             values=values,

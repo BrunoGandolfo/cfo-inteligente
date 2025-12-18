@@ -23,7 +23,7 @@ def generate_operativo_fallback(metricas: Dict[str, Any]) -> Dict[str, str]:
         Dict con 3 insights operativos
     """
     ingresos = float(metricas.get('ingresos_uyu', 0))
-    gastos = float(metricas.get('gastos_uyu', 0))
+    _gastos = float(metricas.get('gastos_uyu', 0))  # noqa: F841 - preparado para expansión
     rentabilidad_neta = metricas.get('rentabilidad_neta', 0.0)
     
     area_lider = metricas.get('area_lider', {})
@@ -108,7 +108,7 @@ def generate_estrategico_fallback(metricas: Dict[str, Any]) -> Dict[str, str]:
         Dict con 4 insights estratégicos
     """
     ingresos = float(metricas.get('ingresos_uyu', 0))
-    margen_operativo = metricas.get('margen_operativo', 0.0)
+    _margen_operativo = metricas.get('margen_operativo', 0.0)  # noqa: F841 - preparado para expansión
     duracion_dias = metricas.get('duracion_dias', 0)
     
     rent_areas = metricas.get('rentabilidad_por_area', {})

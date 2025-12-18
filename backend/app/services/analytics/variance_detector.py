@@ -213,9 +213,7 @@ class VarianceDetector:
     
     def _get_action_required(self, tipo: str, variacion: float) -> str:
         """Retorna acción requerida según tipo y severidad"""
-        
-        severidad_alta = abs(variacion) > 20
-        
+        # Umbral de severidad: 20%
         if tipo == 'revenue':
             if variacion < -20:
                 return "Investigar causas inmediatamente"

@@ -87,9 +87,6 @@ class DonutChart(BaseChart):
         max_idx = values.index(max(values)) if values else 0
         pull = [0.1 if i == max_idx else 0 for i in range(len(values))]
         
-        # Calcular porcentajes para labels
-        total = sum(values)
-        
         fig = go.Figure(data=[go.Pie(
             labels=labels,
             values=values,

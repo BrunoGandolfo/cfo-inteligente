@@ -41,8 +41,9 @@ def dashboard_report(
 
     ingresos = sum(pick_monto(op) for op in operaciones if op.tipo_operacion == TipoOperacion.INGRESO) or 0.0
     gastos = sum(pick_monto(op) for op in operaciones if op.tipo_operacion == TipoOperacion.GASTO) or 0.0
-    retiros = sum(pick_monto(op) for op in operaciones if op.tipo_operacion == TipoOperacion.RETIRO) or 0.0
-    distribuciones = sum(pick_monto(op) for op in operaciones if op.tipo_operacion == TipoOperacion.DISTRIBUCION) or 0.0
+    # retiros y distribuciones calculados para futura expansión del dashboard
+    _retiros = sum(pick_monto(op) for op in operaciones if op.tipo_operacion == TipoOperacion.RETIRO) or 0.0  # noqa: F841
+    _distribuciones = sum(pick_monto(op) for op in operaciones if op.tipo_operacion == TipoOperacion.DISTRIBUCION) or 0.0  # noqa: F841
 
     # Margen Operativo: solo ingresos vs gastos (no incluye retiros ni distribuciones)
     rentabilidad = 0.0

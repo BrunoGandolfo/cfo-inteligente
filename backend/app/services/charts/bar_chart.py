@@ -76,7 +76,6 @@ class BarChart(BaseChart):
         # Ordenar categorías por valor (mayor a menor) si configurado
         if self.config.get('sort_by_value', False) and len(series_list) > 0:
             # Ordenar basado en primera serie
-            first_values = series_list[0]['values']
             sorted_pairs = sorted(zip(categories, *[s['values'] for s in series_list]), 
                                 key=lambda x: x[1], reverse=True)
             categories = [p[0] for p in sorted_pairs]
