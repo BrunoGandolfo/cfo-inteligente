@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends
 from app.core.security import get_current_user
+from app.core.logger import get_logger
 from app.models.usuario import Usuario
 import anthropic
 import os
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/frases", tags=["frases"])
 
@@ -60,7 +63,7 @@ Responde SOLO con la frase, sin comillas ni explicación."""
         return {"frase": frase}
         
     except Exception as e:
-        print(f"Error generando frase: {e}")
+        logger.error(f"Error generando frase: {e}")
         return {"frase": "¡A seguir registrando con excelencia!"}
 
 

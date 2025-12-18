@@ -98,19 +98,3 @@ class PDFGenerator:
 def generar_pdf(html_path: str, pdf_path: str):
     """Genera PDF desde HTML usando WeasyPrint."""
     HTML(html_path).write_pdf(pdf_path)
-
-
-# ============================================================
-# USO DIRECTO
-# ============================================================
-
-if __name__ == '__main__':
-    import sys
-    
-    if len(sys.argv) >= 3:
-        html_input = sys.argv[1]
-        pdf_output = sys.argv[2]
-        generar_pdf(html_input, pdf_output)
-        print(f"PDF generado: {pdf_output}")
-    else:
-        print("Uso: python weasyprint_generator.py <archivo.html> <salida.pdf>")

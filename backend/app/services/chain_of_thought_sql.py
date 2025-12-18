@@ -250,34 +250,3 @@ def generar_con_chain_of_thought(
             'error': str(e)
         }
 
-
-# ══════════════════════════════════════════════════════════════
-# TESTING
-# ══════════════════════════════════════════════════════════════
-
-if __name__ == "__main__":
-    print("="*80)
-    print("🧪 TESTING CHAIN-OF-THOUGHT SQL")
-    print("="*80)
-    
-    # Test de detección
-    preguntas_test = [
-        ("¿Cuánto facturamos este mes?", False),  # Simple, no necesita CoT
-        ("Proyección de fin de año", True),  # Necesita metadatos
-        ("Tendencia últimos 6 meses", True),  # Necesita metadatos
-        ("¿Qué área es más rentable?", False),  # Simple
-        ("Evolución basada en últimos 8 meses", True),  # Necesita metadatos
-    ]
-    
-    for pregunta, esperado in preguntas_test:
-        necesita = ChainOfThoughtSQL.necesita_metadatos(pregunta)
-        simbolo = "✅" if necesita == esperado else "❌"
-        print(f"{simbolo} '{pregunta[:40]}...' → Necesita CoT: {necesita} (esperado: {esperado})")
-    
-    # Test SQL de metadatos
-    print(f"\n{'='*80}")
-    print("SQL DE METADATOS:")
-    print("="*80)
-    sql_meta = ChainOfThoughtSQL.generar_sql_metadatos()
-    print(sql_meta)
-

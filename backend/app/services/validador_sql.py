@@ -431,7 +431,7 @@ class ValidadorSQL:
                 from app.services.query_fallback import QueryFallback
                 sql_predefinido = QueryFallback.get_query_for(pregunta)
                 sugerencia = 'query_predefinida' if sql_predefinido else 'vanna_fallback'
-            except:
+            except Exception:
                 sugerencia = 'vanna_fallback'
         else:
             sugerencia = None
@@ -504,91 +504,4 @@ def validar_resultado_sql(pregunta: str, sql: str, resultado: List[Dict]) -> Dic
             pass
     """
     return ValidadorSQL.validar_resultado(pregunta, sql, resultado)
-
-
-# ══════════════════════════════════════════════════════════════
-# TESTING
-# ══════════════════════════════════════════════════════════════
-
-if __name__ == "__main__":
-    print("="*80)
-    print("🧪 TESTING VALIDADOR SQL")
-    print("="*80)
-    
-    tests = [
-        # Test 1: Distribución normal
-        {
-            'pregunta': '¿Cuánto recibió Bruno este año?',
-            'sql': 'SELECT SUM(monto_uyu) as total FROM ...',
-            'resultado': [{'total': 50000}],
-            'esperado': True
-        },
-        # Test 2: Distribución sospechosamente alta
-        {
-            'pregunta': '¿Cuánto recibió Bruno este año?',
-            'sql': 'SELECT SUM(monto_uyu) as total FROM ...',
-            'resultado': [{'total': 500000}],  # $ 500K es demasiado
-            'esperado': False
-        },
-        # Test 3: Rentabilidad normal
-        {
-            'pregunta': '¿Cuál es la rentabilidad?',
-            'sql': 'SELECT rentabilidad FROM ...',
-            'resultado': [{'rentabilidad': 33.47}],
-            'esperado': True
-        },
-        # Test 4: Rentabilidad imposible
-        {
-            'pregunta': '¿Cuál es la rentabilidad?',
-            'sql': 'SELECT rentabilidad FROM ...',
-            'resultado': [{'rentabilidad': 250}],  # 250% imposible
-            'esperado': False
-        },
-        # Test 5: Porcentajes que suman 100
-        {
-            'pregunta': '¿Qué porcentaje tiene cada área?',
-            'sql': 'SELECT porcentaje FROM ...',
-            'resultado': [
-                {'area': 'Jurídica', 'porcentaje': 30},
-                {'area': 'Notarial', 'porcentaje': 25},
-                {'area': 'Contable', 'porcentaje': 45}
-            ],
-            'esperado': True
-        },
-        # Test 6: Porcentajes que NO suman 100
-        {
-            'pregunta': '¿Qué porcentaje tiene cada área?',
-            'sql': 'SELECT porcentaje FROM ...',
-            'resultado': [
-                {'area': 'Jurídica', 'porcentaje': 30},
-                {'area': 'Notarial', 'porcentaje': 80}
-            ],
-            'esperado': False
-        },
-    ]
-    
-    pasados = 0
-    fallidos = 0
-    
-    for i, test in enumerate(tests, 1):
-        validacion = ValidadorSQL.validar_resultado(
-            test['pregunta'],
-            test['sql'],
-            test['resultado']
-        )
-        
-        exito = validacion['valido'] == test['esperado']
-        
-        if exito:
-            print(f"✅ Test {i}: {test['pregunta'][:40]}...")
-            pasados += 1
-        else:
-            print(f"❌ Test {i}: {test['pregunta'][:40]}...")
-            print(f"   Esperado: {test['esperado']}, Obtenido: {validacion['valido']}")
-            print(f"   Razón: {validacion['razon']}")
-            fallidos += 1
-    
-    print(f"\n{'='*80}")
-    print(f"Resultado: {pasados}/{len(tests)} tests pasados")
-    print("="*80)
 
