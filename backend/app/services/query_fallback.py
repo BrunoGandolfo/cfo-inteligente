@@ -57,7 +57,7 @@ class QueryFallback:
             return "SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion='GASTO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion='RETIRO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion='DISTRIBUCION' THEN monto_uyu ELSE 0 END) AS capital FROM operaciones WHERE deleted_at IS NULL"
         
         if "flujo de caja" in p or "flujo caja" in p:
-            return "SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END) AS ent,SUM(CASE WHEN tipo_operacion='GASTO' THEN monto_uyu ELSE 0 END) AS sal,SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion='GASTO' THEN monto_uyu ELSE 0 END) AS flujo FROM operaciones WHERE deleted_at IS NULL AND DATE_TRUNC('month',fecha)=DATE_TRUNC('month',CURRENT_DATE)"
+            return "SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END) AS ent,SUM(CASE WHEN tipo_operacion IN ('GASTO','RETIRO','DISTRIBUCION') THEN monto_uyu ELSE 0 END) AS sal,SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion IN ('GASTO','RETIRO','DISTRIBUCION') THEN monto_uyu ELSE 0 END) AS flujo FROM operaciones WHERE deleted_at IS NULL AND DATE_TRUNC('month',fecha)=DATE_TRUNC('month',CURRENT_DATE)"
         
         # TENDENCIAS/ANÁLISIS
         if "análisis de tendencias" in p or "tendencias" in p:

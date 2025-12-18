@@ -95,7 +95,10 @@ class SQLPostProcessor:
         # PASO 2: Detección de moneda
         moneda_solicitada = SQLPostProcessor.detectar_moneda(pregunta)
         
-        if moneda_solicitada == 'USD' and 'monto_uyu' in sql_final.lower():
+        # NO convertir si ya tiene AMBAS monedas (el SQL es dual - ej: "en pesos y dólares")
+        tiene_ambas_monedas = 'monto_uyu' in sql_final.lower() and 'monto_usd' in sql_final.lower()
+        
+        if moneda_solicitada == 'USD' and 'monto_uyu' in sql_final.lower() and not tiene_ambas_monedas:
             sql_final = SQLPostProcessor.convertir_a_usd(sql_final)
             cambios.append(f"Convertido a {moneda_solicitada}")
         

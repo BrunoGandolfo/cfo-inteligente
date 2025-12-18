@@ -135,6 +135,7 @@ def preguntar_cfo_stream(
                 return
             
             sql_generado = resultado_sql["sql"]
+            logger.info(f"=== SQL GENERADO [{resultado_sql.get('metodo', 'claude')}] ===\n{sql_generado}\n=== FIN SQL ===")
             yield sse_format("sql", {"query": sql_generado, "metodo": resultado_sql.get('metodo', 'claude')})
             
             # Validación pre-ejecución

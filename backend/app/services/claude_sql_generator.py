@@ -107,9 +107,20 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
    - Ejemplo: ORDER BY rentabilidad DESC LIMIT 5
 
 3. DISTRIBUCIONES POR SOCIO:
-   - Límite razonable por socio: máximo $100.000 UYU
-   - Si resultado > $100K: puede ser error de SQL
-   - Usar tipo_cambio de la operación para conversiones
+   - Usar tabla distribuciones_detalle para montos por socio
+   - SIEMPRE usar dd.monto_uyu para pesos Y dd.monto_usd para dólares (columnas DIFERENTES)
+   - NUNCA duplicar la misma columna: dd.monto_usd, dd.monto_usd es INCORRECTO
+   - Ejemplo SQL CORRECTO para "distribuciones por socio en UYU y USD":
+     SELECT s.nombre,
+            SUM(dd.monto_uyu) AS total_uyu,
+            SUM(dd.monto_usd) AS total_usd
+     FROM distribuciones_detalle dd
+     JOIN socios s ON dd.socio_id = s.id
+     JOIN operaciones o ON dd.operacion_id = o.id
+     WHERE o.deleted_at IS NULL
+       AND o.tipo_operacion = 'DISTRIBUCION'
+     GROUP BY s.nombre
+     ORDER BY total_uyu DESC
 
 4. AFIRMACIONES DE UNICIDAD:
    - NUNCA usar palabras "único", "solo", "únicamente" sin verificar
@@ -159,6 +170,11 @@ REGLAS SQL CRÍTICAS (OBLIGATORIO CUMPLIR):
    - SOLO filtrar por moneda_original si pregunta pide explícitamente "operaciones emitidas en USD"
    - Ejemplo CORRECTO: "Facturación en USD" = SUM(monto_usd)
    - Ejemplo INCORRECTO: SUM(CASE WHEN moneda_original='USD' THEN monto_usd ELSE 0 END)
+   - CRÍTICO - AMBAS MONEDAS: Si el usuario pide "en pesos Y en dólares" o "UYU y USD":
+     * SIEMPRE usar DOS columnas diferentes: SUM(monto_uyu) AS total_uyu, SUM(monto_usd) AS total_usd
+     * NUNCA duplicar la misma columna para ambos valores
+     * Ejemplo CORRECTO: SELECT SUM(monto_uyu) AS total_pesos, SUM(monto_usd) AS total_dolares
+     * Ejemplo INCORRECTO: SELECT SUM(monto_usd) AS total_pesos, SUM(monto_usd) AS total_dolares
 
 10. PERÍODOS RODANTES VS TRIMESTRES:
    - "últimos X meses" = ventana RODANTE desde mes actual hacia atrás
