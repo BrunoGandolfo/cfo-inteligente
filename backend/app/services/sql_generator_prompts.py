@@ -117,3 +117,5 @@ def build_sql_system_prompt() -> str:
 RESPONDE SOLO CON SQL VÁLIDO, SIN EXPLICACIONES. Si no puedes generar SQL, responde: "-- ERROR: [razón]"
 """
 
+
+

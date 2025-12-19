@@ -129,9 +129,17 @@ def preguntar_cfo_stream(
                 resultado_sql = generar_sql_inteligente(data.pregunta, contexto=contexto)
             
             if not resultado_sql.get("exito"):
-                error_msg = resultado_sql.get("error", "Error al generar SQL")
+                error_msg = resultado_sql.get("error", "No pude procesar tu consulta")
                 logger.error(f"Stream: Error SQL - {error_msg}")
-                yield sse_format("error", {"message": error_msg, "type": "sql_generation"})
+                
+                # Mensaje amigable para el usuario
+                mensaje_usuario = error_msg
+                if "temporalmente" in error_msg.lower() or "disponible" in error_msg.lower():
+                    mensaje_usuario = "⏳ El servicio está ocupado. Por favor, espera unos segundos e intenta de nuevo."
+                elif "reformular" in error_msg.lower() or "entender" in error_msg.lower():
+                    mensaje_usuario = "🤔 No entendí bien tu consulta. ¿Podrías escribirla de otra forma? Por ejemplo: '¿Cuál fue la facturación de octubre?'"
+                
+                yield sse_format("error", {"message": mensaje_usuario, "type": "sql_generation"})
                 return
             
             sql_generado = resultado_sql["sql"]
@@ -256,8 +264,9 @@ def preguntar_cfo_stream(
         except Exception as e:
             logger.error(f"Stream: Error general - {e}", exc_info=True)
             yield sse_format("error", {
-                "message": f"Error inesperado: {str(e)}",
-                "type": "general_error"
+                "message": "😅 Algo salió mal. Por favor, intenta de nuevo en unos segundos.",
+                "type": "general_error",
+                "detail": str(e)[:100]  # Para debugging
             })
     
     return StreamingResponse(

@@ -66,3 +66,5 @@ def build_cfo_narrative_prompt(pregunta: str, datos_json: str) -> str:
         datos=datos_json
     )
 
+
+

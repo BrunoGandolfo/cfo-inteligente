@@ -483,3 +483,5 @@ class TestCrearGasto:
             # Puede ser 200 o 422 dependiendo de validación
             assert response.status_code in [200, 422]
 
+
+

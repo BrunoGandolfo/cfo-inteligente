@@ -88,3 +88,5 @@ class SQLTypeDetector:
         
         return 'general'
 
+
+

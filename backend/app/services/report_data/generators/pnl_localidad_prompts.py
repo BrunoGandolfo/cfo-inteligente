@@ -104,3 +104,5 @@ def generate_fallback_narrativas(datos: Dict[str, Any]) -> Dict[str, Any]:
         "recomendacion_3": "Revisar asignación de gastos entre oficinas para optimizar rentabilidad por localidad."
     }
 
+
+

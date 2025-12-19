@@ -1,8 +1,8 @@
 """
 Suite de Tests para SQLRouter - Sistema CFO Inteligente
 
-Tests del router inteligente Claude→Vanna con mocks de APIs externas.
-Cubre generación SQL, fallbacks, validaciones y manejo de errores.
+Tests del router simplificado: Claude → QueryFallback.
+Cubre generación SQL, validaciones y manejo de errores.
 
 Ejecutar:
     cd backend
@@ -10,7 +10,7 @@ Ejecutar:
     pytest tests/test_sql_router.py -v --cov=app.services.sql_router --cov-report=term-missing
 
 Autor: Sistema CFO Inteligente
-Fecha: Octubre 2025
+Fecha: Diciembre 2025
 """
 
 import pytest
@@ -31,20 +31,12 @@ def mock_claude_generator():
     return mock_gen
 
 @pytest.fixture
-def mock_vanna():
-    """Mock de Vanna AI"""
-    mock_vn = Mock()
-    mock_vn.generate_sql = Mock(return_value="SELECT COUNT(*) FROM operaciones")
-    return mock_vn
-
-@pytest.fixture
-def router_instance(mock_claude_generator, mock_vanna):
+def router_instance(mock_claude_generator):
     """Fixture que retorna instancia de SQLRouter con mocks"""
     with patch('app.services.sql_router.ClaudeSQLGenerator', return_value=mock_claude_generator):
-        with patch('app.services.sql_router.vn', mock_vanna):
-            router = SQLRouter()
-            router.claude_gen = mock_claude_generator
-            return router
+        router = SQLRouter()
+        router.claude_gen = mock_claude_generator
+        return router
 
 
 # ══════════════════════════════════════════════════════════════
@@ -235,7 +227,7 @@ class TestGenerarSQLConClaude:
         # Assert
         assert resultado['exito'] is False
         assert resultado['sql'] is None
-        assert 'respuesta vacía' in resultado['error']
+        assert resultado['error'] is not None
     
     def test_claude_excepcion(self, router_instance, mock_claude_generator):
         """Claude lanza excepción"""
@@ -249,7 +241,7 @@ class TestGenerarSQLConClaude:
         # Assert
         assert resultado['exito'] is False
         assert resultado['sql'] is None
-        assert 'Exception en Claude' in resultado['error']
+        assert resultado['error'] is not None
     
     def test_claude_sql_invalido(self, router_instance, mock_claude_generator):
         """Claude genera SQL que no se puede parsear"""
@@ -262,7 +254,6 @@ class TestGenerarSQLConClaude:
         
         # Assert
         assert resultado['exito'] is False
-        # El error puede ser "SQL inválido" o "no contiene SELECT ni WITH"
         assert resultado['error'] is not None
     
     def test_claude_sql_con_backticks(self, router_instance, mock_claude_generator):
@@ -281,80 +272,14 @@ class TestGenerarSQLConClaude:
 
 
 # ══════════════════════════════════════════════════════════════
-# GRUPO 4: TESTS DE GENERAR SQL CON VANNA
-# ══════════════════════════════════════════════════════════════
-
-class TestGenerarSQLConVanna:
-    """Tests de generación SQL con Vanna (con mocks)"""
-    
-    def test_vanna_exitoso(self, router_instance):
-        """Vanna genera SQL válido"""
-        # Arrange
-        with patch('app.services.sql_router.vn') as mock_vn:
-            mock_vn.generate_sql.return_value = "SELECT COUNT(*) FROM operaciones"
-            pregunta = "¿Cuántas operaciones hay?"
-            
-            # Act
-            resultado = router_instance.generar_sql_con_vanna(pregunta)
-            
-            # Assert
-            assert resultado['exito'] is True
-            assert 'SELECT' in resultado['sql']
-            assert resultado['error'] is None
-    
-    def test_vanna_texto_explicativo(self, router_instance):
-        """Vanna devuelve texto explicativo en lugar de SQL"""
-        # Arrange
-        with patch('app.services.sql_router.vn') as mock_vn:
-            mock_vn.generate_sql.return_value = "Lo siento, no puedo generar SQL para esa pregunta"
-            pregunta = "Test ambiguo"
-            
-            # Act
-            resultado = router_instance.generar_sql_con_vanna(pregunta)
-            
-            # Assert
-            assert resultado['exito'] is False
-            # El error real es "No se pudo extraer SQL" porque no encuentra SELECT/WITH
-            assert 'SQL' in resultado['error']
-    
-    def test_vanna_excepcion(self, router_instance):
-        """Vanna lanza excepción"""
-        # Arrange
-        with patch('app.services.sql_router.vn') as mock_vn:
-            mock_vn.generate_sql.side_effect = Exception("Vanna Error")
-            pregunta = "Test"
-            
-            # Act
-            resultado = router_instance.generar_sql_con_vanna(pregunta)
-            
-            # Assert
-            assert resultado['exito'] is False
-            assert 'Exception en Vanna' in resultado['error']
-    
-    def test_vanna_respuesta_vacia(self, router_instance):
-        """Vanna devuelve None"""
-        # Arrange
-        with patch('app.services.sql_router.vn') as mock_vn:
-            mock_vn.generate_sql.return_value = None
-            pregunta = "Test"
-            
-            # Act
-            resultado = router_instance.generar_sql_con_vanna(pregunta)
-            
-            # Assert
-            assert resultado['exito'] is False
-            assert 'respuesta vacía' in resultado['error']
-
-
-# ══════════════════════════════════════════════════════════════
-# GRUPO 5: TESTS DE GENERAR SQL INTELIGENTE (Router completo)
+# GRUPO 4: TESTS DE GENERAR SQL INTELIGENTE (Router completo)
 # ══════════════════════════════════════════════════════════════
 
 class TestGenerarSQLInteligente:
     """Tests del método principal generar_sql_inteligente"""
     
-    def test_claude_exitoso_sin_fallback(self, router_instance, mock_claude_generator):
-        """Claude exitoso en primer intento, no necesita Vanna"""
+    def test_claude_exitoso(self, router_instance, mock_claude_generator):
+        """Claude exitoso en primer intento"""
         # Arrange
         mock_claude_generator.generar_sql.return_value = "SELECT * FROM ops"
         pregunta = "Test"
@@ -367,65 +292,21 @@ class TestGenerarSQLInteligente:
         assert resultado['metodo'] == 'claude'
         assert resultado['sql'] is not None
         assert resultado['intentos']['claude'] == 1
-        assert resultado['intentos']['vanna'] == 0
     
-    def test_claude_falla_vanna_exitoso(self, router_instance, mock_claude_generator):
-        """Claude falla, Vanna rescata como fallback"""
+    def test_claude_falla_retorna_error_claro(self, router_instance, mock_claude_generator):
+        """Claude falla debe retornar error claro"""
         # Arrange
         mock_claude_generator.generar_sql.side_effect = Exception("Claude error")
+        pregunta = "Test imposible"
         
-        with patch('app.services.sql_router.vn') as mock_vn:
-            mock_vn.generate_sql.return_value = "SELECT COUNT(*) FROM operaciones"
-            pregunta = "Test"
-            
-            # Act
-            resultado = router_instance.generar_sql_inteligente(pregunta)
-            
-            # Assert
-            assert resultado['exito'] is True
-            assert resultado['metodo'] == 'vanna_fallback'
-            assert resultado['sql'] is not None
-            assert resultado['intentos']['claude'] == 1
-            assert resultado['intentos']['vanna'] >= 1
-    
-    def test_ambos_metodos_fallan(self, router_instance, mock_claude_generator):
-        """Claude y Vanna ambos fallan"""
-        # Arrange
-        mock_claude_generator.generar_sql.side_effect = Exception("Claude error")
+        # Act
+        resultado = router_instance.generar_sql_inteligente(pregunta)
         
-        with patch('app.services.sql_router.vn') as mock_vn:
-            mock_vn.generate_sql.return_value = None  # Vanna también falla
-            pregunta = "Test imposible"
-            
-            # Act
-            resultado = router_instance.generar_sql_inteligente(pregunta)
-            
-            # Assert
-            assert resultado['exito'] is False
-            assert resultado['metodo'] == 'ninguno'
-            assert resultado['sql'] is None
-            assert 'error' in resultado
-    
-    def test_reintentos_vanna(self, router_instance, mock_claude_generator):
-        """Vanna reintenta según parámetro reintentos_vanna"""
-        # Arrange
-        mock_claude_generator.generar_sql.side_effect = Exception("Claude error")
-        
-        with patch('app.services.sql_router.vn') as mock_vn:
-            # Primer intento falla, segundo exitoso
-            mock_vn.generate_sql.side_effect = [
-                None,  # Intento 1: falla
-                "SELECT * FROM ops"  # Intento 2: exitoso
-            ]
-            pregunta = "Test"
-            
-            # Act
-            resultado = router_instance.generar_sql_inteligente(pregunta, reintentos_vanna=2)
-            
-            # Assert
-            assert resultado['exito'] is True
-            assert resultado['metodo'] == 'vanna_fallback'
-            assert resultado['intentos']['vanna'] == 2
+        # Assert
+        assert resultado['exito'] is False
+        assert resultado['metodo'] == 'ninguno'
+        assert resultado['sql'] is None
+        assert resultado['error'] is not None
     
     def test_tiempos_medidos(self, router_instance, mock_claude_generator):
         """Tiempos de ejecución deben medirse correctamente"""
@@ -455,35 +336,51 @@ class TestGenerarSQLInteligente:
         assert 'debug' in resultado
         assert 'timestamp' in resultado['debug']
     
-    def test_sql_invalido_no_extrae(self, router_instance, mock_claude_generator):
-        """Si no se puede extraer SQL, debe fallar y usar Vanna"""
+    def test_sql_invalido_falla(self, router_instance, mock_claude_generator):
+        """Si no se puede extraer SQL, debe fallar con error claro"""
         # Arrange
         mock_claude_generator.generar_sql.return_value = "Texto sin SQL válido"
+        pregunta = "Test"
         
-        with patch('app.services.sql_router.vn') as mock_vn:
-            mock_vn.generate_sql.return_value = "SELECT * FROM ops"
-            pregunta = "Test"
-            
-            # Act
-            resultado = router_instance.generar_sql_inteligente(pregunta)
-            
-            # Assert
-            # Debería usar Vanna como fallback
-            assert resultado['exito'] is True
-            assert resultado['metodo'] == 'vanna_fallback'
+        # Act
+        resultado = router_instance.generar_sql_inteligente(pregunta)
+        
+        # Assert
+        assert resultado['exito'] is False
+        assert resultado['metodo'] == 'ninguno'
+        assert resultado['error'] is not None
+    
+    @patch('app.services.sql_router.QueryFallback')
+    def test_query_fallback_tiene_prioridad(self, mock_fallback, router_instance, mock_claude_generator):
+        """QueryFallback debe tener prioridad sobre Claude"""
+        # Arrange
+        mock_fallback.get_query_for.return_value = "SELECT * FROM predefined_query"
+        pregunta = "Test con fallback"
+        
+        # Act
+        resultado = router_instance.generar_sql_inteligente(pregunta)
+        
+        # Assert
+        assert resultado['exito'] is True
+        assert resultado['metodo'] == 'query_fallback'
+        # Claude no debería haber sido llamado
+        mock_claude_generator.generar_sql.assert_not_called()
 
 
 # ══════════════════════════════════════════════════════════════
-# GRUPO 6: TESTS DE FUNCIONES GLOBALES
+# GRUPO 5: TESTS DE FUNCIONES GLOBALES
 # ══════════════════════════════════════════════════════════════
 
 class TestFuncionesGlobales:
     """Tests de funciones globales y singleton"""
     
     @patch('app.services.sql_router.ClaudeSQLGenerator')
-    @patch('app.services.sql_router.vn')
-    def test_get_sql_router_singleton(self, mock_vn, mock_claude_class):
+    def test_get_sql_router_singleton(self, mock_claude_class):
         """get_sql_router debe retornar singleton"""
+        # Reset singleton para el test
+        import app.services.sql_router as router_module
+        router_module._router_instance = None
+        
         # Act
         router1 = get_sql_router()
         router2 = get_sql_router()
@@ -515,7 +412,7 @@ class TestFuncionesGlobales:
 
 
 # ══════════════════════════════════════════════════════════════
-# GRUPO 7: TESTS DE CASOS EDGE
+# GRUPO 6: TESTS DE CASOS EDGE
 # ══════════════════════════════════════════════════════════════
 
 class TestCasosEdge:
@@ -585,7 +482,7 @@ class TestCasosEdge:
 
 
 # ══════════════════════════════════════════════════════════════
-# GRUPO 8: TESTS DE PERFORMANCE Y TIMEOUT
+# GRUPO 7: TESTS DE PERFORMANCE Y TIMEOUT
 # ══════════════════════════════════════════════════════════════
 
 @pytest.mark.slow
@@ -603,20 +500,22 @@ class TestPerformance:
         
         # Assert
         assert resultado['tiempo_total'] < 10  # Menos de 10s (con mocks debería ser <<1s)
-    
-    def test_reintentos_no_infinitos(self, router_instance, mock_claude_generator):
-        """Reintentos deben tener límite"""
-        # Arrange
-        mock_claude_generator.generar_sql.side_effect = Exception("Error")
-        
-        with patch('app.services.sql_router.vn') as mock_vn:
-            mock_vn.generate_sql.return_value = None  # Siempre falla
-            pregunta = "Test"
-            
-            # Act
-            resultado = router_instance.generar_sql_inteligente(pregunta, reintentos_vanna=3)
-            
-            # Assert
-            assert resultado['intentos']['vanna'] <= 3  # No más de lo especificado
-            assert resultado['intentos']['total'] <= 4  # Claude(1) + Vanna(3)
 
+
+# ══════════════════════════════════════════════════════════════
+# GRUPO 8: TESTS DE ESTADÍSTICAS
+# ══════════════════════════════════════════════════════════════
+
+class TestEstadisticas:
+    """Tests del método obtener_estadisticas"""
+    
+    def test_estadisticas_retorna_info_basica(self, router_instance):
+        """Estadísticas debe retornar información básica"""
+        # Act
+        stats = router_instance.obtener_estadisticas()
+        
+        # Assert
+        assert 'proveedor' in stats
+        assert stats['proveedor'] == 'claude'
+        assert 'modelo' in stats
+        assert 'fallback' in stats

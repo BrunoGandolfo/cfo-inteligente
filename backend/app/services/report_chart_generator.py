@@ -185,3 +185,5 @@ class ReportChartGenerator:
                 logger.warning(f"No se pudo eliminar: {e}")
         self.temp_dir = None
 
+
+

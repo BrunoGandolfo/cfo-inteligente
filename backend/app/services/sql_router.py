@@ -1,68 +1,57 @@
 """
-SQL Router Inteligente - Sistema CFO Inteligente
-Arquitectura: Claude Sonnet 4.5 (primary) → Vanna AI (fallback)
+SQL Router - Sistema CFO Inteligente
+Arquitectura: Claude Sonnet 4 (único proveedor)
 
-Prioriza precisión sobre costo:
-- Claude: 95-98% tasa de éxito, determinístico
-- Vanna: 88-92% tasa de éxito, 180+ queries entrenadas
+Si Claude falla, usa QueryFallback (queries predefinidas).
+Si ambos fallan, retorna error claro al usuario.
 
 Autor: Sistema CFO Inteligente
-Versión: 1.0
-Fecha: Octubre 2025
+Versión: 2.0 (Simplificado - Solo Claude)
+Fecha: Diciembre 2025
 """
 
-import sys
-import os
 import time
 from typing import Dict, Any
 from datetime import datetime
 
-# Imports del core
 from app.core.logger import get_logger
-from app.core.constants import (
-    DEFAULT_PG_HOST,
-    DEFAULT_PG_PORT,
-    DEFAULT_PG_DB,
-    DEFAULT_PG_USER,
-    DEFAULT_PG_PASS
-)
-
-# Imports de los generadores SQL
 from app.services.claude_sql_generator import ClaudeSQLGenerator
 from app.services.query_fallback import QueryFallback
-
-# Utils de SQL (extraídos para reducir tamaño)
 from app.utils.sql_utils import extraer_sql_limpio, validar_sql
 
-# Logger para este módulo
 logger = get_logger(__name__)
-
-# Agregar path para Vanna
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../scripts'))
-from configurar_vanna_local import my_vanna as vn
 
 
 class SQLRouter:
-    """Router inteligente: Claude (primary) → Vanna (fallback)."""
+    """
+    Router de SQL simplificado: Claude → QueryFallback.
+    
+    Flujo:
+    1. Buscar en QueryFallback (queries predefinidas optimizadas)
+    2. Si no hay match, usar Claude para generar SQL
+    3. Si Claude falla, retornar error claro
+    """
     
     def __init__(self):
+        """Inicializa el generador de SQL con Claude."""
         self.claude_gen = ClaudeSQLGenerator()
-        
-        # Conectar Vanna a PostgreSQL usando variables de entorno o defaults
-        vn.connect_to_postgres(
-            host=os.getenv('PG_HOST', DEFAULT_PG_HOST),
-            dbname=os.getenv('PG_DB', DEFAULT_PG_DB),
-            user=os.getenv('PG_USER', DEFAULT_PG_USER),
-            password=os.getenv('PG_PASS', DEFAULT_PG_PASS),
-            port=int(os.getenv('PG_PORT', str(DEFAULT_PG_PORT)))
-        )
+        logger.info("SQLRouter inicializado (Claude único proveedor)")
     
     def generar_sql_con_claude(self, pregunta: str, contexto: list = None) -> Dict[str, Any]:
-        """Genera SQL usando Claude con memoria de conversación."""
+        """
+        Genera SQL usando Claude con memoria de conversación.
+        
+        Args:
+            pregunta: Pregunta del usuario en lenguaje natural
+            contexto: Lista de mensajes previos para contexto
+            
+        Returns:
+            Dict con sql, exito, tiempo, error, etc.
+        """
         inicio = time.time()
         
         try:
-            logger.info(f"Claude generando SQL para: '{pregunta[:60]}' (contexto: {len(contexto or [])} mensajes)")
+            logger.info(f"Claude generando SQL para: '{pregunta[:60]}' (contexto: {len(contexto or [])} msgs)")
             
             sql_raw = self.claude_gen.generar_sql(pregunta, contexto=contexto)
             tiempo = time.time() - inicio
@@ -73,22 +62,33 @@ class SQLRouter:
                     'sql_raw': '',
                     'exito': False,
                     'tiempo': tiempo,
-                    'error': 'Claude devolvió respuesta vacía'
+                    'error': 'Claude no pudo generar una respuesta. Por favor, intenta de nuevo.'
                 }
             
-            # Extraer SQL limpio
-            sql_limpio = extraer_sql_limpio(sql_raw)
-            
-            # DEBUG: Mostrar SQL generado
-            logger.debug(f"SQL generado por Claude: {sql_limpio if sql_limpio else 'NONE'}")
-            
-            if not sql_limpio:
+            # Verificar si es un mensaje de error del orchestrator
+            if sql_raw.startswith("ERROR:"):
                 return {
                     'sql': None,
                     'sql_raw': sql_raw,
                     'exito': False,
                     'tiempo': tiempo,
-                    'error': 'No se pudo extraer SQL de la respuesta de Claude'
+                    'error': 'El servicio de IA no está disponible temporalmente. Intenta en unos minutos.'
+                }
+            
+            # Extraer SQL limpio
+            sql_limpio = extraer_sql_limpio(sql_raw)
+            
+            logger.debug(f"SQL raw: {sql_raw[:200] if sql_raw else 'NONE'}")
+            logger.debug(f"SQL limpio: {sql_limpio[:200] if sql_limpio else 'NONE'}")
+            
+            if not sql_limpio:
+                # Claude respondió pero no con SQL válido
+                return {
+                    'sql': None,
+                    'sql_raw': sql_raw,
+                    'exito': False,
+                    'tiempo': tiempo,
+                    'error': 'No pude entender la consulta. ¿Podrías reformularla de otra manera?'
                 }
             
             # Validar SQL
@@ -100,7 +100,7 @@ class SQLRouter:
                     'sql_raw': sql_raw,
                     'exito': False,
                     'tiempo': tiempo,
-                    'error': f"SQL inválido: {validacion['error']}"
+                    'error': f"El SQL generado tiene un problema: {validacion['error']}"
                 }
             
             logger.info(f"Claude exitoso en {tiempo:.2f}s - Tipo: {validacion['tipo']}")
@@ -116,119 +116,56 @@ class SQLRouter:
         
         except Exception as e:
             tiempo = time.time() - inicio
-            logger.error(f"Claude falló en {tiempo:.2f}s: {str(e)[:50]}")
+            logger.error(f"Claude falló en {tiempo:.2f}s: {str(e)[:100]}", exc_info=True)
             
             return {
                 'sql': None,
                 'sql_raw': '',
                 'exito': False,
                 'tiempo': tiempo,
-                'error': f'Exception en Claude: {type(e).__name__}: {str(e)}'
+                'error': 'Error interno al procesar la consulta. Intenta de nuevo.'
             }
     
-    def generar_sql_con_vanna(self, pregunta: str) -> Dict[str, Any]:
-        """Genera SQL usando Vanna AI (fallback)."""
-        inicio = time.time()
+    def generar_sql_inteligente(self, pregunta: str, contexto: list = None, **kwargs) -> Dict[str, Any]:
+        """
+        Router principal: QueryFallback → Claude.
         
-        try:
-            logger.info(f"Vanna generando SQL para: '{pregunta[:60]}'")
+        Args:
+            pregunta: Pregunta del usuario en lenguaje natural
+            contexto: Lista de mensajes previos para contexto
+            **kwargs: Argumentos adicionales (ignorados, para compatibilidad)
             
-            sql_raw = vn.generate_sql(pregunta, allow_llm_to_see_data=True)
-            tiempo = time.time() - inicio
-            
-            if not sql_raw:
-                return {
-                    'sql': None,
-                    'sql_raw': '',
-                    'exito': False,
-                    'tiempo': tiempo,
-                    'error': 'Vanna devolvió respuesta vacía'
-                }
-            
-            # Extraer SQL limpio
-            sql_limpio = extraer_sql_limpio(sql_raw)
-            
-            if not sql_limpio:
-                return {
-                    'sql': None,
-                    'sql_raw': sql_raw,
-                    'exito': False,
-                    'tiempo': tiempo,
-                    'error': 'No se pudo extraer SQL de la respuesta de Vanna'
-                }
-            
-            # Validar que NO sea texto explicativo
-            sql_lower = sql_limpio.lower()
-            frases_explicativas = [
-                'lo siento', 'no puedo', 'necesito', 'requiere',
-                'insuficiente', 'no es posible', 'más contexto'
-            ]
-            
-            tiene_explicacion = any(frase in sql_lower[:200] for frase in frases_explicativas)
-            
-            if tiene_explicacion:
-                return {
-                    'sql': sql_limpio,
-                    'sql_raw': sql_raw,
-                    'exito': False,
-                    'tiempo': tiempo,
-                    'error': 'Vanna devolvió texto explicativo en lugar de SQL'
-                }
-            
-            # Validar SQL
-            validacion = validar_sql(sql_limpio)
-            
-            if not validacion['valido']:
-                return {
-                    'sql': sql_limpio,
-                    'sql_raw': sql_raw,
-                    'exito': False,
-                    'tiempo': tiempo,
-                    'error': f"SQL inválido: {validacion['error']}"
-                }
-            
-            logger.info(f"Vanna exitoso en {tiempo:.2f}s - Tipo: {validacion['tipo']}")
-            
-            return {
-                'sql': sql_limpio,
-                'sql_raw': sql_raw,
-                'exito': True,
-                'tiempo': tiempo,
-                'error': None,
-                'validacion': validacion
-            }
-        
-        except Exception as e:
-            tiempo = time.time() - inicio
-            logger.error(f"Vanna falló en {tiempo:.2f}s: {str(e)[:50]}")
-            
-            return {
-                'sql': None,
-                'sql_raw': '',
-                'exito': False,
-                'tiempo': tiempo,
-                'error': f'Exception en Vanna: {type(e).__name__}: {str(e)}'
-            }
-    
-    def generar_sql_inteligente(self, pregunta: str, contexto: list = None, reintentos_vanna: int = 1) -> Dict[str, Any]:
-        """Router principal: Claude primero, Vanna como fallback."""
+        Returns:
+            Dict con:
+            - sql: Query SQL generada o None
+            - metodo: 'query_fallback' | 'claude' | 'ninguno'
+            - exito: True si se generó SQL válido
+            - tiempo_total: Tiempo total en segundos
+            - tiempos: Dict con tiempos por método
+            - intentos: Dict con conteo de intentos
+            - error: Mensaje de error o None
+        """
         inicio_total = time.time()
         
-        tiempos = {'claude': None, 'vanna': None}
-        intentos = {'claude': 0, 'vanna': 0, 'total': 0}
+        tiempos = {'claude': None, 'fallback': None}
+        intentos = {'claude': 0, 'fallback': 0, 'total': 0}
         debug_info = {'timestamp': datetime.now().isoformat()}
         
-        logger.info(f"SQL Router procesando pregunta: '{pregunta[:70]}'")
+        logger.info(f"SQLRouter procesando: '{pregunta[:70]}'")
         
         # ═══════════════════════════════════════════════════════════════
-        # FASE 0: CONSULTAR QUERY FALLBACK PRIMERO (GARANTIZADO)
+        # FASE 1: CONSULTAR QUERY FALLBACK (QUERIES PREDEFINIDAS)
         # ═══════════════════════════════════════════════════════════════
         
+        inicio_fallback = time.time()
         sql_fallback = QueryFallback.get_query_for(pregunta)
+        tiempos['fallback'] = time.time() - inicio_fallback
+        intentos['fallback'] = 1
+        intentos['total'] += 1
         
         if sql_fallback:
             tiempo_total = time.time() - inicio_total
-            logger.info(f"SQL Router usando QueryFallback para: '{pregunta[:50]}'")
+            logger.info(f"SQLRouter: QueryFallback encontró match en {tiempo_total:.3f}s")
             
             return {
                 'sql': sql_fallback,
@@ -236,13 +173,13 @@ class SQLRouter:
                 'exito': True,
                 'tiempo_total': tiempo_total,
                 'tiempos': tiempos,
-                'intentos': {'claude': 0, 'vanna': 0, 'total': 0},
+                'intentos': intentos,
                 'error': None,
                 'debug': {'fallback_usado': True}
             }
         
         # ═══════════════════════════════════════════════════════════════
-        # FASE 1: INTENTAR CON CLAUDE SONNET 4.5 (PRIMARY)
+        # FASE 2: GENERAR CON CLAUDE
         # ═══════════════════════════════════════════════════════════════
         
         intentos['claude'] = 1
@@ -250,15 +187,15 @@ class SQLRouter:
         
         resultado_claude = self.generar_sql_con_claude(pregunta, contexto=contexto)
         tiempos['claude'] = resultado_claude['tiempo']
+        
         debug_info['claude'] = {
-            'sql_raw': resultado_claude['sql_raw'][:200] if resultado_claude['sql_raw'] else None,
-            'error': resultado_claude['error']
+            'sql_raw_preview': resultado_claude.get('sql_raw', '')[:200] if resultado_claude.get('sql_raw') else None,
+            'error': resultado_claude.get('error')
         }
         
         if resultado_claude['exito']:
             tiempo_total = time.time() - inicio_total
-            
-            logger.info(f"SQL Router exitoso con Claude en {tiempo_total:.2f}s")
+            logger.info(f"SQLRouter: Claude exitoso en {tiempo_total:.2f}s")
             
             return {
                 'sql': resultado_claude['sql'],
@@ -271,59 +208,14 @@ class SQLRouter:
                 'debug': debug_info
             }
         
-        # Claude falló, log del error
-        logger.warning(f"Claude falló: {resultado_claude['error']}")
-        
         # ═══════════════════════════════════════════════════════════════
-        # FASE 2: FALLBACK A VANNA AI (RESILIENCIA)
-        # ═══════════════════════════════════════════════════════════════
-        
-        logger.info("Usando Vanna como fallback")
-        
-        for intento in range(reintentos_vanna):
-            intentos['vanna'] += 1
-            intentos['total'] += 1
-            
-            logger.debug(f"Intento Vanna {intento + 1}/{reintentos_vanna}")
-            
-            resultado_vanna = self.generar_sql_con_vanna(pregunta)
-            
-            if tiempos['vanna'] is None:
-                tiempos['vanna'] = resultado_vanna['tiempo']
-            else:
-                tiempos['vanna'] += resultado_vanna['tiempo']
-            
-            debug_info['vanna'] = {
-                'sql_raw': resultado_vanna['sql_raw'][:200] if resultado_vanna['sql_raw'] else None,
-                'error': resultado_vanna['error'],
-                'intentos': intentos['vanna']
-            }
-            
-            if resultado_vanna['exito']:
-                tiempo_total = time.time() - inicio_total
-                
-                logger.info(f"SQL Router exitoso con Vanna fallback ({intentos['vanna']} intentos) en {tiempo_total:.2f}s")
-                
-                return {
-                    'sql': resultado_vanna['sql'],
-                    'metodo': 'vanna_fallback',
-                    'exito': True,
-                    'tiempo_total': tiempo_total,
-                    'tiempos': tiempos,
-                    'intentos': intentos,
-                    'error': None,
-                    'debug': debug_info
-                }
-            
-            logger.debug(f"Vanna intento {intento + 1} falló: {resultado_vanna['error']}")
-        
-        # ═══════════════════════════════════════════════════════════════
-        # AMBOS MÉTODOS FALLARON
+        # CLAUDE FALLÓ - RETORNAR ERROR CLARO
         # ═══════════════════════════════════════════════════════════════
         
         tiempo_total = time.time() - inicio_total
+        error_msg = resultado_claude.get('error', 'No se pudo procesar la consulta')
         
-        logger.error(f"SQL Router - Ambos métodos fallaron. Claude: {resultado_claude['error'][:50] if resultado_claude['error'] else 'N/A'}. Vanna: {resultado_vanna['error'][:50] if resultado_vanna['error'] else 'N/A'}")
+        logger.error(f"SQLRouter: Claude falló - {error_msg}")
         
         return {
             'sql': None,
@@ -332,19 +224,17 @@ class SQLRouter:
             'tiempo_total': tiempo_total,
             'tiempos': tiempos,
             'intentos': intentos,
-            'error': f"Claude: {resultado_claude['error']}. Vanna: {resultado_vanna['error']}",
+            'error': error_msg,
             'debug': debug_info
         }
     
     def obtener_estadisticas(self) -> Dict[str, Any]:
-        """
-        Retorna estadísticas de uso del router (para monitoreo)
-        
-        Nota: Implementación básica. Para producción, usar Redis/DB para persistencia
-        """
+        """Retorna estadísticas del router (para monitoreo)."""
         return {
-            'mensaje': 'Estadísticas no implementadas aún',
-            'sugerencia': 'Agregar contador de uso por método en producción'
+            'proveedor': 'claude',
+            'modelo': 'claude-sonnet-4-20250514',
+            'fallback': 'query_fallback',
+            'mensaje': 'Sistema simplificado - Solo Claude'
         }
 
 
@@ -354,11 +244,12 @@ class SQLRouter:
 
 _router_instance = None
 
+
 def get_sql_router() -> SQLRouter:
     """
-    Retorna instancia singleton del SQL Router
+    Retorna instancia singleton del SQL Router.
     
-    Uso en endpoints:
+    Uso:
         from app.services.sql_router import get_sql_router
         
         router = get_sql_router()
@@ -367,32 +258,22 @@ def get_sql_router() -> SQLRouter:
     global _router_instance
     
     if _router_instance is None:
-        logger.info("Inicializando SQL Router (Claude + Vanna)")
+        logger.info("Inicializando SQLRouter (Claude único)")
         _router_instance = SQLRouter()
     
     return _router_instance
 
 
-# ══════════════════════════════════════════════════════════════
-# FUNCIÓN DE CONVENIENCIA (Para compatibilidad)
-# ══════════════════════════════════════════════════════════════
-
 def generar_sql_inteligente(pregunta: str, contexto: list = None) -> Dict[str, Any]:
     """
-    Función wrapper para facilitar el uso con memoria de conversación
+    Función wrapper para facilitar el uso.
     
     Args:
         pregunta: Pregunta del usuario en lenguaje natural
-        contexto: Lista de mensajes previos [{"role": "user|assistant", "content": "..."}]
-    
-    Uso directo:
-        from app.services.sql_router import generar_sql_inteligente
+        contexto: Lista de mensajes previos
         
-        resultado = generar_sql_inteligente("¿Cuál es la rentabilidad del mes?", contexto=mensajes_previos)
-        if resultado['exito']:
-            sql = resultado['sql']
-            # ejecutar SQL...
+    Returns:
+        Dict con sql, exito, error, etc.
     """
     router = get_sql_router()
     return router.generar_sql_inteligente(pregunta, contexto=contexto)
-

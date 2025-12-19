@@ -63,3 +63,5 @@ def aplicar_filtros_operaciones(
     
     return query
 
+
+

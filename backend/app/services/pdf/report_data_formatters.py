@@ -165,3 +165,5 @@ def build_anterior_proxy(metricas: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         'rentabilidad_neta': rent_ant
     }
 
+
+

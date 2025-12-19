@@ -102,3 +102,5 @@ def validar_sql(sql: str) -> Dict[str, Any]:
         return {'valido': False, 'tipo': tipo, 'parseado': False,
                 'error': f'Error en sqlparse: {str(e)}'}
 
+
+

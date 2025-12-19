@@ -217,6 +217,8 @@ def generate_comparativo_fallback(
     
     ingresos_actual = float(metricas_actual.get('ingresos_uyu', 0))
     ingresos_anterior = float(metricas_anterior.get('ingresos_uyu', 0))
+    rent_actual = float(metricas_actual.get('rentabilidad_neta', 0))
+    rent_anterior = float(metricas_anterior.get('rentabilidad_neta', 0))
     
     # Cambio principal
     if var_ingresos is not None:

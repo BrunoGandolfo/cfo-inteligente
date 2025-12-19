@@ -182,3 +182,5 @@ class SQLResultValidators:
         
         return {'valido': True, 'razon': None}
 
+
+

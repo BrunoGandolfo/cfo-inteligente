@@ -102,3 +102,5 @@ def get_year_before(fecha_inicio: date, fecha_fin: date) -> Tuple[date, date]:
         date(fecha_fin.year - 1, fecha_fin.month, fecha_fin.day)
     )
 
+
+
