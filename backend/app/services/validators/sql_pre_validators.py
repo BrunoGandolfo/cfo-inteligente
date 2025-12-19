@@ -3,7 +3,7 @@ SQL Pre-Validators - Validación ANTES de ejecutar SQL.
 Detecta problemas lógicos y sintaxis básica.
 Extraído de validador_sql.py para responsabilidad única.
 """
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 
 
 class SQLPreValidators:

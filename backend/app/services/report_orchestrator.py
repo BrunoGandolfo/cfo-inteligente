@@ -9,8 +9,7 @@ Fecha: Octubre 2025
 """
 
 from typing import Dict, Any, Optional
-from datetime import datetime, date
-from pathlib import Path
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 

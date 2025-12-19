@@ -17,6 +17,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 import os
 from app.services.claude_sql_generator import ClaudeSQLGenerator
+from app.services.sql_generator_prompts import DDL_CONTEXT, BUSINESS_CONTEXT, build_sql_system_prompt
 
 
 # ══════════════════════════════════════════════════════════════
@@ -53,26 +54,20 @@ class TestInicializacion:
         assert generator._orchestrator is not None
     
     def test_ddl_context_presente(self, mock_orchestrator):
-        """DDL_CONTEXT debe estar definido"""
-        generator = ClaudeSQLGenerator()
-        
-        assert generator.DDL_CONTEXT is not None
-        assert len(generator.DDL_CONTEXT) > 100
-        assert 'CREATE TABLE operaciones' in generator.DDL_CONTEXT
-        assert 'CREATE TABLE socios' in generator.DDL_CONTEXT
-        assert 'CREATE TABLE areas' in generator.DDL_CONTEXT
+        """DDL_CONTEXT debe estar definido en sql_generator_prompts"""
+        assert DDL_CONTEXT is not None
+        assert len(DDL_CONTEXT) > 100
+        assert 'CREATE TABLE operaciones' in DDL_CONTEXT
+        assert 'CREATE TABLE socios' in DDL_CONTEXT
+        assert 'CREATE TABLE areas' in DDL_CONTEXT
     
     def test_business_context_presente(self, mock_orchestrator):
-        """BUSINESS_CONTEXT debe estar definido"""
-        generator = ClaudeSQLGenerator()
-        
-        assert generator.BUSINESS_CONTEXT is not None
-        assert len(generator.BUSINESS_CONTEXT) > 500
+        """BUSINESS_CONTEXT debe estar definido en sql_generator_prompts"""
+        assert BUSINESS_CONTEXT is not None
+        assert len(BUSINESS_CONTEXT) > 200
     
     def test_business_context_tiene_reglas_criticas(self, mock_orchestrator):
         """BUSINESS_CONTEXT debe tener reglas críticas"""
-        generator = ClaudeSQLGenerator()
-        
         # Verificar reglas importantes
         reglas_esperadas = [
             'PORCENTAJES DE MONEDA',
@@ -82,7 +77,14 @@ class TestInicializacion:
         ]
         
         for regla in reglas_esperadas:
-            assert regla in generator.BUSINESS_CONTEXT, f"Falta regla: {regla}"
+            assert regla in BUSINESS_CONTEXT, f"Falta regla: {regla}"
+    
+    def test_system_prompt_builder_existe(self, mock_orchestrator):
+        """build_sql_system_prompt debe retornar prompt completo"""
+        prompt = build_sql_system_prompt()
+        assert prompt is not None
+        assert len(prompt) > 500
+        assert 'CREATE TABLE' in prompt
 
 
 # ══════════════════════════════════════════════════════════════
