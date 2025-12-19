@@ -29,6 +29,9 @@ def sample_operaciones():
         op.monto_usd = Decimal('1250')
         op.area = Mock(nombre='Notarial')
         op.localidad = Mock(value='MONTEVIDEO')
+        op.fecha = date(2025, 10, 10 + i)  # Fechas reales para ordenamiento
+        op.cliente = f"Cliente {i}"
+        op.proveedor = None
         ops.append(op)
     
     # 2 gastos
@@ -39,6 +42,9 @@ def sample_operaciones():
         op.monto_usd = Decimal('500')
         op.area = Mock(nombre='Notarial')
         op.localidad = Mock(value='MONTEVIDEO')
+        op.fecha = date(2025, 10, 15 + i)  # Fechas reales para ordenamiento
+        op.cliente = None
+        op.proveedor = f"Proveedor {i}"
         ops.append(op)
     
     return ops

@@ -248,7 +248,7 @@ class TestCreateAccessToken:
         decoded = jwt.decode(token, mock_settings.secret_key, algorithms=[mock_settings.algorithm])
         
         # Assert
-        exp_datetime = datetime.utcfromtimestamp(decoded["exp"])
+        exp_datetime = datetime.fromtimestamp(decoded["exp"], tz=timezone.utc)
         diferencia = exp_datetime - ahora
         
         # Debe expirar en ~60 minutos (tolerancia de 1 minuto)

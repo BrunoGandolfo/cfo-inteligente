@@ -509,7 +509,7 @@ class TestFuncionesGlobales:
         
         # Assert
         mock_get_router.assert_called_once()
-        mock_router.generar_sql_inteligente.assert_called_once_with(pregunta)
+        mock_router.generar_sql_inteligente.assert_called_once_with(pregunta, contexto=None)
         assert resultado['exito'] is True
 
 

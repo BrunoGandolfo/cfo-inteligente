@@ -109,6 +109,7 @@ def generate_estrategico_fallback(metricas: Dict[str, Any]) -> Dict[str, str]:
     """
     ingresos = float(metricas.get('ingresos_uyu', 0))
     _margen_operativo = metricas.get('margen_operativo', 0.0)  # noqa: F841 - preparado para expansión
+    rentabilidad_neta = float(metricas.get('rentabilidad_neta', 0.0))
     duracion_dias = metricas.get('duracion_dias', 0)
     
     rent_areas = metricas.get('rentabilidad_por_area', {})

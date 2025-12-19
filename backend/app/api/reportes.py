@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_
 from datetime import date, timedelta
 from typing import Tuple
 from app.core.database import get_db
