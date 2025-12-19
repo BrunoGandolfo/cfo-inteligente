@@ -22,6 +22,31 @@ def _calcular_rango_mes(mes: int, anio: int) -> Tuple[date, date]:
         fecha_fin = date(anio, mes + 1, 1) - timedelta(days=1)
     return fecha_inicio, fecha_fin
 
+
+def _calcular_totales_por_tipo(operaciones: list) -> dict:
+    """
+    Calcula totales por tipo de operación.
+    
+    Args:
+        operaciones: Lista de Operacion
+        
+    Returns:
+        Dict con totales por tipo en UYU y USD
+    """
+    totales = {
+        TipoOperacion.INGRESO: {"uyu": 0, "usd": 0},
+        TipoOperacion.GASTO: {"uyu": 0, "usd": 0},
+        TipoOperacion.RETIRO: {"uyu": 0, "usd": 0},
+        TipoOperacion.DISTRIBUCION: {"uyu": 0, "usd": 0},
+    }
+    
+    for op in operaciones:
+        if op.tipo_operacion in totales:
+            totales[op.tipo_operacion]["uyu"] += float(op.monto_uyu or 0)
+            totales[op.tipo_operacion]["usd"] += float(op.monto_usd or 0)
+    
+    return totales
+
 @router.get("/resumen-mensual")
 def resumen_mensual(
     mes: int = None,
@@ -45,27 +70,31 @@ def resumen_mensual(
         )
     ).all()
     
-    total_ingresos_uyu = sum(op.monto_uyu for op in operaciones if op.tipo_operacion == TipoOperacion.INGRESO) or 0
-    total_gastos_uyu = sum(op.monto_uyu for op in operaciones if op.tipo_operacion == TipoOperacion.GASTO) or 0
-    total_retiros_uyu = sum(op.monto_uyu for op in operaciones if op.tipo_operacion == TipoOperacion.RETIRO) or 0
-    total_distribuciones_uyu = sum(op.monto_uyu for op in operaciones if op.tipo_operacion == TipoOperacion.DISTRIBUCION) or 0
+    # Calcular totales usando helper
+    totales = _calcular_totales_por_tipo(operaciones)
     
-    total_ingresos_usd = sum(op.monto_usd for op in operaciones if op.tipo_operacion == TipoOperacion.INGRESO) or 0
-    total_gastos_usd = sum(op.monto_usd for op in operaciones if op.tipo_operacion == TipoOperacion.GASTO) or 0
-    total_retiros_usd = sum(op.monto_usd for op in operaciones if op.tipo_operacion == TipoOperacion.RETIRO) or 0
-    total_distribuciones_usd = sum(op.monto_usd for op in operaciones if op.tipo_operacion == TipoOperacion.DISTRIBUCION) or 0
-    
-    rentabilidad_uyu = total_ingresos_uyu - total_gastos_uyu - total_retiros_uyu - total_distribuciones_uyu
-    rentabilidad_usd = total_ingresos_usd - total_gastos_usd - total_retiros_usd - total_distribuciones_usd
+    # Calcular rentabilidad
+    rentabilidad_uyu = (
+        totales[TipoOperacion.INGRESO]["uyu"] - 
+        totales[TipoOperacion.GASTO]["uyu"] - 
+        totales[TipoOperacion.RETIRO]["uyu"] - 
+        totales[TipoOperacion.DISTRIBUCION]["uyu"]
+    )
+    rentabilidad_usd = (
+        totales[TipoOperacion.INGRESO]["usd"] - 
+        totales[TipoOperacion.GASTO]["usd"] - 
+        totales[TipoOperacion.RETIRO]["usd"] - 
+        totales[TipoOperacion.DISTRIBUCION]["usd"]
+    )
     
     return {
         "periodo": f"{mes}/{anio}",
         "cantidad_operaciones": len(operaciones),
-        "ingresos": {"uyu": float(total_ingresos_uyu), "usd": float(total_ingresos_usd)},
-        "gastos": {"uyu": float(total_gastos_uyu), "usd": float(total_gastos_usd)},
-        "retiros": {"uyu": float(total_retiros_uyu), "usd": float(total_retiros_usd)},
-        "distribuciones": {"uyu": float(total_distribuciones_uyu), "usd": float(total_distribuciones_usd)},
-        "rentabilidad": {"uyu": float(rentabilidad_uyu), "usd": float(rentabilidad_usd)}
+        "ingresos": totales[TipoOperacion.INGRESO],
+        "gastos": totales[TipoOperacion.GASTO],
+        "retiros": totales[TipoOperacion.RETIRO],
+        "distribuciones": totales[TipoOperacion.DISTRIBUCION],
+        "rentabilidad": {"uyu": rentabilidad_uyu, "usd": rentabilidad_usd}
     }
 
 @router.get("/por-area")
