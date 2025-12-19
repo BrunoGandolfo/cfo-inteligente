@@ -11,8 +11,11 @@ Fecha: Octubre 2025
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import TYPE_CHECKING, Dict, Any
 from app.core.logger import get_logger
+
+if TYPE_CHECKING:
+    from app.services.ai.ai_orchestrator import AIOrchestrator as ClaudeClient
 
 logger = get_logger(__name__)
 

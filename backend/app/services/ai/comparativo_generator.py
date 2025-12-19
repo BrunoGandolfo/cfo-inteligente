@@ -8,9 +8,12 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from typing import Dict, Any
+from typing import TYPE_CHECKING, Dict, Any
 
 from app.services.ai.base_insight_generator import BaseInsightGenerator
+
+if TYPE_CHECKING:
+    from app.services.ai.ai_orchestrator import AIOrchestrator as ClaudeClient
 from app.services.ai.prompt_builder import build_comparativo_prompt, build_system_prompt
 from app.services.ai.response_parser import parse_insights_response, validate_insights
 from app.services.ai.fallback_generator import generate_comparativo_fallback

@@ -231,21 +231,19 @@ class TestEndpointCFOAsk:
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
     def test_endpoint_sql_invalido(self, mock_claude_gen, client_api):
         """Endpoint con SQL inválido debe retornar error"""
-        # Arrange
+        # Arrange - Claude falla al generar SQL
         mock_claude_gen.side_effect = Exception("Claude error")
         
-        # Mockear Vanna también para que falle
-        with patch('app.services.sql_router.vn.generate_sql', return_value=None):
-            # Act
-            response = client_api.post("/api/cfo/ask", json={
-                "pregunta": "Query imposible de generar"
-            })
-            
-            # Assert
-            assert response.status_code == 200  # No crashea
-            data = response.json()
-            assert data['status'] == 'error'
-            assert 'error_tipo' in data
+        # Act
+        response = client_api.post("/api/cfo/ask", json={
+            "pregunta": "Query imposible de generar"
+        })
+        
+        # Assert
+        assert response.status_code == 200  # No crashea
+        data = response.json()
+        assert data['status'] == 'error'
+        assert 'error_tipo' in data
     
     def test_endpoint_formato_response(self, client_api):
         """Response debe tener formato correcto siempre"""
