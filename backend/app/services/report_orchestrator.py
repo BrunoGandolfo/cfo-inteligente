@@ -25,6 +25,11 @@ from app.services.ai.insights_orchestrator import InsightsOrchestrator
 from app.services.pdf.report_builder import ReportBuilder
 from app.utils.date_resolver import resolve_period, get_comparison_period
 from app.core.logger import get_logger
+from app.services.period_comparator import (
+    is_period_comparable_yoy,
+    is_period_comparable_qoq,
+    get_quarter_before
+)
 
 logger = get_logger(__name__)
 
@@ -33,43 +38,10 @@ class ReportOrchestrator:
     """
     MAESTRO: Coordina TODA la generación de reportes PDF.
     
-    RESPONSABILIDAD: Orquestar flujo completo (NO implementar lógica).
-    PATRÓN: Facade Pattern + Orchestration Pattern.
+    Flujo: Validar → Resolver fechas → Obtener datos → Calcular métricas 
+           → Generar gráficos → Insights IA → Compilar PDF → Cleanup
     
-    Flujo completo:
-    1. Validar request
-    2. Resolver fechas (períodos predefinidos → rangos)
-    3. Obtener operaciones de BD
-    4. Validar datos suficientes
-    5. Calcular métricas (29+)
-    6. Generar gráficos (7 tipos)
-    7. Generar insights con IA
-    8. Compilar PDF (templates → HTML → PDF)
-    9. Cleanup archivos temporales
-    10. Retornar metadata
-    
-    Dependencias inyectadas:
-    - db: Session (SQLAlchemy)
-    - chart_config: Dict (configuración charts)
-    - insights_orchestrator: InsightsOrchestrator (opcional)
-    - report_builder: ReportBuilder (opcional)
-    
-    Principios aplicados:
-    - Single Responsibility: Solo coordina
-    - Dependency Injection: Todas las deps inyectadas
-    - Error Handling: Manejo robusto con cleanup
-    - Logging: Completo para debugging
-    
-    Ejemplo:
-        >>> orchestrator = ReportOrchestrator(
-        ...     db=db,
-        ...     chart_config=get_chart_config('moderna_2024'),
-        ...     insights_orchestrator=insights_orch,
-        ...     report_builder=builder
-        ... )
-        >>> result = orchestrator.generate(request)
-        >>> print(result['pdf_path'])
-        'output/reports/Reporte_CFO_Oct2025.pdf'
+    Patrón: Facade + Orchestration (solo coordina, no implementa lógica).
     """
     
     def __init__(
@@ -198,7 +170,7 @@ class ReportOrchestrator:
             operaciones_yoy = None
             operaciones_qoq = None
             
-            if self._is_period_comparable_yoy(fecha_inicio, fecha_fin):
+            if is_period_comparable_yoy(fecha_inicio, fecha_fin):
                 try:
                     fecha_inicio_yoy = fecha_inicio.replace(year=fecha_inicio.year - 1)
                     fecha_fin_yoy = fecha_fin.replace(year=fecha_fin.year - 1)
@@ -208,8 +180,8 @@ class ReportOrchestrator:
                 except ValueError:
                     logger.warning("No se pudo calcular período YoY (edge case fechas)")
             
-            if self._is_period_comparable_qoq(fecha_inicio, fecha_fin):
-                fecha_inicio_qoq, fecha_fin_qoq = self._get_quarter_before(fecha_inicio, fecha_fin)
+            if is_period_comparable_qoq(fecha_inicio, fecha_fin):
+                fecha_inicio_qoq, fecha_fin_qoq = get_quarter_before(fecha_inicio, fecha_fin)
                 if fecha_inicio_qoq and fecha_fin_qoq:
                     operaciones_qoq = self.repo.get_by_period(fecha_inicio_qoq, fecha_fin_qoq)
                     logger.info(f"✓ Operaciones QoQ: {len(operaciones_qoq)}")
@@ -381,16 +353,7 @@ class ReportOrchestrator:
         metricas: Dict[str, Any], 
         duracion_dias: int
     ) -> Dict[str, str]:
-        """
-        Genera insights algorítmicos cuando Claude falla.
-        
-        Args:
-            metricas: Dict con métricas calculadas
-            duracion_dias: Duración del período
-            
-        Returns:
-            Dict con insights generados sin IA
-        """
+        """Genera insights algorítmicos cuando Claude falla."""
         from app.services.ai.fallback_generator import (
             generate_operativo_fallback,
             generate_estrategico_fallback
@@ -399,67 +362,7 @@ class ReportOrchestrator:
         logger.info(f"  → Generando fallback para período de {duracion_dias} días")
         
         if duracion_dias <= 45:
-            insights = generate_operativo_fallback(metricas)
-            logger.info("  → Fallback operativo generado")
-        else:
-            insights = generate_estrategico_fallback(metricas)
-            logger.info("  → Fallback estratégico generado")
-        
-        return insights
+            return generate_operativo_fallback(metricas)
+        return generate_estrategico_fallback(metricas)
     
-    def _is_period_comparable_yoy(self, fecha_inicio: date, fecha_fin: date) -> bool:
-        """
-        Verifica si el período es comparable YoY (mes/trimestre/año completo).
-        
-        Args:
-            fecha_inicio: Fecha inicio del período
-            fecha_fin: Fecha fin del período
-            
-        Returns:
-            True si es mes completo, trimestre completo o año completo
-        """
-        from calendar import monthrange
-        
-        # Mes completo
-        if fecha_inicio.day == 1:
-            ultimo_dia = monthrange(fecha_fin.year, fecha_fin.month)[1]
-            if fecha_fin.day == ultimo_dia and fecha_inicio.month == fecha_fin.month:
-                return True
-        
-        # Trimestre completo (inicia en ene/abr/jul/oct y dura 3 meses)
-        if fecha_inicio.day == 1 and fecha_inicio.month in [1, 4, 7, 10]:
-            if fecha_fin.day in [31, 30] and (fecha_fin.month - fecha_inicio.month) == 2:
-                return True
-        
-        # Año completo
-        if fecha_inicio == date(fecha_inicio.year, 1, 1) and \
-           fecha_fin == date(fecha_fin.year, 12, 31):
-            return True
-        
-        return False
-    
-    def _is_period_comparable_qoq(self, fecha_inicio: date, fecha_fin: date) -> bool:
-        """Verifica si el período es un trimestre completo"""
-        if fecha_inicio.day == 1 and fecha_inicio.month in [1, 4, 7, 10]:
-            if fecha_fin.day in [31, 30] and (fecha_fin.month - fecha_inicio.month) == 2:
-                return True
-        return False
-    
-    def _get_quarter_before(self, fecha_inicio: date, fecha_fin: date):
-        """Calcula el trimestre anterior"""
-        # Determinar trimestre actual
-        if fecha_inicio.month == 1:
-            # Q1 → Q4 año anterior
-            return date(fecha_inicio.year - 1, 10, 1), date(fecha_inicio.year - 1, 12, 31)
-        elif fecha_inicio.month == 4:
-            # Q2 → Q1
-            return date(fecha_inicio.year, 1, 1), date(fecha_inicio.year, 3, 31)
-        elif fecha_inicio.month == 7:
-            # Q3 → Q2
-            return date(fecha_inicio.year, 4, 1), date(fecha_inicio.year, 6, 30)
-        elif fecha_inicio.month == 10:
-            # Q4 → Q3
-            return date(fecha_inicio.year, 7, 1), date(fecha_inicio.year, 9, 30)
-        
-        return None, None
 

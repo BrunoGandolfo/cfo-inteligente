@@ -4,287 +4,54 @@ Validador de Resultados SQL - Sistema CFO Inteligente
 Valida que los resultados de SQL sean razonables ANTES de generar narrativas.
 Previene respuestas incorrectas causadas por SQL mal generado.
 
-Reglas de negocio basadas en análisis de errores históricos.
+Coordinador principal que delega a módulos especializados:
+- validators/sql_type_detector: Detección de tipo de query
+- validators/sql_result_validators: Validadores por tipo de resultado
+- validators/sql_pre_validators: Validación pre-ejecución
 
 Autor: Sistema CFO Inteligente
-Versión: 1.0
-Fecha: Octubre 2025
+Versión: 2.0 (modular)
+Fecha: Diciembre 2025
 """
-
 from typing import Dict, Any, List
+
+from app.services.validators.sql_type_detector import SQLTypeDetector
+from app.services.validators.sql_result_validators import SQLResultValidators
+from app.services.validators.sql_pre_validators import SQLPreValidators
 
 
 class ValidadorSQL:
     """
-    Valida resultados de queries SQL según reglas de negocio
+    Valida resultados de queries SQL según reglas de negocio.
+    Coordina entre módulos especializados de validación.
     """
     
-    # Límites razonables para Conexión Consultora
-    LIMITES = {
-        'distribucion_socio_max': 100_000,      # $ 100K por distribución individual
-        'distribucion_socio_min': 0,
-        'facturacion_mes_max': 10_000_000,      # $ 10M por mes
-        'facturacion_dia_max': 1_000_000,       # $ 1M por día
-        'gasto_mes_max': 5_000_000,             # $ 5M gastos/mes
-        'gasto_dia_max': 500_000,               # $ 500K gastos/día
-        'rentabilidad_min': -100,               # -100% a 100%
-        'rentabilidad_max': 100,
-        'porcentaje_min': 0,
-        'porcentaje_max': 100,
-        'tipo_cambio_min': 30,                  # UYU/USD razonable
-        'tipo_cambio_max': 50,
-        'retiro_max': 200_000,                  # $ 200K por retiro
-    }
+    # Re-exportar constantes para compatibilidad
+    LIMITES = SQLResultValidators.LIMITES
     
-    # Nombres de socios para detección de distribuciones específicas
-    _SOCIOS = frozenset(['bruno', 'agustina', 'viviana', 'gonzalo', 'pancho'])
+    # Re-exportar métodos de detección
+    detectar_tipo_query = SQLTypeDetector.detectar_tipo_query
+    _detectar_distribucion_socio = SQLTypeDetector._detectar_distribucion_socio
+    _detectar_con_variante_dia = SQLTypeDetector._detectar_con_variante_dia
     
-    # Patrones simples: keyword -> tipo (orden no importa)
-    _PATTERNS_SIMPLES = {
-        'rentabilidad': 'rentabilidad',
-        'margen': 'rentabilidad',
-        'retir': 'retiros',
-        'tipo de cambio': 'tipo_cambio',
-    }
+    # Re-exportar validadores de resultado
+    validar_rango = SQLResultValidators.validar_rango
+    validar_distribucion_socio = SQLResultValidators.validar_distribucion_socio
+    validar_rentabilidad = SQLResultValidators.validar_rentabilidad
+    validar_porcentaje = SQLResultValidators.validar_porcentaje
+    validar_facturacion = SQLResultValidators.validar_facturacion
+    validar_gastos = SQLResultValidators.validar_gastos
+    validar_retiros = SQLResultValidators.validar_retiros
+    validar_tipo_cambio = SQLResultValidators.validar_tipo_cambio
     
-    @classmethod
-    def detectar_tipo_query(cls, pregunta: str, sql: str) -> str:
-        """
-        Detecta qué tipo de query es para aplicar validaciones específicas.
-        Usa patrones estructurados para reducir complejidad ciclomática.
-        """
-        pregunta_lower = pregunta.lower()
-        
-        # Caso especial: distribuciones con nombre de socio
-        tipo_socio = cls._detectar_distribucion_socio(pregunta_lower)
-        if tipo_socio:
-            return tipo_socio
-        
-        # Patrones simples (búsqueda en diccionario)
-        for keyword, tipo in cls._PATTERNS_SIMPLES.items():
-            if keyword in pregunta_lower:
-                return tipo
-        
-        # Patrones con variantes día/hoy
-        return cls._detectar_con_variante_dia(pregunta_lower, sql.upper())
-    
-    @classmethod
-    def _detectar_distribucion_socio(cls, pregunta: str) -> str | None:
-        """Detecta distribuciones por socio (caso especial con nombres)."""
-        tiene_socio = any(s in pregunta for s in cls._SOCIOS)
-        
-        if tiene_socio:
-            if any(p in pregunta for p in ['distribu', 'recib', 'toca']):
-                return 'distribucion_socio'
-            if 'retir' in pregunta:
-                return 'retiros'
-        
-        if 'distribu' in pregunta and ('socio' in pregunta or 'cada socio' in pregunta):
-            return 'distribucion_socio'
-        
-        return None
-    
-    @staticmethod
-    def _detectar_con_variante_dia(pregunta: str, sql: str) -> str:
-        """Detecta tipos con variante día/hoy (facturación, gastos)."""
-        es_dia = 'día' in pregunta or 'hoy' in pregunta
-        
-        # Porcentajes (verificar SQL también)
-        if 'porcentaje' in pregunta or '%%' in sql or '* 100' in sql:
-            return 'porcentaje'
-        
-        # Facturación
-        if 'factur' in pregunta or 'ingreso' in pregunta:
-            return 'facturacion_dia' if es_dia else 'facturacion'
-        
-        # Gastos
-        if 'gast' in pregunta:
-            return 'gastos_dia' if es_dia else 'gastos'
-        
-        # Tipo de cambio (fallback si no se detectó antes)
-        if 'cambio' in pregunta:
-            return 'tipo_cambio'
-        
-        return 'general'
-    
-    @classmethod
-    def validar_rango(cls, valor: float, min_val: float, max_val: float, nombre: str) -> Dict[str, Any]:
-        """Valida que un valor esté dentro de un rango razonable"""
-        if valor is None:
-            return {'valido': True, 'razon': None}
-        
-        if valor < min_val or valor > max_val:
-            return {
-                'valido': False,
-                'razon': f'{nombre} fuera de rango razonable: {valor:,.2f} (esperado: {min_val:,.0f} - {max_val:,.0f})'
-            }
-        
-        return {'valido': True, 'razon': None}
-    
-    @classmethod
-    def validar_distribucion_socio(cls, resultado: List[Dict]) -> Dict[str, Any]:
-        """
-        Valida distribuciones a socios
-        
-        NOTA: Límite máximo ELIMINADO - no hay restricción real de negocio
-        Solo valida que no sean negativos
-        """
-        if not resultado or len(resultado) == 0:
-            return {'valido': True, 'razon': 'Sin distribuciones (válido)'}
-        
-        # VALIDACIÓN DESACTIVADA: No hay límite máximo real
-        # Las distribuciones pueden ser de cualquier monto según utilidades
-        
-        # Solo validar que no sean negativos
-        for row in resultado:
-            for key in ['monto_uyu', 'monto_usd', 'total', 'total_uyu', 'total_usd']:
-                if key in row and row[key] is not None:
-                    monto = float(row[key])
-                    if monto < 0:
-                        return {
-                            'valido': False,
-                            'razon': f'Distribución con valor negativo: ${monto:,.2f}'
-                        }
-        
-        return {'valido': True, 'razon': None}
-    
-    @classmethod
-    def validar_rentabilidad(cls, resultado: List[Dict]) -> Dict[str, Any]:
-        """Valida rentabilidad (-100% a 100%)"""
-        if not resultado or len(resultado) == 0:
-            return {'valido': True, 'razon': 'Sin datos de rentabilidad'}
-        
-        for row in resultado:
-            for key in ['rentabilidad', 'margen', 'margen_pct', 'rentabilidad_pct']:
-                if key in row and row[key] is not None:
-                    rentabilidad = float(row[key])
-                    return cls.validar_rango(
-                        rentabilidad,
-                        cls.LIMITES['rentabilidad_min'],
-                        cls.LIMITES['rentabilidad_max'],
-                        'Rentabilidad'
-                    )
-        
-        return {'valido': True, 'razon': None}
-    
-    @classmethod
-    def validar_porcentaje(cls, resultado: List[Dict]) -> Dict[str, Any]:
-        """Valida porcentajes (0-100%)"""
-        if not resultado or len(resultado) == 0:
-            return {'valido': True, 'razon': None}
-        
-        # Sumar porcentajes para verificar que sumen ~100
-        porcentajes = []
-        
-        for row in resultado:
-            for key in ['porcentaje', 'pct', 'porcentaje_uyu', 'porcentaje_usd']:
-                if key in row and row[key] is not None:
-                    pct = float(row[key])
-                    
-                    # Validar rango individual
-                    if pct < 0 or pct > 100:
-                        return {
-                            'valido': False,
-                            'razon': f'Porcentaje fuera de rango: {pct:.2f}% (debe estar entre 0-100%)'
-                        }
-                    
-                    porcentajes.append(pct)
-        
-        # Si hay múltiples porcentajes, verificar que sumen ~100
-        if len(porcentajes) > 1:
-            suma = sum(porcentajes)
-            if abs(100 - suma) > 5:  # Tolerancia de 5%
-                return {
-                    'valido': False,
-                    'razon': f'Porcentajes no suman 100%: suma={suma:.1f}% (esperado: ~100%)'
-                }
-        
-        return {'valido': True, 'razon': None}
-    
-    @classmethod
-    def validar_facturacion(cls, resultado: List[Dict], es_dia: bool = False) -> Dict[str, Any]:
-        """Valida facturación/ingresos"""
-        if not resultado or len(resultado) == 0:
-            return {'valido': True, 'razon': None}
-        
-        limite_max = cls.LIMITES['facturacion_dia_max'] if es_dia else cls.LIMITES['facturacion_mes_max']
-        nombre = 'Facturación diaria' if es_dia else 'Facturación mensual'
-        
-        for row in resultado:
-            for key in ['facturacion', 'ingresos', 'total', 'total_uyu', 'total_ingresos']:
-                if key in row and row[key] is not None:
-                    monto = float(row[key])
-                    return cls.validar_rango(monto, 0, limite_max, nombre)
-        
-        return {'valido': True, 'razon': None}
-    
-    @classmethod
-    def validar_gastos(cls, resultado: List[Dict], es_dia: bool = False) -> Dict[str, Any]:
-        """Valida gastos"""
-        if not resultado or len(resultado) == 0:
-            return {'valido': True, 'razon': None}
-        
-        limite_max = cls.LIMITES['gasto_dia_max'] if es_dia else cls.LIMITES['gasto_mes_max']
-        nombre = 'Gastos diarios' if es_dia else 'Gastos mensuales'
-        
-        for row in resultado:
-            for key in ['gastos', 'total_gastos', 'total', 'total_uyu', 'gasto']:
-                if key in row and row[key] is not None:
-                    monto = float(row[key])
-                    return cls.validar_rango(monto, 0, limite_max, nombre)
-        
-        return {'valido': True, 'razon': None}
-    
-    @classmethod
-    def validar_retiros(cls, resultado: List[Dict]) -> Dict[str, Any]:
-        """
-        Valida retiros de socios
-        
-        NOTA: Límite máximo ELIMINADO - no hay restricción real de negocio
-        Solo valida que no sean negativos
-        """
-        if not resultado or len(resultado) == 0:
-            return {'valido': True, 'razon': None}
-        
-        # VALIDACIÓN DESACTIVADA: No hay límite máximo real
-        # Los retiros dependen de las utilidades disponibles
-        
-        # Solo validar que no sean negativos
-        for row in resultado:
-            for key in ['retiros', 'total_retiros', 'total', 'monto']:
-                if key in row and row[key] is not None:
-                    monto = float(row[key])
-                    if monto < 0:
-                        return {
-                            'valido': False,
-                            'razon': f'Retiro con valor negativo: ${monto:,.2f}'
-                        }
-        
-        return {'valido': True, 'razon': None}
-    
-    @classmethod
-    def validar_tipo_cambio(cls, resultado: List[Dict]) -> Dict[str, Any]:
-        """Valida tipo de cambio UYU/USD"""
-        if not resultado or len(resultado) == 0:
-            return {'valido': True, 'razon': None}
-        
-        for row in resultado:
-            for key in ['tipo_cambio', 'tipo_cambio_promedio', 'promedio']:
-                if key in row and row[key] is not None:
-                    tc = float(row[key])
-                    return cls.validar_rango(
-                        tc,
-                        cls.LIMITES['tipo_cambio_min'],
-                        cls.LIMITES['tipo_cambio_max'],
-                        'Tipo de cambio'
-                    )
-        
-        return {'valido': True, 'razon': None}
+    # Re-exportar validadores pre-ejecución
+    validar_sql_antes_ejecutar = SQLPreValidators.validar_sql_antes_ejecutar
+    validar_sintaxis_basica = SQLPreValidators.validar_sintaxis_basica
     
     @classmethod
     def validar_resultado(cls, pregunta: str, sql: str, resultado: List[Dict]) -> Dict[str, Any]:
         """
-        Valida resultado de SQL según tipo de query
+        Valida resultado de SQL según tipo de query.
         
         Args:
             pregunta: Pregunta del usuario
@@ -308,46 +75,26 @@ class ValidadorSQL:
             }
         
         # Detectar tipo de query
-        tipo_query = cls.detectar_tipo_query(pregunta, sql)
+        tipo_query = SQLTypeDetector.detectar_tipo_query(pregunta, sql)
         validaciones_aplicadas = []
         
-        # Aplicar validaciones según tipo
-        if tipo_query == 'distribucion_socio':
-            validacion = cls.validar_distribucion_socio(resultado)
-            validaciones_aplicadas.append('distribucion_socio')
-            
-        elif tipo_query == 'rentabilidad':
-            validacion = cls.validar_rentabilidad(resultado)
-            validaciones_aplicadas.append('rentabilidad')
-            
-        elif tipo_query == 'porcentaje':
-            validacion = cls.validar_porcentaje(resultado)
-            validaciones_aplicadas.append('porcentaje')
-            
-        elif tipo_query == 'facturacion':
-            validacion = cls.validar_facturacion(resultado, es_dia=False)
-            validaciones_aplicadas.append('facturacion_mes')
-            
-        elif tipo_query == 'facturacion_dia':
-            validacion = cls.validar_facturacion(resultado, es_dia=True)
-            validaciones_aplicadas.append('facturacion_dia')
-            
-        elif tipo_query == 'gastos':
-            validacion = cls.validar_gastos(resultado, es_dia=False)
-            validaciones_aplicadas.append('gastos_mes')
-            
-        elif tipo_query == 'gastos_dia':
-            validacion = cls.validar_gastos(resultado, es_dia=True)
-            validaciones_aplicadas.append('gastos_dia')
-            
-        elif tipo_query == 'retiros':
-            validacion = cls.validar_retiros(resultado)
-            validaciones_aplicadas.append('retiros')
-            
-        elif tipo_query == 'tipo_cambio':
-            validacion = cls.validar_tipo_cambio(resultado)
-            validaciones_aplicadas.append('tipo_cambio')
-            
+        # Mapa de tipo -> validador
+        validadores = {
+            'distribucion_socio': (SQLResultValidators.validar_distribucion_socio, 'distribucion_socio'),
+            'rentabilidad': (SQLResultValidators.validar_rentabilidad, 'rentabilidad'),
+            'porcentaje': (SQLResultValidators.validar_porcentaje, 'porcentaje'),
+            'facturacion': (lambda r: SQLResultValidators.validar_facturacion(r, es_dia=False), 'facturacion_mes'),
+            'facturacion_dia': (lambda r: SQLResultValidators.validar_facturacion(r, es_dia=True), 'facturacion_dia'),
+            'gastos': (lambda r: SQLResultValidators.validar_gastos(r, es_dia=False), 'gastos_mes'),
+            'gastos_dia': (lambda r: SQLResultValidators.validar_gastos(r, es_dia=True), 'gastos_dia'),
+            'retiros': (SQLResultValidators.validar_retiros, 'retiros'),
+            'tipo_cambio': (SQLResultValidators.validar_tipo_cambio, 'tipo_cambio'),
+        }
+        
+        if tipo_query in validadores:
+            validador_fn, nombre_validacion = validadores[tipo_query]
+            validacion = validador_fn(resultado)
+            validaciones_aplicadas.append(nombre_validacion)
         else:
             # Query general, sin validaciones específicas
             validacion = {'valido': True, 'razon': None}
@@ -359,138 +106,6 @@ class ValidadorSQL:
             'tipo_query': tipo_query,
             'validaciones_aplicadas': validaciones_aplicadas
         }
-    
-    @classmethod
-    def validar_sql_antes_ejecutar(cls, pregunta: str, sql: str) -> Dict[str, Any]:
-        """
-        VALIDACIÓN PRE-EJECUCIÓN: Detecta problemas lógicos en SQL ANTES de ejecutarlo.
-        Delegated to helper methods for reduced complexity.
-        """
-        pregunta_lower = pregunta.lower()
-        sql_upper = sql.upper()
-        
-        problemas = []
-        
-        # Ejecutar validaciones
-        cls._validar_rankings(pregunta_lower, sql_upper, problemas)
-        cls._validar_proyecciones(pregunta_lower, sql_upper, sql, problemas)
-        cls._validar_porcentaje_moneda(pregunta_lower, sql_upper, sql, problemas)
-        cls._validar_filtro_temporal(pregunta_lower, sql_upper, problemas)
-        
-        # Sugerencia de fallback si hay problemas
-        sugerencia = cls._obtener_sugerencia_fallback(pregunta, problemas)
-        
-        return {
-            'valido': len(problemas) == 0,
-            'problemas': problemas,
-            'sugerencia_fallback': sugerencia
-        }
-    
-    @staticmethod
-    def _validar_rankings(pregunta: str, sql_upper: str, problemas: list) -> None:
-        """Valida rankings con LIMIT 1 sospechoso."""
-        keywords_ranking = ['ranking', 'top', 'mejores', 'principales', 'cuáles', 'cuales']
-        excepciones = ['el mejor', 'el mayor', 'el más', 'cuál es']
-        
-        if any(kw in pregunta for kw in keywords_ranking):
-            if 'LIMIT 1' in sql_upper:
-                if not any(kw in pregunta for kw in excepciones):
-                    problemas.append("Ranking pidió múltiples pero SQL tiene LIMIT 1")
-    
-    @staticmethod
-    def _validar_proyecciones(pregunta: str, sql_upper: str, sql: str, problemas: list) -> None:
-        """Valida proyecciones sin calcular meses restantes."""
-        keywords_proyeccion = ['proyecc', 'proyect', 'fin de año', 'fin del año', 'cierre', 'estimar']
-        
-        if any(kw in pregunta for kw in keywords_proyeccion):
-            tiene_extract = 'EXTRACT(MONTH FROM' in sql_upper
-            tiene_calculo = '12 -' in sql or '365 -' in sql
-            
-            if not (tiene_extract or tiene_calculo):
-                problemas.append("Proyección sin calcular meses/días restantes dinámicamente")
-    
-    @staticmethod
-    def _validar_porcentaje_moneda(pregunta: str, sql_upper: str, sql: str, problemas: list) -> None:
-        """Valida porcentajes de moneda sin usar moneda_original."""
-        keywords_moneda = ['usd', 'uyu', 'dólar', 'peso', 'moneda', 'divisa']
-        
-        es_query_porcentaje_moneda = 'porcentaje' in pregunta and any(m in pregunta for m in keywords_moneda)
-        
-        if es_query_porcentaje_moneda and 'moneda_original' not in sql.lower():
-            if 'COUNT(' in sql_upper or 'SUM(CASE WHEN' not in sql_upper:
-                problemas.append("Porcentaje de moneda debe usar columna moneda_original, no monto_usd/uyu")
-    
-    @staticmethod
-    def _validar_filtro_temporal(pregunta: str, sql_upper: str, problemas: list) -> None:
-        """Valida pregunta genérica sin filtro temporal."""
-        keywords_temporal = [
-            'mes', 'año', 'trimestre', 'semestre', 'día', 'hoy', 'ayer', 'mañana',
-            'histórico', 'desde inicio', 'total', 'todos', '2024', '2025', 'siempre'
-        ]
-        filtros_sql = ['DATE_TRUNC', 'EXTRACT(YEAR', 'EXTRACT(MONTH', "fecha >= '202", "fecha < '202", 'WHERE fecha']
-        
-        no_tiene_periodo = not any(t in pregunta for t in keywords_temporal)
-        no_tiene_filtro = not any(f in sql_upper for f in filtros_sql)
-        
-        if no_tiene_periodo and no_tiene_filtro:
-            problemas.append("Pregunta genérica sin filtro temporal - debería filtrar por año 2025")
-    
-    @staticmethod
-    def _obtener_sugerencia_fallback(pregunta: str, problemas: list) -> str | None:
-        """Obtiene sugerencia de fallback si hay problemas."""
-        if not problemas:
-            return None
-        
-        try:
-            from app.services.query_fallback import QueryFallback
-            sql_predefinido = QueryFallback.get_query_for(pregunta)
-            return 'query_predefinida' if sql_predefinido else 'vanna_fallback'
-        except Exception:
-            return 'vanna_fallback'
-    
-    @staticmethod
-    def validar_sintaxis_basica(sql: str) -> Dict[str, Any]:
-        """
-        Detecta errores de sintaxis comunes ANTES de ejecutar SQL
-        
-        Más rápido que esperar error de PostgreSQL.
-        Detecta: JOINs incompletos, paréntesis desbalanceados, CTEs vacíos.
-        
-        Args:
-            sql: SQL a validar
-            
-        Returns:
-            {'valido': bool, 'problemas': List[str]}
-        """
-        problemas = []
-        sql_upper = sql.upper()
-        
-        # FULL sin JOIN completo
-        if 'FULL' in sql_upper and 'FULL OUTER JOIN' not in sql_upper and 'FULL JOIN' not in sql_upper:
-            problemas.append("FULL keyword sin JOIN completo")
-        
-        # Paréntesis desbalanceados
-        if sql.count('(') != sql.count(')'):
-            problemas.append(f"Paréntesis desbalanceados: {sql.count('(')} abiertos, {sql.count(')')} cerrados")
-        
-        # CTE vacío
-        if 'AS ()' in sql or 'AS ( )' in sql:
-            problemas.append("CTE con cuerpo vacío detectado")
-        
-        # JOIN sin ON o USING
-        joins = ['LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'FULL JOIN', 'FULL OUTER JOIN']
-        for join_type in joins:
-            if join_type in sql_upper:
-                idx = sql_upper.find(join_type)
-                # Buscar en los próximos 150 caracteres si hay ON o USING
-                siguiente = sql_upper[idx:idx+150]
-                if ' ON ' not in siguiente and ' USING' not in siguiente:
-                    problemas.append(f"{join_type} sin cláusula ON o USING")
-        
-        return {
-            'valido': len(problemas) == 0,
-            'problemas': problemas
-        }
 
 
 # ══════════════════════════════════════════════════════════════
@@ -499,7 +114,7 @@ class ValidadorSQL:
 
 def validar_resultado_sql(pregunta: str, sql: str, resultado: List[Dict]) -> Dict[str, Any]:
     """
-    Función wrapper para facilitar uso
+    Función wrapper para facilitar uso.
     
     Uso:
         from app.services.validador_sql import validar_resultado_sql
@@ -510,4 +125,3 @@ def validar_resultado_sql(pregunta: str, sql: str, resultado: List[Dict]) -> Dic
             pass
     """
     return ValidadorSQL.validar_resultado(pregunta, sql, resultado)
-

@@ -7,14 +7,16 @@ Sistema de validación automática que:
 - Compara resultados y genera advertencias si difieren >1%
 
 Autor: Sistema CFO Inteligente
+Versión: 2.0 (modular)
 Fecha: Diciembre 2025
 """
-
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import Dict, Any, Optional
 import re
+
 from app.core.logger import get_logger
+from app.services.canonical_queries_config import QUERIES_CANONICAS
 
 logger = get_logger(__name__)
 
@@ -27,227 +29,8 @@ class ValidadorCanonico:
     Objetivo: Garantizar 99%+ de precisión en cifras financieras críticas.
     """
     
-    # ══════════════════════════════════════════════════════════════
-    # QUERIES CANÓNICAS DE VALIDACIÓN
-    # ══════════════════════════════════════════════════════════════
-    
-    QUERIES_CANONICAS = {
-        # === FACTURACIÓN ===
-        "facturacion_2025": {
-            "patrones": ["facturación 2025", "facturamos 2025", "ingresos 2025", 
-                        "facturación este año", "facturamos este año", "ingresos este año"],
-            "sql_control": """
-                SELECT SUM(monto_uyu) as total FROM operaciones 
-                WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM fecha) = 2025
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01  # 1%
-        },
-        "facturacion_2024": {
-            "patrones": ["facturación 2024", "facturamos 2024", "ingresos 2024"],
-            "sql_control": """
-                SELECT SUM(monto_uyu) as total FROM operaciones 
-                WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM fecha) = 2024
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        "facturacion_mes_actual": {
-            "patrones": ["facturación este mes", "facturamos este mes", "ingresos del mes"],
-            "sql_control": """
-                SELECT SUM(monto_uyu) as total FROM operaciones 
-                WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
-                AND DATE_TRUNC('month', fecha) = DATE_TRUNC('month', CURRENT_DATE)
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        
-        # === GASTOS ===
-        "gastos_2025": {
-            "patrones": ["gastos 2025", "gastamos 2025", "gastos este año"],
-            "sql_control": """
-                SELECT SUM(monto_uyu) as total FROM operaciones 
-                WHERE tipo_operacion = 'GASTO' AND deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM fecha) = 2025
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        "gastos_2024": {
-            "patrones": ["gastos 2024", "gastamos 2024"],
-            "sql_control": """
-                SELECT SUM(monto_uyu) as total FROM operaciones 
-                WHERE tipo_operacion = 'GASTO' AND deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM fecha) = 2024
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        
-        # === RENTABILIDAD ===
-        "rentabilidad_2025": {
-            "patrones": ["rentabilidad 2025", "rentabilidad este año", "margen 2025"],
-            "sql_control": """
-                SELECT ROUND(
-                    (SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END) -
-                     SUM(CASE WHEN tipo_operacion = 'GASTO' THEN monto_uyu ELSE 0 END)) /
-                    NULLIF(SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END), 0) * 100
-                , 2) as porcentaje FROM operaciones 
-                WHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025
-            """,
-            "campo_resultado": "porcentaje",
-            "tolerancia": 0.5  # 0.5 puntos porcentuales
-        },
-        "rentabilidad_mes_actual": {
-            "patrones": ["rentabilidad este mes", "rentabilidad del mes", "margen del mes"],
-            "sql_control": """
-                SELECT ROUND(
-                    (SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END) -
-                     SUM(CASE WHEN tipo_operacion = 'GASTO' THEN monto_uyu ELSE 0 END)) /
-                    NULLIF(SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END), 0) * 100
-                , 2) as porcentaje FROM operaciones 
-                WHERE deleted_at IS NULL 
-                AND DATE_TRUNC('month', fecha) = DATE_TRUNC('month', CURRENT_DATE)
-            """,
-            "campo_resultado": "porcentaje",
-            "tolerancia": 0.5
-        },
-        
-        # === CAPITAL Y FLUJO ===
-        "capital_trabajo": {
-            "patrones": ["capital de trabajo", "capital trabajo", "capital disponible"],
-            "sql_control": """
-                SELECT SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END) -
-                       SUM(CASE WHEN tipo_operacion = 'GASTO' THEN monto_uyu ELSE 0 END) -
-                       SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN monto_uyu ELSE 0 END) -
-                       SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN monto_uyu ELSE 0 END) as total
-                FROM operaciones WHERE deleted_at IS NULL
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        
-        # === POR LOCALIDAD ===
-        "facturacion_montevideo_2025": {
-            "patrones": ["facturación montevideo 2025", "facturamos montevideo", 
-                        "ingresos montevideo 2025", "montevideo 2025 facturación"],
-            "sql_control": """
-                SELECT SUM(monto_uyu) as total FROM operaciones 
-                WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM fecha) = 2025 AND localidad = 'MONTEVIDEO'
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        "facturacion_mercedes_2025": {
-            "patrones": ["facturación mercedes 2025", "facturamos mercedes", 
-                        "ingresos mercedes 2025", "mercedes 2025 facturación"],
-            "sql_control": """
-                SELECT SUM(monto_uyu) as total FROM operaciones 
-                WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM fecha) = 2025 AND localidad = 'MERCEDES'
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        
-        # === POR ÁREA ===
-        "facturacion_juridica_2025": {
-            "patrones": ["facturación jurídica 2025", "jurídica 2025", 
-                        "área jurídica 2025", "ingresos jurídica"],
-            "sql_control": """
-                SELECT SUM(o.monto_uyu) as total FROM operaciones o
-                JOIN areas a ON o.area_id = a.id
-                WHERE o.tipo_operacion = 'INGRESO' AND o.deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM o.fecha) = 2025 AND a.nombre = 'Jurídica'
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        "facturacion_notarial_2025": {
-            "patrones": ["facturación notarial 2025", "notarial 2025", 
-                        "área notarial 2025", "ingresos notarial"],
-            "sql_control": """
-                SELECT SUM(o.monto_uyu) as total FROM operaciones o
-                JOIN areas a ON o.area_id = a.id
-                WHERE o.tipo_operacion = 'INGRESO' AND o.deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM o.fecha) = 2025 AND a.nombre = 'Notarial'
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        "facturacion_contable_2025": {
-            "patrones": ["facturación contable 2025", "contable 2025", 
-                        "área contable 2025", "ingresos contable"],
-            "sql_control": """
-                SELECT SUM(o.monto_uyu) as total FROM operaciones o
-                JOIN areas a ON o.area_id = a.id
-                WHERE o.tipo_operacion = 'INGRESO' AND o.deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM o.fecha) = 2025 AND a.nombre = 'Contable'
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        
-        # === DISTRIBUCIONES ===
-        "distribuciones_2025": {
-            "patrones": ["distribuciones 2025", "distribuciones este año", 
-                        "total distribuido 2025", "cuánto se distribuyó 2025"],
-            "sql_control": """
-                SELECT SUM(dd.monto_uyu) as total 
-                FROM distribuciones_detalle dd
-                JOIN operaciones o ON dd.operacion_id = o.id
-                WHERE o.tipo_operacion = 'DISTRIBUCION' AND o.deleted_at IS NULL
-                AND EXTRACT(YEAR FROM o.fecha) = 2025
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        "distribuciones_2024": {
-            "patrones": ["distribuciones 2024", "total distribuido 2024", 
-                        "cuánto se distribuyó 2024"],
-            "sql_control": """
-                SELECT SUM(dd.monto_uyu) as total 
-                FROM distribuciones_detalle dd
-                JOIN operaciones o ON dd.operacion_id = o.id
-                WHERE o.tipo_operacion = 'DISTRIBUCION' AND o.deleted_at IS NULL
-                AND EXTRACT(YEAR FROM o.fecha) = 2024
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        
-        # === RETIROS ===
-        "retiros_2025": {
-            "patrones": ["retiros 2025", "retiros este año", "total retiros 2025"],
-            "sql_control": """
-                SELECT SUM(monto_uyu) as total FROM operaciones 
-                WHERE tipo_operacion = 'RETIRO' AND deleted_at IS NULL 
-                AND EXTRACT(YEAR FROM fecha) = 2025
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0.01
-        },
-        
-        # === OPERACIONES ===
-        "cantidad_operaciones_2025": {
-            "patrones": ["cuántas operaciones 2025", "operaciones este año", 
-                        "cantidad operaciones 2025"],
-            "sql_control": """
-                SELECT COUNT(*) as total FROM operaciones 
-                WHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025
-            """,
-            "campo_resultado": "total",
-            "tolerancia": 0  # Debe ser exacto
-        },
-    }
-    
-    # ══════════════════════════════════════════════════════════════
-    # MÉTODOS DE IDENTIFICACIÓN
-    # ══════════════════════════════════════════════════════════════
+    # Re-exportar para compatibilidad
+    QUERIES_CANONICAS = QUERIES_CANONICAS
     
     @classmethod
     def identificar_query_canonica(cls, pregunta: str) -> Optional[str]:
@@ -262,17 +45,13 @@ class ValidadorCanonico:
         """
         pregunta_lower = pregunta.lower()
         
-        for key, config in cls.QUERIES_CANONICAS.items():
+        for key, config in QUERIES_CANONICAS.items():
             for patron in config["patrones"]:
                 if patron in pregunta_lower:
                     logger.debug(f"Query canónica identificada: {key} (patrón: '{patron}')")
                     return key
         
         return None
-    
-    # ══════════════════════════════════════════════════════════════
-    # MÉTODOS DE EJECUCIÓN
-    # ══════════════════════════════════════════════════════════════
     
     @classmethod
     def ejecutar_query_control(cls, db: Session, query_key: str) -> Optional[float]:
@@ -286,10 +65,10 @@ class ValidadorCanonico:
         Returns:
             Valor numérico resultado o None si falla
         """
-        if query_key not in cls.QUERIES_CANONICAS:
+        if query_key not in QUERIES_CANONICAS:
             return None
         
-        sql = cls.QUERIES_CANONICAS[query_key]["sql_control"]
+        sql = QUERIES_CANONICAS[query_key]["sql_control"]
         
         try:
             result = db.execute(text(sql)).fetchone()
@@ -299,10 +78,6 @@ class ValidadorCanonico:
         except Exception as e:
             logger.error(f"Error ejecutando query de control '{query_key}': {e}")
             return None
-    
-    # ══════════════════════════════════════════════════════════════
-    # MÉTODOS DE EXTRACCIÓN
-    # ══════════════════════════════════════════════════════════════
     
     @classmethod
     def extraer_valor_respuesta(cls, respuesta: str, datos_raw: Any) -> Optional[float]:
@@ -321,23 +96,37 @@ class ValidadorCanonico:
             Valor numérico extraído o None
         """
         # 1. Intentar extraer de datos_raw primero (más preciso)
-        if datos_raw:
-            if isinstance(datos_raw, list) and len(datos_raw) > 0:
-                primer_registro = datos_raw[0]
-                if isinstance(primer_registro, dict):
-                    # Buscar campos comunes en orden de prioridad
-                    campos_prioritarios = [
-                        'total', 'total_uyu', 'sum', 'monto', 'valor',
-                        'rentabilidad', 'porcentaje', 'margen', 'ing', 'gas'
-                    ]
-                    for campo in campos_prioritarios:
-                        if campo in primer_registro and primer_registro[campo] is not None:
-                            try:
-                                return float(primer_registro[campo])
-                            except (ValueError, TypeError):
-                                continue
+        valor = cls._extraer_de_datos_raw(datos_raw)
+        if valor is not None:
+            return valor
         
-        # 2. Intentar extraer del texto de respuesta usando regex
+        # 2. Intentar extraer del texto de respuesta
+        return cls._extraer_de_texto(respuesta)
+    
+    @classmethod
+    def _extraer_de_datos_raw(cls, datos_raw: Any) -> Optional[float]:
+        """Extrae valor numérico de datos_raw."""
+        if not datos_raw:
+            return None
+        
+        if isinstance(datos_raw, list) and len(datos_raw) > 0:
+            primer_registro = datos_raw[0]
+            if isinstance(primer_registro, dict):
+                campos_prioritarios = [
+                    'total', 'total_uyu', 'sum', 'monto', 'valor',
+                    'rentabilidad', 'porcentaje', 'margen', 'ing', 'gas'
+                ]
+                for campo in campos_prioritarios:
+                    if campo in primer_registro and primer_registro[campo] is not None:
+                        try:
+                            return float(primer_registro[campo])
+                        except (ValueError, TypeError):
+                            continue
+        return None
+    
+    @classmethod
+    def _extraer_de_texto(cls, respuesta: str) -> Optional[float]:
+        """Extrae valor numérico del texto de respuesta usando regex."""
         patrones = [
             r'\$\s*([\d.,]+)',           # $12.340.660
             r'([\d.,]+)\s*%',            # 68,30%
@@ -350,9 +139,8 @@ class ValidadorCanonico:
             matches = re.findall(patron, respuesta, re.IGNORECASE)
             if matches:
                 try:
-                    # Limpiar y convertir (formato uruguayo: 1.234.567,89)
                     valor_str = matches[0]
-                    # Si tiene más de un punto, es separador de miles
+                    # Formato uruguayo: 1.234.567,89
                     if valor_str.count('.') > 1:
                         valor_str = valor_str.replace('.', '')
                     elif ',' in valor_str:
@@ -362,10 +150,6 @@ class ValidadorCanonico:
                     continue
         
         return None
-    
-    # ══════════════════════════════════════════════════════════════
-    # MÉTODO PRINCIPAL DE VALIDACIÓN
-    # ══════════════════════════════════════════════════════════════
     
     @classmethod
     def validar_respuesta(
@@ -385,35 +169,17 @@ class ValidadorCanonico:
             datos_raw: Datos crudos de la consulta
             
         Returns:
-            Dict con resultado de validación:
-            {
-                "validado": bool - True si se pudo validar
-                "query_canonica": str - Key de la query usada
-                "valor_cfo": float - Valor extraído de CFO AI
-                "valor_control": float - Valor de query de control
-                "diferencia_porcentual": float - % de diferencia
-                "dentro_tolerancia": bool - Si está dentro del margen
-                "advertencia": str - Mensaje de advertencia si aplica
-            }
+            Dict con resultado de validación
         """
-        resultado = {
-            "validado": False,
-            "query_canonica": None,
-            "valor_cfo": None,
-            "valor_control": None,
-            "diferencia_porcentual": None,
-            "dentro_tolerancia": None,
-            "advertencia": None
-        }
+        resultado = cls._crear_resultado_vacio()
         
-        # 1. Identificar si es una query canónica
+        # 1. Identificar query canónica
         query_key = cls.identificar_query_canonica(pregunta)
         if not query_key:
-            # No es una query canónica conocida - no validar
             return resultado
         
         resultado["query_canonica"] = query_key
-        config = cls.QUERIES_CANONICAS[query_key]
+        config = QUERIES_CANONICAS[query_key]
         
         # 2. Ejecutar query de control
         valor_control = cls.ejecutar_query_control(db, query_key)
@@ -423,7 +189,7 @@ class ValidadorCanonico:
         
         resultado["valor_control"] = valor_control
         
-        # 3. Extraer valor de la respuesta del CFO
+        # 3. Extraer valor de respuesta CFO
         valor_cfo = cls.extraer_valor_respuesta(respuesta, datos_raw)
         if valor_cfo is None:
             logger.warning(f"Validación canónica: No se pudo extraer valor de respuesta CFO para '{query_key}'")
@@ -432,26 +198,17 @@ class ValidadorCanonico:
         resultado["valor_cfo"] = valor_cfo
         resultado["validado"] = True
         
-        # 4. Calcular diferencia porcentual
-        if valor_control != 0:
-            diferencia = abs(valor_cfo - valor_control) / abs(valor_control) * 100
-        else:
-            diferencia = 0.0 if valor_cfo == 0 else 100.0
-        
+        # 4. Calcular diferencia y verificar tolerancia
+        diferencia = cls._calcular_diferencia(valor_cfo, valor_control)
         resultado["diferencia_porcentual"] = round(diferencia, 2)
         
-        # 5. Verificar tolerancia
-        tolerancia_pct = config["tolerancia"] * 100  # Convertir a porcentaje
+        tolerancia_pct = config["tolerancia"] * 100
         resultado["dentro_tolerancia"] = diferencia <= tolerancia_pct
         
-        # 6. Generar advertencia si está fuera de tolerancia
+        # 5. Generar advertencia si fuera de tolerancia
         if not resultado["dentro_tolerancia"]:
-            resultado["advertencia"] = (
-                f"\n\n⚠️ **ADVERTENCIA DE PRECISIÓN**: La respuesta difiere **{diferencia:.2f}%** "
-                f"del valor de control.\n"
-                f"- Valor reportado: ${valor_cfo:,.0f}\n"
-                f"- Valor de control: ${valor_control:,.0f}\n"
-                f"- Query de validación: `{query_key}`"
+            resultado["advertencia"] = cls._generar_advertencia(
+                query_key, valor_cfo, valor_control, diferencia
             )
             logger.warning(
                 f"Validación canónica FALLIDA [{query_key}]: "
@@ -465,6 +222,37 @@ class ValidadorCanonico:
             )
         
         return resultado
+    
+    @staticmethod
+    def _crear_resultado_vacio() -> Dict[str, Any]:
+        """Crea estructura de resultado vacía."""
+        return {
+            "validado": False,
+            "query_canonica": None,
+            "valor_cfo": None,
+            "valor_control": None,
+            "diferencia_porcentual": None,
+            "dentro_tolerancia": None,
+            "advertencia": None
+        }
+    
+    @staticmethod
+    def _calcular_diferencia(valor_cfo: float, valor_control: float) -> float:
+        """Calcula diferencia porcentual entre valores."""
+        if valor_control != 0:
+            return abs(valor_cfo - valor_control) / abs(valor_control) * 100
+        return 0.0 if valor_cfo == 0 else 100.0
+    
+    @staticmethod
+    def _generar_advertencia(query_key: str, valor_cfo: float, valor_control: float, diferencia: float) -> str:
+        """Genera mensaje de advertencia para diferencias significativas."""
+        return (
+            f"\n\n⚠️ **ADVERTENCIA DE PRECISIÓN**: La respuesta difiere **{diferencia:.2f}%** "
+            f"del valor de control.\n"
+            f"- Valor reportado: ${valor_cfo:,.0f}\n"
+            f"- Valor de control: ${valor_control:,.0f}\n"
+            f"- Query de validación: `{query_key}`"
+        )
 
 
 # ══════════════════════════════════════════════════════════════
@@ -488,5 +276,3 @@ def validar_respuesta_cfo(
             respuesta += validacion['advertencia']
     """
     return ValidadorCanonico.validar_respuesta(db, pregunta, respuesta, datos_raw)
-
-

@@ -43,16 +43,9 @@ from configurar_vanna_local import my_vanna as vn
 
 
 class SQLRouter:
-    """
-    Router inteligente que selecciona el mejor método para generar SQL
-    
-    Métodos disponibles:
-    - claude: Claude Sonnet 4.5 (primary, alta precisión)
-    - vanna: Vanna AI + GPT-3.5 (fallback, 180+ queries entrenadas)
-    """
+    """Router inteligente: Claude (primary) → Vanna (fallback)."""
     
     def __init__(self):
-        """Inicializa los generadores SQL"""
         self.claude_gen = ClaudeSQLGenerator()
         
         # Conectar Vanna a PostgreSQL usando variables de entorno o defaults
@@ -65,22 +58,7 @@ class SQLRouter:
         )
     
     def generar_sql_con_claude(self, pregunta: str, contexto: list = None) -> Dict[str, Any]:
-        """
-        Genera SQL usando Claude Sonnet 4.5 con memoria de conversación
-        
-        Args:
-            pregunta: Pregunta actual del usuario
-            contexto: Mensajes previos de la conversación
-        
-        Returns:
-            {
-                'sql': str o None,
-                'sql_raw': str (respuesta completa de Claude),
-                'exito': bool,
-                'tiempo': float,
-                'error': str o None
-            }
-        """
+        """Genera SQL usando Claude con memoria de conversación."""
         inicio = time.time()
         
         try:
@@ -149,18 +127,7 @@ class SQLRouter:
             }
     
     def generar_sql_con_vanna(self, pregunta: str) -> Dict[str, Any]:
-        """
-        Genera SQL usando Vanna AI + GPT-3.5 (180+ queries entrenadas)
-        
-        Returns:
-            {
-                'sql': str o None,
-                'sql_raw': str,
-                'exito': bool,
-                'tiempo': float,
-                'error': str o None
-            }
-        """
+        """Genera SQL usando Vanna AI (fallback)."""
         inicio = time.time()
         
         try:
@@ -244,37 +211,7 @@ class SQLRouter:
             }
     
     def generar_sql_inteligente(self, pregunta: str, contexto: list = None, reintentos_vanna: int = 1) -> Dict[str, Any]:
-        """
-        Router principal: Intenta Claude primero, Vanna como fallback
-        
-        Arquitectura optimizada para CFO:
-        - Primary: Claude Sonnet 4.5 (96% éxito esperado, alta precisión)
-        - Fallback: Vanna + GPT-3.5 (88% éxito, 180+ queries entrenadas)
-        
-        Args:
-            pregunta: Pregunta del usuario en lenguaje natural
-            contexto: Lista de mensajes previos para memoria de conversación
-            reintentos_vanna: Número de reintentos si Vanna falla (default: 1)
-            
-        Returns:
-            {
-                'sql': str o None - SQL generado y validado,
-                'metodo': 'claude' | 'vanna_fallback' | 'ninguno',
-                'exito': bool,
-                'tiempo_total': float,
-                'tiempos': {
-                    'claude': float o None,
-                    'vanna': float o None
-                },
-                'intentos': {
-                    'claude': int,
-                    'vanna': int,
-                    'total': int
-                },
-                'error': str o None,
-                'debug': dict - Información detallada para debugging
-            }
-        """
+        """Router principal: Claude primero, Vanna como fallback."""
         inicio_total = time.time()
         
         tiempos = {'claude': None, 'vanna': None}
