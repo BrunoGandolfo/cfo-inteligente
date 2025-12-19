@@ -36,57 +36,73 @@ class ValidadorSQL:
         'retiro_max': 200_000,                  # $ 200K por retiro
     }
     
-    @staticmethod
-    def detectar_tipo_query(pregunta: str, sql: str) -> str:
+    # Nombres de socios para detección de distribuciones específicas
+    _SOCIOS = frozenset(['bruno', 'agustina', 'viviana', 'gonzalo', 'pancho'])
+    
+    # Patrones simples: keyword -> tipo (orden no importa)
+    _PATTERNS_SIMPLES = {
+        'rentabilidad': 'rentabilidad',
+        'margen': 'rentabilidad',
+        'retir': 'retiros',
+        'tipo de cambio': 'tipo_cambio',
+    }
+    
+    @classmethod
+    def detectar_tipo_query(cls, pregunta: str, sql: str) -> str:
         """
-        Detecta qué tipo de query es para aplicar validaciones específicas
-        
-        Returns:
-            'distribucion_socio' | 'rentabilidad' | 'facturacion' | 
-            'gastos' | 'retiros' | 'porcentaje' | 'tipo_cambio' | 'general'
+        Detecta qué tipo de query es para aplicar validaciones específicas.
+        Usa patrones estructurados para reducir complejidad ciclomática.
         """
         pregunta_lower = pregunta.lower()
-        sql_upper = sql.upper()
         
-        # Distribuciones por socio
-        # Detectar por nombre específico de socio
-        if any(nombre in pregunta_lower for nombre in ['bruno', 'agustina', 'viviana', 'gonzalo', 'pancho']):
-            if 'distribu' in pregunta_lower or 'recib' in pregunta_lower or 'toca' in pregunta_lower:
+        # Caso especial: distribuciones con nombre de socio
+        tipo_socio = cls._detectar_distribucion_socio(pregunta_lower)
+        if tipo_socio:
+            return tipo_socio
+        
+        # Patrones simples (búsqueda en diccionario)
+        for keyword, tipo in cls._PATTERNS_SIMPLES.items():
+            if keyword in pregunta_lower:
+                return tipo
+        
+        # Patrones con variantes día/hoy
+        return cls._detectar_con_variante_dia(pregunta_lower, sql.upper())
+    
+    @classmethod
+    def _detectar_distribucion_socio(cls, pregunta: str) -> str | None:
+        """Detecta distribuciones por socio (caso especial con nombres)."""
+        tiene_socio = any(s in pregunta for s in cls._SOCIOS)
+        
+        if tiene_socio:
+            if any(p in pregunta for p in ['distribu', 'recib', 'toca']):
                 return 'distribucion_socio'
-            if 'retir' in pregunta_lower:
+            if 'retir' in pregunta:
                 return 'retiros'
         
-        # Detectar distribuciones genéricas (sin nombre específico)
-        if 'distribu' in pregunta_lower and ('socio' in pregunta_lower or 'cada socio' in pregunta_lower):
+        if 'distribu' in pregunta and ('socio' in pregunta or 'cada socio' in pregunta):
             return 'distribucion_socio'
         
-        # Rentabilidad
-        if 'rentabilidad' in pregunta_lower or 'margen' in pregunta_lower:
-            return 'rentabilidad'
+        return None
+    
+    @staticmethod
+    def _detectar_con_variante_dia(pregunta: str, sql: str) -> str:
+        """Detecta tipos con variante día/hoy (facturación, gastos)."""
+        es_dia = 'día' in pregunta or 'hoy' in pregunta
         
-        # Porcentajes
-        if 'porcentaje' in pregunta_lower or '%%' in sql_upper or '* 100' in sql_upper:
-            if 'rentabilidad' not in pregunta_lower:
-                return 'porcentaje'
+        # Porcentajes (verificar SQL también)
+        if 'porcentaje' in pregunta or '%%' in sql or '* 100' in sql:
+            return 'porcentaje'
         
         # Facturación
-        if 'factur' in pregunta_lower or 'ingreso' in pregunta_lower:
-            if 'día' in pregunta_lower or 'hoy' in pregunta_lower:
-                return 'facturacion_dia'
-            return 'facturacion'
+        if 'factur' in pregunta or 'ingreso' in pregunta:
+            return 'facturacion_dia' if es_dia else 'facturacion'
         
         # Gastos
-        if 'gast' in pregunta_lower:
-            if 'día' in pregunta_lower or 'hoy' in pregunta_lower:
-                return 'gastos_dia'
-            return 'gastos'
+        if 'gast' in pregunta:
+            return 'gastos_dia' if es_dia else 'gastos'
         
-        # Retiros
-        if 'retir' in pregunta_lower:
-            return 'retiros'
-        
-        # Tipo de cambio
-        if 'tipo de cambio' in pregunta_lower or 'cambio' in pregunta_lower:
+        # Tipo de cambio (fallback si no se detectó antes)
+        if 'cambio' in pregunta:
             return 'tipo_cambio'
         
         return 'general'
