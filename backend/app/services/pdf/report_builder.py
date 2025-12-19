@@ -26,6 +26,14 @@ from app.utils.narrative_builder import (
     build_executive_summary
 )
 from app.services.analytics.variance_detector import VarianceDetector
+from app.services.pdf.report_data_formatters import (
+    prepare_summary_metrics,
+    prepare_kpis,
+    prepare_distribution,
+    prepare_gastos_por_area,
+    prepare_metadata,
+    build_anterior_proxy
+)
 
 logger = get_logger(__name__)
 
@@ -140,7 +148,7 @@ class ReportBuilder:
                 # La detección se hará solo con las variaciones ya calculadas
                 detector = VarianceDetector(threshold_percent=10.0, threshold_margin_pp=5.0)
                 # Como no tenemos metricas_anterior completas, crear dict mínimo
-                metricas_anterior_proxy = self._build_anterior_proxy(metricas)
+                metricas_anterior_proxy = build_anterior_proxy(metricas)
                 if metricas_anterior_proxy:
                     variances_criticas = detector.detect_variances(metricas, metricas_anterior_proxy)
                     logger.info(f"✓ Variaciones detectadas: {len(variances_criticas)}")
@@ -174,7 +182,7 @@ class ReportBuilder:
             # PASO 4: COMPILAR PDF
             # ═══════════════════════════════════════════════════════════════
             
-            metadata = self._prepare_metadata(metricas)
+            metadata = prepare_metadata(metricas)
             
             pdf_path = self.compiler.compile(
                 html_content=html_content,
@@ -291,17 +299,17 @@ class ReportBuilder:
             'threshold_percent': 10.0,  # Para mostrar en template
             
             # Datos preparados para componentes
-            'metrics': self._prepare_summary_metrics(metricas),
-            'kpis': self._prepare_kpis(metricas),
-            'ingresos_por_area': self._prepare_distribution(
+            'metrics': prepare_summary_metrics(metricas),
+            'kpis': prepare_kpis(metricas),
+            'ingresos_por_area': prepare_distribution(
                 metricas.get('porcentaje_ingresos_por_area', {}),
                 metricas.get('ingresos_uyu', 0)
             ),
-            'ingresos_por_localidad': self._prepare_distribution(
+            'ingresos_por_localidad': prepare_distribution(
                 metricas.get('porcentaje_ingresos_por_localidad', {}),
                 metricas.get('ingresos_uyu', 0)
             ),
-            'gastos_por_area': self._prepare_gastos_por_area(metricas),
+            'gastos_por_area': prepare_gastos_por_area(metricas),
             
             # Análisis de localidades y clientes (nuevos)
             'utilidad_neta_por_localidad': metricas.get('utilidad_neta_por_localidad', {}),
@@ -313,199 +321,6 @@ class ReportBuilder:
         }
         
         return context
-    
-    def _prepare_summary_metrics(self, metricas: Dict[str, Any]) -> list:
-        """Prepara métricas para summary_grid component."""
-        return [
-            {
-                'label': 'Ingresos Totales',
-                'valor': metricas.get('ingresos_uyu', 0),
-                'tipo': 'currency',
-                'variacion': metricas.get('variacion_mom_ingresos'),
-                'color': 'var(--primary)'
-            },
-            {
-                'label': 'Gastos Totales',
-                'valor': metricas.get('gastos_uyu', 0),
-                'tipo': 'currency',
-                'variacion': metricas.get('variacion_mom_gastos'),
-                'color': 'var(--danger)'
-            },
-            {
-                'label': 'Utilidad Neta',
-                'valor': metricas.get('utilidad_neta_uyu', 0),
-                'tipo': 'currency',
-                'color': 'var(--success)'
-            },
-            {
-                'label': 'Retiros',
-                'valor': metricas.get('retiros_uyu', 0),
-                'tipo': 'currency',
-                'color': 'var(--warning)'
-            },
-            {
-                'label': 'Distribuciones',
-                'valor': metricas.get('distribuciones_uyu', 0),
-                'tipo': 'currency',
-                'color': 'var(--secondary)'
-            },
-            {
-                'label': 'Rentabilidad Neta',
-                'valor': metricas.get('rentabilidad_neta', 0),
-                'tipo': 'percentage',
-                'variacion': metricas.get('variacion_mom_rentabilidad'),
-                'color': 'var(--success)'
-            },
-            {
-                'label': 'Ticket Promedio',
-                'valor': metricas.get('ticket_promedio_ingreso', 0),
-                'tipo': 'currency',
-                'color': 'var(--primary)'
-            },
-            {
-                'label': 'Operaciones',
-                'valor': metricas.get('cantidad_operaciones', 0),
-                'tipo': 'number',
-                'color': 'var(--primary)'
-            }
-        ]
-    
-    def _prepare_kpis(self, metricas: Dict[str, Any]) -> list:
-        """Prepara KPIs para kpi_table component."""
-        return [
-            {
-                'nombre': 'Ingresos',
-                'valor': metricas.get('ingresos_uyu', 0),
-                'tipo': 'currency',
-                'valor_anterior': metricas.get('ingresos_uyu_anterior'),
-                'variacion': metricas.get('variacion_mom_ingresos')
-            },
-            {
-                'nombre': 'Gastos',
-                'valor': metricas.get('gastos_uyu', 0),
-                'tipo': 'currency',
-                'valor_anterior': metricas.get('gastos_uyu_anterior'),
-                'variacion': metricas.get('variacion_mom_gastos')
-            },
-            {
-                'nombre': 'Rentabilidad Neta',
-                'valor': metricas.get('rentabilidad_neta', 0),
-                'tipo': 'percentage',
-                'valor_anterior': metricas.get('rentabilidad_neta_anterior'),
-                'variacion': metricas.get('variacion_mom_rentabilidad')
-            }
-        ]
-    
-    def _prepare_distribution(
-        self,
-        porcentajes: Dict[str, float],
-        total: float
-    ) -> list:
-        """Prepara datos de distribución para distribution_table component."""
-        return [
-            {
-                'nombre': nombre,
-                'porcentaje': pct,
-                'valor': (pct / 100) * total
-            }
-            for nombre, pct in porcentajes.items()
-        ]
-    
-    def _prepare_gastos_por_area(self, metricas: Dict[str, Any]) -> list:
-        """
-        Prepara gastos por área para templates.
-        
-        Args:
-            metricas: Dict con métricas calculadas
-            
-        Returns:
-            Lista con estructura [{nombre, valor, porcentaje}, ...]
-        """
-        gastos_total = metricas.get('gastos_uyu', 0)
-        if gastos_total == 0:
-            return []
-        
-        # Calcular gastos por área a partir de rentabilidad_por_area
-        # Fórmula: Gastos_area = Ingresos_area × (1 - Rentabilidad_area/100)
-        
-        rentabilidad_por_area = metricas.get('rentabilidad_por_area', {})
-        porcentaje_ingresos_por_area = metricas.get('porcentaje_ingresos_por_area', {})
-        ingresos_total = metricas.get('ingresos_uyu', 0)
-        
-        if not rentabilidad_por_area or not porcentaje_ingresos_por_area:
-            return []
-        
-        gastos_por_area = []
-        
-        for area, rent_pct in rentabilidad_por_area.items():
-            # Calcular ingresos del área
-            ing_pct = porcentaje_ingresos_por_area.get(area, 0)
-            ing_area = (ing_pct / 100) * ingresos_total
-            
-            # Calcular gastos: Gastos = Ingresos × (1 - Rent/100)
-            gas_area = ing_area * (1 - (rent_pct / 100))
-            gas_pct = (gas_area / gastos_total * 100) if gastos_total > 0 else 0
-            
-            gastos_por_area.append({
-                'nombre': area,
-                'valor': gas_area,
-                'porcentaje': gas_pct
-            })
-        
-        # Ordenar por valor descendente
-        return sorted(gastos_por_area, key=lambda x: x['valor'], reverse=True)
-    
-    def _prepare_metadata(self, metricas: Dict[str, Any]) -> Dict[str, str]:
-        """Prepara metadata para el PDF."""
-        period_label = metricas.get('period_label', 'Período')
-        
-        return {
-            'title': f"Reporte CFO - {period_label}",
-            'author': 'Sistema CFO Inteligente',
-            'subject': f"Análisis Financiero {period_label}",
-            'keywords': 'CFO, Finanzas, Reporte, Análisis, Conexión Consultora',
-            'creator': 'Sistema CFO Inteligente - Conexión Consultora',
-            'producer': 'WeasyPrint + PyPDF'
-        }
-    
-    def _build_anterior_proxy(self, metricas: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """
-        Construye dict proxy de métricas anteriores usando variaciones.
-        
-        Args:
-            metricas: Métricas actuales con variaciones calculadas
-            
-        Returns:
-            Dict con métricas anteriores reconstruidas o None
-        """
-        var_ingresos = metricas.get('variacion_mom_ingresos')
-        var_gastos = metricas.get('variacion_mom_gastos')
-        
-        if var_ingresos is None and var_gastos is None:
-            return None
-        
-        # Reconstruir valores anteriores usando variación
-        ingresos_actual = metricas.get('ingresos_uyu', 0)
-        gastos_actual = metricas.get('gastos_uyu', 0)
-        margen_neto_actual = metricas.get('margen_neto', 0)
-        
-        # Si variacion = (actual - anterior) / anterior * 100
-        # Entonces: anterior = actual / (1 + variacion/100)
-        ingresos_anterior = ingresos_actual / (1 + var_ingresos/100) if var_ingresos else ingresos_actual
-        gastos_anterior = gastos_actual / (1 + var_gastos/100) if var_gastos else gastos_actual
-        
-        var_margen = metricas.get('variacion_mom_rentabilidad', 0)
-        margen_neto_anterior = margen_neto_actual - var_margen
-        
-        return {
-            'ingresos_uyu': ingresos_anterior,
-            'gastos_uyu': gastos_anterior,
-            'margen_neto': margen_neto_anterior,
-            'porcentaje_ingresos_por_area': metricas.get('porcentaje_ingresos_por_area', {}),
-            'variacion_mom_ingresos': var_ingresos,
-            'variacion_mom_gastos': var_gastos,
-            'variacion_mom_rentabilidad': var_margen
-        }
     
     def _generate_filename(self, metricas: Dict[str, Any]) -> str:
         """Genera nombre de archivo automático."""
