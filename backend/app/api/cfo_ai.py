@@ -74,186 +74,158 @@ def generar_respuesta_narrativa(pregunta: str, datos: list, sql_generado: str) -
 
 @router.post("/ask")
 def preguntar_cfo(data: PreguntaCFO, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
-    """
-    Endpoint que recibe pregunta en español y retorna datos con memoria de conversación
-    """
+    """Endpoint que recibe pregunta en español y retorna datos con memoria de conversación."""
     conversacion_id = None
     contexto = []
     
     try:
-        # === SISTEMA DE MEMORIA: Obtener o crear conversación (ANTES de generar SQL) ===
-        if data.conversation_id:
-            # Continuar conversación existente
-            conversacion_id = data.conversation_id
-            logger.info(f"Continuando conversación {conversacion_id}")
-            
-            # Obtener contexto de mensajes previos (últimos 20)
-            # Límite aumentado a 20 mensajes (10 intercambios) para análisis complejos
-            contexto = ConversacionService.obtener_contexto(db, conversacion_id, limite=20)
-            logger.info(f"Contexto cargado: {len(contexto)} mensajes previos")
-        else:
-            # Crear nueva conversación INMEDIATAMENTE (antes de generar SQL)
-            titulo = ConversacionService.generar_titulo(data.pregunta)
-            conversacion = ConversacionService.crear_conversacion(db, current_user.id, titulo)
-            conversacion_id = conversacion.id
-            logger.info(f"Nueva conversación creada: {conversacion_id}")
+        # FASE 1: Gestionar conversación
+        conversacion_id, contexto = _gestionar_conversacion(db, data, current_user)
         
-        # Guardar pregunta del usuario AHORA (antes de generar SQL para tener historial completo)
-        if conversacion_id:
-            ConversacionService.agregar_mensaje(db, conversacion_id, "user", data.pregunta)
-            logger.info(f"Pregunta guardada en conversación {conversacion_id}")
-        
-        # === CHAIN-OF-THOUGHT: Detectar si necesita metadatos temporales ===
-        if ChainOfThoughtSQL.necesita_metadatos(data.pregunta):
-            logger.info("Chain-of-Thought detectada: pregunta temporal compleja")
-            
-            # Generar SQL en 2 pasos con contexto temporal real
-            resultado_cot = generar_con_chain_of_thought(data.pregunta, db, claude_sql_gen)
-            
-            if resultado_cot['exito']:
-                # Usar SQL generado con Chain-of-Thought
-                sql_generado = resultado_cot['sql']
-                resultado_sql = {
-                    'sql': sql_generado,
-                    'metodo': 'claude_chain_of_thought',
-                    'exito': True,
-                    'tiempo_total': 0,  # Se calculará después
-                    'tiempos': {'claude': 0, 'vanna': None},
-                    'intentos': {'claude': 2, 'vanna': 0, 'total': 2},  # 2 pasos
-                    'error': None,
-                    'debug': {'metadatos': resultado_cot['metadatos_usados']}
-                }
-            else:
-                # Chain-of-Thought falló, usar flujo normal
-                logger.warning("Chain-of-Thought falló, usando flujo normal de generación SQL")
-                resultado_sql = generar_sql_inteligente(data.pregunta, contexto=contexto)
-        else:
-            # Pregunta simple, flujo normal CON CONTEXTO
-            resultado_sql = generar_sql_inteligente(data.pregunta, contexto=contexto)
-        
+        # FASE 2: Generar SQL
+        resultado_sql = _generar_sql(data.pregunta, db, contexto)
         if not resultado_sql['exito']:
-            return {
-                "pregunta": data.pregunta,
-                "respuesta": f"No pude generar SQL válido. {resultado_sql['error']}",
-                "sql_generado": None,
-                "status": "error",
-                "error_tipo": "sql_generation_failed",
-                "metadata": {
-                    "metodo": resultado_sql['metodo'],
-                    "tiempo_generacion": resultado_sql['tiempo_total'],
-                    "intentos": resultado_sql['intentos']['total'],
-                    "tiempos_detalle": resultado_sql['tiempos']
-                }
-            }
+            return _error_sql_generation(data.pregunta, resultado_sql)
         
-        sql_generado = resultado_sql['sql']
+        # FASE 3: Validar y procesar SQL
+        sql_final, resultado_sql, sql_procesado_info = _validar_y_procesar_sql(data.pregunta, resultado_sql)
         
-        # VALIDACIÓN PRE-EJECUCIÓN: Detectar problemas lógicos en SQL ANTES de ejecutar
-        from app.services.validador_sql import ValidadorSQL
-        validacion_pre = ValidadorSQL.validar_sql_antes_ejecutar(data.pregunta, sql_generado)
+        # FASE 4: Ejecutar y validar resultado
+        resultado = _ejecutar_y_validar(db, data.pregunta, sql_final)
         
-        if not validacion_pre['valido']:
-            logger.warning(f"Validación Pre-SQL rechazó SQL - Problemas: {', '.join(validacion_pre['problemas'])}")
-            
-            # RECHAZAR SQL y usar fallback
-            if validacion_pre['sugerencia_fallback'] == 'query_predefinida':
-                from app.services.query_fallback import QueryFallback
-                sql_predefinido = QueryFallback.get_query_for(data.pregunta)
-                
-                if sql_predefinido:
-                    logger.info("Usando query predefinida como fallback")
-                    sql_generado = sql_predefinido
-                    resultado_sql['metodo'] = f"{resultado_sql['metodo']}_fallback_predefinido"
-                else:
-                    logger.warning("No hay query predefinida, SQL puede tener errores")
-                    # Continuar con SQL original pero marcar advertencia
-                    resultado_sql['metodo'] = f"{resultado_sql['metodo']}_con_advertencias"
-            else:
-                logger.warning("SQL continúa pero puede tener errores lógicos")
-                resultado_sql['metodo'] = f"{resultado_sql['metodo']}_con_advertencias"
-        
-        # POST-PROCESAMIENTO: Mejorar SQL según patrones en la pregunta
-        sql_procesado_info = SQLPostProcessor.procesar_sql(data.pregunta, sql_generado)
-        sql_final = sql_procesado_info['sql']
-        
-        # Ejecutar el SQL (procesado o original)
-        resultado = ejecutar_consulta_cfo(db, sql_final)
-        
-        # VALIDACIÓN POST-EJECUCIÓN: Verificar que los datos sean razonables
+        # FASE 5: Generar respuesta
         if resultado.get('success') and resultado.get('data'):
-            validacion = validar_resultado_sql(data.pregunta, sql_final, resultado['data'])
-            
-            if not validacion['valido']:
-                logger.warning(f"Validación post-SQL - Resultado sospechoso: {validacion['razon']} (Tipo: {validacion['tipo_query']})")
-                # Por ahora solo loggeamos, no rechazamos
-        
-        # Generar respuesta narrativa con Claude Sonnet 4.5
-        if resultado.get('success') and resultado.get('data'):
-            respuesta_narrativa = generar_respuesta_narrativa(
-                data.pregunta,
-                resultado['data'],
-                sql_generado
+            return _generar_respuesta_exitosa(
+                db, data, resultado_sql, sql_final, resultado, 
+                conversacion_id, contexto, sql_procesado_info
             )
-            
-            # === VALIDACIÓN CANÓNICA ===
-            validacion_canonica = validar_respuesta_cfo(db, data.pregunta, respuesta_narrativa, resultado['data'])
-            
-            if validacion_canonica.get('advertencia'):
-                respuesta_narrativa += validacion_canonica['advertencia']
-                logger.warning(f"Validación canónica agregó advertencia para '{validacion_canonica['query_canonica']}'")
-            elif validacion_canonica.get('validado'):
-                logger.info(f"Validación canónica OK - {validacion_canonica['query_canonica']}")
-            
-            # === GUARDAR RESPUESTA DEL ASSISTANT ===
-            if conversacion_id:
-                ConversacionService.agregar_mensaje(
-                    db, conversacion_id, "assistant", respuesta_narrativa, sql_generado=sql_generado
-                )
-                logger.info(f"Respuesta guardada en conversación {conversacion_id}")
-            
-            return {
-                "pregunta": data.pregunta,
-                "respuesta": respuesta_narrativa,
-                "datos_raw": resultado['data'],
-                "sql_generado": sql_generado,
-                "status": "success",
-                "conversation_id": str(conversacion_id) if conversacion_id else None,  # NUEVO
-                "metadata": {
-                    "metodo_generacion_sql": resultado_sql['metodo'],
-                    "tiempo_generacion_sql": resultado_sql['tiempo_total'],
-                    "intentos_sql": resultado_sql['intentos']['total'],
-                    "tiempos_detalle": resultado_sql['tiempos'],
-                    "post_procesamiento": sql_procesado_info.get('modificado', False),
-                    "contexto_mensajes": len(contexto),
-                    "validacion_canonica": {
-                        "aplicada": validacion_canonica.get('validado', False),
-                        "query": validacion_canonica.get('query_canonica'),
-                        "diferencia_pct": validacion_canonica.get('diferencia_porcentual'),
-                        "dentro_tolerancia": validacion_canonica.get('dentro_tolerancia')
-                    }
-                }
-            }
-        else:
-            # Si el SQL falló, retornar el error
-            return {
-                "pregunta": data.pregunta,
-                "respuesta": f"No pude obtener datos para esa pregunta. Error: {resultado.get('error', 'Desconocido')}",
-                "sql_generado": sql_generado,
-                "resultado": resultado,
-                "status": "error",
-                "conversation_id": str(conversacion_id) if conversacion_id else None
-            }
+        
+        return _error_ejecucion(data.pregunta, sql_final, resultado, conversacion_id)
             
     except Exception as e:
         logger.error(f"Error en preguntar_cfo: {str(e)}", exc_info=True)
-        return {
-            "pregunta": data.pregunta,
-            "sql_generado": None,
-            "resultado": None,
-            "error": str(e),
-            "status": "error",
-            "conversation_id": str(conversacion_id) if conversacion_id else None
+        return {"pregunta": data.pregunta, "sql_generado": None, "resultado": None, 
+                "error": str(e), "status": "error", 
+                "conversation_id": str(conversacion_id) if conversacion_id else None}
+
+
+def _gestionar_conversacion(db: Session, data: PreguntaCFO, current_user) -> tuple:
+    """Obtiene o crea conversación y guarda pregunta."""
+    if data.conversation_id:
+        conversacion_id = data.conversation_id
+        contexto = ConversacionService.obtener_contexto(db, conversacion_id, limite=20)
+        logger.info(f"Contexto cargado: {len(contexto)} mensajes previos")
+    else:
+        titulo = ConversacionService.generar_titulo(data.pregunta)
+        conversacion = ConversacionService.crear_conversacion(db, current_user.id, titulo)
+        conversacion_id = conversacion.id
+        contexto = []
+        logger.info(f"Nueva conversación creada: {conversacion_id}")
+    
+    ConversacionService.agregar_mensaje(db, conversacion_id, "user", data.pregunta)
+    return conversacion_id, contexto
+
+
+def _generar_sql(pregunta: str, db: Session, contexto: list) -> dict:
+    """Genera SQL usando chain-of-thought si es necesario."""
+    if ChainOfThoughtSQL.necesita_metadatos(pregunta):
+        resultado_cot = generar_con_chain_of_thought(pregunta, db, claude_sql_gen)
+        if resultado_cot['exito']:
+            return {
+                'sql': resultado_cot['sql'], 'metodo': 'claude_chain_of_thought',
+                'exito': True, 'tiempo_total': 0, 'tiempos': {'claude': 0, 'vanna': None},
+                'intentos': {'claude': 2, 'vanna': 0, 'total': 2}, 'error': None
+            }
+        logger.warning("Chain-of-Thought falló, usando flujo normal")
+    return generar_sql_inteligente(pregunta, contexto=contexto)
+
+
+def _validar_y_procesar_sql(pregunta: str, resultado_sql: dict) -> tuple:
+    """Valida SQL pre-ejecución y aplica post-procesamiento."""
+    from app.services.validador_sql import ValidadorSQL
+    from app.services.query_fallback import QueryFallback
+    
+    sql_generado = resultado_sql['sql']
+    validacion_pre = ValidadorSQL.validar_sql_antes_ejecutar(pregunta, sql_generado)
+    
+    if not validacion_pre['valido']:
+        logger.warning(f"Validación Pre-SQL rechazó: {', '.join(validacion_pre['problemas'])}")
+        if validacion_pre['sugerencia_fallback'] == 'query_predefinida':
+            sql_predefinido = QueryFallback.get_query_for(pregunta)
+            if sql_predefinido:
+                sql_generado = sql_predefinido
+                resultado_sql['metodo'] += '_fallback_predefinido'
+            else:
+                resultado_sql['metodo'] += '_con_advertencias'
+        else:
+            resultado_sql['metodo'] += '_con_advertencias'
+    
+    sql_procesado_info = SQLPostProcessor.procesar_sql(pregunta, sql_generado)
+    return sql_procesado_info['sql'], resultado_sql, sql_procesado_info
+
+
+def _ejecutar_y_validar(db: Session, pregunta: str, sql_final: str) -> dict:
+    """Ejecuta SQL y valida resultado."""
+    resultado = ejecutar_consulta_cfo(db, sql_final)
+    
+    if resultado.get('success') and resultado.get('data'):
+        validacion = validar_resultado_sql(pregunta, sql_final, resultado['data'])
+        if not validacion['valido']:
+            logger.warning(f"Resultado sospechoso: {validacion['razon']}")
+    
+    return resultado
+
+
+def _generar_respuesta_exitosa(db, data, resultado_sql, sql_final, resultado, 
+                               conversacion_id, contexto, sql_procesado_info) -> dict:
+    """Genera respuesta narrativa y metadata para caso exitoso."""
+    respuesta_narrativa = generar_respuesta_narrativa(data.pregunta, resultado['data'], sql_final)
+    
+    validacion_canonica = validar_respuesta_cfo(db, data.pregunta, respuesta_narrativa, resultado['data'])
+    if validacion_canonica.get('advertencia'):
+        respuesta_narrativa += validacion_canonica['advertencia']
+    
+    if conversacion_id:
+        ConversacionService.agregar_mensaje(db, conversacion_id, "assistant", respuesta_narrativa, sql_generado=sql_final)
+    
+    return {
+        "pregunta": data.pregunta, "respuesta": respuesta_narrativa, "datos_raw": resultado['data'],
+        "sql_generado": sql_final, "status": "success",
+        "conversation_id": str(conversacion_id) if conversacion_id else None,
+        "metadata": {
+            "metodo_generacion_sql": resultado_sql['metodo'],
+            "tiempo_generacion_sql": resultado_sql['tiempo_total'],
+            "intentos_sql": resultado_sql['intentos']['total'],
+            "tiempos_detalle": resultado_sql['tiempos'],
+            "post_procesamiento": sql_procesado_info.get('modificado', False),
+            "contexto_mensajes": len(contexto),
+            "validacion_canonica": {
+                "aplicada": validacion_canonica.get('validado', False),
+                "query": validacion_canonica.get('query_canonica'),
+                "diferencia_pct": validacion_canonica.get('diferencia_porcentual'),
+                "dentro_tolerancia": validacion_canonica.get('dentro_tolerancia')
+            }
         }
+    }
+
+
+def _error_sql_generation(pregunta: str, resultado_sql: dict) -> dict:
+    """Respuesta para error en generación SQL."""
+    return {
+        "pregunta": pregunta, "respuesta": f"No pude generar SQL válido. {resultado_sql['error']}",
+        "sql_generado": None, "status": "error", "error_tipo": "sql_generation_failed",
+        "metadata": {"metodo": resultado_sql['metodo'], "tiempo_generacion": resultado_sql['tiempo_total'],
+                     "intentos": resultado_sql['intentos']['total'], "tiempos_detalle": resultado_sql['tiempos']}
+    }
+
+
+def _error_ejecucion(pregunta: str, sql_generado: str, resultado: dict, conversacion_id) -> dict:
+    """Respuesta para error en ejecución SQL."""
+    return {
+        "pregunta": pregunta, "respuesta": f"No pude obtener datos. Error: {resultado.get('error', 'Desconocido')}",
+        "sql_generado": sql_generado, "resultado": resultado, "status": "error",
+        "conversation_id": str(conversacion_id) if conversacion_id else None
+    }
 
 
 # ══════════════════════════════════════════════════════════════
