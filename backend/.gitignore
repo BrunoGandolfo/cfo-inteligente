@@ -9,3 +9,4 @@ audits/
 test_reporte_*.pdf
 test_*.pdf
 ANALISIS_FORENSE_PDF_COMPLETO.md
+.coverage

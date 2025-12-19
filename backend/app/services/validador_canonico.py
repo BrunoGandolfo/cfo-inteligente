@@ -489,3 +489,4 @@ def validar_respuesta_cfo(
     """
     return ValidadorCanonico.validar_respuesta(db, pregunta, respuesta, datos_raw)
 
+
