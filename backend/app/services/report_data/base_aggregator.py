@@ -173,65 +173,40 @@ class BaseAggregator(ABC):
         return self.db.query(Operacion).filter(and_(*filtros)).all()
     
     def calculate_main_metrics(self, operaciones: List[Operacion]) -> Dict[str, Any]:
-        """
-        Calcula métricas principales comunes a todos los períodos:
-        - Ingresos, Gastos, Retiros, Distribuciones
-        - Rentabilidad
-        - Resultado operativo
-        - Resultado neto
-        """
-        ingresos_uyu = sum(
-            float(op.monto_uyu) for op in operaciones 
-            if op.tipo_operacion == TipoOperacion.INGRESO
-        ) or 0.0
+        """Calcula métricas principales usando helpers para reducir complejidad."""
+        # Agrupar por tipo de operación
+        totales = self._calcular_totales_por_tipo(operaciones)
         
-        gastos_uyu = sum(
-            float(op.monto_uyu) for op in operaciones 
-            if op.tipo_operacion == TipoOperacion.GASTO
-        ) or 0.0
+        ingresos = totales[TipoOperacion.INGRESO]
+        gastos = totales[TipoOperacion.GASTO]
+        retiros = totales[TipoOperacion.RETIRO]
+        distribuciones = totales[TipoOperacion.DISTRIBUCION]
         
-        retiros_uyu = sum(
-            float(op.monto_uyu) for op in operaciones 
-            if op.tipo_operacion == TipoOperacion.RETIRO
-        ) or 0.0
-        
-        distribuciones_uyu = sum(
-            float(op.monto_uyu) for op in operaciones 
-            if op.tipo_operacion == TipoOperacion.DISTRIBUCION
-        ) or 0.0
-        
-        # Rentabilidad: (Ingresos - Gastos) / Ingresos * 100
-        rentabilidad = 0.0
-        if ingresos_uyu > 0:
-            rentabilidad = ((ingresos_uyu - gastos_uyu) / ingresos_uyu) * 100.0
-        
-        # Resultado operativo: Ingresos - Gastos
-        resultado_operativo = ingresos_uyu - gastos_uyu
-        
-        # Resultado neto: Resultado operativo - Retiros - Distribuciones
-        resultado_neto = resultado_operativo - retiros_uyu - distribuciones_uyu
+        # Cálculos derivados
+        rentabilidad = ((ingresos['uyu'] - gastos['uyu']) / ingresos['uyu'] * 100) if ingresos['uyu'] > 0 else 0.0
+        resultado_operativo = ingresos['uyu'] - gastos['uyu']
+        resultado_neto = resultado_operativo - retiros['uyu'] - distribuciones['uyu']
         
         return {
-            'ingresos': {
-                'uyu': round(ingresos_uyu, 2),
-                'cantidad_operaciones': len([op for op in operaciones if op.tipo_operacion == TipoOperacion.INGRESO])
-            },
-            'gastos': {
-                'uyu': round(gastos_uyu, 2),
-                'cantidad_operaciones': len([op for op in operaciones if op.tipo_operacion == TipoOperacion.GASTO])
-            },
-            'retiros': {
-                'uyu': round(retiros_uyu, 2),
-                'cantidad_operaciones': len([op for op in operaciones if op.tipo_operacion == TipoOperacion.RETIRO])
-            },
-            'distribuciones': {
-                'uyu': round(distribuciones_uyu, 2),
-                'cantidad_operaciones': len([op for op in operaciones if op.tipo_operacion == TipoOperacion.DISTRIBUCION])
-            },
+            'ingresos': {'uyu': round(ingresos['uyu'], 2), 'cantidad_operaciones': ingresos['cantidad']},
+            'gastos': {'uyu': round(gastos['uyu'], 2), 'cantidad_operaciones': gastos['cantidad']},
+            'retiros': {'uyu': round(retiros['uyu'], 2), 'cantidad_operaciones': retiros['cantidad']},
+            'distribuciones': {'uyu': round(distribuciones['uyu'], 2), 'cantidad_operaciones': distribuciones['cantidad']},
             'rentabilidad_porcentaje': round(rentabilidad, 2),
             'resultado_operativo': round(resultado_operativo, 2),
             'resultado_neto': round(resultado_neto, 2)
         }
+    
+    def _calcular_totales_por_tipo(self, operaciones: List[Operacion]) -> Dict[TipoOperacion, Dict]:
+        """Agrupa operaciones por tipo y calcula totales."""
+        totales = {tipo: {'uyu': 0.0, 'cantidad': 0} for tipo in TipoOperacion}
+        
+        for op in operaciones:
+            if op.tipo_operacion in totales:
+                totales[op.tipo_operacion]['uyu'] += float(op.monto_uyu or 0)
+                totales[op.tipo_operacion]['cantidad'] += 1
+        
+        return totales
     
     def calculate_by_area(self, operaciones: List[Operacion]) -> List[Dict[str, Any]]:
         """Agrega métricas por área de negocio"""
