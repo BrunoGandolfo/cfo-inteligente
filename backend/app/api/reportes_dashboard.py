@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 from datetime import date
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models import Operacion, TipoOperacion, Area, Localidad, Usuario
+from app.models import Operacion, TipoOperacion, Area, Usuario
+from app.utils.query_helpers import aplicar_filtros_operaciones
 
 router = APIRouter()
 
@@ -18,23 +18,14 @@ def dashboard_report(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    filtros = [
-        Operacion.fecha >= fecha_desde,
-        Operacion.fecha <= fecha_hasta,
-        Operacion.deleted_at == None
-    ]
-    if localidad and localidad != "Todas":
-        localidad_map = {
-            "Montevideo": Localidad.MONTEVIDEO,
-            "MONTEVIDEO": Localidad.MONTEVIDEO,
-            "Mercedes": Localidad.MERCEDES,
-            "MERCEDES": Localidad.MERCEDES,
-        }
-        enum_loc = localidad_map.get(localidad)
-        if enum_loc:
-            filtros.append(Operacion.localidad == enum_loc)
-
-    operaciones = db.query(Operacion).filter(and_(*filtros)).all()
+    # Usar helper centralizado para filtros (DRY)
+    query = aplicar_filtros_operaciones(
+        db.query(Operacion),
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        localidad=localidad
+    )
+    operaciones = query.all()
 
     def pick_monto(op: Operacion) -> float:
         return float(op.monto_uyu) if moneda_vista == "UYU" else float(op.monto_usd)
