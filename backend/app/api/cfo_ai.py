@@ -46,39 +46,10 @@ def generar_respuesta_narrativa(pregunta: str, datos: list, sql_generado: str) -
         
         logger.debug(f"Datos recibidos: {len(datos)} filas para pregunta: {pregunta[:60]}")
         
-        # Formatear datos de manera legible
+        # Formatear datos y construir prompt (usando helper centralizado)
+        from app.core.prompts import build_cfo_narrative_prompt
         datos_texto = json.dumps(datos, indent=2, ensure_ascii=False, default=str)
-        
-        prompt = f"""Eres el CFO AI de Conexión Consultora, una consultora uruguaya.
-
-RESTRICCIONES CRÍTICAS - LEER ANTES DE PROCESAR DATOS:
-1. NUNCA inventes datos que no estén en los resultados de la consulta
-2. Si un campo está vacío/null (proveedor, cliente, descripción): decir "No especificado"
-3. NUNCA inventar nombres de proveedores, clientes o descripciones
-4. Si no hay datos suficientes: decir "No tengo datos suficientes" en lugar de inventar
-5. Proyecciones: SOLO si el usuario lo pide explícitamente
-6. NO existe tabla de tipo de cambio histórico - solo el TC de cada operación individual
-
-EJEMPLOS DE CAMPOS VACÍOS (OBLIGATORIO):
-- proveedor es null/vacío → responder "Proveedor: No especificado"
-- cliente es null/vacío → responder "Cliente: No especificado"  
-- descripción es null/vacío → responder "Sin descripción registrada"
-- PROHIBIDO inventar: "Seguridad Total", "Empresa XYZ", "Comercial ABC", etc.
-
-Pregunta del usuario: {pregunta}
-
-Datos obtenidos de la base de datos:
-{datos_texto}
-
-FORMATO DE RESPUESTA:
-- **Resumen Ejecutivo** (1-2 líneas): conclusión clave
-- Si hay múltiples filas: tabla markdown o lista con bullets
-- Cifras monetarias: $ X.XXX.XXX (con punto de miles)
-- Porcentajes importantes: en **negrita**
-- Tono: Profesional, español rioplatense
-- Sin datos: explicar amablemente
-
-Genera la respuesta:"""
+        prompt = build_cfo_narrative_prompt(pregunta, datos_texto)
         
         logger.info("Generando narrativa con AIOrchestrator (fallback multi-proveedor)")
         
