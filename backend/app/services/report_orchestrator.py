@@ -11,9 +11,6 @@ Fecha: Octubre 2025
 from typing import Dict, Any, Optional
 from datetime import datetime, date
 from pathlib import Path
-import base64
-import tempfile
-import shutil
 
 from sqlalchemy.orm import Session
 
@@ -23,7 +20,7 @@ from app.models import TipoOperacion
 from app.services.validators.request_validator import validate_request
 from app.services.validators.data_validator import validate_sufficient_data, validate_data_quality
 from app.services.metrics.metrics_aggregator import MetricsAggregator
-from app.services.charts.chart_factory import ChartFactory
+from app.services.report_chart_generator import ReportChartGenerator
 from app.services.ai.insights_orchestrator import InsightsOrchestrator
 from app.services.pdf.report_builder import ReportBuilder
 from app.utils.date_resolver import resolve_period, get_comparison_period
@@ -99,8 +96,8 @@ class ReportOrchestrator:
         # Repository (composición)
         self.repo = OperationsRepository(db)
         
-        # Directorio temporal para charts
-        self.temp_dir = None
+        # Generador de charts (composición)
+        self.chart_generator = ReportChartGenerator()
         
         logger.info("ReportOrchestrator inicializado")
     
@@ -267,7 +264,7 @@ class ReportOrchestrator:
             # ═══════════════════════════════════════════════════════════════
             
             logger.info("PASO 6: Generando gráficos")
-            charts_paths = self._generate_charts(metricas, operaciones)
+            charts_paths = self.chart_generator.generate_all(metricas)
             logger.info(f"✓ Gráficos generados: {len(charts_paths)} charts")
             
             # ═══════════════════════════════════════════════════════════════
@@ -347,7 +344,7 @@ class ReportOrchestrator:
             # ═══════════════════════════════════════════════════════════════
             
             logger.info("PASO 9: Cleanup de archivos temporales")
-            self._cleanup()
+            self.chart_generator.cleanup()
             logger.info("✓ Cleanup completado")
             
             # ═══════════════════════════════════════════════════════════════
@@ -370,7 +367,7 @@ class ReportOrchestrator:
             logger.error(f"ERROR GENERANDO REPORTE: {e}")
             
             # Cleanup en caso de error
-            self._cleanup()
+            self.chart_generator.cleanup()
             
             # Re-lanzar excepción
             raise
@@ -378,168 +375,6 @@ class ReportOrchestrator:
     # ═══════════════════════════════════════════════════════════════
     # MÉTODOS PRIVADOS (helpers de orchestration)
     # ═══════════════════════════════════════════════════════════════
-    
-    def _generate_charts(self, metricas: Dict[str, Any], operaciones: list) -> Dict[str, str]:
-        """
-        Genera todos los gráficos necesarios usando helpers especializados.
-        """
-        self.temp_dir = tempfile.mkdtemp(prefix='report_charts_')
-        logger.debug(f"Directorio temporal: {self.temp_dir}")
-        
-        charts_paths = {}
-        
-        try:
-            # Generar cada tipo de chart con helper
-            self._gen_waterfall(metricas, charts_paths)
-            self._gen_donut_areas(metricas, charts_paths)
-            self._gen_donut_localidades(metricas, charts_paths)
-            self._gen_line_temporal(metricas, charts_paths)
-            self._gen_bar_clientes(metricas, charts_paths)
-            
-            logger.info(f"✓ Total gráficos generados: {len(charts_paths)}")
-        except Exception as e:
-            logger.error(f"Error generando gráficos: {str(e)}", exc_info=True)
-            # Retornar paths parciales o vacíos - NO fallar el reporte
-        
-        # ═══════════════════════════════════════════════════════════════
-        # CONVERSIÓN DE PNG A BASE64 PARA EMBEBER EN HTML/PDF
-        # ═══════════════════════════════════════════════════════════════
-        
-        logger.info("Convirtiendo gráficos PNG a base64 data URIs...")
-        charts_base64 = {}
-        
-        for key, path in charts_paths.items():
-            try:
-                if path and Path(path).exists():
-                    with open(path, "rb") as f:
-                        encoded = base64.b64encode(f.read()).decode()
-                        charts_base64[key] = f"data:image/png;base64,{encoded}"
-                        file_size_kb = len(encoded) / 1024
-                        logger.debug(f"✓ {key} convertido a base64 ({file_size_kb:.1f} KB)")
-                else:
-                    logger.warning(f"⚠️ Path no existe para {key}: {path}")
-            except Exception as e:
-                logger.error(f"❌ Error convirtiendo {key} a base64: {e}")
-        
-        logger.info(f"✓ Total gráficos convertidos a base64: {len(charts_base64)}/{len(charts_paths)}")
-        
-        return charts_base64
-    
-    def _gen_waterfall(self, metricas: Dict[str, Any], charts_paths: dict) -> None:
-        """Genera waterfall chart de flujo de rentabilidad."""
-        waterfall_data = {
-            'labels': ['Ingresos', 'Gastos', 'Retiros', 'Distribuciones', 'Resultado'],
-            'values': [
-                float(metricas.get('ingresos_uyu', 0)),
-                -float(metricas.get('gastos_uyu', 0)),
-                -float(metricas.get('retiros_uyu', 0)),
-                -float(metricas.get('distribuciones_uyu', 0)),
-                float(metricas.get('resultado_neto_uyu', 0))
-            ],
-            'measures': ['absolute', 'relative', 'relative', 'relative', 'total']
-        }
-        path = ChartFactory.create_and_save(
-            'waterfall', waterfall_data, f'{self.temp_dir}/waterfall.png',
-            {'title': 'Flujo de Rentabilidad (UYU)'}
-        )
-        charts_paths['waterfall_chart_path'] = path
-        logger.debug(f"✓ Waterfall generado: {path}")
-    
-    def _gen_donut_areas(self, metricas: Dict[str, Any], charts_paths: dict) -> None:
-        """Genera donut chart de distribución por áreas."""
-        dist_areas = metricas.get('porcentaje_ingresos_por_area', {})
-        if not dist_areas:
-            return
-        try:
-            path = ChartFactory.create_and_save(
-                'donut', {'labels': list(dist_areas.keys()), 'values': list(dist_areas.values())},
-                f'{self.temp_dir}/donut_areas.png', {'title': 'Distribución de Ingresos por Área'}
-            )
-            charts_paths['area_donut_chart_path'] = path
-            logger.info(f"✅ Donut áreas generado: {path}")
-        except Exception as e:
-            logger.error(f"Error generando donut áreas: {e}")
-    
-    def _gen_donut_localidades(self, metricas: Dict[str, Any], charts_paths: dict) -> None:
-        """Genera donut chart de distribución por localidades."""
-        dist_loc = metricas.get('porcentaje_ingresos_por_localidad', {})
-        if not dist_loc:
-            return
-        try:
-            path = ChartFactory.create_and_save(
-                'donut', {'labels': list(dist_loc.keys()), 'values': list(dist_loc.values())},
-                f'{self.temp_dir}/donut_localidades.png', {'title': 'Distribución por Localidad'}
-            )
-            charts_paths['localidad_donut_chart_path'] = path
-            logger.info(f"✅ Donut localidades generado: {path}")
-        except Exception as e:
-            logger.error(f"Error generando donut localidades: {e}")
-    
-    def _gen_line_temporal(self, metricas: Dict[str, Any], charts_paths: dict) -> None:
-        """Genera line chart de evolución temporal."""
-        ingresos_mes = metricas.get('ingresos_por_mes', [])
-        gastos_mes = metricas.get('gastos_por_mes', [])
-        meses = metricas.get('meses', [])
-        
-        if not (meses and len(meses) >= 3 and len(ingresos_mes) >= 3):
-            logger.info(f"⚠️ Datos insuficientes para tendencia ({len(meses) if meses else 0} meses)")
-            return
-        
-        try:
-            utilidad_mes = [ingresos_mes[i] - gastos_mes[i] if i < len(gastos_mes) else ingresos_mes[i] 
-                          for i in range(len(ingresos_mes))]
-            meses_texto = "1 mes" if len(meses) == 1 else f"{len(meses)} meses"
-            
-            path = ChartFactory.create_and_save(
-                'line',
-                {'labels': meses, 'series': [
-                    {'name': 'Ingresos', 'values': ingresos_mes, 'color': '#5B9BD5'},
-                    {'name': 'Gastos', 'values': gastos_mes, 'color': '#E74C3C'},
-                    {'name': 'Utilidad', 'values': utilidad_mes, 'color': '#70AD47'}
-                ]},
-                f'{self.temp_dir}/line_temporal.png', {'title': f'Evolución Temporal ({meses_texto})'}
-            )
-            charts_paths['line_temporal_chart_path'] = path
-            logger.info(f"✅ Line chart temporal generado: {path}")
-        except Exception as e:
-            logger.warning(f"Error generando line temporal: {e}")
-    
-    def _gen_bar_clientes(self, metricas: Dict[str, Any], charts_paths: dict) -> None:
-        """Genera bar chart de top 10 clientes."""
-        top_clientes = metricas.get('top_clientes', [])
-        if not top_clientes:
-            return
-        
-        try:
-            top_10 = top_clientes[:10]
-            path = ChartFactory.create_and_save(
-                'bar',
-                {
-                    'categories': [c.get('cliente', f'Cliente {i+1}') for i, c in enumerate(top_10)],
-                    'series': [{'name': 'Facturación', 'values': [c.get('facturacion', 0) for c in top_10], 'color': '#5B9BD5'}]
-                },
-                f'{self.temp_dir}/bar_top_clientes.png',
-                {'title': 'Top 10 Clientes por Facturación', 'orientation': 'h', 'sort_by_value': True}
-            )
-            charts_paths['bar_top_clientes_chart_path'] = path
-            logger.info(f"✅ Bar chart Top 10 generado: {path}")
-        except Exception as e:
-            logger.warning(f"Error generando bar Top 10: {e}")
-    
-    def _cleanup(self) -> None:
-        """
-        Limpia archivos temporales.
-        
-        Elimina directorio temporal de charts después de generar PDF.
-        """
-        if self.temp_dir and Path(self.temp_dir).exists():
-            try:
-                shutil.rmtree(self.temp_dir)
-                logger.debug(f"Directorio temporal eliminado: {self.temp_dir}")
-            except Exception as e:
-                logger.warning(f"No se pudo eliminar directorio temporal: {e}")
-        
-        self.temp_dir = None
     
     def _generate_fallback_insights(
         self, 
