@@ -100,17 +100,25 @@ def crear_distribucion(data: DistribucionCreate, db: Session = Depends(get_db), 
         raise HTTPException(status_code=403, detail="Solo socios pueden registrar distribuciones")
     return operacion_service.crear_distribucion(db, data)
 
-@router.patch("/{operacion_id}")
-def actualizar_operacion(
-    operacion_id: str,
-    data: dict,
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
-):
-    """Actualizar operación existente"""
-    from app.models import Moneda, Localidad
-    from app.services.operacion_service import calcular_montos
+# ═══════════════════════════════════════════════════════════════
+# HELPERS PARA actualizar_operacion (refactorizado para reducir complejidad)
+# ═══════════════════════════════════════════════════════════════
+
+def _obtener_operacion_o_404(db: Session, operacion_id: str) -> Operacion:
+    """
+    Valida UUID y busca operación activa.
     
+    Args:
+        db: Sesión de base de datos
+        operacion_id: ID de operación como string
+        
+    Returns:
+        Operación encontrada
+        
+    Raises:
+        HTTPException 400: ID inválido
+        HTTPException 404: Operación no encontrada
+    """
     try:
         op_uuid = uuid.UUID(operacion_id)
     except ValueError:
@@ -124,7 +132,19 @@ def actualizar_operacion(
     if not operacion:
         raise HTTPException(status_code=404, detail="Operación no encontrada")
     
-    # Actualizar campos permitidos
+    return operacion
+
+
+def _actualizar_campos_basicos(operacion: Operacion, data: dict) -> None:
+    """
+    Actualiza campos simples de la operación (fecha, descripción, localidad, etc).
+    
+    Args:
+        operacion: Operación a actualizar
+        data: Diccionario con campos a actualizar
+    """
+    from app.models import Localidad
+    
     if 'fecha' in data and data['fecha']:
         operacion.fecha = data['fecha']
     
@@ -142,9 +162,27 @@ def actualizar_operacion(
     
     if 'area_id' in data and data['area_id']:
         operacion.area_id = UUID(data['area_id']) if isinstance(data['area_id'], str) else data['area_id']
+
+
+def _actualizar_montos(operacion: Operacion, data: dict) -> None:
+    """
+    Actualiza montos y recalcula UYU/USD si es necesario.
     
-    # Si cambian monto/moneda/TC, recalcular
+    Maneja tres casos:
+    1. Cambio de monto_original/moneda/tipo_cambio → recalcula ambos
+    2. Cambio directo de monto_uyu → recalcula monto_usd
+    3. Cambio directo de monto_usd → recalcula monto_uyu
+    
+    Args:
+        operacion: Operación a actualizar
+        data: Diccionario con montos a actualizar
+    """
+    from app.models import Moneda
+    from app.services.operacion_service import calcular_montos
+    
     recalcular = False
+    
+    # Actualizar monto original si viene en data
     if 'monto_original' in data and data['monto_original'] is not None:
         operacion.monto_original = Decimal(str(data['monto_original']))
         recalcular = True
@@ -157,7 +195,7 @@ def actualizar_operacion(
         operacion.tipo_cambio = Decimal(str(data['tipo_cambio']))
         recalcular = True
     
-    # Retiros con montos directos
+    # Caso especial: montos directos para retiros
     if 'monto_uyu' in data and data['monto_uyu'] is not None:
         operacion.monto_uyu = Decimal(str(data['monto_uyu']))
         if operacion.tipo_cambio and operacion.tipo_cambio > 0:
@@ -168,7 +206,7 @@ def actualizar_operacion(
         if operacion.tipo_cambio and operacion.tipo_cambio > 0:
             operacion.monto_uyu = operacion.monto_usd * operacion.tipo_cambio
     
-    # Recalcular montos si aplica
+    # Recalcular si cambió monto/moneda/TC
     if recalcular and operacion.monto_original and operacion.moneda_original and operacion.tipo_cambio:
         monto_uyu, monto_usd = calcular_montos(
             operacion.monto_original,
@@ -177,7 +215,34 @@ def actualizar_operacion(
         )
         operacion.monto_uyu = monto_uyu
         operacion.monto_usd = monto_usd
+
+
+@router.patch("/{operacion_id}")
+def actualizar_operacion(
+    operacion_id: str,
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Actualizar operación existente.
     
+    Permite actualizar campos básicos (fecha, descripción, localidad, cliente, 
+    proveedor, area_id) y montos (monto_original, moneda, tipo_cambio, monto_uyu, monto_usd).
+    
+    Si se modifican monto_original, moneda_original o tipo_cambio, se recalculan
+    automáticamente monto_uyu y monto_usd.
+    """
+    # 1. Obtener operación (valida UUID y existencia)
+    operacion = _obtener_operacion_o_404(db, operacion_id)
+    
+    # 2. Actualizar campos básicos
+    _actualizar_campos_basicos(operacion, data)
+    
+    # 3. Actualizar montos (con recálculo si necesario)
+    _actualizar_montos(operacion, data)
+    
+    # 4. Guardar cambios
     operacion.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(operacion)
