@@ -16,6 +16,7 @@ Fecha: Octubre 2025
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from app.services.sql_router import SQLRouter, get_sql_router, generar_sql_inteligente
+from app.utils.sql_utils import extraer_sql_limpio, validar_sql
 
 
 # ══════════════════════════════════════════════════════════════
@@ -59,7 +60,7 @@ class TestExtraerSQLLimpio:
         sql = "SELECT * FROM operaciones WHERE deleted_at IS NULL"
         
         # Act
-        resultado = SQLRouter.extraer_sql_limpio(sql)
+        resultado = extraer_sql_limpio(sql)
         
         # Assert
         assert resultado == sql
@@ -70,7 +71,7 @@ class TestExtraerSQLLimpio:
         texto = "```sql\nSELECT * FROM operaciones\n```"
         
         # Act
-        resultado = SQLRouter.extraer_sql_limpio(texto)
+        resultado = extraer_sql_limpio(texto)
         
         # Assert
         assert resultado == "SELECT * FROM operaciones"
@@ -82,7 +83,7 @@ class TestExtraerSQLLimpio:
         texto = "```\nWITH cte AS (...) SELECT * FROM cte\n```"
         
         # Act
-        resultado = SQLRouter.extraer_sql_limpio(texto)
+        resultado = extraer_sql_limpio(texto)
         
         # Assert
         assert "WITH cte AS" in resultado
@@ -94,7 +95,7 @@ class TestExtraerSQLLimpio:
         texto = "No puedo generar sin contexto. Sin embargo:\nSELECT SUM(monto) FROM operaciones"
         
         # Act
-        resultado = SQLRouter.extraer_sql_limpio(texto)
+        resultado = extraer_sql_limpio(texto)
         
         # Assert
         assert resultado.startswith("SELECT")
@@ -106,7 +107,7 @@ class TestExtraerSQLLimpio:
         texto = "SELECT * FROM operaciones; -- Y aquí hay comentarios extras"
         
         # Act
-        resultado = SQLRouter.extraer_sql_limpio(texto)
+        resultado = extraer_sql_limpio(texto)
         
         # Assert
         assert resultado.endswith(";")
@@ -118,7 +119,7 @@ class TestExtraerSQLLimpio:
         texto = "Lo siento, no puedo generar SQL para esa pregunta"
         
         # Act
-        resultado = SQLRouter.extraer_sql_limpio(texto)
+        resultado = extraer_sql_limpio(texto)
         
         # Assert
         assert resultado is None
@@ -126,7 +127,7 @@ class TestExtraerSQLLimpio:
     def test_texto_vacio(self):
         """Texto vacío debe retornar None"""
         # Act
-        resultado = SQLRouter.extraer_sql_limpio("")
+        resultado = extraer_sql_limpio("")
         
         # Assert
         assert resultado is None
@@ -145,7 +146,7 @@ class TestValidarSQL:
         sql = "SELECT SUM(monto) FROM operaciones WHERE deleted_at IS NULL"
         
         # Act
-        validacion = SQLRouter.validar_sql(sql)
+        validacion = validar_sql(sql)
         
         # Assert
         assert validacion['valido'] is True
@@ -158,7 +159,7 @@ class TestValidarSQL:
         sql = "WITH cte AS (SELECT * FROM ops) SELECT SUM(monto) FROM cte"
         
         # Act
-        validacion = SQLRouter.validar_sql(sql)
+        validacion = validar_sql(sql)
         
         # Assert
         assert validacion['valido'] is True
@@ -167,7 +168,7 @@ class TestValidarSQL:
     def test_sql_vacio(self):
         """SQL vacío debe ser inválido"""
         # Act
-        validacion = SQLRouter.validar_sql("")
+        validacion = validar_sql("")
         
         # Assert
         assert validacion['valido'] is False
@@ -179,7 +180,7 @@ class TestValidarSQL:
         sql = "UPDATE operaciones SET monto = 0"
         
         # Act
-        validacion = SQLRouter.validar_sql(sql)
+        validacion = validar_sql(sql)
         
         # Assert
         assert validacion['valido'] is False
@@ -191,7 +192,7 @@ class TestValidarSQL:
         sql = "SELECT FROM WHERE"  # SQL inválido
         
         # Act
-        validacion = SQLRouter.validar_sql(sql)
+        validacion = validar_sql(sql)
         
         # Assert
         # sqlparse puede o no detectarlo, pero debe retornar dict válido
@@ -551,7 +552,7 @@ class TestCasosEdge:
         sql = "-- Comentario\nSELECT * FROM ops -- inline comment"
         
         # Act
-        sql_limpio = SQLRouter.extraer_sql_limpio(sql)
+        sql_limpio = extraer_sql_limpio(sql)
         
         # Assert
         assert sql_limpio is not None

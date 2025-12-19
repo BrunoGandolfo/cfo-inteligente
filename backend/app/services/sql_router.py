@@ -11,12 +11,10 @@ Versión: 1.0
 Fecha: Octubre 2025
 """
 
-import re
 import sys
 import os
 import time
 from typing import Dict, Any, Optional
-import sqlparse
 from datetime import datetime
 
 # Imports del core
@@ -32,6 +30,9 @@ from app.core.constants import (
 # Imports de los generadores SQL
 from app.services.claude_sql_generator import ClaudeSQLGenerator
 from app.services.query_fallback import QueryFallback
+
+# Utils de SQL (extraídos para reducir tamaño)
+from app.utils.sql_utils import extraer_sql_limpio, validar_sql
 
 # Logger para este módulo
 logger = get_logger(__name__)
@@ -62,141 +63,6 @@ class SQLRouter:
             password=os.getenv('PG_PASS', DEFAULT_PG_PASS),
             port=int(os.getenv('PG_PORT', str(DEFAULT_PG_PORT)))
         )
-    
-    @staticmethod
-    def extraer_sql_limpio(texto: str) -> Optional[str]:
-        """
-        Extrae SQL limpio de texto que puede contener:
-        - Backticks: ```sql ... ``` o ``` ... ```
-        - Texto explicativo antes/después del SQL
-        - Comentarios SQL
-        
-        Args:
-            texto: Respuesta del LLM (puede ser SQL puro o texto mixto)
-            
-        Returns:
-            SQL limpio o None si no se encuentra SQL válido
-        """
-        if not texto or len(texto) < 5:
-            return None
-        
-        texto_stripped = texto.strip()
-        
-        # PASO 1: Buscar bloques con triple backticks ```sql...```
-        match_sql = re.search(r'```sql\s*(.*?)\s*```', texto_stripped, re.DOTALL | re.IGNORECASE)
-        if match_sql:
-            return match_sql.group(1).strip()
-        
-        # PASO 2: Buscar bloques con triple backticks genéricos ```...```
-        match_generic = re.search(r'```\s*(.*?)\s*```', texto_stripped, re.DOTALL)
-        if match_generic:
-            contenido = match_generic.group(1).strip()
-            # Verificar que el contenido parece SQL
-            if 'SELECT' in contenido.upper() or 'WITH' in contenido.upper():
-                return contenido
-        
-        # PASO 3: Si no hay backticks pero contiene SQL, extraer desde SELECT/WITH
-        texto_upper = texto_stripped.upper()
-        if 'SELECT' in texto_upper or 'WITH' in texto_upper:
-            # Encontrar posición de inicio del SQL
-            pos_select = texto_upper.find('SELECT')
-            pos_with = texto_upper.find('WITH')
-            
-            if pos_with != -1 and (pos_select == -1 or pos_with < pos_select):
-                # WITH está antes de SELECT o no hay SELECT
-                sql_desde = texto_stripped[pos_with:]
-            elif pos_select != -1:
-                sql_desde = texto_stripped[pos_select:]
-            else:
-                return None
-            
-            # Limpiar posible texto explicativo al final
-            # Buscar el último punto y coma
-            if ';' in sql_desde:
-                ultimo_semicolon = sql_desde.rfind(';')
-                sql_desde = sql_desde[:ultimo_semicolon + 1]
-            
-            return sql_desde.strip()
-        
-        # PASO 4: No se encontró SQL válido
-        return None
-    
-    @staticmethod
-    def validar_sql(sql: str) -> Dict[str, Any]:
-        """
-        Valida que el SQL es sintácticamente correcto y ejecutable
-        
-        Args:
-            sql: Query SQL a validar
-            
-        Returns:
-            {
-                'valido': bool,
-                'tipo': 'SELECT' | 'WITH' | 'OTRO' | None,
-                'parseado': bool,
-                'error': str o None
-            }
-        """
-        if not sql or len(sql) < 5:
-            return {
-                'valido': False,
-                'tipo': None,
-                'parseado': False,
-                'error': 'SQL vacío'
-            }
-        
-        sql_upper = sql.strip().upper()
-        
-        # Verificar que contiene SELECT o WITH
-        tiene_select = 'SELECT' in sql_upper
-        tiene_with = 'WITH' in sql_upper
-        
-        if not (tiene_select or tiene_with):
-            return {
-                'valido': False,
-                'tipo': 'OTRO',
-                'parseado': False,
-                'error': 'SQL no contiene SELECT ni WITH'
-            }
-        
-        # Determinar tipo
-        tipo = 'WITH' if sql_upper.strip().startswith('WITH') else 'SELECT'
-        
-        # Intentar parsear con sqlparse
-        try:
-            parsed = sqlparse.parse(sql)
-            if not parsed or len(parsed) == 0:
-                return {
-                    'valido': False,
-                    'tipo': tipo,
-                    'parseado': False,
-                    'error': 'sqlparse no pudo parsear el SQL'
-                }
-            
-            # Verificar que el primer statement es un SELECT
-            primer_statement = parsed[0]
-            if primer_statement.get_type() not in ['SELECT', 'UNKNOWN']:
-                return {
-                    'valido': False,
-                    'tipo': tipo,
-                    'parseado': True,
-                    'error': f'Tipo de statement inesperado: {primer_statement.get_type()}'
-                }
-            
-            return {
-                'valido': True,
-                'tipo': tipo,
-                'parseado': True,
-                'error': None
-            }
-        
-        except Exception as e:
-            return {
-                'valido': False,
-                'tipo': tipo,
-                'parseado': False,
-                'error': f'Error en sqlparse: {str(e)}'
-            }
     
     def generar_sql_con_claude(self, pregunta: str, contexto: list = None) -> Dict[str, Any]:
         """
@@ -233,7 +99,7 @@ class SQLRouter:
                 }
             
             # Extraer SQL limpio
-            sql_limpio = self.extraer_sql_limpio(sql_raw)
+            sql_limpio = extraer_sql_limpio(sql_raw)
             
             # DEBUG: Mostrar SQL generado
             logger.debug(f"SQL generado por Claude: {sql_limpio if sql_limpio else 'NONE'}")
@@ -248,7 +114,7 @@ class SQLRouter:
                 }
             
             # Validar SQL
-            validacion = self.validar_sql(sql_limpio)
+            validacion = validar_sql(sql_limpio)
             
             if not validacion['valido']:
                 return {
@@ -313,7 +179,7 @@ class SQLRouter:
                 }
             
             # Extraer SQL limpio
-            sql_limpio = self.extraer_sql_limpio(sql_raw)
+            sql_limpio = extraer_sql_limpio(sql_raw)
             
             if not sql_limpio:
                 return {
@@ -343,7 +209,7 @@ class SQLRouter:
                 }
             
             # Validar SQL
-            validacion = self.validar_sql(sql_limpio)
+            validacion = validar_sql(sql_limpio)
             
             if not validacion['valido']:
                 return {
