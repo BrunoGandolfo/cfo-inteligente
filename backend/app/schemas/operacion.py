@@ -16,6 +16,13 @@ class OperacionBase(BaseModel):
             raise ValueError('La fecha no puede ser futura')
         return v
 
+    @field_validator('tipo_cambio')
+    @classmethod
+    def tipo_cambio_positivo(cls, v):
+        if v is None or v <= 0:
+            raise ValueError('El tipo de cambio debe ser mayor a 0')
+        return v
+
 class IngresoCreate(OperacionBase):
     monto_original: Decimal
     moneda_original: str  # UYU o USD
