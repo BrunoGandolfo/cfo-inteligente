@@ -2,6 +2,7 @@
 Prompts y contextos para el generador de SQL.
 Extraído de claude_sql_generator.py para reducir su tamaño.
 """
+from datetime import datetime
 
 DDL_CONTEXT = """
 CREATE TABLE operaciones (
@@ -106,11 +107,25 @@ SELECT socio, total_uyu, total_usd FROM (SELECT * FROM por_socio UNION ALL SELEC
 
 def build_sql_system_prompt() -> str:
     """Construye el system prompt completo para generación de SQL."""
+    # Fecha dinámica para que Claude sepa en qué momento estamos
+    ahora = datetime.now()
+    mes_actual = ahora.strftime("%B %Y")  # "December 2025"
+    año_actual = ahora.year
+    
+    # Reemplazar fechas hardcodeadas en BUSINESS_CONTEXT
+    business_context_dinamico = BUSINESS_CONTEXT.replace(
+        "Fecha actual: Octubre 2025", 
+        f"Fecha actual: {mes_actual}"
+    ).replace(
+        "Sin año explícito → año 2025",
+        f"Sin año explícito → año {año_actual}"
+    )
+    
     return f"""Eres un experto en SQL PostgreSQL para el sistema CFO de Conexión Consultora.
 
 {DDL_CONTEXT}
 
-{BUSINESS_CONTEXT}
+{business_context_dinamico}
 
 {SQL_EXAMPLES}
 
