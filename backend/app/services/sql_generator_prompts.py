@@ -79,7 +79,22 @@ REGLAS SQL OBLIGATORIAS:
 11. RENTABILIDAD POR ÁREA: Excluir 'Gastos Generales' y 'Otros'
 12. RETIROS vs DISTRIBUCIONES: RETIRO=caja empresa, DISTRIBUCIÓN=reparto a socios
 13. COMPLEJIDAD: Evitar FULL OUTER JOIN, máx 3 CTEs, simplificar >40 líneas
-14. ORDER BY DESPUÉS DE UNION: Solo nombre/posición de columna (no CASE/funciones)
+14. PORCENTAJES DE MONEDA - CRÍTICO:
+    - "% en USD" o "% en dólares": COUNT(CASE WHEN moneda_original='USD' THEN 1 END) * 100.0 / COUNT(*)
+    - NUNCA usar SUM(monto_usd)/SUM(total) para porcentajes de moneda
+15. RANKINGS PLURALES:
+    - "mejores/peores" (plural) = LIMIT 5 mínimo
+    - "el mejor/el peor" (singular) = LIMIT 1
+    - "las mejores áreas" → LIMIT 5
+16. UNION ALL CON ENUMS:
+    - tipo_operacion es ENUM, para UNION con texto usar: CAST(tipo_operacion AS TEXT)
+    - O usar columna 'orden' separada (0=datos, 1=total)
+17. PROYECCIONES DINÁMICAS:
+    - Meses transcurridos: EXTRACT(MONTH FROM CURRENT_DATE)
+    - Meses restantes: 12 - EXTRACT(MONTH FROM CURRENT_DATE)
+    - NUNCA hardcodear números de meses (ej: "/ 8 * 4")
+    - Proyección anual: SUM(monto) / EXTRACT(MONTH FROM CURRENT_DATE) * 12
+18. ORDER BY DESPUÉS DE UNION: Solo nombre/posición de columna (no CASE/funciones)
 """
 
 SQL_EXAMPLES = """
