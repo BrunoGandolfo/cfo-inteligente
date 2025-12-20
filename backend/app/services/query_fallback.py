@@ -59,6 +59,12 @@ _QUERY_PATTERNS: List[Tuple] = [
 _QUERY_COMPOUND: List[Tuple[str, str, str]] = [
     ("retiro", "mercedes", "SELECT SUM(monto_uyu) AS total_uyu, SUM(monto_usd) AS total_usd, COUNT(*) AS cantidad FROM operaciones WHERE tipo_operacion='RETIRO' AND localidad='MERCEDES' AND deleted_at IS NULL AND DATE_TRUNC('year',fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
     ("retiro", "montevideo", "SELECT SUM(monto_uyu) AS total_uyu, SUM(monto_usd) AS total_usd, COUNT(*) AS cantidad FROM operaciones WHERE tipo_operacion='RETIRO' AND localidad='MONTEVIDEO' AND deleted_at IS NULL AND DATE_TRUNC('year',fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
+    # Distribuciones por socio
+    ("distribu", "bruno", "SELECT SUM(dd.monto_uyu) AS total_uyu, SUM(dd.monto_usd) AS total_usd, COUNT(*) AS cantidad FROM distribuciones_detalle dd JOIN socios s ON s.id=dd.socio_id JOIN operaciones o ON o.id=dd.operacion_id WHERE s.nombre='Bruno' AND o.deleted_at IS NULL AND DATE_TRUNC('year',o.fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
+    ("distribu", "agustina", "SELECT SUM(dd.monto_uyu) AS total_uyu, SUM(dd.monto_usd) AS total_usd, COUNT(*) AS cantidad FROM distribuciones_detalle dd JOIN socios s ON s.id=dd.socio_id JOIN operaciones o ON o.id=dd.operacion_id WHERE s.nombre='Agustina' AND o.deleted_at IS NULL AND DATE_TRUNC('year',o.fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
+    ("distribu", "viviana", "SELECT SUM(dd.monto_uyu) AS total_uyu, SUM(dd.monto_usd) AS total_usd, COUNT(*) AS cantidad FROM distribuciones_detalle dd JOIN socios s ON s.id=dd.socio_id JOIN operaciones o ON o.id=dd.operacion_id WHERE s.nombre='Viviana' AND o.deleted_at IS NULL AND DATE_TRUNC('year',o.fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
+    ("distribu", "gonzalo", "SELECT SUM(dd.monto_uyu) AS total_uyu, SUM(dd.monto_usd) AS total_usd, COUNT(*) AS cantidad FROM distribuciones_detalle dd JOIN socios s ON s.id=dd.socio_id JOIN operaciones o ON o.id=dd.operacion_id WHERE s.nombre='Gonzalo' AND o.deleted_at IS NULL AND DATE_TRUNC('year',o.fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
+    ("distribu", "pancho", "SELECT SUM(dd.monto_uyu) AS total_uyu, SUM(dd.monto_usd) AS total_usd, COUNT(*) AS cantidad FROM distribuciones_detalle dd JOIN socios s ON s.id=dd.socio_id JOIN operaciones o ON o.id=dd.operacion_id WHERE s.nombre='Pancho' AND o.deleted_at IS NULL AND DATE_TRUNC('year',o.fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
 ]
 
 
