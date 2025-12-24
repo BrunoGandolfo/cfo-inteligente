@@ -41,7 +41,7 @@ CREATE TABLE socios (
 
 CREATE TABLE areas (
     id UUID PRIMARY KEY,
-    nombre VARCHAR(100) UNIQUE NOT NULL CHECK (nombre IN ('Jurídica', 'Notarial', 'Contable', 'Recuperación', 'Gastos Generales', 'Otros'))
+    nombre VARCHAR(100) UNIQUE NOT NULL CHECK (nombre IN ('Jurídica', 'Notarial', 'Contable', 'Recuperación', 'Otros Gastos'))
 );
 """
 
@@ -49,7 +49,7 @@ BUSINESS_CONTEXT = """
 CONTEXTO DEL NEGOCIO - CONEXIÓN CONSULTORA:
 • Consultora uruguaya con 5 socios: Agustina, Viviana, Gonzalo, Pancho y Bruno
 • Opera en 2 localidades: MONTEVIDEO y MERCEDES
-• Áreas de negocio: Jurídica, Notarial, Contable, Recuperación, Gastos Generales, Otros
+• Áreas de negocio: Jurídica, Notarial, Contable, Recuperación, Otros Gastos
 • Tipos de operaciones: INGRESO, GASTO, RETIRO, DISTRIBUCION
 • Monedas: UYU (pesos uruguayos) y USD (dólares estadounidenses)
 • Fórmula de rentabilidad: (Ingresos - Gastos) / Ingresos * 100
@@ -76,7 +76,7 @@ REGLAS SQL OBLIGATORIAS:
 8. UNION ALL CON TOTAL: Usar columna 'orden' (0=datos, 1=total) para ORDER BY
 9. TOTALES DISTRIBUCIONES: Sumar distribuciones_detalle.monto_uyu (fuente de verdad)
 10. DISTRIBUCIONES CON FILTROS: Empezar FROM distribuciones_detalle, INNER JOIN, filtros en WHERE
-11. RENTABILIDAD POR ÁREA: Excluir 'Gastos Generales' y 'Otros'
+11. RENTABILIDAD POR ÁREA: Excluir 'Otros Gastos' (categoría residual de gastos)
 12. RETIROS vs DISTRIBUCIONES: RETIRO=caja empresa, DISTRIBUCIÓN=reparto a socios
 13. COMPLEJIDAD: Evitar FULL OUTER JOIN, máx 3 CTEs, simplificar >40 líneas
 14. PORCENTAJES DE MONEDA - CRÍTICO:

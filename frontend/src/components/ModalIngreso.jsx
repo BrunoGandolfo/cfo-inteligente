@@ -25,8 +25,8 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
     const cargarAreas = async () => {
       try {
         const response = await axiosClient.get('/api/catalogos/areas');
-        // Filtrar: ingresos NO usan "Gastos Generales"
-        const areasIngreso = response.data.filter(a => a.nombre !== 'Gastos Generales');
+        // Filtrar: ingresos NO usan "Otros Gastos"
+        const areasIngreso = response.data.filter(a => a.nombre !== 'Otros Gastos');
         setAreas(areasIngreso);
       } catch (error) {
         console.error('Error cargando áreas:', error);

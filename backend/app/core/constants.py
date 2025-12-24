@@ -116,7 +116,7 @@ KEYWORDS_TEMPORALES = [
 SOCIOS = ['Agustina', 'Viviana', 'Gonzalo', 'Pancho', 'Bruno']
 
 # Áreas de negocio
-AREAS = ['Jurídica', 'Notarial', 'Contable', 'Recuperación', 'Gastos Generales', 'Otros']
+AREAS = ['Jurídica', 'Notarial', 'Contable', 'Recuperación', 'Otros Gastos']
 
 # Localidades
 LOCALIDADES = ['MONTEVIDEO', 'MERCEDES']

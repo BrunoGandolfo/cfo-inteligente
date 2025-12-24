@@ -248,14 +248,28 @@ class ReportBuilder:
         Returns:
             Dict con contexto completo para Jinja2
         """
-        # Logo en base64
-        logo_path = Path(__file__).parent.parent.parent / "static" / "logo-conexion.png"
-        if logo_path.exists():
-            with open(logo_path, "rb") as f:
-                logo_base64 = base64.b64encode(f.read()).decode()
-        else:
-            logo_base64 = ""
-            logger.warning(f"Logo no encontrado en: {logo_path}")
+        # ═══════════════════════════════════════════════════════════════
+        # LOGOS INSTITUCIONALES
+        # ═══════════════════════════════════════════════════════════════
+        static_dir = Path(__file__).parent.parent.parent / "static"
+        
+        def load_logo(filename: str) -> str:
+            """Carga un logo como base64."""
+            path = static_dir / filename
+            if path.exists():
+                with open(path, "rb") as f:
+                    return base64.b64encode(f.read()).decode()
+            logger.warning(f"Logo no encontrado: {path}")
+            return ""
+        
+        # Logo completo para portadas
+        logo_completo_base64 = load_logo("logo-conexion.png")
+        
+        # Logo X para headers internos
+        logo_header_base64 = load_logo("logo_x.png")
+        
+        # Compatibilidad con templates existentes
+        logo_base64 = logo_completo_base64
         
         context = {
             # Metadata general
@@ -275,8 +289,10 @@ class ReportBuilder:
             'variacion_mom_gastos': metricas.get('variacion_mom_gastos'),
             'variacion_mom_rentabilidad': metricas.get('variacion_mom_rentabilidad'),
             
-            # Logo
-            'logo_base64': logo_base64,
+            # Logos institucionales
+            'logo_completo_base64': logo_completo_base64,  # Para portadas
+            'logo_header_base64': logo_header_base64,      # Para headers internos
+            'logo_base64': logo_base64,                    # Compatibilidad
             
             # Métricas (spread todas las métricas)
             **metricas,

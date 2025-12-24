@@ -16,7 +16,7 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
     descripcion: ''
   });
   
-  // Áreas cargadas desde API (excluye "Otros" para gastos)
+  // Áreas cargadas desde API
   const [areas, setAreas] = useState([]);
   const [localLoading, setLocalLoading] = useState(false);
 
@@ -25,9 +25,8 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
     const cargarAreas = async () => {
       try {
         const response = await axiosClient.get('/api/catalogos/areas');
-        // Filtrar: gastos NO usan "Otros"
-        const areasGasto = response.data.filter(a => a.nombre !== 'Otros');
-        setAreas(areasGasto);
+        // Gastos pueden usar todas las áreas (incluye "Otros Gastos")
+        setAreas(response.data);
       } catch (error) {
         console.error('Error cargando áreas:', error);
       }
