@@ -12,7 +12,7 @@ class SQLResultValidators:
     LIMITES = {
         'distribucion_socio_max': 100_000,      # $ 100K por distribución individual
         'distribucion_socio_min': 0,
-        'facturacion_mes_max': 10_000_000,      # $ 10M por mes
+        'facturacion_mes_max': 50_000_000,      # $ 50M por mes
         'facturacion_dia_max': 1_000_000,       # $ 1M por día
         'gasto_mes_max': 5_000_000,             # $ 5M gastos/mes
         'gasto_dia_max': 500_000,               # $ 500K gastos/día

@@ -173,26 +173,6 @@ def get_operations_repository(
 
 
 # ═══════════════════════════════════════════════════════════════
-# REPORT BUILDER
-# ═══════════════════════════════════════════════════════════════
-
-@lru_cache()
-def get_report_builder():
-    """
-    Provee ReportBuilder (singleton).
-    
-    Returns:
-        ReportBuilder configurado con paths default
-    """
-    from app.services.pdf.report_builder import ReportBuilder
-    
-    builder = ReportBuilder()
-    logger.info("ReportBuilder inicializado (singleton)")
-    
-    return builder
-
-
-# ═══════════════════════════════════════════════════════════════
 # INSIGHTS ORCHESTRATOR
 # ═══════════════════════════════════════════════════════════════
 
@@ -250,27 +230,6 @@ def create_metrics_aggregator(
         operaciones_comparacion=operaciones_comparacion,
         historico_mensual=historico_mensual
     )
-
-
-# ═══════════════════════════════════════════════════════════════
-# CHART FACTORY
-# ═══════════════════════════════════════════════════════════════
-
-def get_chart_factory(paleta: str = 'moderna_2024'):
-    """
-    Provee ChartFactory con configuración.
-    
-    Args:
-        paleta: Paleta de colores
-        
-    Returns:
-        ChartFactory configurado
-    """
-    from app.services.charts.chart_factory import ChartFactory
-    
-    # ChartFactory es stateless, no necesita config en constructor
-    # La config se pasa al crear cada chart
-    return ChartFactory
 
 
 # ═══════════════════════════════════════════════════════════════

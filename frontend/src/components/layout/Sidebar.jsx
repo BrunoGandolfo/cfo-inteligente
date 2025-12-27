@@ -1,8 +1,8 @@
-import { Home, FileText, BarChart3, TrendingUp, Settings, Sparkles } from 'lucide-react';
+import { Home, FileText, TrendingUp, Settings, Sparkles } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
-export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onReportsToggle }) {
+export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
   // Verificar si el usuario es socio
   const esSocio = localStorage.getItem('esSocio') === 'true';
 
@@ -10,7 +10,6 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onRep
   const allItems = [
     { key: 'Dashboard', icon: Home, label: 'Dashboard' },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
-    { key: 'Reportes', icon: BarChart3, label: 'Reportes', action: onReportsToggle },
     { key: 'Análisis', icon: TrendingUp, label: 'Análisis' },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
     { key: 'Configuración', icon: Settings, label: 'Configuración' },
@@ -56,7 +55,6 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onRep
 Sidebar.propTypes = {
   active: PropTypes.string,
   onChatToggle: PropTypes.func,
-  onOpsToggle: PropTypes.func,
-  onReportsToggle: PropTypes.func
+  onOpsToggle: PropTypes.func
 };
 export default Sidebar;

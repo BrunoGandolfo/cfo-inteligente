@@ -4,8 +4,6 @@ from app.core.config import settings
 from app.api.auth import router as auth_router
 from app.api.operaciones import router as operaciones_router
 from app.api.tipo_cambio import router as tipo_cambio_router
-from app.api.reportes import router as reportes_router
-from app.api import reportes_dashboard
 
 app = FastAPI(
     title="CFO Inteligente API",
@@ -25,8 +23,6 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(operaciones_router, prefix="/api/operaciones", tags=["operaciones"])
 app.include_router(tipo_cambio_router, prefix="/api/tipo-cambio", tags=["tipo_cambio"])
-app.include_router(reportes_router, prefix="/api/reportes", tags=["reportes"])
-app.include_router(reportes_dashboard.router, prefix="/api/reportes", tags=["reportes"])
 
 @app.get("/")
 def read_root():
@@ -41,14 +37,12 @@ app.include_router(cfo_router, prefix="/api/cfo", tags=["cfo"])
 from app.api.cfo_streaming import router as cfo_streaming_router
 app.include_router(cfo_streaming_router, prefix="/api/cfo", tags=["cfo-streaming"])
 
+from app.api.chat_export import router as chat_export_router
+app.include_router(chat_export_router, prefix="/api/cfo", tags=["cfo-export"])
+
 from app.api.frases_motivacionales import router as frases_router
 app.include_router(frases_router)
 
 from app.api.catalogos import router as catalogos_router
 app.include_router(catalogos_router, prefix="/api/catalogos", tags=["catalogos"])
 
-try:
-    from app.api.endpoints import reports as reports_endpoints
-    app.include_router(reports_endpoints.router, prefix="/api/reports", tags=["reports"])
-except ImportError:
-    pass  # Endpoints opcionales

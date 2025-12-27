@@ -138,10 +138,10 @@ export function useStreamingChat() {
             else if (eventType === 'done') {
               const parsed = JSON.parse(dataStr);
               
-              // Finalizar streaming
+              // Finalizar streaming y guardar ID del backend para exportar
               setMessages(prev => prev.map(msg =>
                 msg.id === assistantMsgId
-                  ? { ...msg, streaming: false }
+                  ? { ...msg, streaming: false, backendId: parsed.mensaje_id }
                   : msg
               ));
               

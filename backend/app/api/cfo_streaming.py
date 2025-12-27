@@ -248,15 +248,17 @@ def preguntar_cfo_stream(
             elif validacion_canonica.get('validado'):
                 logger.info(f"Stream: Validación canónica OK - {validacion_canonica['query_canonica']}")
             
+            mensaje_guardado = None
             if conversacion_id:
-                ConversacionService.agregar_mensaje(
+                mensaje_guardado = ConversacionService.agregar_mensaje(
                     db, conversacion_id, "assistant", respuesta_final, sql_generado=sql_final
                 )
-                logger.info(f"Stream: Respuesta guardada en conversación {conversacion_id}")
+                logger.info(f"Stream: Respuesta guardada en conversación {conversacion_id}, mensaje_id={mensaje_guardado.id}")
             
             # Finalizar stream
             yield sse_format("done", {
                 "conversation_id": str(conversacion_id) if conversacion_id else None,
+                "mensaje_id": str(mensaje_guardado.id) if mensaje_guardado else None,
                 "sql": sql_final,
                 "metodo": resultado_sql.get('metodo', 'claude'),
                 "filas": len(datos)

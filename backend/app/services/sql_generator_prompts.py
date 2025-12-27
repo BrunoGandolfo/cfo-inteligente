@@ -86,14 +86,18 @@ REGLAS SQL OBLIGATORIAS:
     - "mejores/peores" (plural) = LIMIT 5 mínimo
     - "el mejor/el peor" (singular) = LIMIT 1
     - "las mejores áreas" → LIMIT 5
-16. UNION ALL CON ENUMS (CRÍTICO):
+16. COLUMNAS ENUM - SIEMPRE CASTEAR A TEXT (CRÍTICO):
     - tipo_operacion, localidad y moneda_original son ENUM en PostgreSQL
-    - SIEMPRE castear columnas ENUM a TEXT en cualquier UNION/UNION ALL
-    - Esto incluye: UNION con literales ('TOTAL'), UNION entre CTEs, UNION con subconsultas
-    - Ejemplos correctos:
-      * SELECT CAST(localidad AS TEXT) as localidad FROM ... UNION ALL SELECT 'TOTAL' as localidad
-      * SELECT CAST(tipo_operacion AS TEXT) as tipo FROM datos UNION ALL SELECT 'Resumen' as tipo
-    - NUNCA hacer: SELECT localidad FROM ... UNION ALL SELECT 'TOTAL' (FALLA)
+    - SIEMPRE hacer CAST(columna_enum AS TEXT) cuando:
+      * Se usa en UNION/UNION ALL con literales o CTEs
+      * Se renombra con alias (AS nuevo_nombre)
+      * Se compara con strings literales en expresiones complejas
+    - Ejemplos CORRECTOS:
+      * SELECT CAST(tipo_operacion AS TEXT) as detalle FROM operaciones
+      * SELECT CAST(localidad AS TEXT) as localidad FROM ... UNION ALL SELECT 'TOTAL'
+    - Ejemplos INCORRECTOS (FALLAN):
+      * SELECT tipo_operacion as detalle  -- ENUM sin CAST
+      * SELECT localidad FROM ... UNION ALL SELECT 'TOTAL'  -- ENUM vs literal
 17. PROYECCIONES DINÁMICAS:
     - Meses transcurridos: EXTRACT(MONTH FROM CURRENT_DATE)
     - Meses restantes: 12 - EXTRACT(MONTH FROM CURRENT_DATE)

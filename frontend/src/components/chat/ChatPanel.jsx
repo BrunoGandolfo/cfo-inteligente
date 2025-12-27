@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { X, Send, Sparkles, TrendingUp, DollarSign, BarChart3, CalendarDays } from 'lucide-react';
+import { X, Send, Sparkles, TrendingUp, DollarSign, BarChart3, CalendarDays, FileDown, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
 import ReactMarkdown from 'react-markdown';
@@ -8,6 +8,8 @@ import remarkGfm from 'remark-gfm';
 import { useStreamingChat } from '../../hooks/useStreamingChat';
 
 export function ChatPanel({ isOpen, onClose }) {
+  const [exportando, setExportando] = useState(null);
+  
   const {
     messages,
     input,
@@ -25,6 +27,48 @@ export function ChatPanel({ isOpen, onClose }) {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  // Función para exportar mensaje a PDF
+  const exportarPDF = async (mensajeId) => {
+    if (!mensajeId || exportando) return;
+    
+    try {
+      setExportando(mensajeId);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/cfo/export-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ mensaje_id: mensajeId })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Error exportando PDF');
+      }
+      
+      // Descargar el PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const disposition = response.headers.get('Content-Disposition');
+      a.download = disposition?.split('filename=')[1]?.replace(/"/g, '') || 'reporte_cfo.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error exportando PDF:', error);
+      alert(error.message);
+    } finally {
+      setExportando(null);
+    }
+  };
 
   // Auto-expand textarea
   useEffect(() => {
@@ -183,7 +227,7 @@ export function ChatPanel({ isOpen, onClose }) {
                 <div
                   key={idx}
                   className={clsx(
-                    'flex gap-2',
+                    'flex gap-2 group',
                     msg.role === 'user' ? 'justify-end' : 'justify-start'
                   )}
                 >
@@ -194,12 +238,33 @@ export function ChatPanel({ isOpen, onClose }) {
                   )}
                   <div
                     className={clsx(
-                      'px-3 py-2.5 rounded-2xl text-sm font-sans',
+                      'px-3 py-2.5 rounded-2xl text-sm font-sans relative',
                       msg.role === 'user'
                         ? 'bg-blue-600 text-white rounded-tr-sm max-w-[85%]'
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white rounded-tl-sm max-w-full'
                     )}
                   >
+                    {/* Botón exportar PDF - solo para assistant con backendId */}
+                    {msg.role === 'assistant' && msg.backendId && !msg.streaming && msg.content && (
+                      <button
+                        onClick={() => exportarPDF(msg.backendId)}
+                        disabled={exportando === msg.backendId}
+                        className={clsx(
+                          'absolute -top-2 -right-2 p-1.5 rounded-lg',
+                          'bg-white dark:bg-slate-700 shadow-md border border-gray-200 dark:border-slate-600',
+                          'hover:bg-blue-50 dark:hover:bg-slate-600 transition-all duration-200',
+                          'opacity-0 group-hover:opacity-100 focus:opacity-100',
+                          exportando === msg.backendId && 'opacity-100'
+                        )}
+                        title="Exportar a PDF"
+                      >
+                        {exportando === msg.backendId ? (
+                          <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                        ) : (
+                          <FileDown className="w-4 h-4 text-gray-500 dark:text-slate-400 hover:text-blue-500" />
+                        )}
+                      </button>
+                    )}
                     {msg.role === 'assistant' ? (
                       <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
