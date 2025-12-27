@@ -20,6 +20,7 @@ from app.core.database import get_db
 from app.core.logger import get_logger
 from app.core.config import settings
 from app.core.security import get_current_user
+from app.core.constants import CLAUDE_MAX_TOKENS
 from app.services.conversacion_service import ConversacionService
 from app.services.sql_router import generar_sql_inteligente
 from app.services.cfo_ai_service import ejecutar_consulta_cfo
@@ -198,7 +199,7 @@ def preguntar_cfo_stream(
                 
                 with client.messages.stream(
                     model="claude-sonnet-4-5-20250929",
-                    max_tokens=1500,
+                    max_tokens=CLAUDE_MAX_TOKENS,
                     temperature=0.1,
                     messages=[{"role": "user", "content": prompt}]
                 ) as stream:
