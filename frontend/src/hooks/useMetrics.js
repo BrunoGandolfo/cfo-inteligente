@@ -20,7 +20,7 @@ export function useMetrics() {
           localidad: localidad === 'Todas' ? undefined : localidad,
           moneda_vista: monedaVista
         };
-        const { data } = await axiosClient.get('/api/reportes/dashboard', { params });
+        const { data } = await axiosClient.get('/api/metricas/dashboard', { params });
         setMetricas(data.metricas);
         setFiltros(data.filtros_aplicados);
         setRefreshKey(k => k + 1);

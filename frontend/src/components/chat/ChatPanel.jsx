@@ -24,6 +24,9 @@ export function ChatPanel({ isOpen, onClose }) {
     scrollToBottom
   } = useStreamingChat();
 
+  // Contador de mensajes del usuario para límite
+  const mensajesUsuario = messages.filter(m => m.role === 'user').length;
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
@@ -244,33 +247,40 @@ export function ChatPanel({ isOpen, onClose }) {
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white rounded-tl-sm max-w-full'
                     )}
                   >
-                    {/* Botón exportar PDF - solo para assistant con backendId */}
-                    {msg.role === 'assistant' && msg.backendId && !msg.streaming && msg.content && (
-                      <button
-                        onClick={() => exportarPDF(msg.backendId)}
-                        disabled={exportando === msg.backendId}
-                        className={clsx(
-                          'absolute -top-2 -right-2 p-1.5 rounded-lg',
-                          'bg-white dark:bg-slate-700 shadow-md border border-gray-200 dark:border-slate-600',
-                          'hover:bg-blue-50 dark:hover:bg-slate-600 transition-all duration-200',
-                          'opacity-0 group-hover:opacity-100 focus:opacity-100',
-                          exportando === msg.backendId && 'opacity-100'
-                        )}
-                        title="Exportar a PDF"
-                      >
-                        {exportando === msg.backendId ? (
-                          <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                        ) : (
-                          <FileDown className="w-4 h-4 text-gray-500 dark:text-slate-400 hover:text-blue-500" />
-                        )}
-                      </button>
-                    )}
                     {msg.role === 'assistant' ? (
                       <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                       </div>
                     ) : (
                       <p className="whitespace-pre-wrap">{msg.content}</p>
+                    )}
+                    
+                    {/* Botón Exportar PDF - visible después de cada respuesta */}
+                    {msg.role === 'assistant' && msg.backendId && !msg.streaming && msg.content && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                        <button
+                          onClick={() => exportarPDF(msg.backendId)}
+                          disabled={exportando === msg.backendId}
+                          className={clsx(
+                            'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm',
+                            'bg-blue-600 hover:bg-blue-700 text-white',
+                            'disabled:opacity-50 disabled:cursor-not-allowed',
+                            'transition-all duration-200 shadow-sm hover:shadow-md'
+                          )}
+                        >
+                          {exportando === msg.backendId ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Generando PDF...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FileDown className="w-4 h-4" />
+                              <span>📄 Exportar a PDF</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     )}
                   </div>
                   {msg.role === 'user' && (
@@ -298,6 +308,31 @@ export function ChatPanel({ isOpen, onClose }) {
               
               <div ref={messagesEndRef} />
             </div>
+
+            {/* Avisos de límite de mensajes */}
+            {mensajesUsuario >= 25 && mensajesUsuario < 27 && (
+              <div className="mx-4 mb-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-lg">
+                <p className="text-sm text-yellow-700 dark:text-yellow-400 flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>Quedan pocos mensajes en esta conversación. Considerá iniciar una nueva para mejor precisión.</span>
+                </p>
+              </div>
+            )}
+            
+            {mensajesUsuario >= 27 && (
+              <div className="mx-4 mb-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg">
+                <p className="text-sm text-red-700 dark:text-red-400 flex items-center gap-2 mb-2">
+                  <span>🔴</span>
+                  <span>Límite de conversación alcanzado. Iniciá una nueva conversación para continuar.</span>
+                </p>
+                <button
+                  onClick={handleClearHistory}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  🔄 Nueva conversación
+                </button>
+              </div>
+            )}
 
             {/* Input */}
             <div className="p-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">

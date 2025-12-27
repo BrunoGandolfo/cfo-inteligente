@@ -17,7 +17,7 @@ export function useChartData() {
           fecha_hasta: formatISO(to, { representation: 'date' }),
           localidad: localidad === 'Todas' ? undefined : localidad
         };
-        const { data } = await axiosClient.get('/api/reportes/operaciones-grafico', { params });
+        const { data } = await axiosClient.get('/api/metricas/operaciones-grafico', { params });
         setOperaciones(data.operaciones || []);
       } catch (error) {
         console.error('Error fetching chart data:', error);

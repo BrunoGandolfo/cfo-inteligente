@@ -33,24 +33,26 @@ export function useStreamingChat() {
     setInput('');
     setIsTyping(true);
 
-    // Agregar mensaje del usuario
+    // CAMBIO 2: Limpiar historial visual (solo frontend, backend mantiene contexto)
+    // Mostrar solo la pregunta actual y su respuesta
     const userMsg = {
       role: 'user',
       content: userMessage,
       timestamp: new Date()
     };
-    setMessages(prev => [...prev, userMsg]);
-    scrollToBottom();
-
+    
     // Crear mensaje assistant vacío para ir llenando
     const assistantMsgId = Date.now();
-    setMessages(prev => [...prev, {
+    const assistantMsg = {
       id: assistantMsgId,
       role: 'assistant',
       content: '',
       timestamp: new Date(),
       streaming: true
-    }]);
+    };
+    
+    // Reemplazar todos los mensajes con solo pregunta + respuesta actual
+    setMessages([userMsg, assistantMsg]);
     scrollToBottom();
 
     try {
