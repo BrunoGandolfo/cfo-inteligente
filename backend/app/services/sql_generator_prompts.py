@@ -87,7 +87,9 @@ REGLAS SQL OBLIGATORIAS:
     - "el mejor/el peor" (singular) = LIMIT 1
     - "las mejores áreas" → LIMIT 5
 16. UNION ALL CON ENUMS:
-    - tipo_operacion es ENUM, para UNION con texto usar: CAST(tipo_operacion AS TEXT)
+    - tipo_operacion, localidad y moneda_original son ENUM en PostgreSQL
+    - Para UNION ALL con texto SIEMPRE usar: CAST(columna AS TEXT)
+    - Ejemplos: CAST(localidad AS TEXT), CAST(tipo_operacion AS TEXT), CAST(moneda_original AS TEXT)
     - O usar columna 'orden' separada (0=datos, 1=total)
 17. PROYECCIONES DINÁMICAS:
     - Meses transcurridos: EXTRACT(MONTH FROM CURRENT_DATE)
