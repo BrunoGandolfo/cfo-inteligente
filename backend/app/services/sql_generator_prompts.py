@@ -100,6 +100,28 @@ REGLAS SQL OBLIGATORIAS:
     - NUNCA hardcodear números de meses (ej: "/ 8 * 4")
     - Proyección anual: SUM(monto) / EXTRACT(MONTH FROM CURRENT_DATE) * 12
 18. ORDER BY DESPUÉS DE UNION: Solo nombre/posición de columna (no CASE/funciones)
+19. MÚLTIPLES ANÁLISIS EN UNA SOLA CONSULTA (CRÍTICO):
+    - NUNCA generar múltiples queries separadas con punto y coma (;)
+    - SIEMPRE combinar todo en UNA sola query usando WITH y UNION ALL
+    - Estructura obligatoria para múltiples análisis:
+      WITH 
+        analisis_1 AS (SELECT 'SECCION_1' as seccion, ... FROM ...),
+        analisis_2 AS (SELECT 'SECCION_2' as seccion, ... FROM ...)
+      SELECT * FROM analisis_1
+      UNION ALL
+      SELECT * FROM analisis_2
+      ORDER BY seccion;
+    - Todas las CTEs deben tener las MISMAS columnas para poder hacer UNION ALL
+    - Si las columnas difieren, usar NULL::tipo para completar
+20. GROUP BY CON CASE EXPRESSIONS:
+    - El CASE en SELECT y GROUP BY debe ser IDÉNTICO (misma expresión exacta)
+    - MAL:  SELECT CASE...THEN 'texto' END, GROUP BY CASE...THEN numero END
+    - BIEN: SELECT CASE...THEN 'texto' END, GROUP BY CASE...THEN 'texto' END
+    - Alternativa: usar subconsulta o CTE para calcular primero, luego agrupar
+21. SINTAXIS DE JOINS:
+    - SIEMPRE escribir la palabra JOIN completa
+    - LEFT JOIN, RIGHT JOIN, INNER JOIN, FULL OUTER JOIN
+    - NUNCA escribir solo LEFT, RIGHT, INNER sin JOIN
 """
 
 SQL_EXAMPLES = """

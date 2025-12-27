@@ -69,7 +69,8 @@ class SQLResultValidators:
         for row in resultado:
             for key in ['rentabilidad', 'margen', 'margen_pct', 'rentabilidad_pct']:
                 if key in row and row[key] is not None:
-                    rentabilidad = float(row[key])
+                    valor = str(row[key]).replace('%', '').strip()
+                    rentabilidad = float(valor) if valor else 0.0
                     return cls.validar_rango(
                         rentabilidad,
                         cls.LIMITES['rentabilidad_min'],
@@ -90,7 +91,8 @@ class SQLResultValidators:
         for row in resultado:
             for key in ['porcentaje', 'pct', 'porcentaje_uyu', 'porcentaje_usd']:
                 if key in row and row[key] is not None:
-                    pct = float(row[key])
+                    valor = str(row[key]).replace('%', '').strip()
+                    pct = float(valor) if valor else 0.0
                     
                     if pct < 0 or pct > 100:
                         return {
