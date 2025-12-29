@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import axiosClient from '../services/api/axiosClient';
+import axiosClient from '../../services/api/axiosClient';
 import toast from 'react-hot-toast';
-import ModalBase from './shared/ModalBase';
+import ModalBase from '../shared/ModalBase';
 
 function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading, editMode }) {
   const [formData, setFormData] = useState({

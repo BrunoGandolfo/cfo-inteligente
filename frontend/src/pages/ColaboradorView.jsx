@@ -8,8 +8,8 @@
 import { useState, useEffect } from 'react';
 import { ArrowUpCircle, ArrowDownCircle, CalendarCheck } from 'lucide-react';
 import axiosClient from '../services/api/axiosClient';
-import ModalIngreso from './ModalIngreso';
-import ModalGasto from './ModalGasto';
+import ModalIngreso from '../components/modals/ModalIngreso';
+import ModalGasto from '../components/modals/ModalGasto';
 
 function ColaboradorView() {
   const [operaciones, setOperaciones] = useState([]);

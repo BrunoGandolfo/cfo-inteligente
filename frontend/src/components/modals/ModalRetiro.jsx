@@ -1,50 +1,28 @@
 import { useState, useEffect } from 'react';
-import axiosClient from '../services/api/axiosClient';
+import axiosClient from '../../services/api/axiosClient';
 import toast from 'react-hot-toast';
-import ModalBase from './shared/ModalBase';
+import ModalBase from '../shared/ModalBase';
 
-function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
+function ModalRetiro({ isOpen, onClose, onSuccess, setLoading, editMode }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
-    proveedor: '',
-    proveedor_telefono: '',
-    area_id: '',
     localidad: 'Montevideo',
-    monto_original: '',
-    moneda_original: 'UYU',
+    monto_uyu: '',
+    monto_usd: '',
     tipo_cambio: '',
     descripcion: ''
   });
   
-  // Áreas cargadas desde API
-  const [areas, setAreas] = useState([]);
   const [localLoading, setLocalLoading] = useState(false);
-
-  // Cargar áreas desde API
-  useEffect(() => {
-    const cargarAreas = async () => {
-      try {
-        const response = await axiosClient.get('/api/catalogos/areas');
-        // Gastos pueden usar todas las áreas (incluye "Otros Gastos")
-        setAreas(response.data);
-      } catch (error) {
-        console.error('Error cargando áreas:', error);
-      }
-    };
-    cargarAreas();
-  }, []);
 
   useEffect(() => {
     if (isOpen) {
       if (editMode) {
         setFormData({
           fecha: editMode.fecha,
-          proveedor: editMode.proveedor || '',
-          proveedor_telefono: '',
-          area_id: editMode.area?.id || editMode.area_id || '',
           localidad: editMode.localidad || 'Montevideo',
-          monto_original: editMode.monto_original?.toString() || '',
-          moneda_original: editMode.moneda_original || 'UYU',
+          monto_uyu: editMode.monto_uyu?.toString() || '',
+          monto_usd: editMode.monto_usd?.toString() || '',
           tipo_cambio: editMode.tipo_cambio?.toString() || '',
           descripcion: editMode.descripcion || ''
         });
@@ -70,22 +48,19 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
     try {
       const dataToSend = {
         fecha: formData.fecha,
-        proveedor: formData.proveedor || null,
-        proveedor_telefono: formData.proveedor_telefono || null,
-        area_id: formData.area_id,
         localidad: formData.localidad,
-        monto_original: parseFloat(formData.monto_original),
-        moneda_original: formData.moneda_original,
+        monto_uyu: parseFloat(formData.monto_uyu) || 0,
+        monto_usd: parseFloat(formData.monto_usd) || 0,
         tipo_cambio: parseFloat(formData.tipo_cambio) || 40.50,
         descripcion: formData.descripcion || null
       };
 
       if (editMode) {
         await axiosClient.patch(`/api/operaciones/${editMode.id}`, dataToSend);
-        toast.success('✅ Gasto actualizado correctamente');
+        toast.success('✅ Retiro actualizado correctamente');
       } else {
-        await axiosClient.post('/api/operaciones/gasto', dataToSend);
-        toast.success('✅ Gasto registrado correctamente');
+        await axiosClient.post('/api/operaciones/retiro', dataToSend);
+        toast.success('✅ Retiro registrado correctamente');
       }
       
       onSuccess();
@@ -93,12 +68,9 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
       
       setFormData({
         fecha: new Date().toISOString().split('T')[0],
-        proveedor: '',
-        proveedor_telefono: '',
-        area_id: '',
         localidad: 'Montevideo',
-        monto_original: '',
-        moneda_original: 'UYU',
+        monto_uyu: '',
+        monto_usd: '',
         tipo_cambio: '',
         descripcion: ''
       });
@@ -112,14 +84,14 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
     <ModalBase
       isOpen={isOpen}
       onClose={onClose}
-      title={editMode ? "Editar Gasto" : "Registrar Gasto"}
+      title={editMode ? "Editar Retiro" : "Registrar Retiro"}
       submitLabel={editMode ? "Actualizar" : "Guardar"}
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"
-      borderColor="border-red-500"
+      borderColor="border-amber-500"
     >
-      <div className="grid grid-cols-3 gap-2 mb-2">
+      <div className="grid grid-cols-2 gap-2 mb-2">
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Fecha</label>
           <input
@@ -132,65 +104,39 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Área *</label>
-          <select
-            required
-            value={formData.area_id}
-            onChange={(e) => setFormData({...formData, area_id: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-          >
-            <option value="">Seleccione...</option>
-            {areas.map(area => (
-              <option key={area.id} value={area.id}>{area.nombre}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Local</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Localidad</label>
           <select
             value={formData.localidad}
             onChange={(e) => setFormData({...formData, localidad: e.target.value})}
             className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
           >
-            <option value="Montevideo">MVD</option>
+            <option value="Montevideo">Montevideo</option>
             <option value="Mercedes">Mercedes</option>
           </select>
         </div>
       </div>
 
-      <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Proveedor *</label>
-        <input
-          type="text"
-          required
-          value={formData.proveedor}
-          onChange={(e) => setFormData({...formData, proveedor: e.target.value})}
-          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-          placeholder="Nombre del proveedor"
-        />
-      </div>
-
       <div className="grid grid-cols-3 gap-2 mb-2">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Moneda</label>
-          <select
-            value={formData.moneda_original}
-            onChange={(e) => setFormData({...formData, moneda_original: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-          >
-            <option value="UYU">UYU</option>
-            <option value="USD">USD</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto *</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto UYU</label>
           <input
             type="number"
-            required
             step="0.01"
-            min="0.01"
-            value={formData.monto_original}
-            onChange={(e) => setFormData({...formData, monto_original: e.target.value})}
+            min="0"
+            value={formData.monto_uyu}
+            onChange={(e) => setFormData({...formData, monto_uyu: e.target.value})}
+            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            placeholder="0.00"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto USD</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.monto_usd}
+            onChange={(e) => setFormData({...formData, monto_usd: e.target.value})}
             className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
             placeholder="0.00"
           />
@@ -199,7 +145,6 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">T.C.</label>
           <input
             type="number"
-            required
             step="0.01"
             min="0.01"
             value={formData.tipo_cambio}
@@ -223,5 +168,5 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
   );
 }
 
-export default ModalGasto;
+export default ModalRetiro;
 

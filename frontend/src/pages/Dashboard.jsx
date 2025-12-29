@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import MetricsGrid from '../components/metrics/MetricsGrid';
-import ModalIngreso from '../components/ModalIngreso';
-import ModalGasto from '../components/ModalGasto';
-import ModalRetiro from '../components/ModalRetiro';
-import ModalDistribucion from '../components/ModalDistribucion';
+import ModalIngreso from '../components/modals/ModalIngreso';
+import ModalGasto from '../components/modals/ModalGasto';
+import ModalRetiro from '../components/modals/ModalRetiro';
+import ModalDistribucion from '../components/modals/ModalDistribucion';
 import { useMetrics } from '../hooks/useMetrics';
 import { formatMoney } from '../utils/formatters';
 import Button from '../components/ui/Button';
@@ -13,7 +13,7 @@ import { useChartData } from '../hooks/useChartData';
 import ActiveFilters from '../components/filters/ActiveFilters';
 import { TrendingUp, TrendingDown, Wallet, Users } from 'lucide-react';
 import OperationButton from '../components/operations/OperationButton';
-import ColaboradorView from '../components/ColaboradorView';
+import ColaboradorView from './ColaboradorView';
 
 function Dashboard() {
   // Verificar si el usuario es socio (solo socios ven el dashboard completo)

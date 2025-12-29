@@ -7,10 +7,10 @@ import toast from 'react-hot-toast';
 import { useMetrics } from '../../hooks/useMetrics';
 import OperationsTable from './OperationsTable';
 import OperationDetails from './OperationDetails';
-import ModalIngreso from '../ModalIngreso';
-import ModalGasto from '../ModalGasto';
-import ModalRetiro from '../ModalRetiro';
-import ModalDistribucion from '../ModalDistribucion';
+import ModalIngreso from '../modals/ModalIngreso';
+import ModalGasto from '../modals/ModalGasto';
+import ModalRetiro from '../modals/ModalRetiro';
+import ModalDistribucion from '../modals/ModalDistribucion';
 
 export function OperationsPanel({ isOpen, onClose }) {
   const { refreshKey } = useMetrics();

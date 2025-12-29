@@ -24,8 +24,6 @@ CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
 DEFAULT_PG_HOST = "localhost"
 DEFAULT_PG_PORT = 5432
 DEFAULT_PG_DB = "cfo_inteligente"
-DEFAULT_PG_USER = "cfo_user"
-DEFAULT_PG_PASS = "cfo_pass"
 
 # ══════════════════════════════════════════════════════════════
 # LÍMITES DE VALIDACIÓN
