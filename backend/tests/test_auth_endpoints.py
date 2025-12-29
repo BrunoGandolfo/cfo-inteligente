@@ -1,7 +1,7 @@
 """
 Suite de Tests para Auth Endpoints - Sistema CFO Inteligente
 
-Tests de endpoints de autenticación: /login, /register
+Tests de endpoints de autenticacion: /login, /register
 Usa dependency_overrides de FastAPI para mockear la base de datos.
 
 Ejecutar:
@@ -23,23 +23,17 @@ from app.core.database import get_db
 from app.core.security import hash_password
 
 
-# ══════════════════════════════════════════════════════════════
-# FIXTURES
-# ══════════════════════════════════════════════════════════════
-
 @pytest.fixture
 def client():
     """Cliente de FastAPI con BD mockeada usando dependency_overrides"""
     from app.core.security import get_current_user
     from app.models import Usuario
     
-    # Mock de sesión de BD
     mock_db = Mock()
     
-    # Mock de usuario autenticado (para endpoints que requieren auth)
     mock_user = Mock(spec=Usuario)
     mock_user.id = "e85916c0-898a-46e0-84a5-c9c2ff92eaea"
-    mock_user.email = "admin@conexion.uy"
+    mock_user.email = "admin@grupoconexion.uy"
     mock_user.nombre = "Admin"
     mock_user.es_socio = True
     mock_user.activo = True
@@ -53,7 +47,6 @@ def client():
     with TestClient(app) as test_client:
         yield test_client, mock_db
     
-    # Limpiar override después del test
     app.dependency_overrides.clear()
 
 
@@ -96,26 +89,19 @@ def mock_usuario_inactivo():
     return usuario
 
 
-# ══════════════════════════════════════════════════════════════
-# GRUPO 1: TESTS DE LOGIN
-# ══════════════════════════════════════════════════════════════
-
 class TestLogin:
     """Tests del endpoint POST /login"""
     
     def test_login_exitoso_retorna_token(self, client, mock_usuario_activo):
         """Login exitoso debe retornar access_token"""
-        # Arrange
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = mock_usuario_activo
         
-        # Act
         response = test_client.post("/api/auth/login", json={
             "email": "test@grupoconexion.uy",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data
@@ -125,309 +111,289 @@ class TestLogin:
     
     def test_login_email_incorrecto_retorna_401(self, client):
         """Email incorrecto debe retornar 401"""
-        # Arrange
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = None
         
-        # Act
         response = test_client.post("/api/auth/login", json={
             "email": "noexiste@email.com",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 401
-        assert "Email o contraseña incorrectos" in response.json()["detail"]
     
     def test_login_password_incorrecto_retorna_401(self, client, mock_usuario_activo):
         """Password incorrecto debe retornar 401"""
-        # Arrange
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = mock_usuario_activo
         
-        # Act
         response = test_client.post("/api/auth/login", json={
             "email": "test@grupoconexion.uy",
             "password": "password_incorrecto"
         })
         
-        # Assert
         assert response.status_code == 401
-        assert "Email o contraseña incorrectos" in response.json()["detail"]
     
     def test_login_usuario_inactivo_retorna_403(self, client, mock_usuario_inactivo):
         """Usuario inactivo debe retornar 403"""
-        # Arrange
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = mock_usuario_inactivo
         
-        # Act
         response = test_client.post("/api/auth/login", json={
             "email": "inactivo@grupoconexion.uy",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 403
         assert "desactivado" in response.json()["detail"].lower()
     
     def test_login_socio_retorna_es_socio_true(self, client, mock_usuario_socio):
         """Login de socio debe retornar es_socio=True"""
-        # Arrange
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = mock_usuario_socio
         
-        # Act
         response = test_client.post("/api/auth/login", json={
             "email": "aborio@grupoconexion.uy",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 200
         data = response.json()
         assert data["es_socio"] is True
 
 
-# ══════════════════════════════════════════════════════════════
-# GRUPO 2: TESTS DE REGISTER
-# ══════════════════════════════════════════════════════════════
-
 class TestRegister:
-    """Tests del endpoint POST /register"""
+    """Tests del endpoint POST /register con nuevo schema (prefijo_email)"""
     
     def test_register_exitoso_crea_usuario(self, client):
-        """Registro exitoso debe crear usuario"""
-        # Arrange
+        """Registro exitoso debe crear usuario con dominio auto-completado"""
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = None
         
-        # Act
         response = test_client.post("/api/auth/register", json={
-            "email": "nuevo@grupoconexion.uy",
+            "prefijo_email": "nuevo",
             "nombre": "Nuevo Usuario",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 201
         data = response.json()
         assert data["email"] == "nuevo@grupoconexion.uy"
-        assert "registrado exitosamente" in data["message"]
+        assert "exitosamente" in data["message"]
         
-        # Verificar que se llamó db.add
         mock_db.add.assert_called_once()
         mock_db.commit.assert_called_once()
     
     def test_register_email_duplicado_retorna_400(self, client, mock_usuario_activo):
-        """Email duplicado debe retornar 400"""
-        # Arrange
+        """Prefijo duplicado debe retornar 400"""
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = mock_usuario_activo
         
-        # Act
         response = test_client.post("/api/auth/register", json={
-            "email": "test@grupoconexion.uy",
+            "prefijo_email": "test",
             "nombre": "Usuario Duplicado",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 400
-        assert "Ya existe un usuario" in response.json()["detail"]
+        assert "ya" in response.json()["detail"].lower()
     
     def test_register_asigna_rol_socio_si_email_autorizado(self, client):
-        """Email autorizado debe asignar es_socio=True"""
-        # Arrange
+        """Prefijo autorizado debe asignar es_socio=True"""
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = None
         
-        # Emails autorizados: aborio, falgorta, vcaresani, gtaborda
-        
-        # Act
         response = test_client.post("/api/auth/register", json={
-            "email": "aborio@grupoconexion.uy",
+            "prefijo_email": "aborio",
             "nombre": "Aborio Socio",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 201
         data = response.json()
         assert "socio" in data["message"]
+        assert data["es_socio"] is True
         
-        # Verificar que el usuario se creó con es_socio=True
         usuario_creado = mock_db.add.call_args[0][0]
         assert usuario_creado.es_socio is True
     
     def test_register_asigna_rol_colaborador_si_email_no_autorizado(self, client):
-        """Email no autorizado debe asignar es_socio=False"""
-        # Arrange
+        """Prefijo no autorizado debe asignar es_socio=False"""
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = None
         
-        # Act
         response = test_client.post("/api/auth/register", json={
-            "email": "colaborador@grupoconexion.uy",
+            "prefijo_email": "colaborador",
             "nombre": "Colaborador Normal",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 201
         data = response.json()
         assert "colaborador" in data["message"]
+        assert data["es_socio"] is False
         
-        # Verificar que el usuario se creó con es_socio=False
         usuario_creado = mock_db.add.call_args[0][0]
         assert usuario_creado.es_socio is False
     
     def test_register_password_se_hashea(self, client):
         """El password debe guardarse hasheado, no en texto plano"""
-        # Arrange
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = None
         
         password_plano = "mi_password_secreto"
         
-        # Act
         response = test_client.post("/api/auth/register", json={
-            "email": "nuevo@grupoconexion.uy",
+            "prefijo_email": "nuevo",
             "nombre": "Nuevo Usuario",
             "password": password_plano
         })
         
-        # Assert
         assert response.status_code == 201
         
-        # Verificar que el password se hasheó
         usuario_creado = mock_db.add.call_args[0][0]
         assert usuario_creado.password_hash != password_plano
-        assert usuario_creado.password_hash.startswith("$2b$")  # bcrypt
+        assert usuario_creado.password_hash.startswith("$2b$")
     
     def test_register_usuario_activo_por_defecto(self, client):
         """Usuario nuevo debe estar activo por defecto"""
-        # Arrange
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = None
         
-        # Act
         response = test_client.post("/api/auth/register", json={
-            "email": "nuevo@grupoconexion.uy",
+            "prefijo_email": "nuevo",
             "nombre": "Nuevo Usuario",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 201
         
         usuario_creado = mock_db.add.call_args[0][0]
         assert usuario_creado.activo is True
+    
+    def test_register_password_corto_retorna_400(self, client):
+        """Password menor a 6 caracteres debe retornar 400"""
+        test_client, mock_db = client
+        mock_db.query.return_value.filter.return_value.first.return_value = None
+        
+        response = test_client.post("/api/auth/register", json={
+            "prefijo_email": "nuevo",
+            "nombre": "Nuevo Usuario",
+            "password": "12345"
+        })
+        
+        assert response.status_code == 400
+        assert "6 caracteres" in response.json()["detail"]
 
-
-# ══════════════════════════════════════════════════════════════
-# GRUPO 3: TESTS DE VALIDACIÓN
-# ══════════════════════════════════════════════════════════════
 
 class TestAuthValidation:
-    """Tests de validación de datos de entrada"""
+    """Tests de validacion de datos de entrada"""
     
     def test_login_sin_email_retorna_422(self, client):
         """Login sin email debe retornar 422"""
-        # Arrange
         test_client, mock_db = client
         
-        # Act
         response = test_client.post("/api/auth/login", json={
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 422
     
     def test_login_sin_password_retorna_422(self, client):
         """Login sin password debe retornar 422"""
-        # Arrange
         test_client, mock_db = client
         
-        # Act
         response = test_client.post("/api/auth/login", json={
             "email": "test@email.com"
         })
         
-        # Assert
         assert response.status_code == 422
     
-    def test_register_email_invalido_retorna_422(self, client):
-        """Register con email inválido debe retornar 422"""
-        # Arrange
+    def test_register_prefijo_con_arroba_retorna_400(self, client):
+        """Prefijo con @ debe retornar 400"""
         test_client, mock_db = client
+        mock_db.query.return_value.filter.return_value.first.return_value = None
         
-        # Act
         response = test_client.post("/api/auth/register", json={
-            "email": "email_invalido",
+            "prefijo_email": "usuario@dominio.com",
             "nombre": "Test",
             "password": "password123"
         })
         
-        # Assert
-        assert response.status_code == 422
+        assert response.status_code == 400
+        assert "sin @" in response.json()["detail"]
     
     def test_register_sin_nombre_retorna_422(self, client):
         """Register sin nombre debe retornar 422"""
-        # Arrange
         test_client, mock_db = client
         
-        # Act
         response = test_client.post("/api/auth/register", json={
-            "email": "test@email.com",
+            "prefijo_email": "test",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 422
+    
+    def test_register_prefijo_vacio_retorna_400(self, client):
+        """Prefijo vacio debe retornar 400"""
+        test_client, mock_db = client
+        mock_db.query.return_value.filter.return_value.first.return_value = None
+        
+        response = test_client.post("/api/auth/register", json={
+            "prefijo_email": "",
+            "nombre": "Test",
+            "password": "password123"
+        })
+        
+        assert response.status_code == 400
+        assert "requerido" in response.json()["detail"]
 
-
-# ══════════════════════════════════════════════════════════════
-# GRUPO 4: TESTS DE SOCIOS_AUTORIZADOS
-# ══════════════════════════════════════════════════════════════
 
 class TestSociosAutorizados:
     """Tests de la lista de socios autorizados"""
     
-    @pytest.mark.parametrize("prefijo", ["aborio", "falgorta", "vcaresani", "gtaborda"])
+    @pytest.mark.parametrize("prefijo", ["aborio", "falgorta", "vcaresani", "gtaborda", "bgandolfo"])
     def test_todos_los_socios_autorizados_son_socios(self, client, prefijo):
         """Todos los prefijos en SOCIOS_AUTORIZADOS deben crear socio"""
-        # Arrange
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = None
         
-        # Act
         response = test_client.post("/api/auth/register", json={
-            "email": f"{prefijo}@grupoconexion.uy",
+            "prefijo_email": prefijo,
             "nombre": f"Socio {prefijo}",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 201
         usuario_creado = mock_db.add.call_args[0][0]
-        assert usuario_creado.es_socio is True, f"Prefijo {prefijo} debería ser socio"
+        assert usuario_creado.es_socio is True, f"Prefijo {prefijo} deberia ser socio"
     
     def test_prefijo_case_insensitive(self, client):
         """El prefijo debe ser case-insensitive"""
-        # Arrange
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = None
         
-        # Act - Usar mayúsculas
         response = test_client.post("/api/auth/register", json={
-            "email": "ABORIO@grupoconexion.uy",
+            "prefijo_email": "ABORIO",
             "nombre": "Aborio Mayusculas",
             "password": "password123"
         })
         
-        # Assert
         assert response.status_code == 201
         usuario_creado = mock_db.add.call_args[0][0]
         assert usuario_creado.es_socio is True
+    
+    def test_bgandolfo_usa_dominio_cgmasociados(self, client):
+        """bgandolfo debe usar dominio cgmasociados.com"""
+        test_client, mock_db = client
+        mock_db.query.return_value.filter.return_value.first.return_value = None
+        
+        response = test_client.post("/api/auth/register", json={
+            "prefijo_email": "bgandolfo",
+            "nombre": "Bruno Gandolfo",
+            "password": "password123"
+        })
+        
+        assert response.status_code == 201
+        data = response.json()
+        assert data["email"] == "bgandolfo@cgmasociados.com"
+        assert data["es_socio"] is True

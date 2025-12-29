@@ -7,6 +7,29 @@ from app.core.security import verify_password, create_access_token, hash_passwor
 
 router = APIRouter()
 
+# ═══════════════════════════════════════════════════════════════
+# CONFIGURACIÓN DE DOMINIOS Y SOCIOS
+# ═══════════════════════════════════════════════════════════════
+
+# Dominio por defecto y excepciones
+DOMINIO_DEFAULT = "grupoconexion.uy"
+DOMINIOS_EXCEPCION = {
+    "bgandolfo": "cgmasociados.com"
+}
+
+# Lista de prefijos de email autorizados como socios
+SOCIOS_AUTORIZADOS = ["aborio", "falgorta", "vcaresani", "gtaborda", "bgandolfo"]
+
+def construir_email(prefijo: str) -> str:
+    """Construye el email completo según el prefijo."""
+    prefijo_lower = prefijo.lower().strip()
+    dominio = DOMINIOS_EXCEPCION.get(prefijo_lower, DOMINIO_DEFAULT)
+    return f"{prefijo_lower}@{dominio}"
+
+# ═══════════════════════════════════════════════════════════════
+# SCHEMAS
+# ═══════════════════════════════════════════════════════════════
+
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -17,17 +40,16 @@ class LoginResponse(BaseModel):
     nombre: str
     es_socio: bool
 
-# === REGISTRO ===
 class RegisterRequest(BaseModel):
-    email: EmailStr
+    prefijo_email: str  # Solo el prefijo, sin @
     nombre: str
     password: str
 
 class RegisterResponse(BaseModel):
     message: str
     email: str
+    es_socio: bool
 
-# === CAMBIO DE CONTRASEÑA ===
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
@@ -35,8 +57,13 @@ class ChangePasswordRequest(BaseModel):
 class ChangePasswordResponse(BaseModel):
     message: str
 
+# ═══════════════════════════════════════════════════════════════
+# ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
 @router.post("/login", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
+    """Iniciar sesión con email y contraseña."""
     # Buscar usuario
     usuario = db.query(Usuario).filter(Usuario.email == request.email).first()
     
@@ -63,42 +90,53 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         es_socio=usuario.es_socio
     )
 
-# Lista de prefijos de email autorizados como socios
-SOCIOS_AUTORIZADOS = ["aborio", "falgorta", "vcaresani", "gtaborda", "bgandolfo"]
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
-def register(
-    request: RegisterRequest, 
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
-):
+def register(request: RegisterRequest, db: Session = Depends(get_db)):
     """
-    Registrar nuevo usuario.
-    SOLO SOCIOS pueden crear nuevos usuarios.
+    Registro público - cualquiera puede crear su cuenta.
+    El dominio del email se asigna automáticamente según el prefijo.
     """
-    # Verificar que el usuario actual sea socio
-    if not current_user.es_socio:
+    # Validar que el prefijo no esté vacío
+    prefijo = request.prefijo_email.lower().strip()
+    if not prefijo:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo los socios pueden crear usuarios"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El usuario de email es requerido"
         )
     
+    # Validar que no contenga @
+    if "@" in prefijo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Solo ingresa tu usuario, sin @"
+        )
+    
+    # Construir email completo
+    email = construir_email(prefijo)
+    
     # Verificar que el email no exista
-    existing = db.query(Usuario).filter(Usuario.email == request.email).first()
+    existing = db.query(Usuario).filter(Usuario.email == email).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe un usuario con ese email"
+            detail="Este usuario ya está registrado"
         )
     
-    # Determinar rol según prefijo del email
-    prefijo_email = request.email.split("@")[0].lower()
-    es_socio = prefijo_email in SOCIOS_AUTORIZADOS
+    # Validar contraseña mínima
+    if len(request.password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña debe tener al menos 6 caracteres"
+        )
+    
+    # Determinar si es socio según SOCIOS_AUTORIZADOS
+    es_socio = prefijo in SOCIOS_AUTORIZADOS
     
     # Crear usuario
     nuevo_usuario = Usuario(
-        email=request.email,
-        nombre=request.nombre,
+        email=email,
+        nombre=request.nombre.strip(),
         password_hash=hash_password(request.password),
         es_socio=es_socio,
         activo=True
@@ -106,10 +144,12 @@ def register(
     
     db.add(nuevo_usuario)
     db.commit()
+    db.refresh(nuevo_usuario)
     
     return RegisterResponse(
-        message=f"Usuario registrado exitosamente como {'socio' if es_socio else 'colaborador'}",
-        email=request.email
+        message=f"Usuario creado exitosamente como {'socio' if es_socio else 'colaborador'}",
+        email=email,
+        es_socio=es_socio
     )
 
 
@@ -137,8 +177,91 @@ async def change_password(
             detail="La nueva contraseña debe ser diferente a la actual"
         )
     
+    # Validar longitud mínima
+    if len(request.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nueva contraseña debe tener al menos 6 caracteres"
+        )
+    
     # Hashear y guardar nueva contraseña
     current_user.password_hash = hash_password(request.new_password)
     db.commit()
     
     return ChangePasswordResponse(message="Contraseña actualizada correctamente")
+
+
+# ═══════════════════════════════════════════════════════════════
+# ADMINISTRACIÓN DE USUARIOS (SOLO SOCIOS)
+# ═══════════════════════════════════════════════════════════════
+
+class UsuarioResponse(BaseModel):
+    id: str
+    email: str
+    nombre: str
+    es_socio: bool
+
+class ResetPasswordResponse(BaseModel):
+    message: str
+    temp_password: str
+
+
+@router.get("/usuarios", response_model=list[UsuarioResponse])
+def listar_usuarios(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Lista todos los usuarios activos (solo socios pueden ver)."""
+    if not current_user.es_socio:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo socios pueden ver la lista de usuarios"
+        )
+    
+    usuarios = db.query(Usuario).filter(Usuario.activo == True).all()
+    return [
+        UsuarioResponse(
+            id=str(u.id),
+            email=u.email,
+            nombre=u.nombre,
+            es_socio=u.es_socio
+        )
+        for u in usuarios
+    ]
+
+
+@router.post("/reset-password/{user_id}", response_model=ResetPasswordResponse)
+def reset_password(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Resetea la contraseña de un usuario a una temporal (solo socios)."""
+    if not current_user.es_socio:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo socios pueden resetear contraseñas"
+        )
+    
+    usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+    
+    # No permitir resetear a sí mismo
+    if str(usuario.id) == str(current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No puedes resetear tu propia contraseña. Usa 'Cambiar contraseña'"
+        )
+    
+    temp_password = "Temporal123"
+    usuario.password_hash = hash_password(temp_password)
+    db.commit()
+    
+    return ResetPasswordResponse(
+        message=f"Contraseña de {usuario.nombre} reseteada exitosamente",
+        temp_password=temp_password
+    )

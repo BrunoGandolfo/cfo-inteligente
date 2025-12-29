@@ -164,29 +164,23 @@ def usuario_socio_test(db_session):
 class TestAuthIntegration:
     """Tests de autenticación con BD real"""
     
-    def test_registro_y_login_flujo_completo(self, client, db_session, usuario_socio_test):
-        """Flujo completo: registro → login → obtener token"""
-        # Login como socio para poder registrar
-        socio_login = client.post("/api/auth/login", json={
-            "email": usuario_socio_test["email"],
-            "password": usuario_socio_test["password"]
-        })
-        token = socio_login.json()["access_token"]
-        headers = {"Authorization": f"Bearer {token}"}
-        
-        # 1. Registrar usuario (como socio)
+    def test_registro_y_login_flujo_completo(self, client, db_session):
+        """Flujo completo: registro público → login → obtener token"""
+        # 1. Registrar usuario (endpoint público, sin autenticación)
         registro_response = client.post("/api/auth/register", json={
-            "email": "nuevo@grupoconexion.uy",
+            "prefijo_email": "nuevousuario",
             "nombre": "Nuevo Usuario",
             "password": "password123"
-        }, headers=headers)
+        })
         
         assert registro_response.status_code == 201
-        assert "registrado" in registro_response.json()["message"].lower() or "Usuario" in registro_response.json()["message"]
+        reg_data = registro_response.json()
+        assert reg_data["email"] == "nuevousuario@grupoconexion.uy"
+        assert "exitosamente" in reg_data["message"]
         
         # 2. Hacer login con ese usuario
         login_response = client.post("/api/auth/login", json={
-            "email": "nuevo@grupoconexion.uy",
+            "email": "nuevousuario@grupoconexion.uy",
             "password": "password123"
         })
         
@@ -231,48 +225,40 @@ class TestAuthIntegration:
         # Lo importante es que no sea 401 (no autorizado)
         assert conv_response.status_code != 401
     
-    def test_registro_socio_autorizado(self, client, db_session, usuario_socio_test):
-        """Email autorizado se registra como socio (requiere autenticación de socio)"""
-        # Login como socio para poder registrar
-        login_resp = client.post("/api/auth/login", json={
-            "email": usuario_socio_test["email"],
-            "password": usuario_socio_test["password"]
-        })
-        token = login_resp.json()["access_token"]
-        headers = {"Authorization": f"Bearer {token}"}
-        
+    def test_registro_socio_autorizado(self, client, db_session):
+        """Prefijo autorizado se registra automáticamente como socio"""
+        # Registro público - sin necesidad de autenticación
         response = client.post("/api/auth/register", json={
-            "email": "aborio@grupoconexion.uy",
-            "nombre": "Aborio Test",
+            "prefijo_email": "falgorta",
+            "nombre": "Falgorta Test",
             "password": "password123"
-        }, headers=headers)
+        })
         
         assert response.status_code == 201
-        assert "socio" in response.json()["message"].lower() or "Usuario registrado" in response.json()["message"]
+        data = response.json()
+        assert data["es_socio"] is True
+        assert "socio" in data["message"]
         
         # Verificar en BD
         usuario = db_session.query(Usuario).filter(
-            Usuario.email == "aborio@grupoconexion.uy"
+            Usuario.email == "falgorta@grupoconexion.uy"
         ).first()
         assert usuario.es_socio is True
     
-    def test_registro_colaborador(self, client, db_session, usuario_socio_test):
-        """Email no autorizado se registra como colaborador (requiere autenticación de socio)"""
-        # Login como socio para poder registrar
-        login_resp = client.post("/api/auth/login", json={
-            "email": usuario_socio_test["email"],
-            "password": usuario_socio_test["password"]
-        })
-        token = login_resp.json()["access_token"]
-        headers = {"Authorization": f"Bearer {token}"}
-        
+    def test_registro_colaborador(self, client, db_session):
+        """Prefijo no autorizado se registra automáticamente como colaborador"""
+        # Registro público - sin necesidad de autenticación
         response = client.post("/api/auth/register", json={
-            "email": "colaborador@grupoconexion.uy",
+            "prefijo_email": "colaborador",
             "nombre": "Colaborador Test",
             "password": "password123"
-        }, headers=headers)
+        })
         
         assert response.status_code == 201
+        data = response.json()
+        assert data["es_socio"] is False
+        assert "colaborador" in data["message"]
+        
         # Verificar en BD
         usuario = db_session.query(Usuario).filter(
             Usuario.email == "colaborador@grupoconexion.uy"

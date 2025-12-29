@@ -14,9 +14,11 @@ export default function Home() {
   const [registerData, setRegisterData] = useState({
     nombre: '',
     usuario: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
   const [registerLoading, setRegisterLoading] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,17 +46,21 @@ export default function Home() {
     e.preventDefault();
     setRegisterLoading(true);
     
-    const emailCompleto = `${registerData.usuario}@grupoconexion.uy`;
+    if (registerData.password !== registerData.confirmPassword) {
+      toast.error('Las contraseñas no coinciden');
+      setRegisterLoading(false);
+      return;
+    }
     
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+        prefijo_email: registerData.usuario,
         nombre: registerData.nombre,
-        email: emailCompleto,
         password: registerData.password
       });
       
       toast.success('Cuenta creada exitosamente. Ya puedes iniciar sesión.');
-      setRegisterData({ nombre: '', usuario: '', password: '' });
+      setRegisterData({ nombre: '', usuario: '', password: '', confirmPassword: '' });
       setActiveTab('login');
     } catch (error) {
       const message = error.response?.data?.detail || 'Error al crear la cuenta';
@@ -180,10 +186,20 @@ export default function Home() {
                     />
                     <span className="text-sm text-slate-400">Recordarme</span>
                   </label>
-                  <a href="#" className="text-sm text-blue-400 hover:text-blue-300">
+                  <button 
+                    type="button"
+                    onClick={() => setShowHelp(!showHelp)}
+                    className="text-sm text-blue-400 hover:text-blue-300"
+                  >
                     ¿Olvidaste tu contraseña?
-                  </a>
+                  </button>
                 </div>
+                
+                {showHelp && (
+                  <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-slate-300">
+                    Contacta al administrador del sistema para restablecer tu contraseña.
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -239,6 +255,20 @@ export default function Home() {
                     placeholder="••••••••"
                     value={registerData.password}
                     onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Confirmar Contraseña
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    placeholder="••••••••"
+                    value={registerData.confirmPassword}
+                    onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
                   />
                 </div>
 

@@ -1,10 +1,15 @@
-import { Home, FileText, Settings, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Home, FileText, Settings, Sparkles, Lock, Users } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
+import ChangePasswordModal from '../auth/ChangePasswordModal';
+import AdminUsersModal from '../admin/AdminUsersModal';
 
 export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
   // Verificar si el usuario es socio
   const esSocio = localStorage.getItem('esSocio') === 'true';
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   // Items completos para socios
   const allItems = [
@@ -20,7 +25,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
     : allItems.filter(item => item.key === 'Dashboard');
 
   return (
-    <aside className="hidden lg:flex lg:flex-col w-[250px] shrink-0 border-r bg-white dark:bg-slate-900 dark:border-slate-800 pt-16">
+    <aside className="hidden lg:flex lg:flex-col w-[250px] shrink-0 border-r bg-white dark:bg-slate-900 dark:border-slate-800 pt-16 justify-between">
       <nav className="p-2 space-y-1">
         {items.map(({ key, icon: Icon, label, action, highlight }) => {
           const isActive = active === key;
@@ -48,6 +53,41 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
           );
         })}
       </nav>
+      
+      {/* Botones de administración */}
+      <div className="p-2 border-t border-gray-200 dark:border-slate-700">
+        {/* Administrar usuarios - solo socios */}
+        {esSocio && (
+          <button
+            onClick={() => setShowAdminModal(true)}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors mb-1"
+          >
+            <Users className="w-5 h-5" />
+            <span>Administrar usuarios</span>
+          </button>
+        )}
+        
+        {/* Cambiar Contraseña - visible para todos */}
+        <button
+          onClick={() => setShowPasswordModal(true)}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+        >
+          <Lock className="w-5 h-5" />
+          <span>Cambiar contraseña</span>
+        </button>
+      </div>
+      
+      {/* Modal de cambio de contraseña */}
+      <ChangePasswordModal 
+        isOpen={showPasswordModal} 
+        onClose={() => setShowPasswordModal(false)} 
+      />
+      
+      {/* Modal de administración de usuarios */}
+      <AdminUsersModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+      />
     </aside>
   );
 }
