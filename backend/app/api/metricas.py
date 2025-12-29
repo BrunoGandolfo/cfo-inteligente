@@ -107,7 +107,8 @@ def get_operaciones_grafico(
             "tipo_operacion": op.tipo_operacion.value if op.tipo_operacion else None,
             "monto_uyu": float(op.monto_uyu) if op.monto_uyu else 0,
             "monto_usd": float(op.monto_usd) if op.monto_usd else 0,
-            "area": op.area.nombre if op.area else None
+            "area": op.area.nombre if op.area else None,
+            "localidad": op.localidad.value if op.localidad else None
         })
     
     return {"operaciones": result}
