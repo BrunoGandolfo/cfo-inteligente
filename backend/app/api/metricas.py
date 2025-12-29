@@ -32,7 +32,7 @@ def get_dashboard_metrics(
     )
     
     if localidad and localidad != 'Todas':
-        query = query.filter(Operacion.localidad == localidad)
+        query = query.filter(Operacion.localidad == localidad.upper())
     
     operaciones = query.all()
     
@@ -96,7 +96,7 @@ def get_operaciones_grafico(
     )
     
     if localidad and localidad != 'Todas':
-        query = query.filter(Operacion.localidad == localidad)
+        query = query.filter(Operacion.localidad == localidad.upper())
     
     operaciones = query.order_by(Operacion.fecha).all()
     
