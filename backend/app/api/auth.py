@@ -64,7 +64,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     )
 
 # Lista de prefijos de email autorizados como socios
-SOCIOS_AUTORIZADOS = ["aborio", "falgorta", "vcaresani", "gtaborda"]
+SOCIOS_AUTORIZADOS = ["aborio", "falgorta", "vcaresani", "gtaborda", "bgandolfo"]
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
 def register(
