@@ -98,9 +98,12 @@ class SQLPostProcessor:
         # NO convertir si ya tiene AMBAS monedas (el SQL es dual - ej: "en pesos y dólares")
         tiene_ambas_monedas = 'monto_uyu' in sql_final.lower() and 'monto_usd' in sql_final.lower()
         
-        if moneda_solicitada == 'USD' and 'monto_uyu' in sql_final.lower() and not tiene_ambas_monedas:
-            sql_final = SQLPostProcessor.convertir_a_usd(sql_final)
-            cambios.append(f"Convertido a {moneda_solicitada}")
+        # DESACTIVADO: Claude ya genera el SQL correcto según la intención del usuario
+        # La detección de moneda por keywords causaba conversiones incorrectas
+        # Ejemplo: "expresado en pesos" que menciona "USD" se convertía erróneamente
+        # if moneda_solicitada == 'USD' and 'monto_uyu' in sql_final.lower() and not tiene_ambas_monedas:
+        #     sql_final = SQLPostProcessor.convertir_a_usd(sql_final)
+        #     cambios.append(f"Convertido a {moneda_solicitada}")
         
         return {
             'sql': sql_final,

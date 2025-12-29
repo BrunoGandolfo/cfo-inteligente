@@ -36,7 +36,7 @@ _QUERY_PATTERNS: List[Tuple] = [
     ),
     # OPERACIONES
     (
-        ["cuántas operaciones"],
+        ["cuántas operaciones este mes", "operaciones del mes", "operaciones de este mes"],
         "SELECT COUNT(*) AS total FROM operaciones WHERE deleted_at IS NULL AND DATE_TRUNC('month',fecha)=DATE_TRUNC('month',CURRENT_DATE)"
     ),
     # CAPITAL/FLUJO
