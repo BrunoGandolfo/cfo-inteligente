@@ -14,25 +14,25 @@ _QUERY_PATTERNS: List[Tuple] = [
     # RENTABILIDAD (orden importa - específicos primero)
     (
         ["rentabilidad por área", "rentabilidad de cada área"],
-        "SELECT a.nombre,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rent FROM operaciones o JOIN areas a ON a.id=o.area_id WHERE o.deleted_at IS NULL AND a.nombre NOT IN ('Otros Gastos') AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY a.nombre ORDER BY rent DESC"
+        "SELECT a.nombre,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.total_pesificado ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.total_pesificado ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.total_pesificado ELSE 0 END),0))*100 AS rent FROM operaciones o JOIN areas a ON a.id=o.area_id WHERE o.deleted_at IS NULL AND a.nombre NOT IN ('Otros Gastos') AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY a.nombre ORDER BY rent DESC"
     ),
     (
         ["rentabilidad por localidad"],
-        "SELECT o.localidad,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rent FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY o.localidad ORDER BY rent DESC"
+        "SELECT o.localidad,((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.total_pesificado ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.total_pesificado ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.total_pesificado ELSE 0 END),0))*100 AS rent FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY o.localidad ORDER BY rent DESC"
     ),
     (
         ["rentabilidad este mes", "rentabilidad del mes", "cuál es la rentabilidad"],
-        "SELECT ((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END),0))*100 AS rentabilidad FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE)"
+        "SELECT ((SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.total_pesificado ELSE 0 END)-SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.total_pesificado ELSE 0 END))/NULLIF(SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.total_pesificado ELSE 0 END),0))*100 AS rentabilidad FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE)"
     ),
     # COMPARACIONES GEOGRÁFICAS
     (
         ["mercedes vs montevideo", "mercedes montevideo", "comparar mercedes", "comparación mercedes"],
-        "SELECT o.localidad,SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.monto_uyu ELSE 0 END) AS ing,SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.monto_uyu ELSE 0 END) AS gas FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY o.localidad ORDER BY ing DESC"
+        "SELECT o.localidad,SUM(CASE WHEN o.tipo_operacion='INGRESO' THEN o.total_pesificado ELSE 0 END) AS ing,SUM(CASE WHEN o.tipo_operacion='GASTO' THEN o.total_pesificado ELSE 0 END) AS gas FROM operaciones o WHERE o.deleted_at IS NULL AND DATE_TRUNC('month',o.fecha)=DATE_TRUNC('month',CURRENT_DATE) GROUP BY o.localidad ORDER BY ing DESC"
     ),
     # CÓMO VENIMOS
     (
         ["cómo venimos", "como venimos", "cómo vamos"],
-        "SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END) AS ing,SUM(CASE WHEN tipo_operacion='GASTO' THEN monto_uyu ELSE 0 END) AS gas,SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion='GASTO' THEN monto_uyu ELSE 0 END) AS res FROM operaciones WHERE deleted_at IS NULL AND DATE_TRUNC('month',fecha)=DATE_TRUNC('month',CURRENT_DATE)"
+        "SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN total_pesificado ELSE 0 END) AS ing,SUM(CASE WHEN tipo_operacion='GASTO' THEN total_pesificado ELSE 0 END) AS gas,SUM(CASE WHEN tipo_operacion='INGRESO' THEN total_pesificado ELSE 0 END)-SUM(CASE WHEN tipo_operacion='GASTO' THEN total_pesificado ELSE 0 END) AS res FROM operaciones WHERE deleted_at IS NULL AND DATE_TRUNC('month',fecha)=DATE_TRUNC('month',CURRENT_DATE)"
     ),
     # OPERACIONES
     (
@@ -42,23 +42,23 @@ _QUERY_PATTERNS: List[Tuple] = [
     # CAPITAL/FLUJO
     (
         ["capital de trabajo", "capital trabajo"],
-        "SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion='GASTO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion='RETIRO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion='DISTRIBUCION' THEN monto_uyu ELSE 0 END) AS capital FROM operaciones WHERE deleted_at IS NULL"
+        "SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN total_pesificado ELSE 0 END)-SUM(CASE WHEN tipo_operacion='GASTO' THEN total_pesificado ELSE 0 END)-SUM(CASE WHEN tipo_operacion='RETIRO' THEN total_pesificado ELSE 0 END)-SUM(CASE WHEN tipo_operacion='DISTRIBUCION' THEN total_pesificado ELSE 0 END) AS capital FROM operaciones WHERE deleted_at IS NULL"
     ),
     (
         ["flujo de caja", "flujo caja"],
-        "SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END) AS ent,SUM(CASE WHEN tipo_operacion IN ('GASTO','RETIRO','DISTRIBUCION') THEN monto_uyu ELSE 0 END) AS sal,SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END)-SUM(CASE WHEN tipo_operacion IN ('GASTO','RETIRO','DISTRIBUCION') THEN monto_uyu ELSE 0 END) AS flujo FROM operaciones WHERE deleted_at IS NULL AND DATE_TRUNC('month',fecha)=DATE_TRUNC('month',CURRENT_DATE)"
+        "SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN total_pesificado ELSE 0 END) AS ent,SUM(CASE WHEN tipo_operacion='GASTO' THEN total_pesificado ELSE 0 END)+SUM(CASE WHEN tipo_operacion IN ('RETIRO','DISTRIBUCION') THEN total_pesificado ELSE 0 END) AS sal,SUM(CASE WHEN tipo_operacion='INGRESO' THEN total_pesificado ELSE 0 END)-SUM(CASE WHEN tipo_operacion='GASTO' THEN total_pesificado ELSE 0 END)-SUM(CASE WHEN tipo_operacion IN ('RETIRO','DISTRIBUCION') THEN total_pesificado ELSE 0 END) AS flujo FROM operaciones WHERE deleted_at IS NULL AND DATE_TRUNC('month',fecha)=DATE_TRUNC('month',CURRENT_DATE)"
     ),
     # TENDENCIAS
     (
         ["análisis de tendencias", "tendencias"],
-        "SELECT DATE_TRUNC('month',fecha) AS mes,SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END) AS ing FROM operaciones WHERE deleted_at IS NULL AND fecha>=DATE_TRUNC('month',CURRENT_DATE)-INTERVAL'11 months' GROUP BY 1 ORDER BY 1"
+        "SELECT DATE_TRUNC('month',fecha) AS mes,SUM(CASE WHEN tipo_operacion='INGRESO' THEN total_pesificado ELSE 0 END) AS ing FROM operaciones WHERE deleted_at IS NULL AND fecha>=DATE_TRUNC('month',CURRENT_DATE)-INTERVAL'11 months' GROUP BY 1 ORDER BY 1"
     ),
 ]
 
 # Queries con doble condición (requiere ambos patterns)
 _QUERY_COMPOUND: List[Tuple[str, str, str]] = [
-    ("retiro", "mercedes", "SELECT SUM(monto_uyu) AS total_uyu, SUM(monto_usd) AS total_usd, COUNT(*) AS cantidad FROM operaciones WHERE tipo_operacion='RETIRO' AND localidad='MERCEDES' AND deleted_at IS NULL AND DATE_TRUNC('year',fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
-    ("retiro", "montevideo", "SELECT SUM(monto_uyu) AS total_uyu, SUM(monto_usd) AS total_usd, COUNT(*) AS cantidad FROM operaciones WHERE tipo_operacion='RETIRO' AND localidad='MONTEVIDEO' AND deleted_at IS NULL AND DATE_TRUNC('year',fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
+    ("retiro", "mercedes", "SELECT SUM(total_pesificado) AS total_pesificado, SUM(monto_uyu) AS componente_uyu, SUM(monto_usd) AS componente_usd, COUNT(*) AS cantidad FROM operaciones WHERE tipo_operacion='RETIRO' AND localidad='MERCEDES' AND deleted_at IS NULL AND DATE_TRUNC('year',fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
+    ("retiro", "montevideo", "SELECT SUM(total_pesificado) AS total_pesificado, SUM(monto_uyu) AS componente_uyu, SUM(monto_usd) AS componente_usd, COUNT(*) AS cantidad FROM operaciones WHERE tipo_operacion='RETIRO' AND localidad='MONTEVIDEO' AND deleted_at IS NULL AND DATE_TRUNC('year',fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
     # Distribuciones por socio
     ("distribu", "bruno", "SELECT SUM(dd.monto_uyu) AS total_uyu, SUM(dd.monto_usd) AS total_usd, COUNT(*) AS cantidad FROM distribuciones_detalle dd JOIN socios s ON s.id=dd.socio_id JOIN operaciones o ON o.id=dd.operacion_id WHERE s.nombre='Bruno' AND o.deleted_at IS NULL AND DATE_TRUNC('year',o.fecha)=DATE_TRUNC('year',CURRENT_DATE)"),
     ("distribu", "agustina", "SELECT SUM(dd.monto_uyu) AS total_uyu, SUM(dd.monto_usd) AS total_usd, COUNT(*) AS cantidad FROM distribuciones_detalle dd JOIN socios s ON s.id=dd.socio_id JOIN operaciones o ON o.id=dd.operacion_id WHERE s.nombre='Agustina' AND o.deleted_at IS NULL AND DATE_TRUNC('year',o.fecha)=DATE_TRUNC('year',CURRENT_DATE)"),

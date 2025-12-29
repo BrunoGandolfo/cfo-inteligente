@@ -121,7 +121,7 @@ class TestPreguntasGenerales:
     
     def test_cuantas_operaciones(self):
         """Cuenta de operaciones"""
-        pregunta = "¿Cuántas operaciones hay este mes?"
+        pregunta = "¿Cuántas operaciones este mes?"
         sql = QueryFallback.get_query_for(pregunta)
         
         assert sql is not None

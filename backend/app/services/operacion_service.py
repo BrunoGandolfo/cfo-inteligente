@@ -29,6 +29,10 @@ def _crear_operacion_base(
     """
     monto_uyu, monto_usd = calcular_montos(monto_original, moneda_original, tipo_cambio)
     
+    # Para INGRESO/GASTO, los totales son iguales (ya están convertidos)
+    total_pesificado = monto_uyu
+    total_dolarizado = monto_usd
+    
     operacion = Operacion(
         tipo_operacion=tipo_operacion,
         fecha=fecha,
@@ -37,6 +41,8 @@ def _crear_operacion_base(
         tipo_cambio=tipo_cambio,
         monto_uyu=monto_uyu,
         monto_usd=monto_usd,
+        total_pesificado=total_pesificado,
+        total_dolarizado=total_dolarizado,
         area_id=area_id,
         localidad=Localidad[localidad.upper().replace(" ", "_")],
         descripcion=descripcion,
@@ -101,6 +107,10 @@ def crear_retiro(db: Session, data: RetiroCreate):
         monto_original = data.monto_usd
         moneda_original = Moneda.USD
     
+    # Para RETIRO, calcular totales sumando ambos componentes pesificados/dolarizados
+    total_pesificado = monto_uyu + (monto_usd * data.tipo_cambio)
+    total_dolarizado = monto_usd + (monto_uyu / data.tipo_cambio)
+    
     operacion = Operacion(
         tipo_operacion=TipoOperacion.RETIRO,
         fecha=data.fecha,
@@ -109,6 +119,8 @@ def crear_retiro(db: Session, data: RetiroCreate):
         tipo_cambio=data.tipo_cambio,
         monto_uyu=monto_uyu,
         monto_usd=monto_usd,
+        total_pesificado=total_pesificado,
+        total_dolarizado=total_dolarizado,
         area_id=None,  # RETIRO no necesita área
         localidad=Localidad[data.localidad.upper().replace(" ", "_")],
         descripcion=data.descripcion
@@ -150,6 +162,10 @@ def crear_distribucion(db: Session, data: DistribucionCreate):
         monto_original = total_usd
         moneda_original = Moneda.USD
     
+    # Para DISTRIBUCION, calcular totales sumando ambos componentes pesificados/dolarizados
+    total_pesificado = total_uyu + (total_usd * data.tipo_cambio)
+    total_dolarizado = total_usd + (total_uyu / data.tipo_cambio)
+    
     operacion = Operacion(
         tipo_operacion=TipoOperacion.DISTRIBUCION,
         fecha=data.fecha,
@@ -158,6 +174,8 @@ def crear_distribucion(db: Session, data: DistribucionCreate):
         tipo_cambio=data.tipo_cambio,
         monto_uyu=total_uyu,
         monto_usd=total_usd,
+        total_pesificado=total_pesificado,
+        total_dolarizado=total_dolarizado,
         area_id=None,  # DISTRIBUCION no necesita área
         localidad=Localidad[data.localidad.upper().replace(" ", "_")],
         descripcion="Distribución de utilidades"

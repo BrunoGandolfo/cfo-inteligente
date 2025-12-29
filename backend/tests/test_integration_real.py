@@ -395,6 +395,8 @@ class TestOperacionesIntegration:
             tipo_cambio=Decimal("40.00"),
             monto_uyu=Decimal("10000"),
             monto_usd=Decimal("250"),
+            total_pesificado=Decimal("10000"),
+            total_dolarizado=Decimal("250"),
             area_id=area.id,
             localidad=Localidad.MONTEVIDEO,
             descripcion="Test 1"
@@ -407,6 +409,8 @@ class TestOperacionesIntegration:
             tipo_cambio=Decimal("40.00"),
             monto_uyu=Decimal("5000"),
             monto_usd=Decimal("125"),
+            total_pesificado=Decimal("5000"),
+            total_dolarizado=Decimal("125"),
             area_id=area.id,
             localidad=Localidad.MERCEDES,
             descripcion="Test 2"
@@ -661,6 +665,8 @@ class TestDatosConsistencia:
             tipo_cambio=Decimal("40.00"),
             monto_uyu=Decimal("10000"),
             monto_usd=Decimal("250"),
+            total_pesificado=Decimal("10000"),
+            total_dolarizado=Decimal("250"),
             area_id=area.id,
             localidad=Localidad.MONTEVIDEO,
             descripcion="Test soft delete"
@@ -694,6 +700,8 @@ class TestDatosConsistencia:
             tipo_cambio=Decimal("40.00"),
             monto_uyu=Decimal("5000"),
             monto_usd=Decimal("125"),
+            total_pesificado=Decimal("5000"),
+            total_dolarizado=Decimal("125"),
             area_id=area.id,
             localidad=Localidad.MONTEVIDEO,
             descripcion="Test relación"

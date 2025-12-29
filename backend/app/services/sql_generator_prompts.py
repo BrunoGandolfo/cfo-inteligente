@@ -14,6 +14,8 @@ CREATE TABLE operaciones (
     tipo_cambio NUMERIC(10,4) NOT NULL,
     monto_usd NUMERIC(15,2) NOT NULL,
     monto_uyu NUMERIC(15,2) NOT NULL,
+    total_pesificado NUMERIC(15,2) NOT NULL,  -- Total en UYU (usar para sumas en pesos)
+    total_dolarizado NUMERIC(15,2) NOT NULL,  -- Total en USD (usar para sumas en dólares)
     area_id UUID NOT NULL REFERENCES areas(id),
     localidad VARCHAR(50) NOT NULL CHECK (localidad IN ('MONTEVIDEO', 'MERCEDES')),
     descripcion VARCHAR(500),
@@ -56,7 +58,21 @@ CONTEXTO DEL NEGOCIO - CONEXIÓN CONSULTORA:
 • SIEMPRE filtrar deleted_at IS NULL para operaciones activas
 
 REGLAS SQL CRÍTICAS:
-• Si pide "en dólares/USD": usa monto_usd; Si pide "en pesos/UYU": usa monto_uyu; Default: monto_uyu
+• REGLA DE ORO PARA TOTALES:
+  - Para CUALQUIER suma en pesos uruguayos: usar SUM(total_pesificado)
+  - Para CUALQUIER suma en dólares: usar SUM(total_dolarizado)
+  - Esto aplica a TODOS los tipos: INGRESO, GASTO, RETIRO, DISTRIBUCION
+  - NUNCA usar SUM(monto_uyu) o SUM(monto_usd) para totales
+
+  EJEMPLOS:
+  - Total ingresos en pesos: SELECT SUM(total_pesificado) FROM operaciones WHERE tipo_operacion = 'INGRESO'
+  - Total retiros en dólares: SELECT SUM(total_dolarizado) FROM operaciones WHERE tipo_operacion = 'RETIRO'
+  - Capital de trabajo: SELECT SUM(CASE WHEN tipo_operacion='INGRESO' THEN total_pesificado ELSE 0 END) - SUM(CASE WHEN tipo_operacion IN ('GASTO','RETIRO','DISTRIBUCION') THEN total_pesificado ELSE 0 END) FROM operaciones WHERE deleted_at IS NULL
+
+  CUÁNDO USAR monto_uyu/monto_usd:
+  - Solo cuando se necesite discriminar componentes por moneda original
+  - Ejemplo: "¿Cuánto se retiró en pesos vs en dólares?" → mostrar monto_uyu y monto_usd por separado
+
 • Rentabilidad: SOLO INGRESO y GASTO (excluir RETIRO y DISTRIBUCION)
 • Comparaciones "este X vs anterior": DATE_TRUNC + LIMIT con ORDER BY DESC
 • "mejor/peor": ORDER BY + LIMIT 1
@@ -68,13 +84,13 @@ REGLAS SQL OBLIGATORIAS:
 
 1. PORCENTAJES DE MONEDA: Usar moneda_original, NO monto_usd/uyu
 2. RANKINGS: TOP 5 mínimo. LIMIT 1 solo si pregunta "el más/mejor/mayor"
-3. DISTRIBUCIONES: usar dd.monto_uyu y dd.monto_usd (columnas DIFERENTES)
+3. DISTRIBUCIONES: usar distribuciones_detalle para detalle por socio. Para totales usar SUM(o.total_pesificado) o SUM(o.total_dolarizado).
 4. AÑOS EXPLÍCITOS: Si menciona 2024, 2023, etc → usar ESE año exacto
 5. FILTRO TEMPORAL DEFAULT: Sin año explícito → año 2025 (excepto "total/acumulado/histórico")
-6. CONVERSIONES MONEDA: SUM(monto_usd) y SUM(monto_uyu) SIN filtrar por moneda_original
+6. CONVERSIONES MONEDA: Para totales SIEMPRE usar total_pesificado (pesos) o total_dolarizado (dólares). Nunca calcular manualmente.
 7. PERÍODOS RODANTES: "últimos X meses" = ventana rodante, NO trimestre
 8. UNION ALL CON TOTAL: Usar columna 'orden' (0=datos, 1=total) para ORDER BY
-9. TOTALES DISTRIBUCIONES: Sumar distribuciones_detalle.monto_uyu (fuente de verdad)
+9. TOTALES DISTRIBUCIONES: SUM(total_pesificado) para pesos, SUM(total_dolarizado) para dólares. La tabla distribuciones_detalle es para detalle por socio.
 10. DISTRIBUCIONES CON FILTROS: Empezar FROM distribuciones_detalle, INNER JOIN, filtros en WHERE
 11. RENTABILIDAD POR ÁREA: Excluir 'Otros Gastos' (categoría residual de gastos)
 12. RETIROS vs DISTRIBUCIONES: RETIRO=caja empresa, DISTRIBUCIÓN=reparto a socios

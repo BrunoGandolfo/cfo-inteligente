@@ -211,6 +211,7 @@ class TestProcesarSQL:
         assert resultado["modificado"] is False
         assert len(resultado["cambios"]) == 0
     
+    @pytest.mark.skip(reason="Conversión automática monto_uyu→monto_usd DESACTIVADA (causaba bugs). Claude genera SQL correcto.")
     def test_proceso_convierte_a_usd(self):
         """Pregunta en USD convierte SQL"""
         pregunta = "¿Cuánto es en dólares?"
@@ -222,6 +223,7 @@ class TestProcesarSQL:
         assert resultado["modificado"] is True
         assert "USD" in str(resultado["cambios"])
     
+    @pytest.mark.skip(reason="Conversión automática monto_uyu→monto_usd DESACTIVADA (causaba bugs). Claude genera SQL correcto.")
     def test_proceso_extrae_y_convierte(self):
         """Extrae de texto mixto Y convierte moneda"""
         pregunta = "Muéstrame en dólares"
@@ -237,6 +239,7 @@ SELECT SUM(monto_uyu) FROM operaciones
         assert resultado["modificado"] is True
         assert len(resultado["cambios"]) >= 1
     
+    @pytest.mark.skip(reason="Conversión automática monto_uyu→monto_usd DESACTIVADA (causaba bugs). Claude genera SQL correcto.")
     def test_proceso_retorna_cambios_realizados(self):
         """Lista de cambios indica qué se modificó"""
         pregunta = "En dólares por favor"
@@ -279,6 +282,7 @@ SELECT SUM(monto_uyu) FROM operaciones
 class TestCasosEdge:
     """Tests de casos límite"""
     
+    @pytest.mark.skip(reason="Conversión automática monto_uyu→monto_usd DESACTIVADA (causaba bugs). Claude genera SQL correcto.")
     def test_sql_con_alias_monto_uyu(self):
         """Alias con monto_uyu se convierte"""
         pregunta = "En USD"
@@ -293,6 +297,7 @@ class TestCasosEdge:
         # El método busca primero USD keywords
         assert SQLPostProcessor.detectar_moneda("pesos o dólares") == "USD"
     
+    @pytest.mark.skip(reason="Conversión automática monto_uyu→monto_usd DESACTIVADA (causaba bugs). Claude genera SQL correcto.")
     def test_sql_multilinea(self):
         """SQL multilínea se procesa correctamente"""
         pregunta = "En dólares"

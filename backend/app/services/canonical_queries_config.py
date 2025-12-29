@@ -19,7 +19,7 @@ QUERIES_CANONICAS = {
         "patrones": ["facturación 2025", "facturamos 2025", "ingresos 2025", 
                     "facturación este año", "facturamos este año", "ingresos este año"],
         "sql_control": """
-            SELECT SUM(monto_uyu) as total FROM operaciones 
+            SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
             AND EXTRACT(YEAR FROM fecha) = 2025
         """,
@@ -29,7 +29,7 @@ QUERIES_CANONICAS = {
     "facturacion_2024": {
         "patrones": ["facturación 2024", "facturamos 2024", "ingresos 2024"],
         "sql_control": """
-            SELECT SUM(monto_uyu) as total FROM operaciones 
+            SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
             AND EXTRACT(YEAR FROM fecha) = 2024
         """,
@@ -39,7 +39,7 @@ QUERIES_CANONICAS = {
     "facturacion_mes_actual": {
         "patrones": ["facturación este mes", "facturamos este mes", "ingresos del mes"],
         "sql_control": """
-            SELECT SUM(monto_uyu) as total FROM operaciones 
+            SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
             AND DATE_TRUNC('month', fecha) = DATE_TRUNC('month', CURRENT_DATE)
         """,
@@ -53,7 +53,7 @@ QUERIES_CANONICAS = {
     "gastos_2025": {
         "patrones": ["gastos 2025", "gastamos 2025", "gastos este año"],
         "sql_control": """
-            SELECT SUM(monto_uyu) as total FROM operaciones 
+            SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'GASTO' AND deleted_at IS NULL 
             AND EXTRACT(YEAR FROM fecha) = 2025
         """,
@@ -63,7 +63,7 @@ QUERIES_CANONICAS = {
     "gastos_2024": {
         "patrones": ["gastos 2024", "gastamos 2024"],
         "sql_control": """
-            SELECT SUM(monto_uyu) as total FROM operaciones 
+            SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'GASTO' AND deleted_at IS NULL 
             AND EXTRACT(YEAR FROM fecha) = 2024
         """,
@@ -78,9 +78,9 @@ QUERIES_CANONICAS = {
         "patrones": ["rentabilidad 2025", "rentabilidad este año", "margen 2025"],
         "sql_control": """
             SELECT ROUND(
-                (SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END) -
-                 SUM(CASE WHEN tipo_operacion = 'GASTO' THEN monto_uyu ELSE 0 END)) /
-                NULLIF(SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END), 0) * 100
+                (SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -
+                 SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END)) /
+                NULLIF(SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END), 0) * 100
             , 2) as porcentaje FROM operaciones 
             WHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025
         """,
@@ -91,9 +91,9 @@ QUERIES_CANONICAS = {
         "patrones": ["rentabilidad este mes", "rentabilidad del mes", "margen del mes"],
         "sql_control": """
             SELECT ROUND(
-                (SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END) -
-                 SUM(CASE WHEN tipo_operacion = 'GASTO' THEN monto_uyu ELSE 0 END)) /
-                NULLIF(SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END), 0) * 100
+                (SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -
+                 SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END)) /
+                NULLIF(SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END), 0) * 100
             , 2) as porcentaje FROM operaciones 
             WHERE deleted_at IS NULL 
             AND DATE_TRUNC('month', fecha) = DATE_TRUNC('month', CURRENT_DATE)
@@ -108,11 +108,11 @@ QUERIES_CANONICAS = {
     "capital_trabajo": {
         "patrones": ["capital de trabajo", "capital trabajo", "capital disponible"],
         "sql_control": """
-            SELECT SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN monto_uyu ELSE 0 END) -
-                   SUM(CASE WHEN tipo_operacion = 'GASTO' THEN monto_uyu ELSE 0 END) -
-                   SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN monto_uyu ELSE 0 END) -
-                   SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN monto_uyu ELSE 0 END) as total
-            FROM operaciones WHERE deleted_at IS NULL
+            SELECT SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -
+                   SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) -
+                   SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END) -
+                   SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) as total
+            FROM operaciones WHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
@@ -125,7 +125,7 @@ QUERIES_CANONICAS = {
         "patrones": ["facturación montevideo 2025", "facturamos montevideo", 
                     "ingresos montevideo 2025", "montevideo 2025 facturación"],
         "sql_control": """
-            SELECT SUM(monto_uyu) as total FROM operaciones 
+            SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
             AND EXTRACT(YEAR FROM fecha) = 2025 AND localidad = 'MONTEVIDEO'
         """,
@@ -136,7 +136,7 @@ QUERIES_CANONICAS = {
         "patrones": ["facturación mercedes 2025", "facturamos mercedes", 
                     "ingresos mercedes 2025", "mercedes 2025 facturación"],
         "sql_control": """
-            SELECT SUM(monto_uyu) as total FROM operaciones 
+            SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
             AND EXTRACT(YEAR FROM fecha) = 2025 AND localidad = 'MERCEDES'
         """,
@@ -151,7 +151,7 @@ QUERIES_CANONICAS = {
         "patrones": ["facturación jurídica 2025", "jurídica 2025", 
                     "área jurídica 2025", "ingresos jurídica"],
         "sql_control": """
-            SELECT SUM(o.monto_uyu) as total FROM operaciones o
+            SELECT SUM(o.total_pesificado) as total FROM operaciones o
             JOIN areas a ON o.area_id = a.id
             WHERE o.tipo_operacion = 'INGRESO' AND o.deleted_at IS NULL 
             AND EXTRACT(YEAR FROM o.fecha) = 2025 AND a.nombre = 'Jurídica'
@@ -163,7 +163,7 @@ QUERIES_CANONICAS = {
         "patrones": ["facturación notarial 2025", "notarial 2025", 
                     "área notarial 2025", "ingresos notarial"],
         "sql_control": """
-            SELECT SUM(o.monto_uyu) as total FROM operaciones o
+            SELECT SUM(o.total_pesificado) as total FROM operaciones o
             JOIN areas a ON o.area_id = a.id
             WHERE o.tipo_operacion = 'INGRESO' AND o.deleted_at IS NULL 
             AND EXTRACT(YEAR FROM o.fecha) = 2025 AND a.nombre = 'Notarial'
@@ -175,7 +175,7 @@ QUERIES_CANONICAS = {
         "patrones": ["facturación contable 2025", "contable 2025", 
                     "área contable 2025", "ingresos contable"],
         "sql_control": """
-            SELECT SUM(o.monto_uyu) as total FROM operaciones o
+            SELECT SUM(o.total_pesificado) as total FROM operaciones o
             JOIN areas a ON o.area_id = a.id
             WHERE o.tipo_operacion = 'INGRESO' AND o.deleted_at IS NULL 
             AND EXTRACT(YEAR FROM o.fecha) = 2025 AND a.nombre = 'Contable'
@@ -191,11 +191,10 @@ QUERIES_CANONICAS = {
         "patrones": ["distribuciones 2025", "distribuciones este año", 
                     "total distribuido 2025", "cuánto se distribuyó 2025"],
         "sql_control": """
-            SELECT SUM(dd.monto_uyu) as total 
-            FROM distribuciones_detalle dd
-            JOIN operaciones o ON dd.operacion_id = o.id
-            WHERE o.tipo_operacion = 'DISTRIBUCION' AND o.deleted_at IS NULL
-            AND EXTRACT(YEAR FROM o.fecha) = 2025
+            SELECT SUM(total_pesificado) as total 
+            FROM operaciones
+            WHERE tipo_operacion = 'DISTRIBUCION' AND deleted_at IS NULL
+            AND EXTRACT(YEAR FROM fecha) = 2025
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
@@ -204,11 +203,10 @@ QUERIES_CANONICAS = {
         "patrones": ["distribuciones 2024", "total distribuido 2024", 
                     "cuánto se distribuyó 2024"],
         "sql_control": """
-            SELECT SUM(dd.monto_uyu) as total 
-            FROM distribuciones_detalle dd
-            JOIN operaciones o ON dd.operacion_id = o.id
-            WHERE o.tipo_operacion = 'DISTRIBUCION' AND o.deleted_at IS NULL
-            AND EXTRACT(YEAR FROM o.fecha) = 2024
+            SELECT SUM(total_pesificado) as total 
+            FROM operaciones
+            WHERE tipo_operacion = 'DISTRIBUCION' AND deleted_at IS NULL
+            AND EXTRACT(YEAR FROM fecha) = 2024
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
@@ -220,7 +218,7 @@ QUERIES_CANONICAS = {
     "retiros_2025": {
         "patrones": ["retiros 2025", "retiros este año", "total retiros 2025"],
         "sql_control": """
-            SELECT SUM(monto_uyu) as total FROM operaciones 
+            SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'RETIRO' AND deleted_at IS NULL 
             AND EXTRACT(YEAR FROM fecha) = 2025
         """,
