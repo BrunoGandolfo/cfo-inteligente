@@ -164,7 +164,7 @@ function prepareAreaData(operaciones) {
   
   const areas = {};
   ingresos.forEach(op => {
-    const areaName = op.area?.nombre || 'Sin Área';
+    const areaName = op.area || 'Sin Área';
     areas[areaName] = (areas[areaName] || 0) + Number(op.monto_uyu || 0);
   });
   
