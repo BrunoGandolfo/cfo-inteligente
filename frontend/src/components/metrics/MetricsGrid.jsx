@@ -15,7 +15,7 @@ export function MetricsGrid({ ingresos, gastos, margenOperativo, areaLider }) {
         <MetricCard title="Rentabilidad" value={`${margenOperativo}%`} icon={LineChart} colorClass="text-blue-600" />
       </div>
       <div className="rounded-lg shadow-sm hover:shadow-md transform hover:scale-[1.02] transition-all duration-200 border-l-4 border-purple-500 bg-white dark:bg-slate-900">
-        <MetricCard title="Área líder" value={areaLider?.nombre || '—'} icon={Trophy} colorClass="text-gray-700 dark:text-slate-200" />
+        <MetricCard title="Área líder" value={areaLider || '—'} icon={Trophy} colorClass="text-gray-700 dark:text-slate-200" />
       </div>
     </section>
   );
