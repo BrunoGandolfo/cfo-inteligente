@@ -196,12 +196,20 @@ def crear_distribucion(db: Session, data: DistribucionCreate):
     for nombre, monto_uyu, monto_usd in socios_montos:
         socio = db.query(Socio).filter(Socio.nombre == nombre).first()
         if socio and (monto_uyu or monto_usd):
+            # Calcular totales pesificado/dolarizado para este detalle
+            detalle_monto_uyu = monto_uyu or 0
+            detalle_monto_usd = monto_usd or 0
+            detalle_total_pesificado = detalle_monto_uyu + (detalle_monto_usd * data.tipo_cambio)
+            detalle_total_dolarizado = detalle_monto_usd + (detalle_monto_uyu / data.tipo_cambio)
+            
             detalle = DistribucionDetalle(
                 operacion_id=operacion.id,
                 socio_id=socio.id,
-                monto_uyu=monto_uyu or 0,
-                monto_usd=monto_usd or 0,
-                porcentaje=20.0
+                monto_uyu=detalle_monto_uyu,
+                monto_usd=detalle_monto_usd,
+                porcentaje=20.0,
+                total_pesificado=detalle_total_pesificado,
+                total_dolarizado=detalle_total_dolarizado
             )
             db.add(detalle)
     

@@ -17,6 +17,8 @@ class DistribucionDetalle(Base):
     monto_uyu = Column(Numeric(15, 2), nullable=False)
     monto_usd = Column(Numeric(15, 2), nullable=False)
     porcentaje = Column(Numeric(5, 2), nullable=False)
+    total_pesificado = Column(Numeric(15, 2), nullable=False)  # Total en UYU (incluye USD pesificado)
+    total_dolarizado = Column(Numeric(15, 2), nullable=False)  # Total en USD (incluye UYU dolarizado)
     created_at = Column(DateTime, default=utc_now)
     
     # Relaciones
