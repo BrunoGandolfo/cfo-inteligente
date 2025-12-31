@@ -91,7 +91,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading, editMode }) {
       size="max-w-2xl"
       borderColor="border-amber-500"
     >
-      <div className="grid grid-cols-2 gap-2 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Fecha</label>
           <input
@@ -116,7 +116,7 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading, editMode }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
         <div>
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto UYU</label>
           <input

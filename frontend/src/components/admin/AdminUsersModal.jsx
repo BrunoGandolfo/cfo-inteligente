@@ -114,8 +114,8 @@ function AdminUsersModal({ isOpen, onClose }) {
           )}
 
           {/* Lista de usuarios */}
-          <div className="border dark:border-slate-700 rounded-lg overflow-hidden">
-            <table className="w-full">
+          <div className="border dark:border-slate-700 rounded-lg overflow-x-auto">
+            <table className="min-w-full">
               <thead className="bg-gray-50 dark:bg-slate-700">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
