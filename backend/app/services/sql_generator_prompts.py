@@ -144,6 +144,23 @@ REGLAS SQL OBLIGATORIAS:
     - SIEMPRE escribir la palabra JOIN completa
     - LEFT JOIN, RIGHT JOIN, INNER JOIN, FULL OUTER JOIN
     - NUNCA escribir solo LEFT, RIGHT, INNER sin JOIN
+22. SUMAS POR TIPO DE OPERACIÓN (CRÍTICO):
+    - Para INGRESOS por área/localidad/período: SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END)
+    - Para GASTOS por área/localidad/período: SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END)
+    - Para RETIROS: SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END)
+    - Para DISTRIBUCIONES: SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END)
+    - NUNCA usar SUM(total_pesificado) con filtro tipo_operacion IN ('INGRESO', 'GASTO') cuando se pide solo uno
+    - Ejemplos:
+      * "ingresos por área" → SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) GROUP BY area
+      * "gastos de Mercedes" → SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) WHERE localidad = 'MERCEDES'
+23. ÁREA 'OTROS GASTOS' (CRÍTICO):
+    - Es un área EXCLUSIVAMENTE para gastos residuales no imputables a áreas operativas
+    - Tiene 0 ingresos por definición
+    - NUNCA incluirla en reportes de INGRESOS por área
+    - NUNCA incluirla en reportes de RENTABILIDAD por área (no tiene sentido sin ingresos)
+    - SOLO incluirla cuando se listen GASTOS específicamente
+    - Filtrar con: WHERE a.nombre != 'Otros Gastos' o WHERE a.nombre IN ('Jurídica', 'Contable', 'Recuperación', 'Notarial')
+    - Las 4 áreas operativas son: Jurídica, Contable, Recuperación, Notarial
 """
 
 SQL_EXAMPLES = """

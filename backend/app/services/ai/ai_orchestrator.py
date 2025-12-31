@@ -42,7 +42,7 @@ class AIOrchestrator:
     
     # Configuración de Claude
     CLAUDE_MODEL = "claude-sonnet-4-20250514"
-    DEFAULT_TIMEOUT = 30
+    DEFAULT_TIMEOUT = 45
     MAX_RETRIES = 3
     RETRY_DELAY = 2  # segundos entre reintentos
     

@@ -91,9 +91,13 @@ def preguntar_cfo_stream(
                 conversacion_id = data.conversation_id
                 logger.info(f"Stream: Continuando conversación {conversacion_id}")
                 
-                # Límite aumentado a 20 mensajes (10 intercambios) para análisis complejos
-                contexto = ConversacionService.obtener_contexto(db, conversacion_id, limite=20)
+                # Límite de 12 mensajes (6 intercambios) para evitar timeouts
+                contexto = ConversacionService.obtener_contexto(db, conversacion_id, limite=12)
                 logger.info(f"Stream: Contexto cargado - {len(contexto)} mensajes")
+                
+                # Advertencia si conversación muy larga
+                if len(contexto) >= 10:
+                    yield sse_format("warning", {"message": "⚠️ Conversación larga detectada. Para mejor rendimiento, considera iniciar una nueva conversación."})
                 
                 yield sse_format("status", {"message": f"Continuando conversación ({len(contexto)} mensajes previos)"})
             else:
