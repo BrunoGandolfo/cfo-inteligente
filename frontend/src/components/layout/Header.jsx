@@ -1,5 +1,6 @@
-import { Bell, Filter, TrendingUp } from 'lucide-react';
+import { Bell, Filter, TrendingUp, Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import ThemeToggle from './ThemeToggle';
 import Avatar from '../ui/Avatar';
 import DateRangePicker from '../filters/DateRangePicker';
@@ -11,7 +12,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 
-export function Header() {
+export function Header({ onMobileMenuToggle }) {
   const [now, setNow] = useState(new Date());
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   
@@ -63,6 +64,17 @@ export function Header() {
     <header className={`fixed top-0 w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 z-50 ${esSocio ? 'h-16' : 'h-20'}`}>
       <div className="h-full flex items-center min-w-0">
         
+        {/* Botón hamburguesa - SOLO MÓVIL Y SOLO SOCIOS */}
+        {esSocio && (
+          <button
+            onClick={onMobileMenuToggle}
+            className="lg:hidden p-3 ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 shrink-0"
+            aria-label="Abrir menú"
+          >
+            <Menu className="w-6 h-6 text-gray-700 dark:text-slate-200" />
+          </button>
+        )}
+        
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* HEADER PARA COLABORADORES */}
         {/* ═══════════════════════════════════════════════════════════════ */}
@@ -107,8 +119,8 @@ export function Header() {
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* HEADER PARA SOCIOS (sin cambios) */}
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* ZONA 1: Logo (250px fijo) */}
-          <div className="w-[250px] flex items-center px-4 xl:px-6 border-r border-gray-200 dark:border-slate-800 shrink-0">
+          {/* ZONA 1: Logo (oculto en móvil, visible en lg+) */}
+          <div className="hidden lg:flex w-[250px] items-center px-4 xl:px-6 border-r border-gray-200 dark:border-slate-800 shrink-0">
             <img src="/logo-conexion.png" alt="Conexión" className="h-14 xl:h-16 w-auto object-contain" />
           </div>
 
@@ -228,4 +240,9 @@ export function Header() {
     </>
   );
 }
+
+Header.propTypes = {
+  onMobileMenuToggle: PropTypes.func
+};
+
 export default Header;
