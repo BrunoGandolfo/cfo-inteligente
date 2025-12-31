@@ -129,17 +129,17 @@ export default function Home() {
                 className={`pb-2 px-1 text-sm font-medium transition ${
                   activeTab === 'login' 
                     ? 'text-white border-b-2 border-blue-500' 
-                    : 'text-slate-500 hover:text-slate-300'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 Iniciar Sesión
               </button>
               <button
                 onClick={() => setActiveTab('register')}
-                className={`pb-2 px-1 text-sm font-medium transition ${
+                className={`px-3 py-1 text-sm font-medium transition rounded-md border ${
                   activeTab === 'register' 
-                    ? 'text-white border-b-2 border-blue-500' 
-                    : 'text-slate-500 hover:text-slate-300'
+                    ? 'text-white border-slate-400 bg-slate-800/50' 
+                    : 'text-slate-300 border-slate-600 hover:text-white hover:border-slate-500'
                 }`}
               >
                 Registrarse
