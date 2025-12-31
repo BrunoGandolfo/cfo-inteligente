@@ -32,7 +32,9 @@ CREATE TABLE distribuciones_detalle (
     socio_id UUID REFERENCES socios(id),
     monto_uyu NUMERIC(15,2),
     monto_usd NUMERIC(15,2),
-    porcentaje NUMERIC(5,2)
+    porcentaje NUMERIC(5,2),
+    total_pesificado NUMERIC(15,2),  -- Total en UYU (usar para sumas por socio)
+    total_dolarizado NUMERIC(15,2)   -- Total en USD (usar para sumas por socio)
 );
 
 CREATE TABLE socios (
@@ -84,13 +86,13 @@ REGLAS SQL OBLIGATORIAS:
 
 1. PORCENTAJES DE MONEDA: Usar moneda_original, NO monto_usd/uyu
 2. RANKINGS: TOP 5 mínimo. LIMIT 1 solo si pregunta "el más/mejor/mayor"
-3. DISTRIBUCIONES: usar distribuciones_detalle para detalle por socio. Para totales usar SUM(o.total_pesificado) o SUM(o.total_dolarizado).
+3. DISTRIBUCIONES POR SOCIO: usar SUM(dd.total_pesificado) para pesos o SUM(dd.total_dolarizado) para dólares desde distribuciones_detalle. NUNCA usar SUM(dd.monto_uyu).
 4. AÑOS EXPLÍCITOS: Si menciona 2024, 2023, etc → usar ESE año exacto
 5. FILTRO TEMPORAL DEFAULT: Sin año explícito → año 2025 (excepto "total/acumulado/histórico")
 6. CONVERSIONES MONEDA: Para totales SIEMPRE usar total_pesificado (pesos) o total_dolarizado (dólares). Nunca calcular manualmente.
 7. PERÍODOS RODANTES: "últimos X meses" = ventana rodante, NO trimestre
 8. UNION ALL CON TOTAL: Usar columna 'orden' (0=datos, 1=total) para ORDER BY
-9. TOTALES DISTRIBUCIONES: SUM(total_pesificado) para pesos, SUM(total_dolarizado) para dólares. La tabla distribuciones_detalle es para detalle por socio.
+9. TOTALES DISTRIBUCIONES: Para totales globales usar SUM(o.total_pesificado) desde operaciones. Para totales por socio usar SUM(dd.total_pesificado) desde distribuciones_detalle.
 10. DISTRIBUCIONES CON FILTROS: Empezar FROM distribuciones_detalle, INNER JOIN, filtros en WHERE
 11. RENTABILIDAD POR ÁREA: Excluir 'Otros Gastos' (categoría residual de gastos)
 12. RETIROS vs DISTRIBUCIONES: RETIRO=caja empresa, DISTRIBUCIÓN=reparto a socios
@@ -152,14 +154,14 @@ WITH distribuciones_periodo AS (
       AND o.fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '3 months'
 ),
 por_socio AS (
-    SELECT 0 AS orden, s.nombre AS socio, SUM(dd.monto_uyu) AS total_uyu, SUM(dd.monto_usd) AS total_usd
+    SELECT 0 AS orden, s.nombre AS socio, SUM(dd.total_pesificado) AS total_uyu, SUM(dd.total_dolarizado) AS total_usd
     FROM distribuciones_detalle dd
     INNER JOIN socios s ON dd.socio_id = s.id
     INNER JOIN distribuciones_periodo dp ON dd.operacion_id = dp.id
     GROUP BY s.nombre
 ),
 total_general AS (
-    SELECT 1 AS orden, 'TOTAL' AS socio, SUM(dd.monto_uyu) AS total_uyu, SUM(dd.monto_usd) AS total_usd
+    SELECT 1 AS orden, 'TOTAL' AS socio, SUM(dd.total_pesificado) AS total_uyu, SUM(dd.total_dolarizado) AS total_usd
     FROM distribuciones_detalle dd
     INNER JOIN distribuciones_periodo dp ON dd.operacion_id = dp.id
 )
