@@ -391,11 +391,11 @@ class TestAIOrchestatorConfig:
         
         assert AIOrchestrator.RETRY_DELAY == 2
     
-    def test_default_timeout_es_30(self):
-        """Timeout por defecto debe ser 30 segundos"""
+    def test_default_timeout_es_45(self):
+        """Timeout por defecto debe ser 45 segundos"""
         from app.services.ai.ai_orchestrator import AIOrchestrator
         
-        assert AIOrchestrator.DEFAULT_TIMEOUT == 30
+        assert AIOrchestrator.DEFAULT_TIMEOUT == 45
 
 
 # ══════════════════════════════════════════════════════════════
