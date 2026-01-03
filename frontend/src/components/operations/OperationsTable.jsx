@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import { useOperations } from '../../hooks/useOperations';
 import OperationRow from './OperationRow';
 import Card from '../ui/Card';
-import Button from '../ui/Button';
 
 export function OperationsTable({ refresh, onOpenDetails, onEdit }) {
   const { operacionesAll: operaciones, loading, anular } = useOperations(refresh);
@@ -40,8 +39,7 @@ export function OperationsTable({ refresh, onOpenDetails, onEdit }) {
                 {operaciones.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="px-6 py-8 text-center text-gray-500 dark:text-slate-300">
-                      <div className="mb-3">No hay operaciones registradas</div>
-                      <Button variant="primary" onClick={() => { /* abrir modal ingreso */ }}>Registrar primera operación</Button>
+                      No hay operaciones en el período seleccionado
                     </td>
                   </tr>
                 ) : (
