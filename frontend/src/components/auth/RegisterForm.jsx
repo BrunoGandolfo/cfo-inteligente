@@ -139,18 +139,35 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
         <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
           Email corporativo
         </label>
-        <div className="flex">
+        <div className="relative">
+          {/* Capa visual: muestra prefijo + dominio en gris */}
+          <div 
+            className={`absolute inset-0 flex items-center px-3 py-2 pointer-events-none border rounded-md bg-white dark:bg-slate-700 ${
+              errors.prefijoEmail ? 'border-red-400' : 'border-gray-300 dark:border-slate-600'
+            }`}
+            aria-hidden="true"
+          >
+            {formData.prefijoEmail ? (
+              <>
+                <span className="text-gray-900 dark:text-white">{formData.prefijoEmail}</span>
+                <span className="text-gray-400 dark:text-slate-500">@{dominio}</span>
+              </>
+            ) : (
+              <span className="text-gray-400 dark:text-slate-500">tunombre@{dominio}</span>
+            )}
+          </div>
+          {/* Input real: invisible pero funcional */}
           <input
             type="text"
             name="prefijoEmail"
             value={formData.prefijoEmail}
             onChange={handleChange}
-            className={`flex-1 px-3 py-2 border ${errors.prefijoEmail ? 'border-red-400' : 'border-gray-300 dark:border-slate-600'} rounded-l-md bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
-            placeholder="naraujo"
+            className={`w-full px-3 py-2 border rounded-md bg-transparent text-transparent caret-gray-900 dark:caret-white focus:outline-none focus:ring-2 focus:ring-indigo-500 relative z-10 ${
+              errors.prefijoEmail ? 'border-red-400' : 'border-gray-300 dark:border-slate-600'
+            }`}
+            autoComplete="off"
+            spellCheck="false"
           />
-          <span className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 dark:border-slate-600 rounded-r-md bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-slate-300 text-sm">
-            @{dominio}
-          </span>
         </div>
         {errors.prefijoEmail && <p className="mt-1 text-sm text-red-600">{errors.prefijoEmail}</p>}
         {emailCompleto && !errors.prefijoEmail && (
