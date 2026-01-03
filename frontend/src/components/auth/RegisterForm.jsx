@@ -78,7 +78,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
     setLoading(true);
     try {
       await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/register`,
+        `${import.meta.env.VITE_API_URL || 'https://cfo-inteligente-production.up.railway.app'}/api/auth/register`,
         {
           prefijo_email: formData.prefijoEmail.trim().toLowerCase(),
           nombre: formData.nombre.trim(),

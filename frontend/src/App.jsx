@@ -41,10 +41,10 @@ function App() {
     const checkAuth = async () => {
       const isValid = await validateToken();
       if (isValid && (currentPage === 'home' || currentPage === 'login')) {
-        setCurrentPage('dashboard');
+      setCurrentPage('dashboard');
       } else if (!isValid && currentPage === 'dashboard') {
-        setCurrentPage('home');
-      }
+      setCurrentPage('home');
+    }
     };
     checkAuth();
   }, [currentPage, validateToken]);

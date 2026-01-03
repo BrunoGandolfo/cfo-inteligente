@@ -11,7 +11,7 @@ RUN npm ci
 COPY . .
 
 # ARG para recibir la URL de la API en build time
-ARG VITE_API_URL=http://localhost:8000
+ARG VITE_API_URL=https://cfo-inteligente-production.up.railway.app
 ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
