@@ -229,18 +229,31 @@ export default function Home() {
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Usuario
                   </label>
-                  <div className="flex">
+                  <div className="relative">
+                    {/* Capa visual: muestra usuario + dominio en gris */}
+                    <div 
+                      className="absolute inset-0 flex items-center px-4 py-3 pointer-events-none border border-slate-700 rounded-lg bg-slate-800"
+                      aria-hidden="true"
+                    >
+                      {registerData.usuario ? (
+                        <>
+                          <span className="text-white">{registerData.usuario}</span>
+                          <span className="text-slate-400">@grupoconexion.uy</span>
+                        </>
+                      ) : (
+                        <span className="text-slate-500">tunombre@grupoconexion.uy</span>
+                      )}
+                    </div>
+                    {/* Input real: invisible pero funcional */}
                     <input
                       type="text"
                       required
-                      className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-l-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
-                      placeholder="tu.usuario"
                       value={registerData.usuario}
-                      onChange={(e) => setRegisterData({...registerData, usuario: e.target.value.toLowerCase().replace(/\s/g, '')})}
+                      onChange={(e) => setRegisterData({...registerData, usuario: e.target.value.toLowerCase().replace(/[@\s]/g, '')})}
+                      className="w-full px-4 py-3 border border-slate-700 rounded-lg bg-transparent text-transparent caret-white focus:outline-none focus:ring-2 focus:ring-blue-500 relative z-10"
+                      autoComplete="off"
+                      spellCheck="false"
                     />
-                    <span className="px-4 py-3 bg-slate-700 border border-slate-600 border-l-0 rounded-r-lg text-slate-400 text-sm flex items-center">
-                      @grupoconexion.uy
-                    </span>
                   </div>
                 </div>
 
