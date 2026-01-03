@@ -46,7 +46,7 @@ export function OperationsTable({ refresh, onOpenDetails, onEdit }) {
                   </tr>
                 ) : (
                   operaciones.map((op) => (
-                    <OperationRow key={op.id} op={op} onSelect={onOpenDetails} onEdit={onEdit} />
+                    <OperationRow key={op.id} op={op} onSelect={onOpenDetails} onEdit={onEdit} onDelete={anular} />
                   ))
                 )}
               </tbody>
