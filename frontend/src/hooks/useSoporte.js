@@ -34,6 +34,7 @@ export function useSoporte() {
     
     try {
       const token = localStorage.getItem('token');
+      const esSocio = localStorage.getItem('esSocio')?.toLowerCase() === 'true';
       const apiUrl = import.meta.env.VITE_API_URL || 'https://cfo-inteligente-production.up.railway.app';
       
       const response = await fetch(
@@ -46,7 +47,8 @@ export function useSoporte() {
           },
           body: JSON.stringify({ 
             mensaje, 
-            historial: mensajes 
+            historial: mensajes,
+            es_socio: esSocio
           })
         }
       );

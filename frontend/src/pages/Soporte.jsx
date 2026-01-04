@@ -16,6 +16,9 @@ export default function Soporte({ onNavigate }) {
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Detectar si es socio
+  const esSocio = localStorage.getItem('esSocio')?.toLowerCase() === 'true';
+
   // Auto-scroll al último mensaje
   useEffect(() => {
     if (chatEndRef.current) {
@@ -44,12 +47,23 @@ export default function Soporte({ onNavigate }) {
     }
   };
 
-  const sugerencias = [
+  // Sugerencias diferentes según rol
+  const sugerencias = esSocio ? [
     '¿Cómo cargo un ingreso?',
     '¿Dónde veo mis operaciones?',
-    '¿Cómo cambio mi contraseña?',
-    '¿Qué es un retiro?'
+    '¿Qué es un retiro?',
+    '¿Cómo se distribuyen utilidades?'
+  ] : [
+    '¿Cómo cargo un ingreso?',
+    '¿Cómo registro un gasto?',
+    '¿Dónde veo mis operaciones?',
+    '¿Cómo cambio mi contraseña?'
   ];
+
+  // Mensaje de bienvenida según rol
+  const textoAyuda = esSocio 
+    ? 'Preguntame lo que necesites sobre cómo usar CFO Inteligente.'
+    : 'Preguntame sobre cómo registrar ingresos y gastos.';
 
   const mensajeBienvenida = mensajes.length === 0;
 
@@ -99,7 +113,7 @@ export default function Soporte({ onNavigate }) {
                 ¡Hola! Soy el asistente de soporte 👋
               </h2>
               <p className="text-gray-600 dark:text-slate-400">
-                Preguntame lo que necesites sobre cómo usar CFO Inteligente.
+                {textoAyuda}
               </p>
             </div>
             

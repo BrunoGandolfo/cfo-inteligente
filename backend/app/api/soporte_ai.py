@@ -35,6 +35,7 @@ class MensajeHistorial(BaseModel):
 class SoporteRequest(BaseModel):
     mensaje: str
     historial: Optional[List[Dict[str, str]]] = []
+    es_socio: Optional[bool] = True  # Default true por compatibilidad
 
 class SoporteResponse(BaseModel):
     respuesta: str
@@ -113,6 +114,38 @@ def construir_mensajes(request: SoporteRequest, nombre_pila: str) -> list:
 # Cargar documentación al iniciar (solo una vez)
 DOCUMENTACION = cargar_documentacion()
 
+# ═══════════════════════════════════════════════════════════════
+# RESTRICCIONES POR ROL
+# ═══════════════════════════════════════════════════════════════
+
+RESTRICCION_SOCIO = """
+RESTRICCIÓN DE ROL - USUARIO SOCIO:
+Este usuario es SOCIO y tiene acceso completo a todas las funcionalidades del sistema.
+Podés ayudarlo con: ingresos, gastos, retiros, distribuciones, métricas, gráficos, 
+administración de usuarios, y cualquier otra consulta.
+"""
+
+RESTRICCION_NO_SOCIO = """
+RESTRICCIÓN DE ROL - USUARIO COLABORADOR (NO SOCIO):
+Este usuario es un COLABORADOR, NO un socio. Solo puede:
+- Registrar INGRESOS
+- Registrar GASTOS  
+- Ver sus propias operaciones
+- Cambiar su contraseña
+- Ver indicadores económicos del día
+
+NO puede ver ni debe recibir información sobre:
+- Retiros de empresa
+- Distribución de utilidades
+- Métricas financieras (montos totales, rentabilidad, márgenes)
+- Gráficos de evolución financiera
+- Administración de usuarios
+- Cualquier información financiera sensible de la empresa
+
+Si pregunta sobre estos temas, respondé SIEMPRE con esta frase exacta:
+"Esa función está disponible solo para socios. Vos podés registrar ingresos y gastos. ¿Te ayudo con eso?"
+"""
+
 # System prompt para el agente - REGLA DE FORMATO AL INICIO
 SYSTEM_PROMPT = """REGLA ABSOLUTA DE FORMATO (CUMPLIR SIEMPRE):
 - PROHIBIDO usar asteriscos (*) para negritas o énfasis
@@ -150,6 +183,8 @@ FORMATO DE RESPUESTAS:
 - Si hay error, primero empatizá y después da la solución
 - Terminá ofreciendo más ayuda
 
+{restriccion_rol}
+
 DOCUMENTACIÓN DEL SISTEMA:
 
 {documentacion}
@@ -170,6 +205,10 @@ async def soporte_ask(
     nombre_pila = obtener_nombre_pila(current_user.nombre)
     messages = construir_mensajes(request, nombre_pila)
     
+    # Determinar restricción según rol (preferir el valor del request, fallback al usuario)
+    es_socio = request.es_socio if request.es_socio is not None else current_user.es_socio
+    restriccion_rol = RESTRICCION_SOCIO if es_socio else RESTRICCION_NO_SOCIO
+    
     try:
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -177,10 +216,16 @@ async def soporte_ask(
         
         client = anthropic.Anthropic(api_key=api_key)
         
+        # Construir system prompt con restricción de rol
+        system_prompt_final = SYSTEM_PROMPT.format(
+            documentacion=DOCUMENTACION,
+            restriccion_rol=restriccion_rol
+        )
+        
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=2000,
-            system=SYSTEM_PROMPT.format(documentacion=DOCUMENTACION),
+            system=system_prompt_final,
             messages=messages
         )
         
@@ -210,6 +255,16 @@ async def soporte_ask_stream(
     nombre_pila = obtener_nombre_pila(current_user.nombre)
     messages = construir_mensajes(request, nombre_pila)
     
+    # Determinar restricción según rol (preferir el valor del request, fallback al usuario)
+    es_socio = request.es_socio if request.es_socio is not None else current_user.es_socio
+    restriccion_rol = RESTRICCION_SOCIO if es_socio else RESTRICCION_NO_SOCIO
+    
+    # Construir system prompt con restricción de rol
+    system_prompt_final = SYSTEM_PROMPT.format(
+        documentacion=DOCUMENTACION,
+        restriccion_rol=restriccion_rol
+    )
+    
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="API key de Anthropic no configurada")
@@ -222,7 +277,7 @@ async def soporte_ask_stream(
             with client.messages.stream(
                 model="claude-sonnet-4-20250514",
                 max_tokens=2000,
-                system=SYSTEM_PROMPT.format(documentacion=DOCUMENTACION),
+                system=system_prompt_final,
                 messages=messages
             ) as stream:
                 for text in stream.text_stream:
