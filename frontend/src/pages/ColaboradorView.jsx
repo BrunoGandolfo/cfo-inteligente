@@ -10,6 +10,7 @@ import { ArrowUpCircle, ArrowDownCircle, CalendarCheck } from 'lucide-react';
 import axiosClient from '../services/api/axiosClient';
 import ModalIngreso from '../components/modals/ModalIngreso';
 import ModalGasto from '../components/modals/ModalGasto';
+import { useIndicadores } from '../hooks/useIndicadores';
 
 function ColaboradorView() {
   const [operaciones, setOperaciones] = useState([]);
@@ -17,6 +18,7 @@ function ColaboradorView() {
   const [showIngreso, setShowIngreso] = useState(false);
   const [showGasto, setShowGasto] = useState(false);
   const [fraseMotivacional, setFraseMotivacional] = useState('');
+  const { indicadores, loading: loadingIndicadores } = useIndicadores();
 
   // Fetch frase motivacional personalizada
   useEffect(() => {
@@ -122,6 +124,68 @@ function ColaboradorView() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Indicadores del día - siempre visibles */}
+      <div className="w-full max-w-4xl mt-8">
+        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 text-center">
+          Indicadores del día
+        </h3>
+        {loadingIndicadores ? (
+          <div className="text-center text-gray-400">Cargando indicadores...</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+            {/* UI */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">UI</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
+                {indicadores?.ui?.valor?.toFixed(4) || '--'}
+              </p>
+            </div>
+            {/* UR */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">UR</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
+                {indicadores?.ur?.valor?.toLocaleString('es-UY') || '--'}
+              </p>
+            </div>
+            {/* BPC */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">BPC</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
+                {indicadores?.bpc?.valor?.toLocaleString('es-UY') || '--'}
+              </p>
+            </div>
+            {/* Inflación */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Inflación</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
+                {indicadores?.inflacion?.valor?.toFixed(1) || '--'}%
+              </p>
+            </div>
+            {/* USD */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">USD</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
+                {indicadores?.cotizaciones?.usd?.venta?.toFixed(2) || '--'}
+              </p>
+            </div>
+            {/* EUR */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">EUR</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
+                {indicadores?.cotizaciones?.eur?.venta?.toFixed(2) || '--'}
+              </p>
+            </div>
+            {/* BRL */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">BRL</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
+                {indicadores?.cotizaciones?.brl?.venta?.toFixed(2) || '--'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modales */}

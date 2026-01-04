@@ -1,9 +1,8 @@
 /**
  * Página de Indicadores Económicos de Uruguay.
  * 
- * Muestra UI, UR, IPC, BPC, inflación y cotizaciones de monedas.
- * Incluye calculadoras para honorarios, ITP, alquileres e IRPF.
- * Incluye buscador de legislación IMPO.
+ * Muestra UI, UR, BPC, inflación y cotizaciones de monedas.
+ * Incluye calculadoras para honorarios, ITP e IRPF.
  */
 
 import { useState } from 'react';
@@ -14,7 +13,6 @@ import IndicadorCard from '../components/indicadores/IndicadorCard';
 import CalculadoraHonorarios from '../components/indicadores/CalculadoraHonorarios';
 import CalculadoraITP from '../components/indicadores/CalculadoraITP';
 import CalculadoraIRPF from '../components/indicadores/CalculadoraIRPF';
-import BuscadorIMPO from '../components/indicadores/BuscadorIMPO';
 
 // Formateo de números
 const formatearIndicador = (valor, decimales = 4) => {
@@ -105,16 +103,6 @@ export default function Indicadores({ onNavigate }) {
           }`}
         >
           Calculadoras
-        </button>
-        <button
-          onClick={() => setActiveTab('legislacion')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'legislacion'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
-          }`}
-        >
-          Legislación
         </button>
       </div>
 
@@ -213,13 +201,6 @@ export default function Indicadores({ onNavigate }) {
           <CalculadoraHonorarios valorUR={indicadores?.ur?.valor || 1841.56} />
           <CalculadoraITP />
           <CalculadoraIRPF valorUI={indicadores?.ui?.valor || 6.4243} />
-        </div>
-      )}
-
-      {/* Tab: Legislación */}
-      {activeTab === 'legislacion' && (
-        <div className="pb-6">
-          <BuscadorIMPO />
         </div>
       )}
     </div>
