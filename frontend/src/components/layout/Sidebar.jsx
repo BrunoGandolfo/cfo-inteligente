@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle } from 'lucide-react';
+import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle, BarChart3 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 
-export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle }) {
+export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle }) {
   // Verificar si el usuario es socio
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -16,6 +16,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
     { key: 'Dashboard', icon: Home, label: 'Dashboard', action: onDashboardToggle },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
+    { key: 'Indicadores', icon: BarChart3, label: 'Indicadores', action: onIndicadoresToggle },
     { key: 'Soporte', icon: HelpCircle, label: 'Soporte', action: onSoporteToggle },
     { key: 'Configuración', icon: Settings, label: 'Configuración' },
   ];
@@ -40,6 +41,8 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
                   ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-l-4 border-blue-600'
                   : highlight
                   ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-semibold'
+                  :                 key === 'Indicadores'
+                  ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                   : key === 'Soporte'
                   ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
                   : 'text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800'
@@ -100,5 +103,6 @@ Sidebar.propTypes = {
   onOpsToggle: PropTypes.func,
   onSoporteToggle: PropTypes.func,
   onDashboardToggle: PropTypes.func,
+  onIndicadoresToggle: PropTypes.func,
 };
 export default Sidebar;

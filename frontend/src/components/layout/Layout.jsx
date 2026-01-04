@@ -20,11 +20,16 @@ export function Layout({ children, onNavigate, currentPage }) {
           <Header onMobileMenuToggle={() => setMobileNavOpen(true)} />
           <div className="pt-20 flex">
             <Sidebar 
-              active={currentPage === 'soporte' ? 'Soporte' : 'Dashboard'}
+              active={
+                currentPage === 'soporte' ? 'Soporte' : 
+                currentPage === 'indicadores' ? 'Indicadores' : 
+                'Dashboard'
+              }
               onChatToggle={() => setChatOpen(!chatOpen)}
               onOpsToggle={() => setOpsOpen(!opsOpen)}
               onSoporteToggle={() => onNavigate?.('soporte')}
               onDashboardToggle={() => onNavigate?.('dashboard')}
+              onIndicadoresToggle={() => onNavigate?.('indicadores')}
             />
             <main className="flex-1 p-4 lg:p-6 overflow-y-auto">{children}</main>
             <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
@@ -38,6 +43,7 @@ export function Layout({ children, onNavigate, currentPage }) {
               onChatToggle={() => setChatOpen(!chatOpen)}
               onOpsToggle={() => setOpsOpen(!opsOpen)}
               onSoporteToggle={() => { setMobileNavOpen(false); onNavigate?.('soporte'); }}
+              onIndicadoresToggle={() => { setMobileNavOpen(false); onNavigate?.('indicadores'); }}
             />
           </div>
         </div>

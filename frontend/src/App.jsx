@@ -3,6 +3,7 @@ import axios from 'axios';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Soporte from './pages/Soporte';
+import Indicadores from './pages/Indicadores';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import { Toaster } from 'react-hot-toast';
@@ -92,6 +93,8 @@ function App() {
     switch (currentPage) {
       case 'soporte':
         return <Soporte onNavigate={setCurrentPage} />;
+      case 'indicadores':
+        return <Indicadores onNavigate={setCurrentPage} />;
       case 'dashboard':
       default:
         return <Dashboard />;

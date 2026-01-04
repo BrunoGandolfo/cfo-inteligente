@@ -63,3 +63,9 @@ app.include_router(metricas_router, prefix="/api/metricas", tags=["metricas"])
 
 from app.api.soporte_ai import router as soporte_router
 app.include_router(soporte_router)
+
+from app.api.indicadores import router as indicadores_router
+app.include_router(indicadores_router)
+
+from app.api.impo import router as impo_router
+app.include_router(impo_router)
