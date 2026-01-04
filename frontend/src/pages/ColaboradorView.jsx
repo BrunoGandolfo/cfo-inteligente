@@ -126,66 +126,69 @@ function ColaboradorView() {
         </div>
       </div>
 
-      {/* Indicadores del día - siempre visibles */}
+      {/* Indicadores del día - estilo Bloomberg terminal */}
       <div className="w-full max-w-4xl mt-8">
-        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 text-center">
-          Indicadores del día
-        </h3>
-        {loadingIndicadores ? (
-          <div className="text-center text-gray-400">Cargando indicadores...</div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-            {/* UI */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">UI</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
-                {indicadores?.ui?.valor?.toFixed(4) || '--'}
-              </p>
+        <div className="bg-gray-900 dark:bg-black rounded-xl p-4 border border-gray-700">
+          <h3 className="text-xs font-mono uppercase tracking-wider text-gray-400 mb-4 text-center">
+            📊 Indicadores Uruguay • Actualizado hoy
+          </h3>
+          {loadingIndicadores ? (
+            <div className="text-center text-gray-500 font-mono">Cargando indicadores...</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              {/* Indicadores económicos - VERDE */}
+              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-emerald-500">
+                <p className="text-[10px] font-mono text-gray-500 uppercase">UI</p>
+                <p className="text-lg font-mono font-bold text-emerald-400 tabular-nums">
+                  {indicadores?.ui?.valor?.toFixed(4) || '--'}
+                </p>
+              </div>
+              
+              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-emerald-500">
+                <p className="text-[10px] font-mono text-gray-500 uppercase">UR</p>
+                <p className="text-lg font-mono font-bold text-emerald-400 tabular-nums">
+                  {indicadores?.ur?.valor?.toLocaleString('es-UY') || '--'}
+                </p>
+              </div>
+              
+              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-emerald-500">
+                <p className="text-[10px] font-mono text-gray-500 uppercase">BPC</p>
+                <p className="text-lg font-mono font-bold text-emerald-400 tabular-nums">
+                  {indicadores?.bpc?.valor?.toLocaleString('es-UY') || '--'}
+                </p>
+              </div>
+              
+              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-emerald-500">
+                <p className="text-[10px] font-mono text-gray-500 uppercase">Inflación</p>
+                <p className="text-lg font-mono font-bold text-emerald-400 tabular-nums">
+                  {indicadores?.inflacion?.valor?.toFixed(1) || '--'}%
+                </p>
+              </div>
+              
+              {/* Cotizaciones - NARANJA Bloomberg */}
+              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-orange-500">
+                <p className="text-[10px] font-mono text-gray-500 uppercase">USD</p>
+                <p className="text-lg font-mono font-bold text-orange-400 tabular-nums">
+                  {indicadores?.cotizaciones?.usd?.venta?.toFixed(2) || '--'}
+                </p>
+              </div>
+              
+              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-orange-500">
+                <p className="text-[10px] font-mono text-gray-500 uppercase">EUR</p>
+                <p className="text-lg font-mono font-bold text-orange-400 tabular-nums">
+                  {indicadores?.cotizaciones?.eur?.venta?.toFixed(2) || '--'}
+                </p>
+              </div>
+              
+              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-orange-500">
+                <p className="text-[10px] font-mono text-gray-500 uppercase">BRL</p>
+                <p className="text-lg font-mono font-bold text-orange-400 tabular-nums">
+                  {indicadores?.cotizaciones?.brl?.venta?.toFixed(2) || '--'}
+                </p>
+              </div>
             </div>
-            {/* UR */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">UR</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
-                {indicadores?.ur?.valor?.toLocaleString('es-UY') || '--'}
-              </p>
-            </div>
-            {/* BPC */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">BPC</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
-                {indicadores?.bpc?.valor?.toLocaleString('es-UY') || '--'}
-              </p>
-            </div>
-            {/* Inflación */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Inflación</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
-                {indicadores?.inflacion?.valor?.toFixed(1) || '--'}%
-              </p>
-            </div>
-            {/* USD */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">USD</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
-                {indicadores?.cotizaciones?.usd?.venta?.toFixed(2) || '--'}
-              </p>
-            </div>
-            {/* EUR */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">EUR</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
-                {indicadores?.cotizaciones?.eur?.venta?.toFixed(2) || '--'}
-              </p>
-            </div>
-            {/* BRL */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">BRL</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
-                {indicadores?.cotizaciones?.brl?.venta?.toFixed(2) || '--'}
-              </p>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Modales */}
