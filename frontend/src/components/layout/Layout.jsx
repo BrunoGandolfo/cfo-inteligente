@@ -7,6 +7,7 @@ import Sidebar from './Sidebar';
 import ChatPanel from '../chat/ChatPanel';
 import OperationsPanel from '../operations/OperationsPanel';
 import MobileNav from './MobileNav';
+import SoporteChat from '../soporte/SoporteChat';
 
 export function Layout({ children }) {
   const [chatOpen, setChatOpen] = useState(false);
@@ -35,6 +36,8 @@ export function Layout({ children }) {
               onChatToggle={() => setChatOpen(!chatOpen)}
               onOpsToggle={() => setOpsOpen(!opsOpen)}
             />
+            {/* Chat de Soporte AI - botón flotante */}
+            <SoporteChat />
           </div>
         </div>
       </FilterProvider>
