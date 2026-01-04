@@ -1,0 +1,12 @@
+# Archivos de entorno locales (no copiar al container)
+.env
+.env.local
+.env.*.local
+
+# Node modules (se reinstalan en el container)
+node_modules
+
+# Archivos de desarrollo
+.git
+.gitignore
+README.md
