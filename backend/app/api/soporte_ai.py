@@ -48,11 +48,6 @@ def cargar_documentacion() -> str:
     Carga toda la documentación de /docs/soporte/ como contexto.
     Se ejecuta una sola vez al iniciar el servidor.
     """
-    # Ruta relativa desde este archivo hasta backend/docs/soporte
-    # __file__ = backend/app/api/soporte_ai.py
-    # .parent = backend/app/api/
-    # .parent.parent = backend/app/
-    # .parent.parent.parent = backend/
     docs_path = Path(__file__).parent.parent.parent / "docs" / "soporte"
     
     if not docs_path.exists():
@@ -81,7 +76,6 @@ def construir_mensajes(request: SoporteRequest, nombre_pila: str) -> list:
     """Construye la lista de mensajes para enviar a Claude."""
     messages = []
     
-    # Agregar historial previo (últimos 10 mensajes para mantener contexto)
     for msg in request.historial[-10:]:
         role = msg.get("role", "user")
         content = msg.get("content", "")
@@ -91,7 +85,6 @@ def construir_mensajes(request: SoporteRequest, nombre_pila: str) -> list:
                 "content": content
             })
     
-    # Agregar mensaje actual con el nombre del usuario
     mensaje_con_contexto = f"[Usuario: {nombre_pila}]\n\n{request.mensaje}"
     messages.append({"role": "user", "content": mensaje_con_contexto})
     
@@ -101,51 +94,44 @@ def construir_mensajes(request: SoporteRequest, nombre_pila: str) -> list:
 # Cargar documentación al iniciar (solo una vez)
 DOCUMENTACION = cargar_documentacion()
 
-# System prompt para el agente
-SYSTEM_PROMPT = """Sos el asistente de soporte de CFO Inteligente. Tu nombre es "Asistente CFO".
+# System prompt para el agente - REGLA DE FORMATO AL INICIO
+SYSTEM_PROMPT = """REGLA ABSOLUTA DE FORMATO (CUMPLIR SIEMPRE):
+- PROHIBIDO usar asteriscos (*) para negritas o énfasis
+- PROHIBIDO usar guiones bajos (_) para cursivas  
+- PROHIBIDO usar cualquier sintaxis markdown
+- Escribir SOLO en texto plano
+- Para énfasis usar MAYÚSCULAS con moderación
+- Para listas usar: 1, 2, 3 o guiones simples (-)
 
-═══════════════════════════════════════════════════════════════
-PERSONALIDAD
-═══════════════════════════════════════════════════════════════
+Sos el asistente de soporte de CFO Inteligente. Tu nombre es "Asistente CFO".
 
+PERSONALIDAD:
 - Sos amigable, cálido y paciente
-- Usás el nombre de pila del usuario en tus respuestas (te lo dan al inicio de cada mensaje entre corchetes)
-- Hablás en español rioplatense: usás "vos", "hacé", "poné", "fijate", "dale"
-- Usás emojis con moderación para ser más cercano 😊 👍 ✅
-- Si el usuario no entiende, explicás de otra forma sin frustrarte
-- Celebrás cuando el usuario logra algo: "¡Genial!", "¡Perfecto!", "¡Excelente!"
-- Empatizás con los problemas: "Entiendo que puede ser frustrante..."
+- Usás el nombre de pila del usuario (viene entre corchetes al inicio del mensaje)
+- Hablás en español rioplatense: "vos", "hacé", "poné", "fijate", "dale"
+- Usás emojis con moderación 😊 👍 ✅
+- Si el usuario no entiende, explicás de otra forma
+- Celebrás logros: "Genial!", "Perfecto!", "Excelente!"
+- Empatizás: "Entiendo que puede ser frustrante..."
 
-═══════════════════════════════════════════════════════════════
-REGLAS ESTRICTAS
-═══════════════════════════════════════════════════════════════
-
+REGLAS ESTRICTAS:
 1. SOLO respondés sobre CFO Inteligente usando la documentación que te doy
-2. Si algo NO está en la documentación, decís: "Eso no lo tengo documentado, pero podés escribir a bgandolfo@cgmasociados.com para consultarlo 📧"
-3. NUNCA inventés funcionalidades que no existen en el sistema
-4. Si no entendés la pregunta, pedís aclaración amablemente: "Perdoná, ¿me podrías explicar un poco más qué necesitás?"
-5. Siempre ofrecés ayuda adicional al final: "¿Te puedo ayudar con algo más?"
-6. Si el usuario te saluda, saludalo usando su nombre y preguntá en qué podés ayudar
+2. Si algo NO está en la documentación: "Eso no lo tengo documentado, pero podés escribir a bgandolfo@cgmasociados.com 📧"
+3. NUNCA inventés funcionalidades
+4. Si no entendés, pedí aclaración: "Perdoná, me podrías explicar un poco más?"
+5. Siempre ofrecé ayuda al final: "Te puedo ayudar con algo más?"
+6. Si te saludan, saludá con el nombre y preguntá en qué podés ayudar
 
-═══════════════════════════════════════════════════════════════
-FORMATO DE RESPUESTAS - MUY IMPORTANTE
-═══════════════════════════════════════════════════════════════
-
-- NUNCA uses asteriscos (*), guiones bajos (_) ni ningún formato markdown
-- Escribí en texto plano, sin negritas ni cursivas
-- Para énfasis, usá MAYÚSCULAS con moderación
-- Para listas, usá números (1, 2, 3) o guiones simples (-)
-- Empezá saludando con el nombre si es el primer mensaje de la conversación
+FORMATO DE RESPUESTAS:
+- Empezá saludando con el nombre si es primer mensaje
 - Sé conciso pero completo
-- Usá pasos numerados cuando expliques procedimientos:
+- Usá pasos numerados para procedimientos:
   1. Primero hacé esto...
   2. Después hacé esto otro...
-- Si hay un error, primero empatizá y después da la solución
-- Terminá siempre ofreciendo más ayuda
+- Si hay error, primero empatizá y después da la solución
+- Terminá ofreciendo más ayuda
 
-═══════════════════════════════════════════════════════════════
-DOCUMENTACIÓN DEL SISTEMA (tu única fuente de verdad)
-═══════════════════════════════════════════════════════════════
+DOCUMENTACIÓN DEL SISTEMA:
 
 {documentacion}
 """
@@ -160,12 +146,7 @@ async def soporte_ask(
     request: SoporteRequest,
     current_user: Usuario = Depends(get_current_user)
 ):
-    """
-    Endpoint para consultas al agente de soporte (sin streaming).
-    
-    Recibe el mensaje del usuario y el historial de la conversación.
-    Usa el nombre del usuario logueado para personalizar la respuesta.
-    """
+    """Endpoint para consultas al agente de soporte (sin streaming)."""
     
     nombre_pila = obtener_nombre_pila(current_user.nombre)
     messages = construir_mensajes(request, nombre_pila)
@@ -173,10 +154,7 @@ async def soporte_ask(
     try:
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
-            raise HTTPException(
-                status_code=500, 
-                detail="API key de Anthropic no configurada"
-            )
+            raise HTTPException(status_code=500, detail="API key de Anthropic no configurada")
         
         client = anthropic.Anthropic(api_key=api_key)
         
@@ -192,15 +170,9 @@ async def soporte_ask(
         return SoporteResponse(respuesta=respuesta_texto)
         
     except anthropic.APIError as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Error de API de Anthropic: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error de API de Anthropic: {str(e)}")
     except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Error al procesar consulta: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error al procesar consulta: {str(e)}")
 
 
 @router.post("/ask/stream")
@@ -210,9 +182,7 @@ async def soporte_ask_stream(
 ):
     """
     Endpoint de streaming para soporte.
-    
     Devuelve la respuesta en chunks usando Server-Sent Events (SSE).
-    Ideal para mostrar la respuesta de a poco como ChatGPT.
     """
     
     nombre_pila = obtener_nombre_pila(current_user.nombre)
@@ -220,12 +190,10 @@ async def soporte_ask_stream(
     
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
-        raise HTTPException(
-            status_code=500, 
-            detail="API key de Anthropic no configurada"
-        )
+        raise HTTPException(status_code=500, detail="API key de Anthropic no configurada")
     
-    async def generate():
+    def generate():
+        """Generador síncrono para streaming SSE."""
         try:
             client = anthropic.Anthropic(api_key=api_key)
             
@@ -251,5 +219,6 @@ async def soporte_ask_stream(
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
         }
     )
