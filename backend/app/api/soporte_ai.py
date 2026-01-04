@@ -45,8 +45,12 @@ def cargar_documentacion() -> str:
     Carga toda la documentación de /docs/soporte/ como contexto.
     Se ejecuta una sola vez al iniciar el servidor.
     """
-    # Ruta relativa desde este archivo hasta docs/soporte
-    docs_path = Path(__file__).parent.parent.parent.parent / "docs" / "soporte"
+    # Ruta relativa desde este archivo hasta backend/docs/soporte
+    # __file__ = backend/app/api/soporte_ai.py
+    # .parent = backend/app/api/
+    # .parent.parent = backend/app/
+    # .parent.parent.parent = backend/
+    docs_path = Path(__file__).parent.parent.parent / "docs" / "soporte"
     
     if not docs_path.exists():
         return "Documentación no disponible."
