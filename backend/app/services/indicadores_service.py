@@ -36,12 +36,6 @@ VALORES_ACTUALES = {
         "fecha": "2026-01-01",
         "frecuencia": "mensual",
     },
-    "ipc": {
-        "valor": 100.0,
-        "fecha": "2025-12-01",
-        "frecuencia": "mensual",
-        "nota": "Base octubre 2022 = 100",
-    },
     "bpc": {
         "valor": 6576.0,
         "fecha": "2026-01-01",
@@ -114,21 +108,6 @@ def obtener_ur() -> Dict[str, Any]:
     return {
         "valor": VALORES_ACTUALES["ur"]["valor"],
         "fecha": VALORES_ACTUALES["ur"]["fecha"],
-        "fuente": "INE (manual)",
-    }
-
-
-def obtener_ipc() -> Dict[str, Any]:
-    """
-    Obtiene el Índice de Precios al Consumo (IPC).
-    
-    Valor fijo actualizable manualmente.
-    Fuente: INE (https://www.ine.gub.uy)
-    Frecuencia: Mensual
-    """
-    return {
-        "valor": VALORES_ACTUALES["ipc"]["valor"],
-        "fecha": VALORES_ACTUALES["ipc"]["fecha"],
         "fuente": "INE (manual)",
     }
 
@@ -247,7 +226,6 @@ def obtener_todos_indicadores() -> Dict[str, Any]:
     return {
         "ui": obtener_ui(),
         "ur": obtener_ur(),
-        "ipc": obtener_ipc(),
         "bpc": obtener_bpc(),
         "inflacion": obtener_inflacion(),
         "cotizaciones": obtener_cotizaciones(),

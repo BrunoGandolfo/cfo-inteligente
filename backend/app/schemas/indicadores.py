@@ -38,7 +38,6 @@ class IndicadoresTodosResponse(BaseModel):
     """Respuesta con todos los indicadores económicos."""
     ui: IndicadorResponse
     ur: IndicadorResponse
-    ipc: IndicadorResponse
     bpc: IndicadorResponse
     inflacion: IndicadorResponse
     cotizaciones: CotizacionesResponse

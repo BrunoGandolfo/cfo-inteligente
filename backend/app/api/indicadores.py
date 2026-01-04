@@ -51,17 +51,6 @@ def obtener_ur(current_user: Usuario = Depends(get_current_user)):
     return indicadores_service.obtener_ur()
 
 
-@router.get("/ipc", response_model=IndicadorResponse)
-def obtener_ipc(current_user: Usuario = Depends(get_current_user)):
-    """
-    Obtiene el Índice de Precios al Consumo (IPC).
-    
-    El IPC mide la variación de precios de una canasta de bienes.
-    Fuente: INE
-    """
-    return indicadores_service.obtener_ipc()
-
-
 @router.get("/bpc", response_model=IndicadorResponse)
 def obtener_bpc(current_user: Usuario = Depends(get_current_user)):
     """

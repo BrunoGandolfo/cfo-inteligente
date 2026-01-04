@@ -8,12 +8,11 @@
 
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { ArrowLeft, RefreshCw, BarChart3, TrendingUp, Landmark, DollarSign, Percent } from 'lucide-react';
+import { ArrowLeft, RefreshCw, TrendingUp, Landmark, DollarSign, Percent } from 'lucide-react';
 import { useIndicadores } from '../hooks/useIndicadores';
 import IndicadorCard from '../components/indicadores/IndicadorCard';
 import CalculadoraHonorarios from '../components/indicadores/CalculadoraHonorarios';
 import CalculadoraITP from '../components/indicadores/CalculadoraITP';
-import CalculadoraAlquileres from '../components/indicadores/CalculadoraAlquileres';
 import CalculadoraIRPF from '../components/indicadores/CalculadoraIRPF';
 import BuscadorIMPO from '../components/indicadores/BuscadorIMPO';
 
@@ -156,16 +155,6 @@ export default function Indicadores({ onNavigate }) {
             colorIcono="text-cyan-500"
           />
 
-          {/* IPC */}
-          <IndicadorCard
-            titulo="IPC (Base Oct 2022)"
-            valor={formatearIndicador(indicadores.ipc?.valor, 2)}
-            subtitulo={`Actualización mensual — ${indicadores.ipc?.fuente || ''}`}
-            icono={BarChart3}
-            colorBorde="border-violet-500"
-            colorIcono="text-violet-500"
-          />
-
           {/* BPC */}
           <IndicadorCard
             titulo="BPC (Base Prestaciones)"
@@ -220,10 +209,9 @@ export default function Indicadores({ onNavigate }) {
 
       {/* Tab: Calculadoras */}
       {activeTab === 'calculadoras' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pb-6">
           <CalculadoraHonorarios valorUR={indicadores?.ur?.valor || 1841.56} />
           <CalculadoraITP />
-          <CalculadoraAlquileres />
           <CalculadoraIRPF valorUI={indicadores?.ui?.valor || 6.4243} />
         </div>
       )}

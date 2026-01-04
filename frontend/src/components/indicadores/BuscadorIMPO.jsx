@@ -18,8 +18,8 @@ export function BuscadorIMPO() {
   const [error, setError] = useState(null);
 
   const buscar = async () => {
-    if (!numero || !anio) {
-      setError('Ingresá número y año');
+    if (!numero) {
+      setError('Ingresá el número de la norma');
       return;
     }
 
@@ -28,7 +28,12 @@ export function BuscadorIMPO() {
       setError(null);
       setResultado(null);
 
-      const { data } = await axiosClient.get(`/api/impo/${tipo}/${numero}/${anio}`);
+      // Si hay año, buscar con año; si no, buscar sin año (búsqueda automática)
+      const url = anio 
+        ? `/api/impo/${tipo}/${numero}/${anio}`
+        : `/api/impo/${tipo}/${numero}`;
+      
+      const { data } = await axiosClient.get(url);
       setResultado(data);
     } catch (err) {
       setError(err.response?.data?.detail || 'No se encontró la norma');
@@ -81,7 +86,7 @@ export function BuscadorIMPO() {
             value={anio}
             onChange={(e) => setAnio(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Año"
+            placeholder="Año (opcional)"
             className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:text-white"
           />
 
@@ -100,16 +105,16 @@ export function BuscadorIMPO() {
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="text-xs text-gray-400 dark:text-slate-500">Ejemplos:</span>
           <button
-            onClick={() => { setTipo('ley'); setNumero('17437'); setAnio('2001'); }}
+            onClick={() => { setTipo('ley'); setNumero('17437'); setAnio(''); }}
             className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
           >
-            Ley 17437/2001
+            Ley 17437
           </button>
           <button
-            onClick={() => { setTipo('decreto'); setNumero('500'); setAnio('1991'); }}
+            onClick={() => { setTipo('decreto'); setNumero('500'); setAnio(''); }}
             className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
           >
-            Decreto 500/1991
+            Decreto 500
           </button>
         </div>
 
