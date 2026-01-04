@@ -56,3 +56,6 @@ app.include_router(catalogos_router, prefix="/api/catalogos", tags=["catalogos"]
 from app.api.metricas import router as metricas_router
 app.include_router(metricas_router, prefix="/api/metricas", tags=["metricas"])
 
+
+from app.api.soporte_ai import router as soporte_router
+app.include_router(soporte_router)
