@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Home, FileText, Settings, Sparkles, Lock, Users } from 'lucide-react';
+import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 
-export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
+export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle }) {
   // Verificar si el usuario es socio
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -13,16 +13,17 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
 
   // Items completos para socios
   const allItems = [
-    { key: 'Dashboard', icon: Home, label: 'Dashboard' },
+    { key: 'Dashboard', icon: Home, label: 'Dashboard', action: onDashboardToggle },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
+    { key: 'Soporte', icon: HelpCircle, label: 'Soporte', action: onSoporteToggle },
     { key: 'Configuración', icon: Settings, label: 'Configuración' },
   ];
 
-  // Colaboradores solo ven Dashboard
+  // Colaboradores solo ven Dashboard y Soporte
   const items = esSocio 
     ? allItems 
-    : allItems.filter(item => item.key === 'Dashboard');
+    : allItems.filter(item => ['Dashboard', 'Soporte'].includes(item.key));
 
   return (
     <aside className="hidden lg:flex lg:flex-col w-[250px] shrink-0 border-r bg-white dark:bg-slate-900 dark:border-slate-800 pt-16 justify-between">
@@ -39,6 +40,8 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
                   ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-l-4 border-blue-600'
                   : highlight
                   ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-semibold'
+                  : key === 'Soporte'
+                  ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
                   : 'text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800'
               )}
             >
@@ -94,6 +97,8 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle }) {
 Sidebar.propTypes = {
   active: PropTypes.string,
   onChatToggle: PropTypes.func,
-  onOpsToggle: PropTypes.func
+  onOpsToggle: PropTypes.func,
+  onSoporteToggle: PropTypes.func,
+  onDashboardToggle: PropTypes.func,
 };
 export default Sidebar;

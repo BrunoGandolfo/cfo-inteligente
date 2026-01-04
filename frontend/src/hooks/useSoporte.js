@@ -1,12 +1,12 @@
 /**
- * Hook para el chat de soporte AI
+ * Hook para el chat de soporte AI con streaming
  * 
  * Maneja la comunicación con el endpoint de soporte,
  * el historial de mensajes y el estado de carga.
+ * Usa streaming para mostrar respuestas de a poco.
  */
 
 import { useState, useCallback } from 'react';
-import axiosClient from '../services/api/axiosClient';
 import toast from 'react-hot-toast';
 
 export function useSoporte() {
@@ -14,44 +14,93 @@ export function useSoporte() {
   const [mensajes, setMensajes] = useState([]);
 
   /**
-   * Envía un mensaje al agente de soporte
+   * Envía un mensaje al agente de soporte con streaming
    * @param {string} mensaje - Texto del mensaje del usuario
-   * @returns {Promise<string|null>} - Respuesta del agente o null si hay error
    */
   const enviarMensaje = useCallback(async (mensaje) => {
-    if (!mensaje.trim()) return null;
+    if (!mensaje.trim()) return;
 
     // Agregar mensaje del usuario al historial
     const nuevoMensajeUsuario = { role: 'user', content: mensaje };
     setMensajes(prev => [...prev, nuevoMensajeUsuario]);
     
+    // Agregar mensaje vacío del asistente que se irá llenando
+    setMensajes(prev => [...prev, { role: 'assistant', content: '' }]);
+    
     setLoading(true);
     
     try {
-      const { data } = await axiosClient.post('/api/soporte/ask', {
-        mensaje,
-        historial: mensajes
-      });
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://cfo-inteligente-production.up.railway.app';
       
-      // Agregar respuesta del asistente al historial
-      const respuestaAsistente = { role: 'assistant', content: data.respuesta };
-      setMensajes(prev => [...prev, respuestaAsistente]);
-      
-      return data.respuesta;
+      const response = await fetch(
+        `${apiUrl}/api/soporte/ask/stream`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            mensaje, 
+            historial: mensajes 
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.text) {
+                // Actualizar el último mensaje (el del asistente)
+                setMensajes(prev => {
+                  const updated = [...prev];
+                  const lastIndex = updated.length - 1;
+                  updated[lastIndex] = {
+                    ...updated[lastIndex],
+                    content: updated[lastIndex].content + data.text
+                  };
+                  return updated;
+                });
+              }
+              if (data.error) {
+                console.error('Error del servidor:', data.error);
+                toast.error('Error al procesar la consulta');
+              }
+            } catch (e) {
+              // Ignorar líneas que no son JSON válido
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error('Error en soporte:', error);
       
-      // No mostrar toast para no duplicar feedback
-      // toast.error('Error al contactar soporte');
-      
-      // Agregar mensaje de error amigable
-      const mensajeError = { 
-        role: 'assistant', 
-        content: '😕 Ups, tuve un problema técnico. ¿Podés intentar de nuevo en unos segundos? Si sigue fallando, escribí a bgandolfo@cgmasociados.com' 
-      };
-      setMensajes(prev => [...prev, mensajeError]);
-      
-      return null;
+      // Actualizar el mensaje del asistente con error
+      setMensajes(prev => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        updated[lastIndex] = {
+          ...updated[lastIndex],
+          content: '😕 Ups, tuve un problema técnico. ¿Podés intentar de nuevo en unos segundos? Si sigue fallando, escribí a bgandolfo@cgmasociados.com'
+        };
+        return updated;
+      });
     } finally {
       setLoading(false);
     }

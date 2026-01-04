@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Soporte from './pages/Soporte';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import { Toaster } from 'react-hot-toast';
@@ -42,7 +43,7 @@ function App() {
       const isValid = await validateToken();
       if (isValid && (currentPage === 'home' || currentPage === 'login')) {
       setCurrentPage('dashboard');
-      } else if (!isValid && currentPage === 'dashboard') {
+      } else if (!isValid && !['home', 'login'].includes(currentPage)) {
       setCurrentPage('home');
     }
     };
@@ -86,10 +87,21 @@ function App() {
     );
   }
 
+  // Función para renderizar el contenido según la página
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'soporte':
+        return <Soporte />;
+      case 'dashboard':
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
     <>
-      <Layout>
-        <Dashboard />
+      <Layout onNavigate={setCurrentPage} currentPage={currentPage}>
+        {renderContent()}
       </Layout>
       <Toaster position="top-right" />
     </>

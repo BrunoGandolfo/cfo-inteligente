@@ -5,13 +5,16 @@ Este módulo implementa un asistente de soporte que:
 - Usa la documentación de /docs/soporte/ como única fuente de verdad
 - Personaliza respuestas usando el nombre del usuario
 - Habla en español rioplatense de forma amigable
+- Soporta streaming para respuestas en tiempo real
 """
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 import anthropic
 import os
+import json
 from pathlib import Path
 
 from app.core.security import get_current_user
@@ -74,6 +77,27 @@ def obtener_nombre_pila(nombre_completo: str) -> str:
     return nombre_completo.split()[0].capitalize()
 
 
+def construir_mensajes(request: SoporteRequest, nombre_pila: str) -> list:
+    """Construye la lista de mensajes para enviar a Claude."""
+    messages = []
+    
+    # Agregar historial previo (últimos 10 mensajes para mantener contexto)
+    for msg in request.historial[-10:]:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role in ["user", "assistant"] and content:
+            messages.append({
+                "role": role,
+                "content": content
+            })
+    
+    # Agregar mensaje actual con el nombre del usuario
+    mensaje_con_contexto = f"[Usuario: {nombre_pila}]\n\n{request.mensaje}"
+    messages.append({"role": "user", "content": mensaje_con_contexto})
+    
+    return messages
+
+
 # Cargar documentación al iniciar (solo una vez)
 DOCUMENTACION = cargar_documentacion()
 
@@ -104,9 +128,13 @@ REGLAS ESTRICTAS
 6. Si el usuario te saluda, saludalo usando su nombre y preguntá en qué podés ayudar
 
 ═══════════════════════════════════════════════════════════════
-FORMATO DE RESPUESTAS
+FORMATO DE RESPUESTAS - MUY IMPORTANTE
 ═══════════════════════════════════════════════════════════════
 
+- NUNCA uses asteriscos (*), guiones bajos (_) ni ningún formato markdown
+- Escribí en texto plano, sin negritas ni cursivas
+- Para énfasis, usá MAYÚSCULAS con moderación
+- Para listas, usá números (1, 2, 3) o guiones simples (-)
 - Empezá saludando con el nombre si es el primer mensaje de la conversación
 - Sé conciso pero completo
 - Usá pasos numerados cuando expliques procedimientos:
@@ -114,8 +142,6 @@ FORMATO DE RESPUESTAS
   2. Después hacé esto otro...
 - Si hay un error, primero empatizá y después da la solución
 - Terminá siempre ofreciendo más ayuda
-- Usá negrita **así** para destacar cosas importantes
-- Usá formato cuando ayude a la claridad
 
 ═══════════════════════════════════════════════════════════════
 DOCUMENTACIÓN DEL SISTEMA (tu única fuente de verdad)
@@ -126,7 +152,7 @@ DOCUMENTACIÓN DEL SISTEMA (tu única fuente de verdad)
 
 
 # ═══════════════════════════════════════════════════════════════
-# ENDPOINT
+# ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
 
 @router.post("/ask", response_model=SoporteResponse)
@@ -135,34 +161,16 @@ async def soporte_ask(
     current_user: Usuario = Depends(get_current_user)
 ):
     """
-    Endpoint para consultas al agente de soporte.
+    Endpoint para consultas al agente de soporte (sin streaming).
     
     Recibe el mensaje del usuario y el historial de la conversación.
     Usa el nombre del usuario logueado para personalizar la respuesta.
     """
     
-    # Obtener nombre de pila del usuario
     nombre_pila = obtener_nombre_pila(current_user.nombre)
-    
-    # Construir lista de mensajes con historial
-    messages = []
-    
-    # Agregar historial previo (últimos 10 mensajes para mantener contexto)
-    for msg in request.historial[-10:]:
-        role = msg.get("role", "user")
-        content = msg.get("content", "")
-        if role in ["user", "assistant"] and content:
-            messages.append({
-                "role": role,
-                "content": content
-            })
-    
-    # Agregar mensaje actual con el nombre del usuario
-    mensaje_con_contexto = f"[Usuario: {nombre_pila}]\n\n{request.mensaje}"
-    messages.append({"role": "user", "content": mensaje_con_contexto})
+    messages = construir_mensajes(request, nombre_pila)
     
     try:
-        # Crear cliente de Anthropic
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise HTTPException(
@@ -172,7 +180,6 @@ async def soporte_ask(
         
         client = anthropic.Anthropic(api_key=api_key)
         
-        # Llamar a Claude
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=2000,
@@ -180,7 +187,6 @@ async def soporte_ask(
             messages=messages
         )
         
-        # Extraer texto de la respuesta
         respuesta_texto = response.content[0].text if response.content else "No pude procesar tu consulta."
         
         return SoporteResponse(respuesta=respuesta_texto)
@@ -195,3 +201,55 @@ async def soporte_ask(
             status_code=500, 
             detail=f"Error al procesar consulta: {str(e)}"
         )
+
+
+@router.post("/ask/stream")
+async def soporte_ask_stream(
+    request: SoporteRequest,
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Endpoint de streaming para soporte.
+    
+    Devuelve la respuesta en chunks usando Server-Sent Events (SSE).
+    Ideal para mostrar la respuesta de a poco como ChatGPT.
+    """
+    
+    nombre_pila = obtener_nombre_pila(current_user.nombre)
+    messages = construir_mensajes(request, nombre_pila)
+    
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise HTTPException(
+            status_code=500, 
+            detail="API key de Anthropic no configurada"
+        )
+    
+    async def generate():
+        try:
+            client = anthropic.Anthropic(api_key=api_key)
+            
+            with client.messages.stream(
+                model="claude-sonnet-4-20250514",
+                max_tokens=2000,
+                system=SYSTEM_PROMPT.format(documentacion=DOCUMENTACION),
+                messages=messages
+            ) as stream:
+                for text in stream.text_stream:
+                    yield f"data: {json.dumps({'text': text})}\n\n"
+            
+            yield "data: [DONE]\n\n"
+            
+        except anthropic.APIError as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+    
+    return StreamingResponse(
+        generate(), 
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )

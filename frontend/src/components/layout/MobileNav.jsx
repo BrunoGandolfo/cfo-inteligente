@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Home, FileText, Sparkles, Lock, Users, LogOut } from 'lucide-react';
+import { X, Home, FileText, Sparkles, Lock, Users, LogOut, HelpCircle } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -7,7 +7,7 @@ import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 import toast from 'react-hot-toast';
 
-export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle }) {
+export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle }) {
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const userName = localStorage.getItem('userName') || 'Usuario';
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -18,11 +18,12 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle }) {
     { key: 'Dashboard', icon: Home, label: 'Dashboard', action: onClose },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: () => { onOpsToggle(); onClose(); } },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: () => { onChatToggle(); onClose(); }, highlight: true },
+    { key: 'Soporte', icon: HelpCircle, label: 'Soporte', action: () => { onSoporteToggle?.(); }, supportItem: true },
   ];
 
   const items = esSocio 
     ? allItems 
-    : allItems.filter(item => item.key === 'Dashboard');
+    : allItems.filter(item => ['Dashboard', 'Soporte'].includes(item.key));
 
   const handleLogout = () => {
     toast.success('Sesión cerrada correctamente');
@@ -71,7 +72,7 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle }) {
 
               {/* Navegación principal */}
               <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-                {items.map(({ key, icon: Icon, label, action, highlight }) => (
+                {items.map(({ key, icon: Icon, label, action, highlight, supportItem }) => (
                   <button
                     key={key}
                     onClick={action}
@@ -79,6 +80,8 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle }) {
                       'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all',
                       highlight
                         ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 font-semibold'
+                        : supportItem
+                        ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
                         : 'text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800'
                     )}
                   >
@@ -146,7 +149,8 @@ MobileNav.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onChatToggle: PropTypes.func,
-  onOpsToggle: PropTypes.func
+  onOpsToggle: PropTypes.func,
+  onSoporteToggle: PropTypes.func,
 };
 
 export default MobileNav;
