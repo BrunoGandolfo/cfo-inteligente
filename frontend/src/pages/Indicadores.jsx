@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { ArrowLeft, RefreshCw, TrendingUp, Landmark, DollarSign, Percent } from 'lucide-react';
+import { ArrowLeft, RefreshCw, TrendingUp, Landmark, DollarSign, Percent, BarChart3 } from 'lucide-react';
 import { useIndicadores } from '../hooks/useIndicadores';
 import IndicadorCard from '../components/indicadores/IndicadorCard';
 import CalculadoraHonorarios from '../components/indicadores/CalculadoraHonorarios';
