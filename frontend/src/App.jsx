@@ -22,8 +22,8 @@ function App() {
     }
 
     try {
-      // Verificar token con endpoint protegido
-      await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/usuarios`, {
+      // Verificar token con endpoint /me (accesible por todos los usuarios)
+      await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsValidating(false);

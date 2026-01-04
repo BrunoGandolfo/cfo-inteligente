@@ -57,6 +57,16 @@ class ChangePasswordRequest(BaseModel):
 class ChangePasswordResponse(BaseModel):
     message: str
 
+class UsuarioResponse(BaseModel):
+    id: str
+    email: str
+    nombre: str
+    es_socio: bool
+
+class ResetPasswordResponse(BaseModel):
+    message: str
+    temp_password: str
+
 # ═══════════════════════════════════════════════════════════════
 # ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
@@ -153,6 +163,22 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/me", response_model=UsuarioResponse)
+def get_current_user_info(
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Obtiene información del usuario actual.
+    Usado para validar tokens - accesible por TODOS los usuarios autenticados.
+    """
+    return UsuarioResponse(
+        id=str(current_user.id),
+        email=current_user.email,
+        nombre=current_user.nombre,
+        es_socio=current_user.es_socio
+    )
+
+
 @router.post("/change-password", response_model=ChangePasswordResponse)
 async def change_password(
     request: ChangePasswordRequest,
@@ -194,17 +220,6 @@ async def change_password(
 # ═══════════════════════════════════════════════════════════════
 # ADMINISTRACIÓN DE USUARIOS (SOLO SOCIOS)
 # ═══════════════════════════════════════════════════════════════
-
-class UsuarioResponse(BaseModel):
-    id: str
-    email: str
-    nombre: str
-    es_socio: bool
-
-class ResetPasswordResponse(BaseModel):
-    message: str
-    temp_password: str
-
 
 @router.get("/usuarios", response_model=list[UsuarioResponse])
 def listar_usuarios(
