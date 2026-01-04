@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import os
 from app.core.config import settings
 from app.api.auth import router as auth_router
@@ -11,6 +12,10 @@ app = FastAPI(
     description="Sistema Financiero Conexión Consultora",
     version="0.1.0"
 )
+
+# Middleware para manejar headers de proxy (X-Forwarded-Proto, X-Forwarded-For)
+# Necesario para que Railway preserve HTTPS en redirects
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 # CORS - lee orígenes de variable de entorno
 cors_origins = os.getenv(
@@ -55,7 +60,6 @@ app.include_router(catalogos_router, prefix="/api/catalogos", tags=["catalogos"]
 
 from app.api.metricas import router as metricas_router
 app.include_router(metricas_router, prefix="/api/metricas", tags=["metricas"])
-
 
 from app.api.soporte_ai import router as soporte_router
 app.include_router(soporte_router)
