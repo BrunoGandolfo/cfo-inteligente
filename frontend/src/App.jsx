@@ -91,7 +91,7 @@ function App() {
   const renderContent = () => {
     switch (currentPage) {
       case 'soporte':
-        return <Soporte />;
+        return <Soporte onNavigate={setCurrentPage} />;
       case 'dashboard':
       default:
         return <Dashboard />;

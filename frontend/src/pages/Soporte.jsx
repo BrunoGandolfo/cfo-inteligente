@@ -6,10 +6,11 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { HelpCircle, Send, RefreshCw } from 'lucide-react';
+import { HelpCircle, Send, RefreshCw, ArrowLeft } from 'lucide-react';
+import PropTypes from 'prop-types';
 import { useSoporte } from '../hooks/useSoporte';
 
-export default function Soporte() {
+export default function Soporte({ onNavigate }) {
   const [input, setInput] = useState('');
   const { mensajes, loading, enviarMensaje, limpiarChat } = useSoporte();
   const chatEndRef = useRef(null);
@@ -54,6 +55,15 @@ export default function Soporte() {
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col max-w-4xl mx-auto">
+      {/* Botón volver */}
+      <button 
+        onClick={() => onNavigate?.('dashboard')}
+        className="flex items-center gap-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 mb-3 px-2 transition-colors"
+      >
+        <ArrowLeft size={18} />
+        <span className="text-sm">Volver al Dashboard</span>
+      </button>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4 px-2">
         <div className="flex items-center gap-3">
@@ -169,3 +179,7 @@ export default function Soporte() {
     </div>
   );
 }
+
+Soporte.propTypes = {
+  onNavigate: PropTypes.func,
+};

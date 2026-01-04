@@ -15,6 +15,7 @@ from typing import Optional, List, Dict
 import anthropic
 import os
 import json
+import re
 from pathlib import Path
 
 from app.core.security import get_current_user
@@ -42,6 +43,24 @@ class SoporteResponse(BaseModel):
 # ═══════════════════════════════════════════════════════════════
 # FUNCIONES AUXILIARES
 # ═══════════════════════════════════════════════════════════════
+
+def limpiar_markdown(texto: str) -> str:
+    """
+    Elimina asteriscos y formato markdown del texto.
+    Se aplica a cada chunk para garantizar texto plano.
+    """
+    if not texto:
+        return texto
+    # Quitar **texto** y *texto*
+    texto = re.sub(r'\*\*([^*]+)\*\*', r'\1', texto)
+    texto = re.sub(r'\*([^*]+)\*', r'\1', texto)
+    # Quitar __texto__ y _texto_
+    texto = re.sub(r'__([^_]+)__', r'\1', texto)
+    texto = re.sub(r'_([^_]+)_', r'\1', texto)
+    # Quitar asteriscos sueltos que queden
+    texto = texto.replace('**', '').replace('*', '')
+    return texto
+
 
 def cargar_documentacion() -> str:
     """
@@ -167,7 +186,10 @@ async def soporte_ask(
         
         respuesta_texto = response.content[0].text if response.content else "No pude procesar tu consulta."
         
-        return SoporteResponse(respuesta=respuesta_texto)
+        # Limpiar cualquier markdown que haya quedado
+        respuesta_limpia = limpiar_markdown(respuesta_texto)
+        
+        return SoporteResponse(respuesta=respuesta_limpia)
         
     except anthropic.APIError as e:
         raise HTTPException(status_code=500, detail=f"Error de API de Anthropic: {str(e)}")
@@ -204,7 +226,10 @@ async def soporte_ask_stream(
                 messages=messages
             ) as stream:
                 for text in stream.text_stream:
-                    yield f"data: {json.dumps({'text': text})}\n\n"
+                    # Limpiar markdown de cada chunk
+                    texto_limpio = limpiar_markdown(text)
+                    if texto_limpio:
+                        yield f"data: {json.dumps({'text': texto_limpio})}\n\n"
             
             yield "data: [DONE]\n\n"
             

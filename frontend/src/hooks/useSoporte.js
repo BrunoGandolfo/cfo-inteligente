@@ -9,6 +9,9 @@
 import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
+// Helper para delay
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 export function useSoporte() {
   const [loading, setLoading] = useState(false);
   const [mensajes, setMensajes] = useState([]);
@@ -75,8 +78,10 @@ export function useSoporte() {
                     ...updated[lastIndex],
                     content: updated[lastIndex].content + data.text
                   };
-                  return updated;
+                  return [...updated];
                 });
+                // Delay entre chunks para efecto más natural
+                await delay(20);
               }
               if (data.error) {
                 console.error('Error del servidor:', data.error);
