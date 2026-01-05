@@ -66,3 +66,6 @@ app.include_router(soporte_router)
 
 from app.api.indicadores import router as indicadores_router
 app.include_router(indicadores_router)
+
+from app.api.expedientes import router as expedientes_router
+app.include_router(expedientes_router)
