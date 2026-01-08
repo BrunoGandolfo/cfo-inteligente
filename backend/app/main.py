@@ -1,11 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+import logging
 import os
 from app.core.config import settings
 from app.api.auth import router as auth_router
 from app.api.operaciones import router as operaciones_router
 from app.api.tipo_cambio import router as tipo_cambio_router
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="CFO Inteligente API",
@@ -69,3 +72,26 @@ app.include_router(indicadores_router)
 
 from app.api.expedientes import router as expedientes_router
 app.include_router(expedientes_router)
+
+
+# ============================================================================
+# EVENTOS STARTUP / SHUTDOWN
+# ============================================================================
+
+@app.on_event("startup")
+async def startup_event():
+    """Inicia servicios al arrancar la aplicación."""
+    if settings.environment == "production":
+        from app.services.scheduler_service import iniciar_scheduler
+        iniciar_scheduler()
+        logger.info("🚀 Scheduler activado (producción)")
+    else:
+        logger.info("⏸️ Scheduler desactivado (desarrollo)")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Detiene servicios al cerrar la aplicación."""
+    if settings.environment == "production":
+        from app.services.scheduler_service import detener_scheduler
+        detener_scheduler()

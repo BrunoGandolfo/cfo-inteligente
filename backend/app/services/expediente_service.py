@@ -9,6 +9,7 @@ Solo socios pueden gestionar expedientes.
 
 import logging
 import json
+import time
 from datetime import datetime, timezone
 from typing import Optional, Dict, List, Tuple, Any
 
@@ -472,3 +473,163 @@ def listar_expedientes_activos(
     return query.order_by(
         Expediente.ultimo_movimiento.desc().nullslast()
     ).offset(offset).limit(limit).all()
+
+
+# ============================================================================
+# SINCRONIZACIÓN MASIVA
+# ============================================================================
+
+def sincronizar_todos_los_expedientes(db: Session) -> Dict[str, Any]:
+    """
+    Sincroniza todos los expedientes activos con el Web Service del Poder Judicial.
+    
+    Diseñado para ejecución diaria (ej: cron a las 8AM).
+    Incluye delay de 1 segundo entre consultas para no sobrecargar el WS.
+    
+    Args:
+        db: Sesión de SQLAlchemy
+        
+    Returns:
+        Dict con resumen de la sincronización:
+        {
+            "total_expedientes": int,
+            "sincronizados_ok": int,
+            "con_nuevos_movimientos": int,
+            "total_nuevos_movimientos": int,
+            "errores": int,
+            "detalle_errores": [{"iue": str, "error": str}],
+            "inicio": datetime,
+            "fin": datetime,
+            "duracion_segundos": float
+        }
+    """
+    inicio = datetime.now(timezone.utc)
+    
+    logger.info("=" * 60)
+    logger.info("INICIO SINCRONIZACIÓN MASIVA DE EXPEDIENTES")
+    logger.info("=" * 60)
+    
+    # Obtener todos los expedientes activos
+    expedientes = db.query(Expediente).filter(
+        Expediente.activo == True,
+        Expediente.deleted_at.is_(None)
+    ).all()
+    
+    total_expedientes = len(expedientes)
+    logger.info(f"Expedientes activos a sincronizar: {total_expedientes}")
+    
+    # Contadores
+    sincronizados_ok = 0
+    con_nuevos_movimientos = 0
+    total_nuevos_movimientos = 0
+    errores = 0
+    detalle_errores = []
+    
+    # Procesar cada expediente
+    for idx, expediente in enumerate(expedientes, 1):
+        iue = expediente.iue
+        logger.info(f"[{idx}/{total_expedientes}] Sincronizando: {iue}")
+        
+        try:
+            # Sincronizar expediente individual
+            _, nuevos_movimientos = sincronizar_expediente(db, iue)
+            
+            sincronizados_ok += 1
+            
+            if nuevos_movimientos > 0:
+                con_nuevos_movimientos += 1
+                total_nuevos_movimientos += nuevos_movimientos
+                logger.info(f"  -> {nuevos_movimientos} nuevos movimientos detectados")
+            
+        except Exception as e:
+            errores += 1
+            error_msg = str(e)
+            detalle_errores.append({"iue": iue, "error": error_msg})
+            logger.error(f"  -> ERROR: {error_msg}")
+            # Continuar con el siguiente expediente
+        
+        # Esperar 1 segundo entre consultas (excepto en el último)
+        if idx < total_expedientes:
+            time.sleep(1)
+    
+    fin = datetime.now(timezone.utc)
+    duracion = (fin - inicio).total_seconds()
+    
+    logger.info("=" * 60)
+    logger.info("SINCRONIZACIÓN MASIVA COMPLETADA")
+    logger.info(f"  Total expedientes: {total_expedientes}")
+    logger.info(f"  Sincronizados OK: {sincronizados_ok}")
+    logger.info(f"  Con nuevos movimientos: {con_nuevos_movimientos}")
+    logger.info(f"  Total nuevos movimientos: {total_nuevos_movimientos}")
+    logger.info(f"  Errores: {errores}")
+    logger.info(f"  Duración: {duracion:.2f} segundos")
+    logger.info("=" * 60)
+    
+    return {
+        "total_expedientes": total_expedientes,
+        "sincronizados_ok": sincronizados_ok,
+        "con_nuevos_movimientos": con_nuevos_movimientos,
+        "total_nuevos_movimientos": total_nuevos_movimientos,
+        "errores": errores,
+        "detalle_errores": detalle_errores,
+        "inicio": inicio,
+        "fin": fin,
+        "duracion_segundos": duracion
+    }
+
+
+def obtener_resumen_sincronizacion(db: Session) -> Dict[str, Any]:
+    """
+    Obtiene estadísticas actuales de sincronización de expedientes.
+    
+    Args:
+        db: Sesión de SQLAlchemy
+        
+    Returns:
+        Dict con estadísticas:
+        {
+            "total_expedientes_activos": int,
+            "sincronizados_hoy": int,
+            "movimientos_sin_notificar": int,
+            "ultima_sincronizacion_global": datetime | None
+        }
+    """
+    from sqlalchemy import func
+    
+    hoy = datetime.now(timezone.utc).date()
+    
+    # Total expedientes activos
+    total_activos = db.query(Expediente).filter(
+        Expediente.activo == True,
+        Expediente.deleted_at.is_(None)
+    ).count()
+    
+    # Sincronizados hoy (ultima_sincronizacion es de hoy)
+    sincronizados_hoy = db.query(Expediente).filter(
+        Expediente.activo == True,
+        Expediente.deleted_at.is_(None),
+        func.date(Expediente.ultima_sincronizacion) == hoy
+    ).count()
+    
+    # Movimientos sin notificar
+    movimientos_pendientes = db.query(ExpedienteMovimiento).join(
+        Expediente,
+        ExpedienteMovimiento.expediente_id == Expediente.id
+    ).filter(
+        ExpedienteMovimiento.notificado == False,
+        Expediente.activo == True,
+        Expediente.deleted_at.is_(None)
+    ).count()
+    
+    # Última sincronización global (max de todas)
+    ultima_sync = db.query(func.max(Expediente.ultima_sincronizacion)).filter(
+        Expediente.activo == True,
+        Expediente.deleted_at.is_(None)
+    ).scalar()
+    
+    return {
+        "total_expedientes_activos": total_activos,
+        "sincronizados_hoy": sincronizados_hoy,
+        "movimientos_sin_notificar": movimientos_pendientes,
+        "ultima_sincronizacion_global": ultima_sync
+    }

@@ -106,6 +106,33 @@ class MovimientoPendienteResponse(BaseModel):
     socio_responsable_id: Optional[str]
 
 
+class ErrorSincronizacion(BaseModel):
+    """Detalle de error en sincronización."""
+    iue: str
+    error: str
+
+
+class SincronizacionMasivaResponse(BaseModel):
+    """Schema de respuesta para sincronización masiva de expedientes."""
+    total_expedientes: int
+    sincronizados_ok: int
+    con_nuevos_movimientos: int
+    total_nuevos_movimientos: int
+    errores: int
+    detalle_errores: List[ErrorSincronizacion]
+    inicio: datetime
+    fin: datetime
+    duracion_segundos: float
+
+
+class ResumenSincronizacionResponse(BaseModel):
+    """Schema de respuesta para estadísticas de sincronización."""
+    total_expedientes_activos: int
+    sincronizados_hoy: int
+    movimientos_sin_notificar: int
+    ultima_sincronizacion_global: Optional[datetime]
+
+
 # ============================================================================
 # HELPERS
 # ============================================================================
@@ -529,3 +556,62 @@ def actualizar_expediente(
         "mensaje": "Expediente actualizado",
         "expediente": _expediente_to_response(expediente)
     }
+
+
+# ============================================================================
+# SINCRONIZACIÓN MASIVA
+# ============================================================================
+
+@router.post("/sincronizar-todos", response_model=SincronizacionMasivaResponse)
+def sincronizar_todos_expedientes(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Sincroniza TODOS los expedientes activos con el Poder Judicial.
+    
+    ⚠️ ADVERTENCIA: Este endpoint puede demorar varios minutos si hay muchos expedientes.
+    Se espera 1 segundo entre cada consulta para no sobrecargar el servicio del PJ.
+    
+    Solo socios pueden usar este endpoint.
+    """
+    _verificar_socio(current_user)
+    
+    logger.info(f"🔄 Iniciando sincronización masiva - Usuario: {current_user.email}")
+    
+    try:
+        resultado = expediente_service.sincronizar_todos_los_expedientes(db)
+        
+        logger.info(
+            f"✅ Sincronización masiva completada: {resultado['sincronizados_ok']}/{resultado['total_expedientes']} "
+            f"expedientes, {resultado['total_nuevos_movimientos']} nuevos movimientos"
+        )
+        
+        return resultado
+        
+    except Exception as e:
+        logger.error(f"❌ Error en sincronización masiva: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error durante la sincronización masiva: {str(e)}"
+        )
+
+
+@router.get("/resumen-sincronizacion", response_model=ResumenSincronizacionResponse)
+def obtener_resumen_sync(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Obtiene estadísticas actuales de sincronización de expedientes.
+    
+    Incluye: total activos, sincronizados hoy, movimientos pendientes, última sync.
+    Solo socios pueden usar este endpoint.
+    """
+    _verificar_socio(current_user)
+    
+    logger.info(f"📊 Consultando resumen de sincronización - Usuario: {current_user.email}")
+    
+    resumen = expediente_service.obtener_resumen_sincronizacion(db)
+    
+    return resumen
