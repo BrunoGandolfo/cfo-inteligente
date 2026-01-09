@@ -548,10 +548,20 @@ def obtener_historia_expediente(
     if expediente is None:
         raise HTTPException(status_code=404, detail="Expediente no encontrado")
     
-    # Obtener movimientos ordenados cronológicamente (más antiguo primero)
-    movimientos = db.query(ExpedienteMovimiento).filter(
+    # Obtener todos los movimientos ordenados cronológicamente (más antiguo primero)
+    todos_movimientos = db.query(ExpedienteMovimiento).filter(
         ExpedienteMovimiento.expediente_id == exp_uuid
     ).order_by(ExpedienteMovimiento.fecha.asc()).all()
+    
+    total_movimientos = len(todos_movimientos)
+    
+    # Si hay más de 35 movimientos, tomar primeros 5 + últimos 30 para evitar timeout
+    if total_movimientos > 35:
+        movimientos = todos_movimientos[:5] + todos_movimientos[-30:]
+        movimientos_omitidos = total_movimientos - 35
+    else:
+        movimientos = todos_movimientos
+        movimientos_omitidos = 0
     
     # Preparar datos para Claude
     movimientos_data = []
@@ -583,7 +593,9 @@ IUE: {expediente.iue}
 Carátula: {expediente.caratula or 'Sin carátula'}
 Origen: {expediente.origen or 'No especificado'}
 Sede actual: {sede_actual}
-Total movimientos: {len(movimientos)}
+Total movimientos: {total_movimientos}
+Movimientos mostrados: {len(movimientos)} (primeros 5 + últimos 30)
+Movimientos omitidos del medio: {movimientos_omitidos}
 
 MOVIMIENTOS (cronológico):
 {json.dumps(movimientos_data, ensure_ascii=False, indent=2)}
@@ -599,17 +611,17 @@ Usa formato con bullets y secciones para facilitar la lectura."""
             prompt=prompt,
             temperature=0.3,
             max_tokens=2000,
-            timeout=30
+            timeout=60
         )
         
-        logger.info(f"Historia generada exitosamente para expediente {expediente_id}")
+        logger.info(f"Historia generada exitosamente para expediente {expediente_id} ({total_movimientos} movimientos totales, {len(movimientos)} mostrados)")
         
         return {
             "expediente_id": str(expediente.id),
             "iue": expediente.iue,
             "caratula": expediente.caratula,
             "resumen": resumen.strip(),
-            "total_movimientos": len(movimientos),
+            "total_movimientos": total_movimientos,
             "generado_en": datetime.now(timezone.utc)
         }
         
