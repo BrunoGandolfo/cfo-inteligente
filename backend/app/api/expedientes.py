@@ -18,6 +18,7 @@ from app.core.security import get_current_user
 from app.models import Usuario
 from app.models.expediente import Expediente, ExpedienteMovimiento
 from app.services import expediente_service
+from app.services import twilio_service
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +132,19 @@ class ResumenSincronizacionResponse(BaseModel):
     sincronizados_hoy: int
     movimientos_sin_notificar: int
     ultima_sincronizacion_global: Optional[datetime]
+
+
+class NotificacionRequest(BaseModel):
+    """Schema para enviar notificación WhatsApp."""
+    numero: str = Field(..., description="Número WhatsApp en formato internacional (ej: +59899123456)")
+
+
+class NotificacionResponse(BaseModel):
+    """Schema de respuesta para notificación."""
+    exito: bool
+    mensaje: str
+    sid: Optional[str] = None
+    detalles: Optional[dict] = None
 
 
 # ============================================================================
@@ -615,3 +629,92 @@ def obtener_resumen_sync(
     resumen = expediente_service.obtener_resumen_sincronizacion(db)
     
     return resumen
+
+
+# ============================================================================
+# NOTIFICACIONES WHATSAPP
+# ============================================================================
+
+@router.post("/notificaciones/test", response_model=NotificacionResponse)
+def enviar_notificacion_test(
+    data: NotificacionRequest,
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Envía mensaje de prueba para verificar configuración de WhatsApp.
+    
+    Solo socios pueden usar este endpoint.
+    """
+    _verificar_socio(current_user)
+    
+    logger.info(f"📱 Enviando WhatsApp de prueba a {data.numero} - Usuario: {current_user.email}")
+    
+    resultado = twilio_service.enviar_test(data.numero)
+    
+    if resultado["exito"]:
+        return {
+            "exito": True,
+            "mensaje": "Mensaje de prueba enviado correctamente",
+            "sid": resultado["sid"],
+            "detalles": None
+        }
+    else:
+        return {
+            "exito": False,
+            "mensaje": f"Error al enviar: {resultado['error']}",
+            "sid": None,
+            "detalles": {"error": resultado["error"]}
+        }
+
+
+@router.post("/notificaciones/enviar", response_model=NotificacionResponse)
+def enviar_notificacion_movimientos(
+    data: NotificacionRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Envía notificación de movimientos pendientes via WhatsApp.
+    
+    Obtiene todos los movimientos sin notificar, los envía y los marca como notificados.
+    Solo socios pueden usar este endpoint.
+    """
+    _verificar_socio(current_user)
+    
+    logger.info(f"📱 Enviando notificación de movimientos a {data.numero} - Usuario: {current_user.email}")
+    
+    # Obtener movimientos pendientes
+    movimientos = expediente_service.obtener_movimientos_sin_notificar(db)
+    
+    if not movimientos:
+        return {
+            "exito": True,
+            "mensaje": "No hay movimientos pendientes de notificar",
+            "sid": None,
+            "detalles": {"total_movimientos": 0}
+        }
+    
+    # Enviar notificación
+    resultado = twilio_service.notificar_movimientos_expedientes(movimientos, data.numero)
+    
+    if resultado.get("exito"):
+        # Marcar como notificados
+        ids = [m["movimiento_id"] for m in movimientos]
+        expediente_service.marcar_movimientos_notificados(db, ids)
+        
+        return {
+            "exito": True,
+            "mensaje": f"Notificación enviada: {resultado['total_movimientos']} movimientos de {resultado['total_expedientes']} expedientes",
+            "sid": resultado.get("sid"),
+            "detalles": {
+                "total_movimientos": resultado["total_movimientos"],
+                "total_expedientes": resultado["total_expedientes"]
+            }
+        }
+    else:
+        return {
+            "exito": False,
+            "mensaje": f"Error al enviar: {resultado.get('error', 'Error desconocido')}",
+            "sid": None,
+            "detalles": {"error": resultado.get("error")}
+        }

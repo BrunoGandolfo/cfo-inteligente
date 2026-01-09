@@ -4,6 +4,7 @@ Usa APScheduler con zona horaria Uruguay.
 """
 
 import logging
+import os
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
@@ -22,20 +23,49 @@ scheduler = AsyncIOScheduler(timezone=TZ_URUGUAY)
 
 
 def tarea_sincronizar_expedientes():
-    """Tarea programada: sincroniza todos los expedientes."""
+    """Tarea programada: sincroniza expedientes y envía notificaciones."""
     logger.info("🕗 Ejecutando tarea programada: sincronización de expedientes")
     
     db: Session = SessionLocal()
     try:
+        # 1. Sincronizar expedientes
         resultado = sincronizar_todos_los_expedientes(db)
         logger.info(
-            f"✅ Tarea completada: {resultado['sincronizados_ok']}/{resultado['total_expedientes']} "
+            f"✅ Sincronización: {resultado['sincronizados_ok']}/{resultado['total_expedientes']} "
             f"expedientes, {resultado['total_nuevos_movimientos']} nuevos movimientos"
         )
+        
+        # 2. Enviar notificaciones si hay nuevos movimientos
+        if resultado['total_nuevos_movimientos'] > 0:
+            enviar_notificaciones_pendientes(db)
+            
     except Exception as e:
         logger.error(f"❌ Error en tarea programada: {e}")
     finally:
         db.close()
+
+
+def enviar_notificaciones_pendientes(db: Session):
+    """Envía notificaciones de movimientos pendientes a todos los socios."""
+    from app.services.expediente_service import obtener_movimientos_sin_notificar, marcar_movimientos_notificados
+    from app.services import twilio_service
+    
+    movimientos = obtener_movimientos_sin_notificar(db)
+    
+    if not movimientos:
+        logger.info("📭 Sin movimientos pendientes de notificar")
+        return
+    
+    # Enviar a todos los socios
+    resultado = twilio_service.notificar_a_todos_los_socios(movimientos)
+    
+    if resultado["enviados_ok"] > 0:
+        # Marcar como notificados si al menos un envío fue exitoso
+        ids = [m["movimiento_id"] for m in movimientos]
+        marcar_movimientos_notificados(db, ids)
+        logger.info(f"📱 Notificaciones: {resultado['enviados_ok']}/{resultado['total_numeros']} socios notificados")
+    else:
+        logger.error(f"❌ Falló el envío a todos los socios")
 
 
 def iniciar_scheduler():
