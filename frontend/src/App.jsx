@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Soporte from './pages/Soporte';
 import Indicadores from './pages/Indicadores';
+import Expedientes from './pages/Expedientes';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import { Toaster } from 'react-hot-toast';
@@ -91,6 +92,8 @@ function App() {
   // Función para renderizar el contenido según la página
   const renderContent = () => {
     switch (currentPage) {
+      case 'expedientes':
+        return <Expedientes />;
       case 'soporte':
         return <Soporte onNavigate={setCurrentPage} />;
       case 'indicadores':

@@ -22,7 +22,8 @@ export function Layout({ children, onNavigate, currentPage }) {
             <Sidebar 
               active={
                 currentPage === 'soporte' ? 'Soporte' : 
-                currentPage === 'indicadores' ? 'Indicadores' : 
+                currentPage === 'indicadores' ? 'Indicadores' :
+                currentPage === 'expedientes' ? 'Expedientes' :
                 'Dashboard'
               }
               onChatToggle={() => setChatOpen(!chatOpen)}
@@ -30,6 +31,7 @@ export function Layout({ children, onNavigate, currentPage }) {
               onSoporteToggle={() => onNavigate?.('soporte')}
               onDashboardToggle={() => onNavigate?.('dashboard')}
               onIndicadoresToggle={() => onNavigate?.('indicadores')}
+              onExpedientesToggle={() => onNavigate?.('expedientes')}
             />
             <main className="flex-1 p-4 lg:p-6 overflow-y-auto">{children}</main>
             <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />

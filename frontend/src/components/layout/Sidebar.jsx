@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle, BarChart3 } from 'lucide-react';
+import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle, BarChart3, Scale } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 
-export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle }) {
+export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle, onExpedientesToggle }) {
   // Verificar si el usuario es socio
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -14,6 +14,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
   // Items completos para socios
   const allItems = [
     { key: 'Dashboard', icon: Home, label: 'Dashboard', action: onDashboardToggle },
+    { key: 'Expedientes', icon: Scale, label: 'Expedientes', action: onExpedientesToggle },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
     { key: 'Indicadores', icon: BarChart3, label: 'Indicadores', action: onIndicadoresToggle },
@@ -104,5 +105,6 @@ Sidebar.propTypes = {
   onSoporteToggle: PropTypes.func,
   onDashboardToggle: PropTypes.func,
   onIndicadoresToggle: PropTypes.func,
+  onExpedientesToggle: PropTypes.func,
 };
 export default Sidebar;
