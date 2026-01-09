@@ -12,6 +12,7 @@ from typing import Optional, List
 from datetime import datetime, date, timezone
 from uuid import UUID
 import logging
+import json
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -145,6 +146,16 @@ class NotificacionResponse(BaseModel):
     mensaje: str
     sid: Optional[str] = None
     detalles: Optional[dict] = None
+
+
+class HistoriaResponse(BaseModel):
+    """Schema de respuesta para historia del expediente."""
+    expediente_id: str
+    iue: str
+    caratula: Optional[str]
+    resumen: str
+    total_movimientos: int
+    generado_en: datetime
 
 
 # ============================================================================
@@ -499,6 +510,115 @@ def enviar_notificacion_movimientos(
             "sid": None,
             "detalles": {"error": resultado.get("error")}
         }
+
+
+@router.get("/{expediente_id}/historia", response_model=HistoriaResponse)
+def obtener_historia_expediente(
+    expediente_id: str,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Genera resumen inteligente de la historia del expediente usando Claude.
+    
+    Analiza todos los movimientos procesales y genera un resumen ejecutivo
+    con cronología, estado actual, hitos importantes y próximos pasos.
+    
+    Solo socios pueden usar este endpoint.
+    """
+    _verificar_socio(current_user)
+    
+    logger.info(f"Generando historia del expediente {expediente_id} - Usuario: {current_user.email}")
+    
+    try:
+        exp_uuid = UUID(expediente_id)
+    except ValueError as e:
+        logger.error(f"ID de expediente inválido: {expediente_id} - Error: {e}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"ID de expediente inválido: {expediente_id}. Formato esperado: UUID"
+        )
+    
+    # Obtener expediente con movimientos
+    expediente = db.query(Expediente).filter(
+        Expediente.id == exp_uuid,
+        Expediente.deleted_at.is_(None)
+    ).first()
+    
+    if expediente is None:
+        raise HTTPException(status_code=404, detail="Expediente no encontrado")
+    
+    # Obtener movimientos ordenados cronológicamente (más antiguo primero)
+    movimientos = db.query(ExpedienteMovimiento).filter(
+        ExpedienteMovimiento.expediente_id == exp_uuid
+    ).order_by(ExpedienteMovimiento.fecha.asc()).all()
+    
+    # Preparar datos para Claude
+    movimientos_data = []
+    for mov in movimientos:
+        movimientos_data.append({
+            "fecha": mov.fecha.strftime("%d/%m/%Y") if mov.fecha else "S/F",
+            "tipo": mov.tipo or "Sin tipo",
+            "decreto": mov.decreto,
+            "vencimiento": mov.vencimiento.strftime("%d/%m/%Y") if mov.vencimiento else None,
+            "sede": mov.sede
+        })
+    
+    # Construir prompt para Claude
+    sede_actual = movimientos[-1].sede if movimientos else "No especificada"
+    
+    prompt = f"""Eres un asistente legal experto en derecho procesal uruguayo.
+
+Analiza la historia procesal de este expediente y genera un resumen ejecutivo que:
+
+CRONOLOGÍA: Resume las etapas principales del proceso en orden cronológico
+ESTADO ACTUAL: Indica claramente dónde está el expediente ahora y qué implica
+HITOS IMPORTANTES: Destaca decretos, resoluciones y actuaciones relevantes
+PLAZOS: Si hay plazos corriendo o vencidos, mencionarlos
+PRÓXIMOS PASOS: Sugiere qué actuaciones podrían corresponder
+
+DATOS DEL EXPEDIENTE:
+
+IUE: {expediente.iue}
+Carátula: {expediente.caratula or 'Sin carátula'}
+Origen: {expediente.origen or 'No especificado'}
+Sede actual: {sede_actual}
+Total movimientos: {len(movimientos)}
+
+MOVIMIENTOS (cronológico):
+{json.dumps(movimientos_data, ensure_ascii=False, indent=2)}
+
+Genera un resumen profesional pero accesible, de máximo 1000 palabras.
+Usa formato con bullets y secciones para facilitar la lectura."""
+    
+    try:
+        from app.services.ai.claude_client import ClaudeClient
+        
+        client = ClaudeClient()
+        resumen = client.complete(
+            prompt=prompt,
+            temperature=0.3,
+            max_tokens=2000,
+            timeout=30
+        )
+        
+        logger.info(f"Historia generada exitosamente para expediente {expediente_id}")
+        
+        return {
+            "expediente_id": str(expediente.id),
+            "iue": expediente.iue,
+            "caratula": expediente.caratula,
+            "resumen": resumen.strip(),
+            "total_movimientos": len(movimientos),
+            "generado_en": datetime.now(timezone.utc)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generando historia con Claude: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al generar resumen de historia: {str(e)}"
+        )
 
 
 # ============================================================================

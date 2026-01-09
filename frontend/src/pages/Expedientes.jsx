@@ -9,29 +9,35 @@ import {
   Calendar,
   MapPin,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  BookOpen
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import axiosClient from '../services/api/axiosClient';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 function Expedientes() {
   const { 
     expedientes, 
     loading, 
     resumen,
+    historiaActual,
+    loadingHistoria,
     fetchExpedientes, 
     fetchResumen,
     sincronizarNuevo,
     reSincronizar,
-    fetchExpediente
+    fetchExpediente,
+    fetchHistoria
   } = useExpedientes();
   
   const [showModal, setShowModal] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const [syncingId, setSyncingId] = useState(null);
+  const [showHistoriaModal, setShowHistoriaModal] = useState(false);
   const [iueInput, setIueInput] = useState('');
 
   useEffect(() => {
@@ -83,6 +89,14 @@ function Expedientes() {
       fetchResumen();
     } finally {
       setSyncingId(null);
+    }
+  };
+
+  const handleVerHistoria = async (id) => {
+    setShowHistoriaModal(true);
+    const historia = await fetchHistoria(id);
+    if (!historia) {
+      setShowHistoriaModal(false);
     }
   };
 
@@ -280,17 +294,30 @@ function Expedientes() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReSync(exp.id);
-                        }}
-                        disabled={syncingId === exp.id}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors disabled:opacity-50"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${syncingId === exp.id ? 'animate-spin' : ''}`} />
-                        {syncingId === exp.id ? 'Sincronizando...' : 'Re-sincronizar'}
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReSync(exp.id);
+                          }}
+                          disabled={syncingId === exp.id}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${syncingId === exp.id ? 'animate-spin' : ''}`} />
+                          {syncingId === exp.id ? 'Sincronizando...' : 'Re-sincronizar'}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleVerHistoria(exp.id);
+                          }}
+                          disabled={loadingHistoria}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors disabled:opacity-50"
+                        >
+                          <BookOpen className={`w-4 h-4 ${loadingHistoria ? 'animate-pulse' : ''}`} />
+                          Ver Historia
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   );
@@ -300,6 +327,57 @@ function Expedientes() {
           </div>
         )}
       </Card>
+
+      {/* Modal Historia */}
+      {showHistoriaModal && historiaActual && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Historia del Expediente
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                    {historiaActual.iue} - {historiaActual.caratula}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setShowHistoriaModal(false);
+                    setHistoriaActual(null);
+                  }} 
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            {/* Body - scrollable */}
+            <div className="px-6 py-4 overflow-y-auto flex-1">
+              {loadingHistoria ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-500 dark:text-slate-400">Generando historia...</p>
+                </div>
+              ) : (
+                <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap text-gray-700 dark:text-slate-200">
+                  {historiaActual.resumen}
+                </div>
+              )}
+            </div>
+            
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
+              <p className="text-xs text-gray-400 dark:text-slate-500">
+                Generado: {format(new Date(historiaActual.generado_en), "dd/MM/yyyy HH:mm", { locale: es })}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Agregar Expediente */}
       {showModal && (

@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 export function useExpedientes() {
   const [expedientes, setExpedientes] = useState([]);
   const [expedienteActual, setExpedienteActual] = useState(null);
+  const [historiaActual, setHistoriaActual] = useState(null);
+  const [loadingHistoria, setLoadingHistoria] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [resumen, setResumen] = useState(null);
@@ -200,9 +202,34 @@ export function useExpedientes() {
     }
   }, []);
 
+  /**
+   * Obtiene la historia inteligente del expediente
+   */
+  const fetchHistoria = useCallback(async (id) => {
+    try {
+      setLoadingHistoria(true);
+      setError(null);
+      
+      const { data } = await axiosClient.get(`/api/expedientes/${id}/historia`);
+      setHistoriaActual(data);
+      
+      return data;
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || err.message || 'Error al generar historia';
+      setError(errorMsg);
+      toast.error(errorMsg);
+      console.error('Error generando historia:', err);
+      return null;
+    } finally {
+      setLoadingHistoria(false);
+    }
+  }, []);
+
   return {
     expedientes,
     expedienteActual,
+    historiaActual,
+    loadingHistoria,
     loading,
     error,
     resumen,
@@ -212,6 +239,7 @@ export function useExpedientes() {
     reSincronizar,
     eliminarExpediente,
     fetchResumen,
+    fetchHistoria,
   };
 }
 
