@@ -401,12 +401,21 @@ def obtener_expediente(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"Obteniendo expediente {expediente_id} - Usuario: {current_user.email}")
+    logger.info(
+        f"Obteniendo expediente - ID recibido: '{expediente_id}' "
+        f"(tipo: {type(expediente_id).__name__}, len: {len(expediente_id)}) - "
+        f"Usuario: {current_user.email}"
+    )
     
     try:
         exp_uuid = UUID(expediente_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="ID de expediente inválido")
+        logger.debug(f"UUID parseado correctamente: {exp_uuid}")
+    except ValueError as e:
+        logger.error(f"ID de expediente inválido: {expediente_id} - Error: {e}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"ID de expediente inválido: {expediente_id}. Formato esperado: UUID"
+        )
     
     expediente = db.query(Expediente).filter(
         Expediente.id == exp_uuid,

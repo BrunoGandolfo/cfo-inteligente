@@ -87,6 +87,7 @@ function Expedientes() {
   };
 
   const handleRowClick = async (id) => {
+    console.log('handleRowClick - ID:', id, 'Type:', typeof id);
     await fetchExpediente(id);
     // TODO: Abrir modal de detalle
     toast.info('Detalle de expediente (próximamente)');
@@ -236,7 +237,9 @@ function Expedientes() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
-                {expedientes.map((exp) => (
+                {expedientes.map((exp) => {
+                  console.log('Expediente en tabla:', exp.id, exp);
+                  return (
                   <tr
                     key={exp.id}
                     onClick={() => handleRowClick(exp.id)}
@@ -290,7 +293,8 @@ function Expedientes() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

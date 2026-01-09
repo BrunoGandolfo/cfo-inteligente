@@ -10,6 +10,7 @@ Solo socios pueden gestionar expedientes.
 import logging
 import json
 import time
+import re
 from datetime import datetime, timezone
 from typing import Optional, Dict, List, Tuple, Any
 
@@ -151,6 +152,29 @@ def consultar_expediente_ws(iue: str) -> Optional[Dict[str, Any]]:
 # SINCRONIZACIÓN CON BASE DE DATOS
 # ============================================================================
 
+def _limpiar_html(texto: Optional[str]) -> Optional[str]:
+    """
+    Limpia tags HTML de un texto.
+    
+    Args:
+        texto: Texto que puede contener HTML
+        
+    Returns:
+        Texto limpio sin tags HTML
+    """
+    if not texto:
+        return texto
+    
+    # Reemplazar <br> y variantes por espacio
+    texto = re.sub(r'<br\s*/?>', ' ', texto, flags=re.IGNORECASE)
+    # Eliminar cualquier otro tag HTML
+    texto = re.sub(r'<[^>]+>', '', texto)
+    # Limpiar espacios múltiples
+    texto = re.sub(r'\s+', ' ', texto).strip()
+    
+    return texto
+
+
 def _parsear_fecha(fecha_str: str) -> Optional[datetime]:
     """Parsea fecha del WS (formato DD/MM/YYYY) a datetime."""
     if not fecha_str:
@@ -208,6 +232,8 @@ def sincronizar_expediente(
     ahora = datetime.now(timezone.utc)
     
     if expediente is None:
+        # Limpiar carátula de HTML antes de guardar
+        caratula_limpia = _limpiar_html(datos_ws.get("caratula"))
         # Crear nuevo expediente
         logger.info(f"Creando expediente: {iue}")
         expediente = Expediente(
@@ -215,7 +241,7 @@ def sincronizar_expediente(
             iue_sede=sede,
             iue_numero=numero,
             iue_anio=anio,
-            caratula=datos_ws.get("caratula"),
+            caratula=caratula_limpia,
             origen=datos_ws.get("origen"),
             abogado_actor=datos_ws.get("abogado_actor"),
             abogado_demandado=datos_ws.get("abogado_demandante"),  # Nota: el WS usa "demandante"
@@ -229,7 +255,8 @@ def sincronizar_expediente(
     else:
         # Actualizar datos básicos
         logger.info(f"Actualizando expediente: {iue}")
-        expediente.caratula = datos_ws.get("caratula") or expediente.caratula
+        caratula_limpia = _limpiar_html(datos_ws.get("caratula"))
+        expediente.caratula = caratula_limpia or expediente.caratula
         expediente.origen = datos_ws.get("origen") or expediente.origen
         expediente.abogado_actor = datos_ws.get("abogado_actor") or expediente.abogado_actor
         expediente.abogado_demandado = datos_ws.get("abogado_demandante") or expediente.abogado_demandado
