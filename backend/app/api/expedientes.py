@@ -314,6 +314,61 @@ def listar_expedientes(
     }
 
 
+@router.post("/sincronizar-todos", response_model=SincronizacionMasivaResponse)
+def sincronizar_todos_expedientes(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Sincroniza TODOS los expedientes activos con el Poder Judicial.
+    
+    ⚠️ ADVERTENCIA: Este endpoint puede demorar varios minutos si hay muchos expedientes.
+    Se espera 1 segundo entre cada consulta para no sobrecargar el servicio del PJ.
+    
+    Solo socios pueden usar este endpoint.
+    """
+    _verificar_socio(current_user)
+    
+    logger.info(f"🔄 Iniciando sincronización masiva - Usuario: {current_user.email}")
+    
+    try:
+        resultado = expediente_service.sincronizar_todos_los_expedientes(db)
+        
+        logger.info(
+            f"✅ Sincronización masiva completada: {resultado['sincronizados_ok']}/{resultado['total_expedientes']} "
+            f"expedientes, {resultado['total_nuevos_movimientos']} nuevos movimientos"
+        )
+        
+        return resultado
+        
+    except Exception as e:
+        logger.error(f"❌ Error en sincronización masiva: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error durante la sincronización masiva: {str(e)}"
+        )
+
+
+@router.get("/resumen-sincronizacion", response_model=ResumenSincronizacionResponse)
+def obtener_resumen_sync(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Obtiene estadísticas actuales de sincronización de expedientes.
+    
+    Incluye: total activos, sincronizados hoy, movimientos pendientes, última sync.
+    Solo socios pueden usar este endpoint.
+    """
+    _verificar_socio(current_user)
+    
+    logger.info(f"📊 Consultando resumen de sincronización - Usuario: {current_user.email}")
+    
+    resumen = expediente_service.obtener_resumen_sincronizacion(db)
+    
+    return resumen
+
+
 @router.get("/pendientes", response_model=List[MovimientoPendienteResponse])
 def listar_movimientos_pendientes(
     db: Session = Depends(get_db),
@@ -360,6 +415,95 @@ def marcar_movimientos_notificados(
         "actualizados": actualizados
     }
 
+
+@router.post("/notificaciones/test", response_model=NotificacionResponse)
+def enviar_notificacion_test(
+    data: NotificacionRequest,
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Envía mensaje de prueba para verificar configuración de WhatsApp.
+    
+    Solo socios pueden usar este endpoint.
+    """
+    _verificar_socio(current_user)
+    
+    logger.info(f"📱 Enviando WhatsApp de prueba a {data.numero} - Usuario: {current_user.email}")
+    
+    resultado = twilio_service.enviar_test(data.numero)
+    
+    if resultado["exito"]:
+        return {
+            "exito": True,
+            "mensaje": "Mensaje de prueba enviado correctamente",
+            "sid": resultado["sid"],
+            "detalles": None
+        }
+    else:
+        return {
+            "exito": False,
+            "mensaje": f"Error al enviar: {resultado['error']}",
+            "sid": None,
+            "detalles": {"error": resultado["error"]}
+        }
+
+
+@router.post("/notificaciones/enviar", response_model=NotificacionResponse)
+def enviar_notificacion_movimientos(
+    data: NotificacionRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Envía notificación de movimientos pendientes via WhatsApp.
+    
+    Obtiene todos los movimientos sin notificar, los envía y los marca como notificados.
+    Solo socios pueden usar este endpoint.
+    """
+    _verificar_socio(current_user)
+    
+    logger.info(f"📱 Enviando notificación de movimientos a {data.numero} - Usuario: {current_user.email}")
+    
+    # Obtener movimientos pendientes
+    movimientos = expediente_service.obtener_movimientos_sin_notificar(db)
+    
+    if not movimientos:
+        return {
+            "exito": True,
+            "mensaje": "No hay movimientos pendientes de notificar",
+            "sid": None,
+            "detalles": {"total_movimientos": 0}
+        }
+    
+    # Enviar notificación
+    resultado = twilio_service.notificar_movimientos_expedientes(movimientos, data.numero)
+    
+    if resultado.get("exito"):
+        # Marcar como notificados
+        ids = [m["movimiento_id"] for m in movimientos]
+        expediente_service.marcar_movimientos_notificados(db, ids)
+        
+        return {
+            "exito": True,
+            "mensaje": f"Notificación enviada: {resultado['total_movimientos']} movimientos de {resultado['total_expedientes']} expedientes",
+            "sid": resultado.get("sid"),
+            "detalles": {
+                "total_movimientos": resultado["total_movimientos"],
+                "total_expedientes": resultado["total_expedientes"]
+            }
+        }
+    else:
+        return {
+            "exito": False,
+            "mensaje": f"Error al enviar: {resultado.get('error', 'Error desconocido')}",
+            "sid": None,
+            "detalles": {"error": resultado.get("error")}
+        }
+
+
+# ============================================================================
+# ENDPOINTS CON PARÁMETROS DINÁMICOS (deben ir al final)
+# ============================================================================
 
 @router.get("/iue/{iue:path}", response_model=ExpedienteResponse)
 def obtener_por_iue(
@@ -579,151 +723,3 @@ def actualizar_expediente(
         "mensaje": "Expediente actualizado",
         "expediente": _expediente_to_response(expediente)
     }
-
-
-# ============================================================================
-# SINCRONIZACIÓN MASIVA
-# ============================================================================
-
-@router.post("/sincronizar-todos", response_model=SincronizacionMasivaResponse)
-def sincronizar_todos_expedientes(
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
-):
-    """
-    Sincroniza TODOS los expedientes activos con el Poder Judicial.
-    
-    ⚠️ ADVERTENCIA: Este endpoint puede demorar varios minutos si hay muchos expedientes.
-    Se espera 1 segundo entre cada consulta para no sobrecargar el servicio del PJ.
-    
-    Solo socios pueden usar este endpoint.
-    """
-    _verificar_socio(current_user)
-    
-    logger.info(f"🔄 Iniciando sincronización masiva - Usuario: {current_user.email}")
-    
-    try:
-        resultado = expediente_service.sincronizar_todos_los_expedientes(db)
-        
-        logger.info(
-            f"✅ Sincronización masiva completada: {resultado['sincronizados_ok']}/{resultado['total_expedientes']} "
-            f"expedientes, {resultado['total_nuevos_movimientos']} nuevos movimientos"
-        )
-        
-        return resultado
-        
-    except Exception as e:
-        logger.error(f"❌ Error en sincronización masiva: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error durante la sincronización masiva: {str(e)}"
-        )
-
-
-@router.get("/resumen-sincronizacion", response_model=ResumenSincronizacionResponse)
-def obtener_resumen_sync(
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
-):
-    """
-    Obtiene estadísticas actuales de sincronización de expedientes.
-    
-    Incluye: total activos, sincronizados hoy, movimientos pendientes, última sync.
-    Solo socios pueden usar este endpoint.
-    """
-    _verificar_socio(current_user)
-    
-    logger.info(f"📊 Consultando resumen de sincronización - Usuario: {current_user.email}")
-    
-    resumen = expediente_service.obtener_resumen_sincronizacion(db)
-    
-    return resumen
-
-
-# ============================================================================
-# NOTIFICACIONES WHATSAPP
-# ============================================================================
-
-@router.post("/notificaciones/test", response_model=NotificacionResponse)
-def enviar_notificacion_test(
-    data: NotificacionRequest,
-    current_user: Usuario = Depends(get_current_user)
-):
-    """
-    Envía mensaje de prueba para verificar configuración de WhatsApp.
-    
-    Solo socios pueden usar este endpoint.
-    """
-    _verificar_socio(current_user)
-    
-    logger.info(f"📱 Enviando WhatsApp de prueba a {data.numero} - Usuario: {current_user.email}")
-    
-    resultado = twilio_service.enviar_test(data.numero)
-    
-    if resultado["exito"]:
-        return {
-            "exito": True,
-            "mensaje": "Mensaje de prueba enviado correctamente",
-            "sid": resultado["sid"],
-            "detalles": None
-        }
-    else:
-        return {
-            "exito": False,
-            "mensaje": f"Error al enviar: {resultado['error']}",
-            "sid": None,
-            "detalles": {"error": resultado["error"]}
-        }
-
-
-@router.post("/notificaciones/enviar", response_model=NotificacionResponse)
-def enviar_notificacion_movimientos(
-    data: NotificacionRequest,
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
-):
-    """
-    Envía notificación de movimientos pendientes via WhatsApp.
-    
-    Obtiene todos los movimientos sin notificar, los envía y los marca como notificados.
-    Solo socios pueden usar este endpoint.
-    """
-    _verificar_socio(current_user)
-    
-    logger.info(f"📱 Enviando notificación de movimientos a {data.numero} - Usuario: {current_user.email}")
-    
-    # Obtener movimientos pendientes
-    movimientos = expediente_service.obtener_movimientos_sin_notificar(db)
-    
-    if not movimientos:
-        return {
-            "exito": True,
-            "mensaje": "No hay movimientos pendientes de notificar",
-            "sid": None,
-            "detalles": {"total_movimientos": 0}
-        }
-    
-    # Enviar notificación
-    resultado = twilio_service.notificar_movimientos_expedientes(movimientos, data.numero)
-    
-    if resultado.get("exito"):
-        # Marcar como notificados
-        ids = [m["movimiento_id"] for m in movimientos]
-        expediente_service.marcar_movimientos_notificados(db, ids)
-        
-        return {
-            "exito": True,
-            "mensaje": f"Notificación enviada: {resultado['total_movimientos']} movimientos de {resultado['total_expedientes']} expedientes",
-            "sid": resultado.get("sid"),
-            "detalles": {
-                "total_movimientos": resultado["total_movimientos"],
-                "total_expedientes": resultado["total_expedientes"]
-            }
-        }
-    else:
-        return {
-            "exito": False,
-            "mensaje": f"Error al enviar: {resultado.get('error', 'Error desconocido')}",
-            "sid": None,
-            "detalles": {"error": resultado.get("error")}
-        }
