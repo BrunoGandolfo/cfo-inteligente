@@ -206,19 +206,24 @@ export function useExpedientes() {
    * Obtiene la historia inteligente del expediente
    */
   const fetchHistoria = useCallback(async (id) => {
+    console.log('fetchHistoria llamado con id:', id);
     try {
       setLoadingHistoria(true);
+      setHistoriaActual(null); // Limpiar historia anterior
       setError(null);
       
+      console.log('Llamando a API historia...');
       const { data } = await axiosClient.get(`/api/expedientes/${id}/historia`);
-      setHistoriaActual(data);
+      console.log('Historia recibida:', data);
       
+      setHistoriaActual(data);
       return data;
     } catch (err) {
+      console.error('Error completo historia:', err);
+      console.error('Response data:', err.response?.data);
       const errorMsg = err.response?.data?.detail || err.message || 'Error al generar historia';
       setError(errorMsg);
       toast.error(errorMsg);
-      console.error('Error generando historia:', err);
       return null;
     } finally {
       setLoadingHistoria(false);
@@ -240,6 +245,7 @@ export function useExpedientes() {
     eliminarExpediente,
     fetchResumen,
     fetchHistoria,
+    setHistoriaActual,
   };
 }
 

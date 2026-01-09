@@ -31,7 +31,8 @@ function Expedientes() {
     sincronizarNuevo,
     reSincronizar,
     fetchExpediente,
-    fetchHistoria
+    fetchHistoria,
+    setHistoriaActual
   } = useExpedientes();
   
   const [showModal, setShowModal] = useState(false);
@@ -93,11 +94,10 @@ function Expedientes() {
   };
 
   const handleVerHistoria = async (id) => {
-    setShowHistoriaModal(true);
-    const historia = await fetchHistoria(id);
-    if (!historia) {
-      setShowHistoriaModal(false);
-    }
+    console.log('handleVerHistoria llamado con id:', id);
+    setShowHistoriaModal(true); // Mostrar modal primero (con loading)
+    await fetchHistoria(id);
+    // No cerrar si falla, el usuario puede cerrar manualmente
   };
 
   const handleRowClick = async (id) => {
@@ -329,7 +329,7 @@ function Expedientes() {
       </Card>
 
       {/* Modal Historia */}
-      {showHistoriaModal && historiaActual && (
+      {showHistoriaModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
             {/* Header */}
@@ -339,9 +339,11 @@ function Expedientes() {
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                     Historia del Expediente
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                    {historiaActual.iue} - {historiaActual.caratula}
-                  </p>
+                  {historiaActual && (
+                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                      {historiaActual.iue} - {historiaActual.caratula}
+                    </p>
+                  )}
                 </div>
                 <button 
                   onClick={() => {
@@ -362,19 +364,25 @@ function Expedientes() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
                   <p className="mt-2 text-gray-500 dark:text-slate-400">Generando historia...</p>
                 </div>
-              ) : (
+              ) : historiaActual ? (
                 <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap text-gray-700 dark:text-slate-200">
                   {historiaActual.resumen}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 dark:text-slate-400">No se pudo cargar la historia</p>
                 </div>
               )}
             </div>
             
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
-              <p className="text-xs text-gray-400 dark:text-slate-500">
-                Generado: {format(new Date(historiaActual.generado_en), "dd/MM/yyyy HH:mm", { locale: es })}
-              </p>
-            </div>
+            {historiaActual && (
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
+                <p className="text-xs text-gray-400 dark:text-slate-500">
+                  Generado: {format(new Date(historiaActual.generado_en), "dd/MM/yyyy HH:mm", { locale: es })}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
