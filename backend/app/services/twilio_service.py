@@ -5,6 +5,7 @@ Servicio para envío de notificaciones via WhatsApp (Twilio).
 import logging
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
+import json
 from typing import List, Dict, Any, Optional
 import os
 
@@ -71,6 +72,58 @@ def enviar_whatsapp(
         return {"exito": False, "sid": None, "error": str(e)}
 
 
+def generar_mensaje_inteligente(movimientos: List[Dict[str, Any]]) -> Optional[str]:
+    """
+    Genera mensaje de notificación usando Claude.
+    
+    Args:
+        movimientos: Lista de movimientos de expedientes
+        
+    Returns:
+        Mensaje generado por Claude o None si falla
+    """
+    try:
+        from app.services.ai.claude_client import ClaudeClient
+        
+        client = ClaudeClient()
+        
+        prompt = f"""Eres el asistente CFO Inteligente de un estudio jurídico-contable en Uruguay.
+
+Analiza estos movimientos de expedientes judiciales y genera un mensaje de WhatsApp conciso (máximo 500 caracteres) para notificar a los socios.
+
+El mensaje debe:
+1. Empezar con 🔔 CFO Inteligente
+2. Ser profesional pero cercano
+3. Destacar lo más importante (decretos, vencimientos, cambios de estado)
+4. Si hay vencimientos próximos, alertar con ⚠️
+5. No listar todos los movimientos, resumir lo relevante
+
+Movimientos:
+{json.dumps(movimientos, default=str, ensure_ascii=False)}
+
+Genera SOLO el mensaje, sin explicaciones adicionales."""
+        
+        response = client.complete(
+            prompt=prompt,
+            temperature=0.3,
+            max_tokens=300,
+            timeout=15
+        )
+        
+        mensaje = response.strip()
+        
+        # Validar que no exceda 500 caracteres (límite WhatsApp recomendado)
+        if len(mensaje) > 500:
+            mensaje = mensaje[:497] + "..."
+        
+        logger.info(f"✅ Mensaje generado con Claude ({len(mensaje)} caracteres)")
+        return mensaje
+        
+    except Exception as e:
+        logger.error(f"❌ Error generando mensaje con Claude: {e}")
+        return None
+
+
 def notificar_movimientos_expedientes(
     movimientos: List[Dict[str, Any]],
     numero_destino: str
@@ -88,40 +141,55 @@ def notificar_movimientos_expedientes(
     if not movimientos:
         return {"enviados": 0, "mensaje": "Sin movimientos pendientes"}
     
-    # Agrupar por expediente
+    # Intentar generar mensaje inteligente con Claude
+    mensaje = generar_mensaje_inteligente(movimientos)
+    
+    # Si Claude falla, usar template original
+    if not mensaje:
+        logger.info("📝 Usando template original (Claude no disponible)")
+        # Agrupar por expediente
+        por_expediente = {}
+        for mov in movimientos:
+            iue = mov["iue"]
+            if iue not in por_expediente:
+                por_expediente[iue] = {
+                    "caratula": mov["caratula"],
+                    "movimientos": []
+                }
+            por_expediente[iue]["movimientos"].append(mov)
+        
+        # Construir mensaje
+        lineas = ["🔔 *CFO Inteligente - Nuevos Movimientos*\n"]
+        
+        for iue, data in por_expediente.items():
+            caratula_corta = (data["caratula"][:50] + "...") if data["caratula"] and len(data["caratula"]) > 50 else data["caratula"]
+            lineas.append(f"📁 *{iue}*")
+            lineas.append(f"   {caratula_corta}")
+            
+            for mov in data["movimientos"][:3]:  # Máximo 3 movimientos por expediente
+                fecha = mov["fecha"].strftime("%d/%m") if mov["fecha"] else "S/F"
+                tipo = mov["tipo"] or "Movimiento"
+                decreto = f" - {mov['decreto']}" if mov["decreto"] else ""
+                lineas.append(f"   • {fecha}: {tipo}{decreto}")
+            
+            if len(data["movimientos"]) > 3:
+                lineas.append(f"   ... y {len(data['movimientos']) - 3} más")
+            
+            lineas.append("")
+        
+        mensaje = "\n".join(lineas)
+    
+    # Enviar
+    resultado = enviar_whatsapp(numero_destino, mensaje)
+    
+    # Calcular estadísticas
     por_expediente = {}
     for mov in movimientos:
         iue = mov["iue"]
         if iue not in por_expediente:
-            por_expediente[iue] = {
-                "caratula": mov["caratula"],
-                "movimientos": []
-            }
+            por_expediente[iue] = {"movimientos": []}
         por_expediente[iue]["movimientos"].append(mov)
     
-    # Construir mensaje
-    lineas = ["🔔 *CFO Inteligente - Nuevos Movimientos*\n"]
-    
-    for iue, data in por_expediente.items():
-        caratula_corta = (data["caratula"][:50] + "...") if data["caratula"] and len(data["caratula"]) > 50 else data["caratula"]
-        lineas.append(f"📁 *{iue}*")
-        lineas.append(f"   {caratula_corta}")
-        
-        for mov in data["movimientos"][:3]:  # Máximo 3 movimientos por expediente
-            fecha = mov["fecha"].strftime("%d/%m") if mov["fecha"] else "S/F"
-            tipo = mov["tipo"] or "Movimiento"
-            decreto = f" - {mov['decreto']}" if mov["decreto"] else ""
-            lineas.append(f"   • {fecha}: {tipo}{decreto}")
-        
-        if len(data["movimientos"]) > 3:
-            lineas.append(f"   ... y {len(data['movimientos']) - 3} más")
-        
-        lineas.append("")
-    
-    mensaje = "\n".join(lineas)
-    
-    # Enviar
-    resultado = enviar_whatsapp(numero_destino, mensaje)
     resultado["total_movimientos"] = len(movimientos)
     resultado["total_expedientes"] = len(por_expediente)
     
