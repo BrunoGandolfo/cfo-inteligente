@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Soporte from './pages/Soporte';
 import Indicadores from './pages/Indicadores';
 import Expedientes from './pages/Expedientes';
+import Casos from './pages/Casos';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import { Toaster } from 'react-hot-toast';
@@ -94,6 +95,8 @@ function App() {
     switch (currentPage) {
       case 'expedientes':
         return <Expedientes />;
+      case 'casos':
+        return <Casos />;
       case 'soporte':
         return <Soporte onNavigate={setCurrentPage} />;
       case 'indicadores':
@@ -106,7 +109,11 @@ function App() {
 
   return (
     <>
-      <Layout onNavigate={setCurrentPage} currentPage={currentPage}>
+      <Layout 
+        onNavigate={setCurrentPage} 
+        currentPage={currentPage}
+        onCasosToggle={() => setCurrentPage('casos')}
+      >
         {renderContent()}
       </Layout>
       <Toaster position="top-right" />

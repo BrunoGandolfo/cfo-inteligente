@@ -75,6 +75,8 @@ app.include_router(expedientes_router)
 
 from app.api.leyes import router as leyes_router
 app.include_router(leyes_router)
+from app.api.casos import router as casos_router
+app.include_router(casos_router)
 
 
 # ============================================================================
