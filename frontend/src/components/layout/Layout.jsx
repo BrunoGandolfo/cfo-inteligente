@@ -8,7 +8,7 @@ import ChatPanel from '../chat/ChatPanel';
 import OperationsPanel from '../operations/OperationsPanel';
 import MobileNav from './MobileNav';
 
-export function Layout({ children, onNavigate, currentPage }) {
+export function Layout({ children, onNavigate, currentPage, onCasosToggle }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [opsOpen, setOpsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -24,6 +24,7 @@ export function Layout({ children, onNavigate, currentPage }) {
                 currentPage === 'soporte' ? 'Soporte' : 
                 currentPage === 'indicadores' ? 'Indicadores' :
                 currentPage === 'expedientes' ? 'Expedientes' :
+                currentPage === 'casos' ? 'Casos' :
                 'Dashboard'
               }
               onChatToggle={() => setChatOpen(!chatOpen)}
@@ -32,6 +33,7 @@ export function Layout({ children, onNavigate, currentPage }) {
               onDashboardToggle={() => onNavigate?.('dashboard')}
               onIndicadoresToggle={() => onNavigate?.('indicadores')}
               onExpedientesToggle={() => onNavigate?.('expedientes')}
+              onCasosToggle={onCasosToggle}
             />
             <main className="flex-1 p-4 lg:p-6 overflow-y-auto">{children}</main>
             <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
@@ -56,6 +58,7 @@ export function Layout({ children, onNavigate, currentPage }) {
 Layout.propTypes = { 
   children: PropTypes.node,
   onNavigate: PropTypes.func,
-  currentPage: PropTypes.string
+  currentPage: PropTypes.string,
+  onCasosToggle: PropTypes.func
 };
 export default Layout;
