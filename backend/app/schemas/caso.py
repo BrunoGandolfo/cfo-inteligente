@@ -36,7 +36,7 @@ class CasoBase(BaseModel):
 
 class CasoCreate(CasoBase):
     """Schema para crear un caso."""
-    pass
+    responsable_id: Optional[UUID] = None
 
 
 class CasoUpdate(BaseModel):
