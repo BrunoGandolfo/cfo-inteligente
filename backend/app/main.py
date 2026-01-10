@@ -73,6 +73,9 @@ app.include_router(indicadores_router)
 from app.api.expedientes import router as expedientes_router
 app.include_router(expedientes_router)
 
+from app.api.leyes import router as leyes_router
+app.include_router(leyes_router)
+
 
 # ============================================================================
 # EVENTOS STARTUP / SHUTDOWN

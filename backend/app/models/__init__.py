@@ -7,6 +7,7 @@ from app.models.cliente import Cliente
 from app.models.proveedor import Proveedor
 from app.models.conversacion import Conversacion, Mensaje
 from app.models.expediente import Expediente, ExpedienteMovimiento
+from app.models.ley import Ley
 
 __all__ = [
     "Area",
@@ -22,5 +23,6 @@ __all__ = [
     "Conversacion",
     "Mensaje",
     "Expediente",
-    "ExpedienteMovimiento"
+    "ExpedienteMovimiento",
+    "Ley"
 ]

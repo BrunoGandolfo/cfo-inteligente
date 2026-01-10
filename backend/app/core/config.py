@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, ConfigDict
 
 class Settings(BaseSettings):
     # Database
@@ -19,9 +19,11 @@ class Settings(BaseSettings):
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
     google_ai_key: str = Field(default="", alias="GOOGLE_AI_KEY")
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False  # Permite minúsculas y MAYÚSCULAS
-        populate_by_name = True  # Permite usar tanto el nombre como el alias
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False,  # Permite minúsculas y MAYÚSCULAS
+        populate_by_name=True,  # Permite usar tanto el nombre como el alias
+        extra="ignore"  # Ignora campos extra en variables de entorno
+    )
 
 settings = Settings()
