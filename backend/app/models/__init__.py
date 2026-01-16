@@ -9,6 +9,7 @@ from app.models.conversacion import Conversacion, Mensaje
 from app.models.expediente import Expediente, ExpedienteMovimiento
 from app.models.ley import Ley
 from app.models.caso import Caso, EstadoCaso, PrioridadCaso
+from app.models.contrato import Contrato
 
 __all__ = [
     "Area",
@@ -28,5 +29,6 @@ __all__ = [
     "Ley",
     "Caso",
     "EstadoCaso",
-    "PrioridadCaso"
+    "PrioridadCaso",
+    "Contrato",
 ]

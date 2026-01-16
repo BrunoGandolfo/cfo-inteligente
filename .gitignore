@@ -43,3 +43,21 @@ backend/chroma_db/
 ANALISIS_FORENSE_PDF_COMPLETO.md
 backend/output/
 *.pdf
+
+# Logs y archivos temporales
+backend/*_errores_*.txt
+backend/*_checkpoint_*.txt
+backend/resumenes_*.log
+backend/resumenes_*.txt
+backend/0
+
+# Scripts temporales/de prueba (no producción)
+backend/scripts/convertir_pdfs_docx.py
+backend/scripts/convertir_pdfs_otros.py
+backend/scripts/limpiar_docx_machado.py
+backend/scripts/prueba_piloto_conversion.py
+backend/scripts/generar_resumenes_deepseek.py
+backend/scripts/investigacion_estado_proyecto.py
+backend/scripts/verificar_leyes_impo.py
+backend/scripts/verificar_tabla_leyes.py
+backend/test_*.py
