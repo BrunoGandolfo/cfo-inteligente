@@ -50,6 +50,10 @@ export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNot
               onOpsToggle={() => setOpsOpen(!opsOpen)}
               onSoporteToggle={() => { setMobileNavOpen(false); onNavigate?.('soporte'); }}
               onIndicadoresToggle={() => { setMobileNavOpen(false); onNavigate?.('indicadores'); }}
+              onExpedientesToggle={() => { setMobileNavOpen(false); onNavigate?.('expedientes'); }}
+              onCasosToggle={() => { setMobileNavOpen(false); onCasosToggle?.(); }}
+              onNotarialToggle={() => { setMobileNavOpen(false); onNotarialToggle?.(); }}
+              onDashboardToggle={() => { setMobileNavOpen(false); onNavigate?.('dashboard'); }}
             />
           </div>
         </div>

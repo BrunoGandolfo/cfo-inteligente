@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Home, FileText, Sparkles, Lock, Users, LogOut, HelpCircle, BarChart3 } from 'lucide-react';
+import { X, Home, FileText, Sparkles, Lock, Users, LogOut, HelpCircle, BarChart3, Scale, Briefcase } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -7,19 +7,22 @@ import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 import toast from 'react-hot-toast';
 
-export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle }) {
+export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onDashboardToggle }) {
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const userName = localStorage.getItem('userName') || 'Usuario';
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
 
-  // Items del menú (mismo que Sidebar)
+  // Items del menú (sincronizado con Sidebar)
   const allItems = [
-    { key: 'Dashboard', icon: Home, label: 'Dashboard', action: onClose },
-    { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: () => { onOpsToggle(); onClose(); } },
-    { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: () => { onChatToggle(); onClose(); }, highlight: true },
-    { key: 'Indicadores', icon: BarChart3, label: 'Indicadores', action: () => { onIndicadoresToggle?.(); }, indicadorItem: true },
-    { key: 'Soporte', icon: HelpCircle, label: 'Soporte', action: () => { onSoporteToggle?.(); }, supportItem: true },
+    { key: 'Dashboard', icon: Home, label: 'Dashboard', action: () => { onDashboardToggle?.(); onClose(); } },
+    { key: 'Expedientes', icon: Scale, label: 'Expedientes', action: () => { onExpedientesToggle?.(); onClose(); } },
+    { key: 'Notarial', icon: FileText, label: 'Notarial', action: () => { onNotarialToggle?.(); onClose(); } },
+    { key: 'Casos', icon: Briefcase, label: 'Casos', action: () => { onCasosToggle?.(); onClose(); } },
+    { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: () => { onOpsToggle?.(); onClose(); } },
+    { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: () => { onChatToggle?.(); onClose(); }, highlight: true },
+    { key: 'Indicadores', icon: BarChart3, label: 'Indicadores', action: () => { onIndicadoresToggle?.(); onClose(); }, indicadorItem: true },
+    { key: 'Soporte', icon: HelpCircle, label: 'Soporte', action: () => { onSoporteToggle?.(); onClose(); }, supportItem: true },
   ];
 
   const items = esSocio 
@@ -155,6 +158,10 @@ MobileNav.propTypes = {
   onOpsToggle: PropTypes.func,
   onSoporteToggle: PropTypes.func,
   onIndicadoresToggle: PropTypes.func,
+  onExpedientesToggle: PropTypes.func,
+  onCasosToggle: PropTypes.func,
+  onNotarialToggle: PropTypes.func,
+  onDashboardToggle: PropTypes.func,
 };
 
 export default MobileNav;
