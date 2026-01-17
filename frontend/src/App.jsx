@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Soporte from './pages/Soporte';
 import Indicadores from './pages/Indicadores';
 import Expedientes from './pages/Expedientes';
+import Contratos from './pages/Contratos';
 import Casos from './pages/Casos';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
@@ -95,6 +96,8 @@ function App() {
     switch (currentPage) {
       case 'expedientes':
         return <Expedientes />;
+      case 'notarial':
+        return <Contratos />;
       case 'casos':
         return <Casos />;
       case 'soporte':
@@ -112,6 +115,7 @@ function App() {
       <Layout 
         onNavigate={setCurrentPage} 
         currentPage={currentPage}
+        onNotarialToggle={() => setCurrentPage('notarial')}
         onCasosToggle={() => setCurrentPage('casos')}
       >
         {renderContent()}

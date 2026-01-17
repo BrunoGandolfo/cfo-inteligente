@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 
-export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle }) {
+export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle }) {
   // Verificar si el usuario es socio
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -15,6 +15,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
   const allItems = [
     { key: 'Dashboard', icon: Home, label: 'Dashboard', action: onDashboardToggle },
     { key: 'Expedientes', icon: Scale, label: 'Expedientes', action: onExpedientesToggle },
+    { key: 'Notarial', icon: FileText, label: 'Notarial', action: onNotarialToggle },
     { key: 'Casos', icon: Briefcase, label: 'Casos', action: onCasosToggle },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
@@ -108,5 +109,6 @@ Sidebar.propTypes = {
   onIndicadoresToggle: PropTypes.func,
   onExpedientesToggle: PropTypes.func,
   onCasosToggle: PropTypes.func,
+  onNotarialToggle: PropTypes.func,
 };
 export default Sidebar;

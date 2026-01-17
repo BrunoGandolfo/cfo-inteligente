@@ -24,6 +24,8 @@ from app.schemas.contrato import (
     ContratoListResponse,
     ContratoBusquedaParams
 )
+from app.services.contrato_fields_extractor import ContratoFieldsExtractor
+from app.services.contrato_generator import ContratoGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -304,6 +306,33 @@ def crear_contrato(
         db.commit()
         db.refresh(nuevo_contrato)
         
+        # Extraer campos automáticamente si hay contenido_texto
+        # (solo si no se proporcionaron campos_editables manualmente)
+        if nuevo_contrato.contenido_texto and not nuevo_contrato.campos_editables:
+            try:
+                logger.info(f"Extrayendo campos automáticamente para nuevo contrato {nuevo_contrato.id}")
+                extractor = ContratoFieldsExtractor()
+                campos_data = extractor.extract_fields(nuevo_contrato.contenido_texto)
+                
+                if campos_data:
+                    # Guardar directamente como dict (SQLAlchemy JSON lo maneja automáticamente)
+                    nuevo_contrato.campos_editables = campos_data
+                    db.commit()
+                    db.refresh(nuevo_contrato)
+                    logger.info(
+                        f"Campos extraídos automáticamente para contrato {nuevo_contrato.id}: "
+                        f"{campos_data.get('total_campos', 0)} campos"
+                    )
+                else:
+                    logger.warning(f"No se pudieron extraer campos para contrato {nuevo_contrato.id}")
+            except Exception as e:
+                # No fallar la creación si la extracción falla
+                logger.error(
+                    f"Error extrayendo campos automáticamente para contrato {nuevo_contrato.id}: {e}",
+                    exc_info=True
+                )
+                # Continuar sin campos_editables (se pueden extraer después manualmente)
+        
         return ContratoResponse.model_validate(nuevo_contrato)
     
     except HTTPException:
@@ -419,4 +448,380 @@ def eliminar_contrato(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error interno al eliminar contrato"
+        )
+
+
+@router.post("/{contrato_id}/extraer-campos", status_code=status.HTTP_200_OK)
+def extraer_campos_contrato(
+    contrato_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Extrae campos editables de un contrato usando Claude.
+    
+    Analiza el contenido_texto y detecta placeholders (____________, [___], [...]).
+    Guarda el resultado en campos_editables.
+    
+    Acceso: Solo socios.
+    
+    Returns:
+        {
+            "contrato_id": str,
+            "campos_extraidos": int,
+            "campos": [...]
+        }
+    """
+    try:
+        # Verificar que el usuario es socio
+        if not current_user.es_socio:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo los socios pueden extraer campos de contratos"
+            )
+        
+        # Buscar contrato
+        contrato = db.query(Contrato).filter(
+            Contrato.id == contrato_id,
+            Contrato.deleted_at.is_(None)
+        ).first()
+        
+        if not contrato:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Contrato no encontrado"
+            )
+        
+        # Verificar que tiene contenido_texto
+        if not contrato.contenido_texto:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El contrato no tiene contenido_texto disponible"
+            )
+        
+        # Extraer campos usando el servicio
+        extractor = ContratoFieldsExtractor()
+        campos_data = extractor.extract_fields(contrato.contenido_texto)
+        
+        if not campos_data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error al extraer campos del contrato. Verifique los logs para más detalles."
+            )
+        
+        # Guardar en campos_editables (SQLAlchemy JSON maneja la serialización)
+        contrato.campos_editables = campos_data
+        
+        db.commit()
+        db.refresh(contrato)
+        
+        logger.info(
+            f"Campos extraídos para contrato {contrato_id}: "
+            f"{campos_data.get('total_campos', 0)} campos"
+        )
+        
+        return {
+            "contrato_id": str(contrato_id),
+            "campos_extraidos": campos_data.get('total_campos', 0),
+            "campos": campos_data.get('campos', [])
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error extrayendo campos del contrato {contrato_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno al extraer campos del contrato"
+        )
+
+
+@router.post("/{contrato_id}/generar")
+def generar_contrato(
+    contrato_id: UUID,
+    datos: dict,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Genera un contrato DOCX con los valores proporcionados.
+    
+    Reemplaza los placeholders en el documento con los valores del formulario.
+    
+    Acceso: Solo socios.
+    
+    Args:
+        contrato_id: ID del contrato a generar
+        datos: Dict con estructura {"valores": {campo_id: valor}}
+    
+    Returns:
+        Response con el DOCX generado para descarga
+    """
+    import json
+    
+    try:
+        # Verificar que el usuario es socio
+        if not current_user.es_socio:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo los socios pueden generar contratos"
+            )
+        
+        # Obtener contrato
+        contrato = db.query(Contrato).filter(
+            Contrato.id == contrato_id,
+            Contrato.deleted_at.is_(None)
+        ).first()
+        
+        if not contrato:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Contrato no encontrado"
+            )
+        
+        if not contrato.contenido_docx:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El contrato no tiene archivo DOCX disponible"
+            )
+        
+        if not contrato.campos_editables:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El contrato no tiene campos editables definidos"
+            )
+        
+        # Parsear campos_editables si viene como string
+        campos = contrato.campos_editables
+        if isinstance(campos, str):
+            try:
+                campos = json.loads(campos)
+            except json.JSONDecodeError:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Error al parsear campos editables del contrato"
+                )
+        
+        # Obtener valores del request
+        valores = datos.get('valores', {})
+        if not valores:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No se proporcionaron valores para completar el contrato"
+            )
+        
+        # Generar documento
+        generator = ContratoGenerator()
+        docx_generado = generator.generar(
+            contenido_docx=contrato.contenido_docx,
+            campos_editables=campos,
+            valores=valores
+        )
+        
+        # Generar nombre de archivo seguro
+        nombre_archivo = contrato.titulo.replace(" ", "_").replace("/", "-")
+        nombre_archivo = f"{nombre_archivo}_completado.docx"
+        
+        # Retornar como descarga
+        return Response(
+            content=docx_generado,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={
+                "Content-Disposition": f'attachment; filename="{nombre_archivo}"'
+            }
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generando contrato {contrato_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno al generar contrato"
+        )
+
+
+@router.post("/extraer-campos-batch", status_code=status.HTTP_200_OK)
+def extraer_campos_batch(
+    solo_sin_campos: bool = Query(True, description="Solo procesar contratos sin campos_editables"),
+    limite: int = Query(10, ge=1, le=50, description="Máximo de contratos a procesar"),
+    max_intentos: int = Query(2, ge=1, le=5, description="Máximo intentos por contrato"),
+    max_caracteres: int = Query(40000, ge=1000, description="Máximo caracteres de contenido"),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Extrae campos editables de múltiples contratos (procesamiento batch inteligente).
+    
+    Características:
+    - Máximo 2 intentos por contrato (configurable)
+    - Skip automático de contratos muy largos (>40k caracteres)
+    - Registro de errores para análisis
+    - No reintenta contratos marcados como problemáticos
+    
+    Acceso: Solo socios.
+    
+    Args:
+        solo_sin_campos: Si True, solo procesa contratos con campos_editables=NULL
+        limite: Máximo de contratos a procesar por llamada (1-50)
+        max_intentos: Máximo intentos por contrato antes de marcarlo como fallido
+        max_caracteres: Máximo caracteres permitidos (contratos más largos se skipean)
+    
+    Returns:
+        {
+            "procesados": int,
+            "exitosos": int,
+            "errores": int,
+            "skipped_por_intentos": int,
+            "skipped_por_tamaño": int,
+            "detalles": [...]
+        }
+    """
+    try:
+        # Verificar que el usuario es socio
+        if not current_user.es_socio:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo los socios pueden extraer campos de contratos"
+            )
+        
+        # Construir query base con filtros inteligentes
+        query = db.query(Contrato).filter(
+            Contrato.deleted_at.is_(None),
+            Contrato.activo == True,
+            Contrato.contenido_texto.isnot(None),
+            Contrato.requiere_procesamiento_manual == False,  # Excluir problemáticos
+            Contrato.intentos_extraccion < max_intentos  # Solo los que no agotaron intentos
+        )
+        
+        # Filtrar por campos_editables si es necesario
+        if solo_sin_campos:
+            query = query.filter(Contrato.campos_editables.is_(None))
+        
+        # Limitar cantidad
+        contratos = query.limit(limite).all()
+        
+        if not contratos:
+            return {
+                "procesados": 0,
+                "exitosos": 0,
+                "errores": 0,
+                "skipped_por_intentos": 0,
+                "skipped_por_tamaño": 0,
+                "detalles": [],
+                "mensaje": "No hay contratos pendientes de procesar"
+            }
+        
+        # Procesar cada contrato
+        extractor = ContratoFieldsExtractor()
+        detalles = []
+        exitosos = 0
+        errores = 0
+        skipped_tamaño = 0
+        
+        for contrato in contratos:
+            detalle = {
+                "contrato_id": str(contrato.id),
+                "titulo": contrato.titulo,
+                "exito": False,
+                "campos_extraidos": 0,
+                "error": None,
+                "intento": contrato.intentos_extraccion + 1,
+                "caracteres": len(contrato.contenido_texto) if contrato.contenido_texto else 0
+            }
+            
+            # Skip si es muy largo
+            if contrato.contenido_texto and len(contrato.contenido_texto) > max_caracteres:
+                contrato.requiere_procesamiento_manual = True
+                contrato.ultimo_error_extraccion = f"Contenido demasiado largo: {len(contrato.contenido_texto)} caracteres (máx: {max_caracteres})"
+                db.commit()
+                
+                detalle["error"] = f"Skipped: contenido muy largo ({len(contrato.contenido_texto)} chars)"
+                detalle["skipped"] = True
+                skipped_tamaño += 1
+                detalles.append(detalle)
+                logger.info(f"Batch: Skip {contrato.titulo} - muy largo ({len(contrato.contenido_texto)} chars)")
+                continue
+            
+            try:
+                # Incrementar contador de intentos ANTES de procesar
+                contrato.intentos_extraccion += 1
+                db.commit()
+                
+                # Extraer campos
+                campos_data = extractor.extract_fields(contrato.contenido_texto)
+                
+                if campos_data:
+                    # Guardar en campos_editables
+                    contrato.campos_editables = campos_data
+                    contrato.ultimo_error_extraccion = None  # Limpiar error previo
+                    db.commit()
+                    
+                    detalle["exito"] = True
+                    detalle["campos_extraidos"] = campos_data.get('total_campos', 0)
+                    exitosos += 1
+                    
+                    logger.info(
+                        f"Batch: ✅ {contrato.titulo}: {detalle['campos_extraidos']} campos "
+                        f"(intento {detalle['intento']})"
+                    )
+                else:
+                    error_msg = "No se pudieron extraer campos (respuesta vacía)"
+                    contrato.ultimo_error_extraccion = error_msg
+                    
+                    # Si agotó intentos, marcar como problemático
+                    if contrato.intentos_extraccion >= max_intentos:
+                        contrato.requiere_procesamiento_manual = True
+                        error_msg += f" - Marcado para procesamiento manual (agotó {max_intentos} intentos)"
+                    
+                    db.commit()
+                    
+                    detalle["error"] = error_msg
+                    errores += 1
+                    logger.warning(f"Batch: ❌ {contrato.titulo} - {error_msg}")
+            
+            except Exception as e:
+                db.rollback()
+                error_msg = str(e)[:500]
+                
+                # Actualizar error en el contrato
+                try:
+                    contrato.ultimo_error_extraccion = error_msg
+                    if contrato.intentos_extraccion >= max_intentos:
+                        contrato.requiere_procesamiento_manual = True
+                    db.commit()
+                except:
+                    pass
+                
+                detalle["error"] = error_msg[:200]
+                errores += 1
+                logger.error(f"Batch: ❌ {contrato.titulo}: {e}")
+            
+            detalles.append(detalle)
+        
+        # Contar cuántos quedaron excluidos por intentos agotados
+        skipped_intentos = db.query(Contrato).filter(
+            Contrato.deleted_at.is_(None),
+            Contrato.activo == True,
+            Contrato.campos_editables.is_(None),
+            Contrato.intentos_extraccion >= max_intentos
+        ).count()
+        
+        return {
+            "procesados": len(contratos),
+            "exitosos": exitosos,
+            "errores": errores,
+            "skipped_por_intentos": skipped_intentos,
+            "skipped_por_tamaño": skipped_tamaño,
+            "detalles": detalles
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error en extracción batch: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno al procesar extracción batch"
         )

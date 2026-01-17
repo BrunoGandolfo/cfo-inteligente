@@ -8,7 +8,7 @@ import ChatPanel from '../chat/ChatPanel';
 import OperationsPanel from '../operations/OperationsPanel';
 import MobileNav from './MobileNav';
 
-export function Layout({ children, onNavigate, currentPage, onCasosToggle }) {
+export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNotarialToggle }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [opsOpen, setOpsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -23,6 +23,7 @@ export function Layout({ children, onNavigate, currentPage, onCasosToggle }) {
               active={
                 currentPage === 'soporte' ? 'Soporte' : 
                 currentPage === 'indicadores' ? 'Indicadores' :
+                currentPage === 'notarial' ? 'Notarial' :
                 currentPage === 'expedientes' ? 'Expedientes' :
                 currentPage === 'casos' ? 'Casos' :
                 'Dashboard'
@@ -34,6 +35,7 @@ export function Layout({ children, onNavigate, currentPage, onCasosToggle }) {
               onIndicadoresToggle={() => onNavigate?.('indicadores')}
               onExpedientesToggle={() => onNavigate?.('expedientes')}
               onCasosToggle={onCasosToggle}
+              onNotarialToggle={onNotarialToggle}
             />
             <main className="flex-1 p-4 lg:p-6 overflow-y-auto">{children}</main>
             <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
@@ -59,6 +61,7 @@ Layout.propTypes = {
   children: PropTypes.node,
   onNavigate: PropTypes.func,
   currentPage: PropTypes.string,
-  onCasosToggle: PropTypes.func
+  onCasosToggle: PropTypes.func,
+  onNotarialToggle: PropTypes.func
 };
 export default Layout;

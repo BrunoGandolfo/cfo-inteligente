@@ -7,7 +7,7 @@ Incluye contenido binario del archivo y texto extraído para búsqueda.
 Fuente inicial: estudionotarialmachado.com (133 modelos)
 """
 
-from sqlalchemy import Column, String, DateTime, Boolean, Text, Index, LargeBinary
+from sqlalchemy import Column, String, DateTime, Boolean, Text, Index, LargeBinary, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSON
 from app.core.database import Base
 import uuid
@@ -66,6 +66,11 @@ class Contrato(Base):
     
     # Estado
     activo = Column(Boolean, default=True)
+    
+    # Control de extracción de campos (batch inteligente)
+    intentos_extraccion = Column(Integer, default=0)  # Máximo 2 intentos
+    ultimo_error_extraccion = Column(Text, nullable=True)  # Último error registrado
+    requiere_procesamiento_manual = Column(Boolean, default=False)  # Contratos muy largos
     
     # Auditoría estándar del sistema
     created_at = Column(DateTime, default=utc_now)

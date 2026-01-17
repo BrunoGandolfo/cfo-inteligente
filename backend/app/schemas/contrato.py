@@ -73,8 +73,20 @@ class ContratoResponse(ContratoBase):
     fuente_original: str
     archivo_original: Optional[str] = None
     activo: bool
+    campos_editables: Optional[dict] = None  # JSON con campos extraídos (parseado automáticamente)
     created_at: datetime
     updated_at: datetime
+    
+    @classmethod
+    def model_validate(cls, obj):
+        """Override para parsear campos_editables si viene como string JSON."""
+        if hasattr(obj, 'campos_editables') and isinstance(obj.campos_editables, str):
+            import json
+            try:
+                obj.campos_editables = json.loads(obj.campos_editables)
+            except (json.JSONDecodeError, TypeError):
+                obj.campos_editables = None
+        return super().model_validate(obj)
     
     class Config:
         from_attributes = True  # Pydantic v2 - permite ORM mode
