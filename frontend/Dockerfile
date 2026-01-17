@@ -18,7 +18,7 @@ ARG VITE_API_URL=https://cfo-inteligente-production.up.railway.app
 ENV VITE_API_URL=$VITE_API_URL
 
 # Cache buster - cambiar para forzar rebuild
-ARG CACHE_BUST=2026-01-04-v2
+ARG CACHE_BUST=2026-01-17-v1
 
 RUN npm run build
 
