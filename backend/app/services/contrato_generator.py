@@ -1,9 +1,7 @@
 """
 Servicio para generar contratos DOCX completados.
-
 Reemplaza placeholders en documentos DOCX con valores proporcionados.
 """
-
 from docx import Document
 from io import BytesIO
 import json
@@ -20,64 +18,31 @@ class ContratoGenerator:
         logger.info("ContratoGenerator inicializado")
     
     def generar(self, contenido_docx: bytes, campos_editables: dict, valores: dict) -> bytes:
-        """
-        Reemplaza placeholders en el DOCX con los valores proporcionados.
-        
-        Args:
-            contenido_docx: Bytes del archivo DOCX original
-            campos_editables: Dict con la estructura de campos {campos: [...]}
-            valores: Dict con {campo_id: valor_ingresado}
-        
-        Returns:
-            bytes del DOCX generado
-        """
         try:
-            # Cargar documento
             doc = Document(BytesIO(contenido_docx))
             
-            # Crear mapeo placeholder -> valor
-            mapeo = {}
-            for campo in campos_editables.get('campos', []):
+            campos_ordenados = sorted(
+                campos_editables.get('campos', []), 
+                key=lambda x: x.get('orden', 999)
+            )
+            
+            logger.info(f"ContratoGenerator: Procesando {len(campos_ordenados)} campos en orden")
+            
+            for campo in campos_ordenados:
                 campo_id = campo.get('id')
                 placeholder = campo.get('placeholder_original', '[___]')
                 valor = valores.get(campo_id, '')
-                if valor:
-                    # Limpiar placeholder para búsqueda (escapar caracteres especiales)
-                    placeholder_escaped = re.escape(placeholder)
-                    mapeo[placeholder_escaped] = valor
-            
-            logger.info(f"ContratoGenerator: Reemplazando {len(mapeo)} placeholders")
-            
-            # Reemplazar en párrafos
-            for paragraph in doc.paragraphs:
-                texto_original = paragraph.text
-                texto_nuevo = texto_original
                 
-                for placeholder, valor in mapeo.items():
-                    # Usar regex para reemplazar todas las ocurrencias
-                    texto_nuevo = re.sub(placeholder, valor, texto_nuevo)
+                if not valor:
+                    continue
                 
-                if texto_nuevo != texto_original:
-                    # Limpiar párrafo y agregar nuevo texto
-                    paragraph.clear()
-                    paragraph.add_run(texto_nuevo)
+                reemplazado = self._reemplazar_primera_ocurrencia(doc, placeholder, valor)
+                
+                if reemplazado:
+                    logger.debug(f"Campo '{campo_id}': '{placeholder}' -> '{valor[:20]}...'")
+                else:
+                    logger.warning(f"Campo '{campo_id}': placeholder '{placeholder}' no encontrado")
             
-            # Reemplazar en tablas
-            for table in doc.tables:
-                for row in table.rows:
-                    for cell in row.cells:
-                        for paragraph in cell.paragraphs:
-                            texto_original = paragraph.text
-                            texto_nuevo = texto_original
-                            
-                            for placeholder, valor in mapeo.items():
-                                texto_nuevo = re.sub(placeholder, valor, texto_nuevo)
-                            
-                            if texto_nuevo != texto_original:
-                                paragraph.clear()
-                                paragraph.add_run(texto_nuevo)
-            
-            # Guardar a bytes
             output = BytesIO()
             doc.save(output)
             output.seek(0)
@@ -89,3 +54,23 @@ class ContratoGenerator:
         except Exception as e:
             logger.error(f"ContratoGenerator: Error generando documento: {e}", exc_info=True)
             raise
+    
+    def _reemplazar_primera_ocurrencia(self, doc, placeholder: str, valor: str) -> bool:
+        for paragraph in doc.paragraphs:
+            if placeholder in paragraph.text:
+                texto_nuevo = paragraph.text.replace(placeholder, valor, 1)
+                paragraph.clear()
+                paragraph.add_run(texto_nuevo)
+                return True
+        
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for paragraph in cell.paragraphs:
+                        if placeholder in paragraph.text:
+                            texto_nuevo = paragraph.text.replace(placeholder, valor, 1)
+                            paragraph.clear()
+                            paragraph.add_run(texto_nuevo)
+                            return True
+        
+        return False
