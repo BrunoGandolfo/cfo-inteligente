@@ -64,3 +64,4 @@ pytest-asyncio>=0.23.0
 pytest-cov>=5.0.0
 sqlparse
 zeep>=4.2.0
+python-docx==1.1.0
