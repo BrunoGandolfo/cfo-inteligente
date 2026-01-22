@@ -160,6 +160,21 @@ function Contratos() {
         </div>
       </div>
 
+      {/* Mensaje de advertencia */}
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <span className="text-amber-600 dark:text-amber-400 text-xl">⚠️</span>
+          <div>
+            <p className="font-semibold text-amber-800 dark:text-amber-300 mb-1">
+              Importante sobre los contratos
+            </p>
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              Algunos contratos están completos y listos para usar. Otros son <strong>modelos de ejemplo</strong> donde, al completar los campos, algunos valores aparecerán en el documento y otros no. Los datos ingresados quedarán en los lugares correctos. <strong>El documento Word descargado puede requerir revisión y ajustes adicionales.</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Detalle del contrato seleccionado */}
       {contratoActual && contratoSeleccionadoId && (
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
