@@ -180,22 +180,23 @@ function Contratos() {
           {/* Formulario de campos */}
           {contratoActual.campos_editables?.campos && contratoActual.campos_editables.campos.length > 0 ? (
             <form onSubmit={handleGenerarContrato} className="space-y-4">
+              <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-sm text-green-700 dark:text-green-400">
+                  Todos los campos son opcionales. Complete solo los que necesite.
+                </p>
+              </div>
               {contratoActual.campos_editables.campos
                 .sort((a, b) => (a.orden || 0) - (b.orden || 0))
                 .map((campo) => (
                   <div key={campo.id} className="space-y-1">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       {campo.nombre}
-                      {campo.requerido && (
-                        <span className="text-red-500 ml-1">*</span>
-                      )}
                     </label>
                     <input
                       type="text"
                       value={valoresCampos[campo.id] || ''}
                       onChange={(e) => handleCampoChange(campo.id, e.target.value)}
                       placeholder={campo.placeholder_original || campo.contexto || 'Ingrese el valor...'}
-                      required={campo.requerido}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     {campo.contexto && (
