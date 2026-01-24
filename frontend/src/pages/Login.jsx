@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { LogIn, UserPlus, HelpCircle, Lock, Mail } from 'lucide-react';
 import RegisterForm from '../components/auth/RegisterForm';
 
-function Login() {
+function Login({ onLoginSuccess }) {
   const [activeTab, setActiveTab] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +28,7 @@ function Login() {
       localStorage.setItem('esSocio', String(response.data.es_socio).toLowerCase());
       
       toast.success(`¡Bienvenido, ${response.data.nombre}!`);
-      window.location.href = '/dashboard';
+      onLoginSuccess();
     } catch (err) {
       const message = err.response?.data?.detail || 'Email o contraseña incorrectos';
       setError(message);

@@ -3,7 +3,7 @@ import { Shield, BarChart3, FileText, Users, Lock, CheckCircle } from 'lucide-re
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-export default function Home() {
+export default function Home({ onLoginSuccess }) {
   const [activeTab, setActiveTab] = useState('login');
   const [formData, setFormData] = useState({
     email: '',
@@ -35,7 +35,7 @@ export default function Home() {
       localStorage.setItem('esSocio', String(response.data.es_socio).toLowerCase());
       
       toast.success('Bienvenido al sistema');
-      window.location.href = '/dashboard';
+      onLoginSuccess();
     } catch (error) {
       toast.error('Credenciales incorrectas');
       setLoading(false);

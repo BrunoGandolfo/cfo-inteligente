@@ -14,6 +14,7 @@ ENV/
 .env
 *.db
 *.sqlite
+*.dump
 
 # React
 node_modules/

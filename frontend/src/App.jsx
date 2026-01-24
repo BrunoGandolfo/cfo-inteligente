@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -10,10 +10,14 @@ import Casos from './pages/Casos';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import { Toaster } from 'react-hot-toast';
+import WelcomeModal from './components/modals/WelcomeModal';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [isValidating, setIsValidating] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeFrase, setWelcomeFrase] = useState(null);
+  const [welcomeFraseLoading, setWelcomeFraseLoading] = useState(false);
 
   // Validar token contra el backend
   const validateToken = useCallback(async () => {
@@ -30,16 +34,54 @@ function App() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsValidating(false);
+      
+      // ELIMINADO: Ya no usamos localStorage para el modal
+      
       return true;
-    } catch (error) {
+    } catch {
       // Token inválido o expirado - limpiar
-      console.log('Token inválido, limpiando sesión...');
       localStorage.removeItem('token');
       localStorage.removeItem('userName');
       localStorage.removeItem('esSocio');
       setIsValidating(false);
       return false;
     }
+  }, []);
+
+  // Callback centralizado para login exitoso
+  const handleLoginSuccess = useCallback(() => {
+    // Navegar inmediatamente
+    setCurrentPage('dashboard');
+    
+    // Iniciar fetch de frase en paralelo (sin await, no bloquea)
+    setWelcomeFraseLoading(true);
+    
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/frases/motivacional`, {
+      headers: { 
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      setWelcomeFrase(data.frase);
+      setWelcomeFraseLoading(false);
+    })
+    .catch(() => {
+      setWelcomeFrase('¡Bienvenido al sistema!');
+      setWelcomeFraseLoading(false);
+    });
+    
+    // Mostrar modal inmediatamente (mientras carga la frase)
+    setShowWelcome(true);
+  }, []);
+
+  // Callback estable para cerrar modal
+  const handleCloseWelcome = useCallback(() => {
+    setShowWelcome(false);
+    // Reset frase cuando se cierra el modal
+    setWelcomeFrase(null);
+    setWelcomeFraseLoading(false);
   }, []);
 
   useEffect(() => {
@@ -66,7 +108,7 @@ function App() {
   if (currentPage === 'home') {
     return (
       <>
-        <Home />
+        <Home onLoginSuccess={handleLoginSuccess} />
         <Toaster position="top-right" />
       </>
     );
@@ -75,7 +117,7 @@ function App() {
   if (currentPage === 'login') {
     return (
       <>
-        <Login onLoginSuccess={() => setCurrentPage('dashboard')} />
+        <Login onLoginSuccess={handleLoginSuccess} />
         <Toaster position="top-right" />
       </>
     );
@@ -121,6 +163,12 @@ function App() {
         {renderContent()}
       </Layout>
       <Toaster position="top-right" />
+      <WelcomeModal 
+        isOpen={showWelcome} 
+        onClose={handleCloseWelcome}
+        frasePreCargada={welcomeFrase}
+        fraseLoading={welcomeFraseLoading}
+      />
     </>
   );
 }
