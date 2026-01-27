@@ -10,9 +10,10 @@ import toast from 'react-hot-toast';
 export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onDashboardToggle }) {
   // Solo estos usuarios ven Expedientes y Casos (socios ya no tienen acceso automático)
   const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
-    "gferrari@grupoconexion.uy",  // Gerardo
+    "gferrari@grupoconexion.uy",   // Gerardo
     "falgorta@grupoconexion.uy",   // Pancho
     "gtaborda@grupoconexion.uy",   // Gonzalo
+    "bgandolfo@cgmasociados.com",  // Bruno
   ];
   
   const esSocio = localStorage.getItem('esSocio') === 'true';

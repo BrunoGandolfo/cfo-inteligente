@@ -8,9 +8,10 @@ import AdminUsersModal from '../admin/AdminUsersModal';
 export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle }) {
   // Solo estos usuarios ven Expedientes y Casos (socios ya no tienen acceso automático)
   const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
-    "gferrari@grupoconexion.uy",  // Gerardo
+    "gferrari@grupoconexion.uy",   // Gerardo
     "falgorta@grupoconexion.uy",   // Pancho
     "gtaborda@grupoconexion.uy",   // Gonzalo
+    "bgandolfo@cgmasociados.com",  // Bruno
   ];
   
   // Verificar si el usuario es socio

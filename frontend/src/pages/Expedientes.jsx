@@ -10,7 +10,8 @@ import {
   MapPin,
   AlertCircle,
   CheckCircle2,
-  BookOpen
+  BookOpen,
+  Trash2
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -107,6 +108,19 @@ function Expedientes() {
     setShowHistoriaModal(true); // Mostrar modal primero (con loading)
     await fetchHistoria(id);
     // No cerrar si falla, el usuario puede cerrar manualmente
+  };
+
+  const handleEliminar = async (expedienteId) => {
+    if (!window.confirm('¿Está seguro de eliminar este expediente?')) return;
+
+    try {
+      await axiosClient.delete(`/api/expedientes/${expedienteId}`);
+      toast.success('Expediente eliminado');
+      fetchExpedientes();
+      fetchResumen();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al eliminar');
+    }
   };
 
   const handleRowClick = async (id) => {
@@ -324,6 +338,16 @@ function Expedientes() {
                         >
                           <BookOpen className={`w-4 h-4 ${loadingHistoria ? 'animate-pulse' : ''}`} />
                           Ver Historia
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEliminar(exp.id);
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Eliminar
                         </button>
                       </div>
                     </td>

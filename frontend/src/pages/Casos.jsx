@@ -32,8 +32,9 @@ function Casos() {
     estado: 'pendiente',
     prioridad: 'media',
     fecha_vencimiento: '',
-    expediente_id: ''
+    iue: ''
   });
+  const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     fetchCasos();
@@ -48,7 +49,7 @@ function Casos() {
         estado: caso.estado || 'pendiente',
         prioridad: caso.prioridad || 'media',
         fecha_vencimiento: caso.fecha_vencimiento ? format(new Date(caso.fecha_vencimiento), 'yyyy-MM-dd') : '',
-        expediente_id: caso.expediente_id || ''
+        iue: caso.iue || caso.expediente?.iue || ''
       });
     } else {
       setEditMode(false);
@@ -58,7 +59,7 @@ function Casos() {
         estado: 'pendiente',
         prioridad: 'media',
         fecha_vencimiento: '',
-        expediente_id: ''
+        iue: ''
       });
     }
     setShowModal(true);
@@ -73,7 +74,7 @@ function Casos() {
       estado: 'pendiente',
       prioridad: 'media',
       fecha_vencimiento: '',
-      expediente_id: ''
+      iue: ''
     });
   };
 
@@ -82,26 +83,31 @@ function Casos() {
       return;
     }
 
-    const payload = {
-      titulo: formData.titulo.trim(),
-      estado: formData.estado,
-      prioridad: formData.prioridad,
-      fecha_vencimiento: formData.fecha_vencimiento || null,
-      expediente_id: formData.expediente_id || null
-    };
+    setGuardando(true);
+    try {
+      const payload = {
+        titulo: formData.titulo.trim(),
+        estado: formData.estado,
+        prioridad: formData.prioridad,
+        fecha_vencimiento: formData.fecha_vencimiento || null,
+        iue: formData.iue || null
+      };
 
-    // Remover null values
-    Object.keys(payload).forEach(key => 
-      payload[key] === null && delete payload[key]
-    );
+      // Remover null values
+      Object.keys(payload).forEach(key => 
+        payload[key] === null && delete payload[key]
+      );
 
-    if (editMode && casoActual) {
-      await actualizarCaso(casoActual.id, payload);
-    } else {
-      await crearCaso(payload);
+      if (editMode && casoActual) {
+        await actualizarCaso(casoActual.id, payload);
+      } else {
+        await crearCaso(payload);
+      }
+
+      handleCloseModal();
+    } finally {
+      setGuardando(false);
     }
-    
-    handleCloseModal();
   };
 
   const handleDelete = async (id) => {
@@ -385,27 +391,38 @@ function Casos() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  ID Expediente (opcional)
+                  IUE del Expediente (opcional)
                 </label>
                 <input
                   type="text"
-                  value={formData.expediente_id}
-                  onChange={(e) => setFormData({...formData, expediente_id: e.target.value})}
-                  placeholder="UUID del expediente asociado"
+                  value={formData.iue}
+                  onChange={(e) => setFormData({...formData, iue: e.target.value})}
+                  placeholder="Ej: 2-12345/2023"
                   className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div className="flex gap-2 justify-end pt-4">
-                <Button variant="ghost" onClick={handleCloseModal}>
+                <Button variant="ghost" onClick={handleCloseModal} disabled={guardando}>
                   Cancelar
                 </Button>
                 <Button 
                   variant="primary" 
                   onClick={handleSubmit}
-                  disabled={!formData.titulo.trim()}
+                  disabled={!formData.titulo.trim() || guardando}
+                  className="disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {editMode ? 'Actualizar' : 'Crear'}
+                  {guardando ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      {editMode ? 'Actualizando...' : 'Creando...'}
+                    </>
+                  ) : (
+                    editMode ? 'Actualizar' : 'Crear'
+                  )}
                 </Button>
               </div>
             </div>

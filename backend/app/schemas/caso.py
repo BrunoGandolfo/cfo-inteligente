@@ -37,6 +37,7 @@ class CasoBase(BaseModel):
 class CasoCreate(CasoBase):
     """Schema para crear un caso."""
     responsable_id: Optional[UUID] = None
+    iue: Optional[str] = None
 
 
 class CasoUpdate(BaseModel):
