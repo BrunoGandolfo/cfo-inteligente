@@ -38,13 +38,15 @@ function Expedientes() {
   const [showModal, setShowModal] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const [syncingId, setSyncingId] = useState(null);
+  const [addingExpediente, setAddingExpediente] = useState(false);
   const [showHistoriaModal, setShowHistoriaModal] = useState(false);
   const [iueInput, setIueInput] = useState('');
 
   useEffect(() => {
     fetchExpedientes();
     fetchResumen();
-  }, [fetchExpedientes, fetchResumen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);  // Ejecutar solo al montar - funciones son estables con useCallback([])
 
   const handleSyncAll = async () => {
     const confirmacion = window.confirm(
@@ -73,13 +75,20 @@ function Expedientes() {
       return;
     }
 
+    if (addingExpediente) {
+      return; // Prevenir múltiples clicks
+    }
+
     try {
+      setAddingExpediente(true);
       await sincronizarNuevo(iueInput.trim());
       setShowModal(false);
       setIueInput('');
       fetchResumen();
     } catch (err) {
       // Error ya manejado en el hook
+    } finally {
+      setAddingExpediente(false);
     }
   };
 
@@ -252,7 +261,6 @@ function Expedientes() {
               </thead>
               <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
                 {expedientes.map((exp) => {
-                  console.log('Expediente en tabla:', exp.id, exp);
                   return (
                   <tr
                     key={exp.id}
@@ -429,8 +437,14 @@ function Expedientes() {
                 }}>
                   Cancelar
                 </Button>
-                <Button variant="primary" onClick={handleAddExpediente}>
-                  Sincronizar
+                <Button 
+                  variant="primary" 
+                  onClick={handleAddExpediente}
+                  disabled={addingExpediente}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${addingExpediente ? 'animate-spin' : ''}`} />
+                  {addingExpediente ? 'Sincronizando...' : 'Sincronizar'}
                 </Button>
               </div>
             </div>

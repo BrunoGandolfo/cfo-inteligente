@@ -43,6 +43,7 @@ function App() {
       localStorage.removeItem('token');
       localStorage.removeItem('userName');
       localStorage.removeItem('esSocio');
+      localStorage.removeItem('userEmail');
       setIsValidating(false);
       return false;
     }

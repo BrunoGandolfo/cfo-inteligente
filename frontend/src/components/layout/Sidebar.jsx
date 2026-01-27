@@ -6,8 +6,18 @@ import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 
 export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle }) {
+  // Solo estos usuarios ven Expedientes y Casos (socios ya no tienen acceso automático)
+  const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
+    "gferrari@grupoconexion.uy",  // Gerardo
+    "falgorta@grupoconexion.uy",   // Pancho
+    "gtaborda@grupoconexion.uy",   // Gonzalo
+  ];
+  
   // Verificar si el usuario es socio
   const esSocio = localStorage.getItem('esSocio') === 'true';
+  const userEmail = localStorage.getItem('userEmail') || '';
+  const veExpedientesYCasos = USUARIOS_ACCESO_EXPEDIENTES_CASOS.includes(userEmail.toLowerCase());
+  
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
 
@@ -24,10 +34,12 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
     { key: 'Configuración', icon: Settings, label: 'Configuración' },
   ];
 
-  // Colaboradores solo ven Dashboard y Soporte
-  const items = esSocio 
-    ? allItems 
-    : allItems.filter(item => ['Dashboard', 'Soporte'].includes(item.key));
+  // Lógica de filtrado de items según rol y permisos
+  const items = esSocio
+    ? allItems.filter(item => (item.key === 'Expedientes' || item.key === 'Casos') ? veExpedientesYCasos : true)
+    : veExpedientesYCasos
+    ? allItems.filter(item => ['Dashboard', 'Soporte', 'Indicadores', 'Expedientes', 'Casos'].includes(item.key))
+    : allItems.filter(item => ['Dashboard', 'Soporte', 'Indicadores'].includes(item.key));
 
   return (
     <aside className="hidden lg:flex lg:flex-col w-[250px] shrink-0 border-r bg-white dark:bg-slate-900 dark:border-slate-800 pt-16 justify-between">

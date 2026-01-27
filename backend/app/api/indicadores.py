@@ -6,7 +6,7 @@ Expone endpoints para obtener:
 - UR (Unidad Reajustable)
 - IPC (Índice de Precios al Consumo)
 - BPC (Base de Prestaciones y Contribuciones)
-- Cotizaciones de monedas (USD, EUR, BRL)
+- Cotizaciones de monedas (USD)
 
 Todos los endpoints requieren autenticación JWT.
 """
@@ -75,9 +75,9 @@ def obtener_inflacion(current_user: Usuario = Depends(get_current_user)):
 @router.get("/cotizaciones", response_model=CotizacionesResponse)
 def obtener_cotizaciones(current_user: Usuario = Depends(get_current_user)):
     """
-    Obtiene las cotizaciones de monedas (USD, EUR, BRL).
+    Obtiene la cotización de USD.
     
-    Retorna valores de compra y venta para cada moneda.
+    Retorna valores de compra y venta.
     Fuente: DolarApi
     """
     return indicadores_service.obtener_cotizaciones()

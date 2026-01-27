@@ -125,25 +125,33 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     # Construir email completo
     email = construir_email(prefijo)
     
-    # Verificar que el email no exista
-    existing = db.query(Usuario).filter(Usuario.email == email).first()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Este usuario ya está registrado"
-        )
-    
-    # Validar contraseña mínima
+    # Validar contraseña mínima (para crear y para completar registro)
     if len(request.password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña debe tener al menos 6 caracteres"
         )
     
-    # Determinar si es socio según SOCIOS_AUTORIZADOS
-    es_socio = prefijo in SOCIOS_AUTORIZADOS
+    # Buscar usuario por email
+    existing = db.query(Usuario).filter(Usuario.email == email).first()
     
-    # Crear usuario
+    if existing:
+        if existing.password_hash is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Este usuario ya está registrado"
+            )
+        # Completar registro: usuario existe sin contraseña
+        existing.password_hash = hash_password(request.password)
+        db.commit()
+        return RegisterResponse(
+            message="Registro completado. Ya puedes iniciar sesión.",
+            email=email,
+            es_socio=existing.es_socio
+        )
+    
+    # Usuario no existe: crear nuevo
+    es_socio = prefijo in SOCIOS_AUTORIZADOS
     nuevo_usuario = Usuario(
         email=email,
         nombre=request.nombre.strip(),

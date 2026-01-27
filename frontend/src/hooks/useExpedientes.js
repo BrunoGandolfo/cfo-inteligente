@@ -20,7 +20,7 @@ export function useExpedientes() {
       setError(null);
       
       const params = {
-        socio_id: filtros.socioId,
+        responsable_id: filtros.responsableId,
         area_id: filtros.areaId,
         anio: filtros.anio,
         limit: filtros.limit || 20,
@@ -73,7 +73,7 @@ export function useExpedientes() {
   /**
    * Sincroniza un nuevo expediente desde el Poder Judicial
    */
-  const sincronizarNuevo = useCallback(async (iue, clienteId = null, areaId = null, socioId = null) => {
+  const sincronizarNuevo = useCallback(async (iue, clienteId = null, areaId = null, responsableId = null) => {
     try {
       setLoading(true);
       setError(null);
@@ -82,7 +82,7 @@ export function useExpedientes() {
         iue,
         cliente_id: clienteId,
         area_id: areaId,
-        socio_responsable_id: socioId,
+        responsable_id: responsableId,
       };
 
       // Remover null values

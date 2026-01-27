@@ -14,7 +14,7 @@ class Usuario(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False)
     nombre = Column(String(100), nullable=False)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)
     es_socio = Column(Boolean, default=False)  # True = socio, False = operador
     activo = Column(Boolean, default=True)
     created_at = Column(DateTime, default=utc_now)

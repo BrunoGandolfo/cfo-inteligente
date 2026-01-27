@@ -8,7 +8,7 @@ Indicadores con valores actualizables manualmente:
 - BPC (Base Prestaciones): actualización anual
 
 Cotizaciones con API en tiempo real:
-- USD/EUR/BRL: DolarApi
+- USD: DolarApi
 
 TODO: Integrar con API del INE cuando esté disponible.
 """
@@ -49,14 +49,10 @@ VALORES_ACTUALES = {
     },
 }
 
-# Fallback para cotizaciones si falla DolarApi
+# Fallback para cotizaciones si falla DolarApi (solo USD)
 COTIZACIONES_FALLBACK = {
     "usd_compra": 43.50,
     "usd_venta": 44.50,
-    "eur_compra": 45.80,
-    "eur_venta": 46.80,
-    "brl_compra": 7.00,
-    "brl_venta": 7.20,
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -151,7 +147,7 @@ def _obtener_cotizacion_moneda(moneda: str) -> Dict[str, float]:
     Obtiene cotización de una moneda desde DolarApi.
     
     Args:
-        moneda: Código de moneda (usd, eur, brl)
+        moneda: Código de moneda (usd)
         
     Returns:
         Dict con compra y venta
@@ -182,7 +178,7 @@ def _obtener_cotizacion_moneda(moneda: str) -> Dict[str, float]:
 
 def obtener_cotizaciones() -> Dict[str, Any]:
     """
-    Obtiene todas las cotizaciones de monedas (USD, EUR, BRL).
+    Obtiene la cotización de USD.
     
     Fuente: DolarApi (https://uy.dolarapi.com)
     Cache: 1 hora
@@ -194,11 +190,9 @@ def obtener_cotizaciones() -> Dict[str, Any]:
         logger.info("Cotizaciones desde cache")
         return _cache_cotizaciones["data"]
     
-    # Obtener cotizaciones
+    # Obtener cotización USD
     cotizaciones = {
         "usd": _obtener_cotizacion_moneda("usd"),
-        "eur": _obtener_cotizacion_moneda("eur"),
-        "brl": _obtener_cotizacion_moneda("brl"),
         "timestamp": datetime.now().isoformat(),
     }
     

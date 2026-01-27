@@ -35,7 +35,7 @@ class ExpedienteCreate(BaseModel):
     iue: str = Field(..., description="IUE en formato Sede-Numero/Año (ej: 2-12345/2023)")
     cliente_id: Optional[str] = Field(None, description="UUID del cliente asociado")
     area_id: Optional[str] = Field(None, description="UUID del área")
-    socio_responsable_id: Optional[str] = Field(None, description="UUID del socio responsable")
+    responsable_id: Optional[str] = Field(None, description="UUID del usuario responsable")
 
 
 class MovimientoResponse(BaseModel):
@@ -66,7 +66,7 @@ class ExpedienteResponse(BaseModel):
     abogado_demandado: Optional[str]
     cliente_id: Optional[str]
     area_id: Optional[str]
-    socio_responsable_id: Optional[str]
+    responsable_id: Optional[str]
     ultimo_movimiento: Optional[date]
     cantidad_movimientos: int
     ultima_sincronizacion: Optional[datetime]
@@ -105,7 +105,7 @@ class MovimientoPendienteResponse(BaseModel):
     decreto: Optional[str]
     vencimiento: Optional[date]
     sede: Optional[str]
-    socio_responsable_id: Optional[str]
+    responsable_id: Optional[str]
 
 
 class ErrorSincronizacion(BaseModel):
@@ -159,17 +159,39 @@ class HistoriaResponse(BaseModel):
 
 
 # ============================================================================
+# CONFIGURACIÓN DE ACCESO
+# ============================================================================
+
+# Colaboradores con acceso especial a expedientes
+COLABORADORES_ACCESO_EXPEDIENTES = [
+    "gferrari@grupoconexion.uy",   # Gerardo
+    "falgorta@grupoconexion.uy",   # Pancho
+    "gtaborda@grupoconexion.uy",   # Gonzalo
+]
+
+# Usuarios que solo ven expedientes donde ellos son el responsable
+USUARIOS_FILTRO_EXPEDIENTES = [
+    "gferrari@grupoconexion.uy",
+    "falgorta@grupoconexion.uy",
+    "gtaborda@grupoconexion.uy",
+]
+
+
+# ============================================================================
 # HELPERS
 # ============================================================================
 
 def _verificar_socio(current_user: Usuario) -> None:
-    """Verifica que el usuario sea socio, o lanza 403."""
-    if not current_user.es_socio:
-        logger.warning(f"Usuario {current_user.email} intentó acceder a expedientes sin ser socio")
-        raise HTTPException(
-            status_code=403, 
-            detail="Solo socios pueden gestionar expedientes judiciales"
-        )
+    """Verifica que el usuario sea socio o tenga acceso especial, o lanza 403."""
+    if current_user.es_socio:
+        return
+    if current_user.email in COLABORADORES_ACCESO_EXPEDIENTES:
+        return
+    logger.warning(f"Usuario {current_user.email} intentó acceder a expedientes sin permiso")
+    raise HTTPException(
+        status_code=403, 
+        detail="Solo socios pueden gestionar expedientes judiciales"
+    )
 
 
 def _expediente_to_response(exp: Expediente, incluir_movimientos: bool = False) -> dict:
@@ -186,7 +208,7 @@ def _expediente_to_response(exp: Expediente, incluir_movimientos: bool = False) 
         "abogado_demandado": exp.abogado_demandado,
         "cliente_id": str(exp.cliente_id) if exp.cliente_id else None,
         "area_id": str(exp.area_id) if exp.area_id else None,
-        "socio_responsable_id": str(exp.socio_responsable_id) if exp.socio_responsable_id else None,
+        "responsable_id": str(exp.responsable_id) if exp.responsable_id else None,
         "ultimo_movimiento": exp.ultimo_movimiento,
         "cantidad_movimientos": exp.cantidad_movimientos or 0,
         "ultima_sincronizacion": exp.ultima_sincronizacion,
@@ -243,7 +265,7 @@ def sincronizar_expediente(
             iue=data.iue,
             cliente_id=data.cliente_id,
             area_id=data.area_id,
-            socio_responsable_id=data.socio_responsable_id
+            responsable_id=data.responsable_id
         )
         
         if expediente is None:
@@ -276,7 +298,7 @@ def sincronizar_expediente(
 
 @router.get("/", response_model=ExpedienteListResponse)
 def listar_expedientes(
-    socio_id: Optional[str] = Query(None, description="Filtrar por socio responsable"),
+    responsable_id: Optional[str] = Query(None, description="Filtrar por responsable (usuario)"),
     area_id: Optional[str] = Query(None, description="Filtrar por área"),
     anio: Optional[int] = Query(None, description="Filtrar por año del IUE"),
     limit: int = Query(20, ge=1, le=100, description="Máximo de resultados"),
@@ -293,10 +315,14 @@ def listar_expedientes(
     
     logger.info(f"Listando expedientes - Usuario: {current_user.email}")
     
+    # Forzar filtro por responsable para usuarios específicos
+    if current_user.email.lower() in USUARIOS_FILTRO_EXPEDIENTES:
+        responsable_id = str(current_user.id)
+    
     # Obtener expedientes
     expedientes = expediente_service.listar_expedientes_activos(
         db=db,
-        socio_responsable_id=socio_id,
+        responsable_id=responsable_id,
         area_id=area_id,
         anio=anio,
         limit=limit,
@@ -308,8 +334,8 @@ def listar_expedientes(
         Expediente.activo == True,
         Expediente.deleted_at.is_(None)
     )
-    if socio_id:
-        query = query.filter(Expediente.socio_responsable_id == UUID(socio_id))
+    if responsable_id:
+        query = query.filter(Expediente.responsable_id == UUID(responsable_id))
     if area_id:
         query = query.filter(Expediente.area_id == UUID(area_id))
     if anio:
@@ -741,7 +767,7 @@ def resincronizar_expediente(
             iue=expediente.iue,
             cliente_id=str(expediente.cliente_id) if expediente.cliente_id else None,
             area_id=str(expediente.area_id) if expediente.area_id else None,
-            socio_responsable_id=str(expediente.socio_responsable_id) if expediente.socio_responsable_id else None
+            responsable_id=str(expediente.responsable_id) if expediente.responsable_id else None
         )
         
         mensaje = (
@@ -811,12 +837,12 @@ def actualizar_expediente(
     expediente_id: str,
     cliente_id: Optional[str] = None,
     area_id: Optional[str] = None,
-    socio_responsable_id: Optional[str] = None,
+    responsable_id: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
     """
-    Actualiza las relaciones de un expediente (cliente, área, socio responsable).
+    Actualiza las relaciones de un expediente (cliente, área, responsable).
     
     Los datos del expediente (carátula, movimientos) se actualizan via sincronización.
     Solo socios pueden usar este endpoint.
@@ -845,8 +871,8 @@ def actualizar_expediente(
     if area_id is not None:
         expediente.area_id = UUID(area_id) if area_id else None
     
-    if socio_responsable_id is not None:
-        expediente.socio_responsable_id = UUID(socio_responsable_id) if socio_responsable_id else None
+    if responsable_id is not None:
+        expediente.responsable_id = UUID(responsable_id) if responsable_id else None
     
     expediente.updated_at = datetime.now(timezone.utc)
     db.commit()

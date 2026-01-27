@@ -16,7 +16,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://cfo-inteligente-pr
 // Crear instancia de axios con configuración base
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 120000,  // 2 minutos para expedientes con muchos movimientos
   headers: {
     'Content-Type': 'application/json',
   },

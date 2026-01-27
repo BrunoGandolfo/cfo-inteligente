@@ -18,6 +18,7 @@ from zeep import Client, Settings
 from zeep.helpers import serialize_object
 from zeep.exceptions import Fault, TransportError
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.models.expediente import (
     Expediente, 
@@ -191,7 +192,7 @@ def sincronizar_expediente(
     iue: str,
     cliente_id: Optional[str] = None,
     area_id: Optional[str] = None,
-    socio_responsable_id: Optional[str] = None
+    responsable_id: Optional[str] = None
 ) -> Tuple[Optional[Expediente], int]:
     """
     Sincroniza un expediente con el Web Service del Poder Judicial.
@@ -204,7 +205,7 @@ def sincronizar_expediente(
         iue: Identificador Único de Expediente
         cliente_id: UUID del cliente asociado (opcional)
         area_id: UUID del área (opcional)
-        socio_responsable_id: UUID del socio responsable (opcional)
+        responsable_id: UUID del usuario responsable (opcional)
         
     Returns:
         Tupla (expediente, cantidad_nuevos_movimientos)
@@ -247,7 +248,7 @@ def sincronizar_expediente(
             abogado_demandado=datos_ws.get("abogado_demandante"),  # Nota: el WS usa "demandante"
             cliente_id=cliente_id,
             area_id=area_id,
-            socio_responsable_id=socio_responsable_id,
+            responsable_id=responsable_id,
             ultima_sincronizacion=ahora
         )
         db.add(expediente)
@@ -267,8 +268,8 @@ def sincronizar_expediente(
             expediente.cliente_id = cliente_id
         if area_id:
             expediente.area_id = area_id
-        if socio_responsable_id:
-            expediente.socio_responsable_id = socio_responsable_id
+        if responsable_id:
+            expediente.responsable_id = responsable_id
     
     # Sincronizar movimientos
     movimientos_ws = datos_ws.get("movimientos") or []
@@ -310,12 +311,19 @@ def sincronizar_expediente(
             hash_movimiento=hash_mov,
             notificado=False  # Nuevo = sin notificar
         )
-        db.add(nuevo_mov)
-        nuevos_movimientos += 1
         
-        # Trackear fecha más reciente
-        if fecha_mov and (fecha_ultimo is None or fecha_mov > fecha_ultimo):
-            fecha_ultimo = fecha_mov
+        try:
+            with db.begin_nested():  # Savepoint para rollback parcial
+                db.add(nuevo_mov)
+                db.flush()  # Fuerza el INSERT inmediato para detectar duplicados
+            nuevos_movimientos += 1
+            
+            # Trackear fecha más reciente (solo para movimientos realmente insertados)
+            if fecha_mov and (fecha_ultimo is None or fecha_mov > fecha_ultimo):
+                fecha_ultimo = fecha_mov
+        except IntegrityError:
+            # Savepoint hace rollback automático, solo continuar
+            continue
     
     # Actualizar estadísticas del expediente
     total_movimientos = db.query(ExpedienteMovimiento).filter(
@@ -362,7 +370,7 @@ def obtener_movimientos_sin_notificar(db: Session) -> List[Dict[str, Any]]:
                 "decreto": str,
                 "vencimiento": date | None,
                 "sede": str,
-                "socio_responsable_id": str | None
+                "responsable_id": str | None
             }
         ]
     """
@@ -392,7 +400,7 @@ def obtener_movimientos_sin_notificar(db: Session) -> List[Dict[str, Any]]:
             "decreto": mov.decreto,
             "vencimiento": mov.vencimiento,
             "sede": mov.sede,
-            "socio_responsable_id": str(exp.socio_responsable_id) if exp.socio_responsable_id else None
+            "responsable_id": str(exp.responsable_id) if exp.responsable_id else None
         })
     
     logger.info(f"Movimientos sin notificar: {len(movimientos)}")
@@ -461,7 +469,7 @@ def obtener_expediente_por_iue(
 
 def listar_expedientes_activos(
     db: Session,
-    socio_responsable_id: Optional[str] = None,
+    responsable_id: Optional[str] = None,
     area_id: Optional[str] = None,
     anio: Optional[int] = None,
     limit: int = 100,
@@ -472,7 +480,7 @@ def listar_expedientes_activos(
     
     Args:
         db: Sesión de SQLAlchemy
-        socio_responsable_id: Filtrar por socio responsable
+        responsable_id: Filtrar por responsable (usuario)
         area_id: Filtrar por área
         anio: Filtrar por año del IUE
         limit: Máximo de resultados
@@ -488,8 +496,8 @@ def listar_expedientes_activos(
         Expediente.deleted_at.is_(None)
     )
     
-    if socio_responsable_id:
-        query = query.filter(Expediente.socio_responsable_id == UUID(socio_responsable_id))
+    if responsable_id:
+        query = query.filter(Expediente.responsable_id == UUID(responsable_id))
     
     if area_id:
         query = query.filter(Expediente.area_id == UUID(area_id))

@@ -8,8 +8,18 @@ import AdminUsersModal from '../admin/AdminUsersModal';
 import toast from 'react-hot-toast';
 
 export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onDashboardToggle }) {
+  // Solo estos usuarios ven Expedientes y Casos (socios ya no tienen acceso automático)
+  const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
+    "gferrari@grupoconexion.uy",  // Gerardo
+    "falgorta@grupoconexion.uy",   // Pancho
+    "gtaborda@grupoconexion.uy",   // Gonzalo
+  ];
+  
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const userName = localStorage.getItem('userName') || 'Usuario';
+  const userEmail = localStorage.getItem('userEmail') || '';
+  const veExpedientesYCasos = USUARIOS_ACCESO_EXPEDIENTES_CASOS.includes(userEmail.toLowerCase());
+  
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
 
@@ -25,9 +35,12 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
     { key: 'Soporte', icon: HelpCircle, label: 'Soporte', action: () => { onSoporteToggle?.(); onClose(); }, supportItem: true },
   ];
 
-  const items = esSocio 
-    ? allItems 
-    : allItems.filter(item => ['Dashboard', 'Soporte'].includes(item.key));
+  // Lógica de filtrado de items según rol y permisos
+  const items = esSocio
+    ? allItems.filter(item => (item.key === 'Expedientes' || item.key === 'Casos') ? veExpedientesYCasos : true)
+    : veExpedientesYCasos
+    ? allItems.filter(item => ['Dashboard', 'Soporte', 'Indicadores', 'Expedientes', 'Casos'].includes(item.key))
+    : allItems.filter(item => ['Dashboard', 'Soporte', 'Indicadores'].includes(item.key));
 
   const handleLogout = () => {
     toast.success('Sesión cerrada correctamente');

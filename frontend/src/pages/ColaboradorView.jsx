@@ -172,20 +172,6 @@ function ColaboradorView() {
                   {indicadores?.cotizaciones?.usd?.venta?.toFixed(2) || '--'}
                 </p>
               </div>
-              
-              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-orange-500">
-                <p className="text-[10px] font-mono text-gray-500 uppercase">EUR</p>
-                <p className="text-lg font-mono font-bold text-orange-400 tabular-nums">
-                  {indicadores?.cotizaciones?.eur?.venta?.toFixed(2) || '--'}
-                </p>
-              </div>
-              
-              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-orange-500">
-                <p className="text-[10px] font-mono text-gray-500 uppercase">BRL</p>
-                <p className="text-lg font-mono font-bold text-orange-400 tabular-nums">
-                  {indicadores?.cotizaciones?.brl?.venta?.toFixed(2) || '--'}
-                </p>
-              </div>
             </div>
           )}
         </div>

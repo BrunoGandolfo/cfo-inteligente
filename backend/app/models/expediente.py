@@ -76,7 +76,7 @@ class Expediente(Base):
     Relaciones opcionales:
     - cliente: Cliente asociado al expediente
     - area: Área de negocio (Jurídica, Notarial, etc.)
-    - socio_responsable: Socio a cargo del caso
+    - responsable: Usuario a cargo del caso
     """
     __tablename__ = "expedientes"
 
@@ -96,7 +96,7 @@ class Expediente(Base):
     # Relaciones con entidades del sistema
     cliente_id = Column(UUID(as_uuid=True), ForeignKey("clientes.id"), nullable=True)
     area_id = Column(UUID(as_uuid=True), ForeignKey("areas.id"), nullable=True)
-    socio_responsable_id = Column(UUID(as_uuid=True), ForeignKey("socios.id"), nullable=True)
+    responsable_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
     
     # Estado de sincronización
     ultimo_movimiento = Column(Date, nullable=True)
@@ -118,7 +118,7 @@ class Expediente(Base):
     )
     cliente = relationship("Cliente", backref="expedientes")
     area = relationship("Area", backref="expedientes")
-    socio_responsable = relationship("Socio", backref="expedientes_responsable")
+    responsable = relationship("Usuario", backref="expedientes_responsable")
     
     @classmethod
     def from_iue(cls, iue: str, **kwargs) -> "Expediente":

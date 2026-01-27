@@ -1,7 +1,7 @@
 /**
  * Hook para obtener indicadores económicos de Uruguay.
  * 
- * Obtiene: UI, UR, IPC, BPC y cotizaciones (USD, EUR, BRL).
+ * Obtiene: UI, UR, IPC, BPC y cotización USD.
  * Sigue el patrón de useMetrics.js.
  */
 

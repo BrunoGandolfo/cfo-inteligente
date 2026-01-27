@@ -26,6 +26,7 @@ function Login({ onLoginSuccess }) {
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('userName', response.data.nombre);
       localStorage.setItem('esSocio', String(response.data.es_socio).toLowerCase());
+      localStorage.setItem('userEmail', email);
       
       toast.success(`¡Bienvenido, ${response.data.nombre}!`);
       onLoginSuccess();

@@ -172,26 +172,6 @@ export default function Indicadores({ onNavigate }) {
             colorBorde="border-green-500"
             colorIcono="text-green-500"
           />
-
-          {/* EUR */}
-          <IndicadorCard
-            titulo="Euro EUR"
-            valor={`C: ${formatearPesos(indicadores.cotizaciones?.eur?.compra)} / V: ${formatearPesos(indicadores.cotizaciones?.eur?.venta)}`}
-            subtitulo="DolarApi — Tiempo real"
-            icono={DollarSign}
-            colorBorde="border-blue-500"
-            colorIcono="text-blue-500"
-          />
-
-          {/* BRL */}
-          <IndicadorCard
-            titulo="Real BRL"
-            valor={`C: ${formatearPesos(indicadores.cotizaciones?.brl?.compra)} / V: ${formatearPesos(indicadores.cotizaciones?.brl?.venta)}`}
-            subtitulo="DolarApi — Tiempo real"
-            icono={DollarSign}
-            colorBorde="border-orange-500"
-            colorIcono="text-orange-500"
-          />
         </div>
       )}
 

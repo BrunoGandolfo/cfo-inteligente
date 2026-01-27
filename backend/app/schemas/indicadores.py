@@ -6,7 +6,7 @@ Define los modelos de respuesta para:
 - UR (Unidad Reajustable)
 - IPC (Índice de Precios al Consumo)
 - BPC (Base de Prestaciones y Contribuciones)
-- Cotizaciones (USD, EUR, BRL)
+- Cotizaciones (USD)
 """
 
 from pydantic import BaseModel
@@ -27,10 +27,8 @@ class CotizacionResponse(BaseModel):
 
 
 class CotizacionesResponse(BaseModel):
-    """Todas las cotizaciones de monedas."""
+    """Cotización de USD."""
     usd: CotizacionResponse
-    eur: CotizacionResponse
-    brl: CotizacionResponse
     timestamp: str
 
 
