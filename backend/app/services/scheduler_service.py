@@ -70,17 +70,17 @@ def enviar_notificaciones_pendientes(db: Session):
 
 def iniciar_scheduler():
     """Inicia el scheduler con las tareas programadas."""
-    # Tarea: sincronizar expedientes a las 8:00 AM Uruguay
+    # Tarea: sincronizar expedientes a las 7:30 AM Uruguay
     scheduler.add_job(
         tarea_sincronizar_expedientes,
-        CronTrigger(hour=8, minute=0, timezone=TZ_URUGUAY),
+        CronTrigger(hour=7, minute=30, timezone=TZ_URUGUAY),
         id="sync_expedientes_diario",
         name="Sincronización diaria de expedientes",
         replace_existing=True
     )
     
     scheduler.start()
-    logger.info("📅 Scheduler iniciado - Próxima ejecución: 8:00 AM (Uruguay)")
+    logger.info("📅 Scheduler iniciado - Próxima ejecución: 7:30 AM (Uruguay)")
 
 
 def detener_scheduler():
