@@ -80,6 +80,9 @@ app.include_router(casos_router)
 from app.api.contratos import router as contratos_router
 app.include_router(contratos_router)
 
+from app.api.ala import router as ala_router
+app.include_router(ala_router, prefix="/api/ala", tags=["ALA - Anti Lavado"])
+
 
 # ============================================================================
 # EVENTOS STARTUP / SHUTDOWN

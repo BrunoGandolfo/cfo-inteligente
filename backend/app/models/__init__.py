@@ -10,6 +10,7 @@ from app.models.expediente import Expediente, ExpedienteMovimiento
 from app.models.ley import Ley
 from app.models.caso import Caso, EstadoCaso, PrioridadCaso
 from app.models.contrato import Contrato
+from app.models.verificacion_ala import VerificacionALA, ListaALAMetadata
 
 __all__ = [
     "Area",
@@ -31,4 +32,6 @@ __all__ = [
     "EstadoCaso",
     "PrioridadCaso",
     "Contrato",
+    "VerificacionALA",
+    "ListaALAMetadata",
 ]
