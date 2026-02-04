@@ -115,36 +115,75 @@ def construir_mensajes(request: SoporteRequest, nombre_pila: str) -> list:
 DOCUMENTACION = cargar_documentacion()
 
 # ═══════════════════════════════════════════════════════════════
-# RESTRICCIONES POR ROL
+# CONFIGURACIÓN DE ACCESO A MÓDULOS
 # ═══════════════════════════════════════════════════════════════
 
-RESTRICCION_SOCIO = """
-RESTRICCIÓN DE ROL - USUARIO SOCIO:
-Este usuario es SOCIO y tiene acceso completo a todas las funcionalidades del sistema.
-Podés ayudarlo con: ingresos, gastos, retiros, distribuciones, métricas, gráficos, 
-administración de usuarios, y cualquier otra consulta.
-"""
+# Listas de usuarios con acceso especial (replicadas aquí para evitar dependencias circulares)
+USUARIOS_ACCESO_EXPEDIENTES = [
+    "bgandolfo@cgmasociados.com",
+    "gtaborda@grupoconexion.uy",
+    "falgorta@grupoconexion.uy",
+    "gferrari@grupoconexion.uy",
+]
 
-RESTRICCION_NO_SOCIO = """
-RESTRICCIÓN DE ROL - USUARIO COLABORADOR (NO SOCIO):
-Este usuario es un COLABORADOR, NO un socio. Solo puede:
-- Registrar INGRESOS
-- Registrar GASTOS  
-- Ver sus propias operaciones
-- Cambiar su contraseña
-- Ver indicadores económicos del día
+USUARIOS_ACCESO_CASOS = [
+    "bgandolfo@cgmasociados.com",
+    "gtaborda@grupoconexion.uy",
+    "falgorta@grupoconexion.uy",
+    "gferrari@grupoconexion.uy",
+]
 
-NO puede ver ni debe recibir información sobre:
-- Retiros de empresa
-- Distribución de utilidades
-- Métricas financieras (montos totales, rentabilidad, márgenes)
-- Gráficos de evolución financiera
-- Administración de usuarios
-- Cualquier información financiera sensible de la empresa
+USUARIOS_ACCESO_ALA = [
+    "bgandolfo@cgmasociados.com",
+    "gferrari@grupoconexion.uy",
+]
 
-Si pregunta sobre estos temas, respondé SIEMPRE con esta frase exacta:
-"Esa función está disponible solo para socios. Vos podés registrar ingresos y gastos. ¿Te ayudo con eso?"
-"""
+
+def _obtener_modulos_usuario(usuario: Usuario) -> str:
+    """
+    Retorna una descripción de qué módulos y funciones puede usar este usuario específico.
+    Solo incluye lo que SÍ puede hacer, nunca menciona lo que NO puede hacer.
+    """
+    email = usuario.email.lower()
+    es_socio = usuario.es_socio
+    
+    modulos = []
+    
+    # Todos los usuarios pueden:
+    modulos.append("- Cambiar su contraseña")
+    modulos.append("- Ver indicadores económicos (UI, UR, BPC, cotizaciones)")
+    modulos.append("- Consultar leyes uruguayas")
+    modulos.append("- Ver contratos notariales")
+    
+    # Operaciones
+    if es_socio:
+        modulos.append("- Registrar ingresos, gastos, retiros y distribuciones")
+        modulos.append("- Ver el dashboard completo con métricas y gráficos")
+        modulos.append("- Usar el chat CFO AI para consultas financieras")
+        modulos.append("- Administrar usuarios del sistema")
+        modulos.append("- Crear y editar contratos notariales")
+    else:
+        modulos.append("- Registrar ingresos y gastos")
+    
+    # Expedientes
+    if email in [e.lower() for e in USUARIOS_ACCESO_EXPEDIENTES]:
+        if email == "bgandolfo@cgmasociados.com":
+            modulos.append("- Gestionar expedientes judiciales (ve todos)")
+        else:
+            modulos.append("- Gestionar sus expedientes judiciales asignados")
+    
+    # Casos
+    if email in [e.lower() for e in USUARIOS_ACCESO_CASOS]:
+        if email == "bgandolfo@cgmasociados.com":
+            modulos.append("- Gestionar casos legales (ve todos)")
+        else:
+            modulos.append("- Gestionar sus casos legales asignados")
+    
+    # ALA
+    if es_socio or email in [e.lower() for e in USUARIOS_ACCESO_ALA]:
+        modulos.append("- Usar el módulo ALA (Anti-Lavado de Activos)")
+    
+    return "\n".join(modulos)
 
 # System prompt para el agente - REGLA DE FORMATO AL INICIO
 SYSTEM_PROMPT = """REGLA ABSOLUTA DE FORMATO (CUMPLIR SIEMPRE):
@@ -168,11 +207,12 @@ PERSONALIDAD:
 
 REGLAS ESTRICTAS:
 1. SOLO respondés sobre CFO Inteligente usando la documentación que te doy
-2. Si algo NO está en la documentación: "Eso no lo tengo documentado, pero podés escribir a bgandolfo@cgmasociados.com 📧"
+2. Si algo NO está en la documentación: "No tengo información sobre eso en mi documentación. ¿Te puedo ayudar con alguna de las funciones disponibles?"
 3. NUNCA inventés funcionalidades
 4. Si no entendés, pedí aclaración: "Perdoná, me podrías explicar un poco más?"
 5. Siempre ofrecé ayuda al final: "Te puedo ayudar con algo más?"
 6. Si te saludan, saludá con el nombre y preguntá en qué podés ayudar
+7. NUNCA digas "eso es solo para socios" ni "no tenés acceso". Simplemente respondé que no tenés información sobre eso.
 
 FORMATO DE RESPUESTAS:
 - Empezá saludando con el nombre si es primer mensaje
@@ -183,7 +223,15 @@ FORMATO DE RESPUESTAS:
 - Si hay error, primero empatizá y después da la solución
 - Terminá ofreciendo más ayuda
 
-{restriccion_rol}
+PERFIL DEL USUARIO:
+Este usuario se llama {nombre} y puede acceder a las siguientes funciones:
+{modulos_usuario}
+
+REGLA CRÍTICA: Solo respondé sobre las funciones listadas arriba.
+Si te preguntan sobre algo que NO está en la lista, respondé:
+"No tengo información sobre eso en mi documentación. ¿Te puedo ayudar con alguna de las funciones disponibles?"
+NUNCA digas "eso es solo para socios" ni "no tenés acceso".
+Simplemente respondé que no tenés información sobre eso.
 
 DOCUMENTACIÓN DEL SISTEMA:
 
@@ -205,9 +253,8 @@ async def soporte_ask(
     nombre_pila = obtener_nombre_pila(current_user.nombre)
     messages = construir_mensajes(request, nombre_pila)
     
-    # Determinar restricción según rol (preferir el valor del request, fallback al usuario)
-    es_socio = request.es_socio if request.es_socio is not None else current_user.es_socio
-    restriccion_rol = RESTRICCION_SOCIO if es_socio else RESTRICCION_NO_SOCIO
+    # Obtener módulos disponibles para este usuario
+    modulos_usuario = _obtener_modulos_usuario(current_user)
     
     try:
         api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -216,10 +263,11 @@ async def soporte_ask(
         
         client = anthropic.Anthropic(api_key=api_key)
         
-        # Construir system prompt con restricción de rol
+        # Construir system prompt con módulos del usuario
         system_prompt_final = SYSTEM_PROMPT.format(
             documentacion=DOCUMENTACION,
-            restriccion_rol=restriccion_rol
+            nombre=nombre_pila,
+            modulos_usuario=modulos_usuario
         )
         
         response = client.messages.create(
@@ -255,14 +303,14 @@ async def soporte_ask_stream(
     nombre_pila = obtener_nombre_pila(current_user.nombre)
     messages = construir_mensajes(request, nombre_pila)
     
-    # Determinar restricción según rol (preferir el valor del request, fallback al usuario)
-    es_socio = request.es_socio if request.es_socio is not None else current_user.es_socio
-    restriccion_rol = RESTRICCION_SOCIO if es_socio else RESTRICCION_NO_SOCIO
+    # Obtener módulos disponibles para este usuario
+    modulos_usuario = _obtener_modulos_usuario(current_user)
     
-    # Construir system prompt con restricción de rol
+    # Construir system prompt con módulos del usuario
     system_prompt_final = SYSTEM_PROMPT.format(
         documentacion=DOCUMENTACION,
-        restriccion_rol=restriccion_rol
+        nombre=nombre_pila,
+        modulos_usuario=modulos_usuario
     )
     
     api_key = os.getenv("ANTHROPIC_API_KEY")

@@ -19,6 +19,23 @@ export default function Soporte({ onNavigate }) {
   // Detectar si es socio
   const esSocio = localStorage.getItem('esSocio')?.toLowerCase() === 'true';
   
+  // Verificar acceso a Expedientes y Casos (igual que en Sidebar.jsx)
+  const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
+    "bgandolfo@cgmasociados.com",
+    "gtaborda@grupoconexion.uy",
+    "falgorta@grupoconexion.uy",
+    "gferrari@grupoconexion.uy",
+  ];
+  const userEmail = localStorage.getItem('userEmail') || '';
+  const veExpedientesYCasos = USUARIOS_ACCESO_EXPEDIENTES_CASOS.includes(userEmail.toLowerCase());
+  
+  // Verificar acceso a ALA
+  const USUARIOS_ACCESO_ALA = [
+    "bgandolfo@cgmasociados.com",
+    "gferrari@grupoconexion.uy",
+  ];
+  const veALa = esSocio || USUARIOS_ACCESO_ALA.includes(userEmail.toLowerCase());
+  
   // Estado para sección de documentación de Expedientes
   const [expedientesDocOpen, setExpedientesDocOpen] = useState(false);
 
@@ -50,23 +67,46 @@ export default function Soporte({ onNavigate }) {
     }
   };
 
-  // Sugerencias diferentes según rol
-  const sugerencias = esSocio ? [
-    '¿Cómo cargo un ingreso?',
-    '¿Dónde veo mis operaciones?',
-    '¿Qué es un retiro?',
-    '¿Cómo se distribuyen utilidades?',
-    '¿Cómo agrego un expediente judicial?',
-    '¿Cómo funciona la sincronización de expedientes?'
-  ] : [
-    '¿Cómo cargo un ingreso?',
-    '¿Cómo registro un gasto?',
-    '¿Dónde veo mis operaciones?',
-    '¿Cómo cambio mi contraseña?'
-  ];
+  // Sugerencias según acceso del usuario
+  const sugerencias = (() => {
+    const base = [
+      '¿Cómo cargo un ingreso?',
+      '¿Cómo registro un gasto?',
+      '¿Dónde veo mis operaciones?',
+    ];
+    
+    if (esSocio) {
+      return [
+        ...base,
+        '¿Qué es un retiro?',
+        '¿Cómo se distribuyen utilidades?',
+        '¿Cómo agrego un expediente judicial?',
+        '¿Cómo funciona la sincronización de expedientes?'
+      ];
+    }
+    
+    // Colaborador con acceso especial
+    if (veExpedientesYCasos || veALa) {
+      const extras = [];
+      if (veExpedientesYCasos) {
+        extras.push('¿Cómo agrego un expediente?');
+        extras.push('¿Cómo creo un caso legal?');
+      }
+      if (veALa) {
+        extras.push('¿Cómo verifico una persona en ALA?');
+      }
+      return [...base, ...extras];
+    }
+    
+    // Colaborador básico
+    return [
+      ...base,
+      '¿Cómo cambio mi contraseña?'
+    ];
+  })();
 
-  // Mensaje de bienvenida según rol
-  const textoAyuda = esSocio 
+  // Mensaje de bienvenida según acceso
+  const textoAyuda = (esSocio || veExpedientesYCasos || veALa)
     ? 'Preguntame lo que necesites sobre cómo usar CFO Inteligente.'
     : 'Preguntame sobre cómo registrar ingresos y gastos.';
 
@@ -136,7 +176,7 @@ export default function Soporte({ onNavigate }) {
             </div>
             
             {/* Documentación de Expedientes Judiciales */}
-            {esSocio && (
+            {(esSocio || veExpedientesYCasos) && (
               <div className="mt-8 border-t border-gray-200 dark:border-slate-700 pt-6">
                 <button
                   onClick={() => setExpedientesDocOpen(!expedientesDocOpen)}

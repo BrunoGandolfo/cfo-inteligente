@@ -4,10 +4,7 @@
 CFO Inteligente es el sistema de gestión financiera de Conexión Consultora, un estudio jurídico-contable en Uruguay con oficinas en Montevideo y Mercedes.
 
 ## ¿Quién puede usarlo?
-| Rol | Acceso |
-|-----|--------|
-| Socio | ✅ Acceso completo a todas las funciones |
-| Colaborador | ✅ Solo puede registrar ingresos y gastos |
+Cada usuario tiene acceso a los módulos que le corresponden según su perfil. El sistema muestra automáticamente solo los módulos disponibles para cada usuario, personalizando la experiencia según los permisos asignados.
 
 ## ¿Qué es CFO Inteligente?
 
@@ -23,16 +20,7 @@ CFO Inteligente es una plataforma web profesional de gestión y análisis financ
 
 **Conexión Consultora** - Estudio jurídico-contable uruguayo
 
-### Socios (5 personas):
-- Agustina (aborio@grupoconexion.uy)
-- Viviana (vcaresani@grupoconexion.uy)
-- Gonzalo (gtaborda@grupoconexion.uy)
-- Pancho (falgorta@grupoconexion.uy)
-- Bruno (bgandolfo@cgmasociados.com)
-
-### Colaboradores:
-- Personal administrativo que registra operaciones diarias
-- No ven montos totales ni métricas financieras
+El sistema es utilizado por socios y colaboradores del estudio, cada uno con acceso a los módulos y funciones que le corresponden según su perfil y responsabilidades.
 
 ## Áreas de negocio
 
@@ -65,12 +53,16 @@ El sistema obtiene automáticamente el tipo de cambio del Banco Central del Urug
 
 ## Tipos de operación
 
-| Tipo | ¿Quién puede? | Descripción |
-|------|---------------|-------------|
-| **Ingreso** | Todos | Dinero que entra al estudio (cobros a clientes) |
-| **Gasto** | Todos | Dinero que sale (pagos a proveedores) |
-| **Retiro** | Solo socios | Un socio retira dinero para sí mismo |
-| **Distribución** | Solo socios | Reparto de utilidades entre los 5 socios |
+El sistema permite registrar diferentes tipos de operaciones financieras:
+
+| Tipo | Descripción |
+|------|-------------|
+| **Ingreso** | Dinero que entra al estudio (cobros a clientes) |
+| **Gasto** | Dinero que sale (pagos a proveedores) |
+| **Retiro** | Un socio retira dinero para sí mismo |
+| **Distribución** | Reparto de utilidades entre los socios |
+
+Cada usuario puede registrar los tipos de operación disponibles según su perfil.
 
 ## Acceso al sistema
 
@@ -78,23 +70,9 @@ El sistema obtiene automáticamente el tipo de cambio del Banco Central del Urug
 - **Requisitos**: Navegador moderno (Chrome, Firefox, Safari, Edge)
 - **Conexión**: Requiere internet
 
-## Diferencias entre roles
+## Personalización por usuario
 
-### Socio (acceso completo)
-- Ve el Dashboard completo con métricas
-- Puede registrar los 4 tipos de operaciones
-- Accede al panel de Operaciones
-- Puede usar CFO AI
-- Puede administrar usuarios
-- Ve filtros de fecha, localidad y moneda
-
-### Colaborador (acceso limitado)
-- Ve una pantalla simplificada
-- Solo puede registrar ingresos y gastos
-- Ve contador de operaciones del mes (sin montos)
-- No ve métricas financieras
-- No accede al chat CFO AI
-- No ve retiros ni distribuciones
+El sistema se adapta automáticamente a cada usuario, mostrando solo las funciones y módulos disponibles según su perfil. Cada usuario verá en el menú y podrá usar únicamente los módulos a los que tiene acceso, creando una experiencia personalizada y segura.
 
 ## Soporte técnico
 
