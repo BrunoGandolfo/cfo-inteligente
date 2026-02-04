@@ -19,12 +19,17 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
   const USUARIOS_ACCESO_ALA = [
     "gferrari@grupoconexion.uy",   // Gerardo
   ];
+  // Colaboradores con acceso al módulo Notarial (Contratos)
+  const USUARIOS_ACCESO_NOTARIAL = [
+    "gferrari@grupoconexion.uy",   // Gerardo
+  ];
   
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const userName = localStorage.getItem('userName') || 'Usuario';
   const userEmail = localStorage.getItem('userEmail') || '';
   const veExpedientesYCasos = USUARIOS_ACCESO_EXPEDIENTES_CASOS.includes(userEmail.toLowerCase());
   const veALa = esSocio || USUARIOS_ACCESO_ALA.includes(userEmail.toLowerCase());
+  const veNotarial = esSocio || USUARIOS_ACCESO_NOTARIAL.includes(userEmail.toLowerCase());
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -60,7 +65,11 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
       })
     : (() => {
         const baseKeys = ['Dashboard', 'Dudas', 'Indicadores'];
-        const extraKeys = [...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []), ...(veALa ? ['ALA'] : [])];
+        const extraKeys = [
+          ...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []), 
+          ...(veALa ? ['ALA'] : []),
+          ...(veNotarial ? ['Notarial'] : [])
+        ];
         const visibleKeys = [...baseKeys, ...extraKeys];
         return allItems.filter(item => visibleKeys.includes(item.key));
       })();

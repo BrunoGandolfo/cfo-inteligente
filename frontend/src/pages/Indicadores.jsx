@@ -32,6 +32,7 @@ const formatearPesos = (valor) => {
 };
 
 export default function Indicadores({ onNavigate }) {
+  const esSocio = localStorage.getItem('esSocio')?.toLowerCase() === 'true';
   const [activeTab, setActiveTab] = useState('indicadores');
   const { indicadores, loading, error, refetch } = useIndicadores();
 
@@ -82,29 +83,31 @@ export default function Indicadores({ onNavigate }) {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-gray-200 dark:border-slate-700">
-        <button
-          onClick={() => setActiveTab('indicadores')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'indicadores'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
-          }`}
-        >
-          Indicadores
-        </button>
-        <button
-          onClick={() => setActiveTab('calculadoras')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'calculadoras'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
-          }`}
-        >
-          Calculadoras
-        </button>
-      </div>
+      {/* Tabs - Solo mostrar si es socio (colaboradores solo ven indicadores) */}
+      {esSocio && (
+        <div className="flex gap-1 mb-6 border-b border-gray-200 dark:border-slate-700">
+          <button
+            onClick={() => setActiveTab('indicadores')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'indicadores'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+            }`}
+          >
+            Indicadores
+          </button>
+          <button
+            onClick={() => setActiveTab('calculadoras')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'calculadoras'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+            }`}
+          >
+            Calculadoras
+          </button>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -120,8 +123,8 @@ export default function Indicadores({ onNavigate }) {
         </div>
       )}
 
-      {/* Tab: Indicadores */}
-      {activeTab === 'indicadores' && indicadores && (
+      {/* Tab: Indicadores - Siempre visible para todos */}
+      {(!esSocio || activeTab === 'indicadores') && indicadores && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-6">
           {/* UI */}
           <IndicadorCard
@@ -175,8 +178,8 @@ export default function Indicadores({ onNavigate }) {
         </div>
       )}
 
-      {/* Tab: Calculadoras */}
-      {activeTab === 'calculadoras' && (
+      {/* Tab: Calculadoras - Solo para socios */}
+      {esSocio && activeTab === 'calculadoras' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pb-6">
           <CalculadoraHonorarios valorUR={indicadores?.ur?.valor || 1841.56} />
           <CalculadoraITP />

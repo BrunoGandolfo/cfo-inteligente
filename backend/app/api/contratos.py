@@ -33,6 +33,35 @@ router = APIRouter(prefix="/api/contratos", tags=["contratos"])
 
 
 # ============================================================================
+# CONFIGURACIÓN DE ACCESO
+# ============================================================================
+
+# Colaboradores con acceso completo a Contratos (igual que un socio)
+COLABORADORES_ACCESO_CONTRATOS = [
+    "gferrari@grupoconexion.uy",   # Gerardo
+]
+
+
+# ============================================================================
+# HELPERS
+# ============================================================================
+
+def _tiene_acceso_contratos(usuario: Usuario) -> bool:
+    """
+    Retorna True si el usuario tiene acceso completo al módulo Contratos.
+    
+    - Socios: siempre True
+    - Colaboradores en COLABORADORES_ACCESO_CONTRATOS: True
+    - Resto: False
+    """
+    if usuario.es_socio:
+        return True
+    if usuario.email and usuario.email.strip().lower() in [e.lower() for e in COLABORADORES_ACCESO_CONTRATOS]:
+        return True
+    return False
+
+
+# ============================================================================
 # ENDPOINTS PÚBLICOS (lectura)
 # ============================================================================
 # IMPORTANTE: Las rutas estáticas deben ir ANTES de las dinámicas
@@ -282,11 +311,11 @@ def crear_contrato(
     Acceso: Solo socios.
     """
     try:
-        # Verificar que el usuario es socio
-        if not current_user.es_socio:
+        # Verificar acceso
+        if not _tiene_acceso_contratos(current_user):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Solo los socios pueden crear contratos"
+                detail="No tiene permisos para esta acción"
             )
         
         # Crear contrato
@@ -359,11 +388,11 @@ def actualizar_contrato(
     Acceso: Solo socios.
     """
     try:
-        # Verificar que el usuario es socio
-        if not current_user.es_socio:
+        # Verificar acceso
+        if not _tiene_acceso_contratos(current_user):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Solo los socios pueden actualizar contratos"
+                detail="No tiene permisos para esta acción"
             )
         
         # Buscar contrato
@@ -413,11 +442,11 @@ def eliminar_contrato(
     Acceso: Solo socios.
     """
     try:
-        # Verificar que el usuario es socio
-        if not current_user.es_socio:
+        # Verificar acceso
+        if not _tiene_acceso_contratos(current_user):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Solo los socios pueden eliminar contratos"
+                detail="No tiene permisos para esta acción"
             )
         
         # Buscar contrato
@@ -473,11 +502,11 @@ def extraer_campos_contrato(
         }
     """
     try:
-        # Verificar que el usuario es socio
-        if not current_user.es_socio:
+        # Verificar acceso
+        if not _tiene_acceso_contratos(current_user):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Solo los socios pueden extraer campos de contratos"
+                detail="No tiene permisos para esta acción"
             )
         
         # Buscar contrato
@@ -561,11 +590,11 @@ def generar_contrato(
     import json
     
     try:
-        # Verificar que el usuario es socio
-        if not current_user.es_socio:
+        # Verificar acceso
+        if not _tiene_acceso_contratos(current_user):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Solo los socios pueden generar contratos"
+                detail="No tiene permisos para esta acción"
             )
         
         # Obtener contrato
@@ -679,11 +708,11 @@ def extraer_campos_batch(
         }
     """
     try:
-        # Verificar que el usuario es socio
-        if not current_user.es_socio:
+        # Verificar acceso
+        if not _tiene_acceso_contratos(current_user):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Solo los socios pueden extraer campos de contratos"
+                detail="No tiene permisos para esta acción"
             )
         
         # Construir query base con filtros inteligentes

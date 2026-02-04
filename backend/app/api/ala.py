@@ -32,8 +32,49 @@ router = APIRouter()
 
 
 # =============================================================================
+# CONFIGURACIÓN DE ACCESO
+# =============================================================================
+
+# Colaboradores con acceso completo a ALA (igual que un socio)
+COLABORADORES_ACCESO_COMPLETO_ALA = [
+    "gferrari@grupoconexion.uy",   # Gerardo
+]
+
+
+# =============================================================================
 # Helpers
 # =============================================================================
+
+def _tiene_acceso_ala(usuario: Usuario) -> bool:
+    """
+    Retorna True si el usuario tiene acceso completo al módulo ALA.
+    
+    - Socios: siempre True
+    - Colaboradores en COLABORADORES_ACCESO_COMPLETO_ALA: True
+    - Resto: False
+    """
+    if usuario.es_socio:
+        return True
+    if usuario.email and usuario.email.strip().lower() in [e.lower() for e in COLABORADORES_ACCESO_COMPLETO_ALA]:
+        return True
+    return False
+
+
+def _verificar_acceso_ala(current_user: Usuario, accion: str = "realizar esta acción") -> None:
+    """
+    Verifica que el usuario sea socio o tenga acceso completo ALA.
+    
+    Raises:
+        HTTPException 403 si no tiene permiso
+    """
+    if _tiene_acceso_ala(current_user):
+        return
+    logger.warning(f"Usuario {current_user.email} intentó {accion} sin permiso ALA")
+    raise HTTPException(
+        status_code=403,
+        detail=f"Solo socios pueden {accion}"
+    )
+
 
 def _verificar_permiso_verificacion(
     verificacion,
@@ -43,13 +84,13 @@ def _verificar_permiso_verificacion(
     """
     Verifica que el usuario tenga permiso sobre la verificación.
     
-    - Socios pueden ver/editar cualquier verificación
-    - No socios solo pueden ver/editar las propias
+    - Socios y colaboradores con acceso ALA completo: pueden ver/editar cualquier verificación
+    - Resto: solo pueden ver/editar las propias
     
     Raises:
         HTTPException 403 si no tiene permiso
     """
-    if current_user.es_socio:
+    if _tiene_acceso_ala(current_user):
         return
     
     if verificacion.usuario_id != current_user.id:
@@ -60,21 +101,6 @@ def _verificar_permiso_verificacion(
         raise HTTPException(
             status_code=403,
             detail=f"No tiene permiso para {accion} esta verificación"
-        )
-
-
-def _verificar_es_socio(current_user: Usuario, accion: str = "realizar esta acción") -> None:
-    """
-    Verifica que el usuario sea socio.
-    
-    Raises:
-        HTTPException 403 si no es socio
-    """
-    if not current_user.es_socio:
-        logger.warning(f"Usuario {current_user.email} intentó {accion} sin ser socio")
-        raise HTTPException(
-            status_code=403,
-            detail=f"Solo socios pueden {accion}"
         )
 
 
@@ -143,8 +169,8 @@ def listar_verificaciones(
     """
     logger.info(f"Listando verificaciones ALA - Usuario: {current_user.email}")
     
-    # Socios ven todas, no socios solo las propias
-    usuario_id = None if current_user.es_socio else current_user.id
+    # Socios y colaboradores con acceso ALA completo ven todas; resto solo las propias
+    usuario_id = None if _tiene_acceso_ala(current_user) else current_user.id
     
     try:
         resultado = ala_service.listar_verificaciones(
@@ -266,11 +292,11 @@ def obtener_metadata_listas(
     """
     Obtiene metadata de las listas ALA (PEP, ONU, OFAC, UE).
     
-    Solo socios pueden acceder a esta información.
+    Solo socios o colaboradores con acceso ALA completo pueden acceder.
     
     Incluye: estado, última descarga, cantidad de registros, hash, errores.
     """
-    _verificar_es_socio(current_user, "ver metadata de listas ALA")
+    _verificar_acceso_ala(current_user, "ver metadata de listas ALA")
     
     logger.info(f"Consultando metadata de listas ALA - Usuario: {current_user.email}")
     
@@ -453,9 +479,9 @@ def eliminar_verificacion(
     """
     Elimina una verificación ALA (soft delete).
     
-    Solo socios pueden eliminar verificaciones.
+    Solo socios o colaboradores con acceso ALA completo pueden eliminar.
     """
-    _verificar_es_socio(current_user, "eliminar verificaciones ALA")
+    _verificar_acceso_ala(current_user, "eliminar verificaciones ALA")
     
     logger.info(
         f"Eliminando verificación ALA {verificacion_id} - Usuario: {current_user.email}"
