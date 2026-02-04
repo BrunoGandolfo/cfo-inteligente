@@ -162,7 +162,15 @@ class HistoriaResponse(BaseModel):
 # CONFIGURACIÓN DE ACCESO
 # ============================================================================
 
-# Colaboradores con acceso especial a expedientes
+# Usuarios con acceso al módulo de Expedientes (SOLO estos 4)
+USUARIOS_ACCESO_EXPEDIENTES = [
+    "bgandolfo@cgmasociados.com",  # Bruno
+    "gtaborda@grupoconexion.uy",   # Gonzalo
+    "falgorta@grupoconexion.uy",   # Pancho
+    "gferrari@grupoconexion.uy",   # Gerardo
+]
+
+# Colaboradores con acceso especial a expedientes (mantener para compatibilidad)
 COLABORADORES_ACCESO_EXPEDIENTES = [
     "gferrari@grupoconexion.uy",   # Gerardo
     "falgorta@grupoconexion.uy",   # Pancho
@@ -170,6 +178,7 @@ COLABORADORES_ACCESO_EXPEDIENTES = [
 ]
 
 # Usuarios que solo ven expedientes donde ellos son el responsable
+# Bruno NO está en esta lista → ve todos
 USUARIOS_FILTRO_EXPEDIENTES = [
     "gferrari@grupoconexion.uy",
     "falgorta@grupoconexion.uy",
@@ -182,15 +191,13 @@ USUARIOS_FILTRO_EXPEDIENTES = [
 # ============================================================================
 
 def _verificar_socio(current_user: Usuario) -> None:
-    """Verifica que el usuario sea socio o tenga acceso especial, o lanza 403."""
-    if current_user.es_socio:
-        return
-    if current_user.email in COLABORADORES_ACCESO_EXPEDIENTES:
+    """Verifica que el usuario tenga acceso al módulo de Expedientes, o lanza 403."""
+    if current_user.email.lower() in [email.lower() for email in USUARIOS_ACCESO_EXPEDIENTES]:
         return
     logger.warning(f"Usuario {current_user.email} intentó acceder a expedientes sin permiso")
     raise HTTPException(
         status_code=403, 
-        detail="Solo socios pueden gestionar expedientes judiciales"
+        detail="No tienes permiso para acceder a expedientes judiciales"
     )
 
 

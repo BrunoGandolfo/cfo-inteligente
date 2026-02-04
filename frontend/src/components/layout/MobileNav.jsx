@@ -8,18 +8,23 @@ import AdminUsersModal from '../admin/AdminUsersModal';
 import toast from 'react-hot-toast';
 
 export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onALAToggle, onDashboardToggle }) {
-  // Solo estos usuarios ven Expedientes y Casos (socios ya no tienen acceso automático)
+  // Solo estos 4 usuarios ven Expedientes y Casos (NO usar esSocio como criterio)
   const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
-    "gferrari@grupoconexion.uy",   // Gerardo
-    "falgorta@grupoconexion.uy",   // Pancho
-    "gtaborda@grupoconexion.uy",   // Gonzalo
     "bgandolfo@cgmasociados.com",  // Bruno
+    "gtaborda@grupoconexion.uy",   // Gonzalo
+    "falgorta@grupoconexion.uy",   // Pancho
+    "gferrari@grupoconexion.uy",   // Gerardo
+  ];
+  // Colaboradores con acceso completo al módulo ALA (igual que un socio)
+  const USUARIOS_ACCESO_ALA = [
+    "gferrari@grupoconexion.uy",   // Gerardo
   ];
   
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const userName = localStorage.getItem('userName') || 'Usuario';
   const userEmail = localStorage.getItem('userEmail') || '';
   const veExpedientesYCasos = USUARIOS_ACCESO_EXPEDIENTES_CASOS.includes(userEmail.toLowerCase());
+  const veALa = esSocio || USUARIOS_ACCESO_ALA.includes(userEmail.toLowerCase());
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -38,11 +43,27 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
   ];
 
   // Lógica de filtrado de items según rol y permisos
+  // CRÍTICO: Expedientes y Casos se muestran SOLO si el email está en USUARIOS_ACCESO_EXPEDIENTES_CASOS
+  // NO usar esSocio como condición para estos dos ítems
   const items = esSocio
-    ? allItems.filter(item => (item.key === 'Expedientes' || item.key === 'Casos') ? veExpedientesYCasos : true)
-    : veExpedientesYCasos
-    ? allItems.filter(item => ['Dashboard', 'Soporte', 'Indicadores', 'Expedientes', 'Casos'].includes(item.key))
-    : allItems.filter(item => ['Dashboard', 'Soporte', 'Indicadores'].includes(item.key));
+    ? allItems.filter(item => {
+        // Expedientes y Casos: solo si está en la lista (NO por ser socio)
+        if (item.key === 'Expedientes' || item.key === 'Casos') {
+          return veExpedientesYCasos;
+        }
+        // ALA: si es socio o está en la lista
+        if (item.key === 'ALA') {
+          return veALa;
+        }
+        // Resto: visible para socios
+        return true;
+      })
+    : (() => {
+        const baseKeys = ['Dashboard', 'Soporte', 'Indicadores'];
+        const extraKeys = [...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []), ...(veALa ? ['ALA'] : [])];
+        const visibleKeys = [...baseKeys, ...extraKeys];
+        return allItems.filter(item => visibleKeys.includes(item.key));
+      })();
 
   const handleLogout = () => {
     toast.success('Sesión cerrada correctamente');

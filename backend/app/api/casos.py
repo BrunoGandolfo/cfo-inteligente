@@ -2,7 +2,7 @@
 API para gestión de casos legales.
 
 Endpoints CRUD para casos legales.
-Cada usuario solo puede ver y gestionar sus propios casos (filtrado por responsable_id).
+Solo 4 usuarios tienen acceso: Bruno (ve todos), Gonzalo, Pancho, Gerardo (ven solo suyos).
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -26,6 +26,42 @@ router = APIRouter(prefix="/api/casos", tags=["casos"])
 
 
 # ============================================================================
+# CONFIGURACIÓN DE ACCESO
+# ============================================================================
+
+# Usuarios con acceso al módulo de Casos (SOLO estos 4)
+USUARIOS_ACCESO_CASOS = [
+    "bgandolfo@cgmasociados.com",  # Bruno
+    "gtaborda@grupoconexion.uy",   # Gonzalo
+    "falgorta@grupoconexion.uy",   # Pancho
+    "gferrari@grupoconexion.uy",   # Gerardo
+]
+
+# Usuarios que solo ven casos donde ellos son el responsable
+# Bruno NO está en esta lista → ve todos
+USUARIOS_FILTRO_CASOS = [
+    "gtaborda@grupoconexion.uy",
+    "falgorta@grupoconexion.uy",
+    "gferrari@grupoconexion.uy",
+]
+
+
+# ============================================================================
+# HELPERS
+# ============================================================================
+
+def _verificar_acceso_casos(current_user: Usuario) -> None:
+    """Verifica que el usuario tenga acceso al módulo de Casos, o lanza 403."""
+    if current_user.email.lower() in [email.lower() for email in USUARIOS_ACCESO_CASOS]:
+        return
+    logger.warning(f"Usuario {current_user.email} intentó acceder a casos sin permiso")
+    raise HTTPException(
+        status_code=403,
+        detail="No tienes permiso para acceder a casos legales"
+    )
+
+
+# ============================================================================
 # ENDPOINTS
 # ============================================================================
 
@@ -39,18 +75,24 @@ def listar_casos(
     current_user: Usuario = Depends(get_current_user)
 ):
     """
-    Lista casos del usuario actual.
+    Lista casos según permisos del usuario.
     
-    Solo muestra casos donde responsable_id = current_user.id.
+    - Bruno: ve todos los casos
+    - Gonzalo, Pancho, Gerardo: ven solo sus casos (responsable_id = current_user.id)
     Filtros opcionales por estado y prioridad.
     """
+    _verificar_acceso_casos(current_user)
+    
     logger.info(f"Listando casos - Usuario: {current_user.email}")
     
-    # Query base: solo casos del usuario actual y no eliminados
+    # Query base: casos no eliminados
     query = db.query(Caso).filter(
-        Caso.responsable_id == current_user.id,
         Caso.deleted_at.is_(None)
     )
+    
+    # Filtrar por responsable solo si el usuario está en USUARIOS_FILTRO_CASOS
+    if current_user.email.lower() in [email.lower() for email in USUARIOS_FILTRO_CASOS]:
+        query = query.filter(Caso.responsable_id == current_user.id)
     
     # Filtros opcionales
     if estado:
@@ -96,8 +138,11 @@ def obtener_caso(
     """
     Obtiene un caso por su ID.
     
-    Solo permite obtener casos donde responsable_id = current_user.id.
+    - Bruno: puede ver cualquier caso
+    - Gonzalo, Pancho, Gerardo: solo pueden ver casos donde son responsables
     """
+    _verificar_acceso_casos(current_user)
+    
     logger.info(f"Obteniendo caso {caso_id} - Usuario: {current_user.email}")
     
     try:
@@ -110,15 +155,22 @@ def obtener_caso(
     
     caso = db.query(Caso).filter(
         Caso.id == caso_uuid,
-        Caso.responsable_id == current_user.id,
         Caso.deleted_at.is_(None)
     ).first()
     
     if caso is None:
         raise HTTPException(
             status_code=404,
-            detail="Caso no encontrado o no tienes permiso para acceder a él"
+            detail="Caso no encontrado"
         )
+    
+    # Verificar permisos: si el usuario está en USUARIOS_FILTRO_CASOS, solo puede ver sus casos
+    if current_user.email.lower() in [email.lower() for email in USUARIOS_FILTRO_CASOS]:
+        if caso.responsable_id != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="No tienes permiso para acceder a este caso"
+            )
     
     return caso
 
@@ -135,6 +187,8 @@ def crear_caso(
     El responsable_id del caso se establece automáticamente como current_user.id.
     Si se envía "iue", se busca o crea el expediente y se asocia al caso.
     """
+    _verificar_acceso_casos(current_user)
+    
     logger.info(f"Creando caso - Usuario: {current_user.email}")
     
     # Manejar vinculación con expediente por IUE
@@ -207,9 +261,12 @@ def actualizar_caso(
     """
     Actualiza un caso existente.
     
-    Solo permite actualizar casos donde responsable_id = current_user.id.
-    Si se envía responsable_id en el update, se ignora (el caso siempre pertenece al usuario actual).
+    - Bruno: puede actualizar cualquier caso
+    - Gonzalo, Pancho, Gerardo: solo pueden actualizar casos donde son responsables
+    Si se envía responsable_id en el update, se ignora.
     """
+    _verificar_acceso_casos(current_user)
+    
     logger.info(f"Actualizando caso {caso_id} - Usuario: {current_user.email}")
     
     try:
@@ -222,15 +279,22 @@ def actualizar_caso(
     
     caso = db.query(Caso).filter(
         Caso.id == caso_uuid,
-        Caso.responsable_id == current_user.id,
         Caso.deleted_at.is_(None)
     ).first()
     
     if caso is None:
         raise HTTPException(
             status_code=404,
-            detail="Caso no encontrado o no tienes permiso para actualizarlo"
+            detail="Caso no encontrado"
         )
+    
+    # Verificar permisos: si el usuario está en USUARIOS_FILTRO_CASOS, solo puede actualizar sus casos
+    if current_user.email.lower() in [email.lower() for email in USUARIOS_FILTRO_CASOS]:
+        if caso.responsable_id != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="No tienes permiso para actualizar este caso"
+            )
     
     # Actualizar solo los campos proporcionados
     update_data = data.model_dump(exclude_unset=True)
@@ -260,9 +324,12 @@ def eliminar_caso(
     """
     Elimina un caso (soft delete).
     
-    Solo permite eliminar casos donde responsable_id = current_user.id.
+    - Bruno: puede eliminar cualquier caso
+    - Gonzalo, Pancho, Gerardo: solo pueden eliminar casos donde son responsables
     El caso se marca como eliminado pero no se borra físicamente de la BD.
     """
+    _verificar_acceso_casos(current_user)
+    
     logger.info(f"Eliminando caso {caso_id} - Usuario: {current_user.email}")
     
     try:
@@ -275,15 +342,22 @@ def eliminar_caso(
     
     caso = db.query(Caso).filter(
         Caso.id == caso_uuid,
-        Caso.responsable_id == current_user.id,
         Caso.deleted_at.is_(None)
     ).first()
     
     if caso is None:
         raise HTTPException(
             status_code=404,
-            detail="Caso no encontrado o no tienes permiso para eliminarlo"
+            detail="Caso no encontrado"
         )
+    
+    # Verificar permisos: si el usuario está en USUARIOS_FILTRO_CASOS, solo puede eliminar sus casos
+    if current_user.email.lower() in [email.lower() for email in USUARIOS_FILTRO_CASOS]:
+        if caso.responsable_id != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="No tienes permiso para eliminar este caso"
+            )
     
     # Soft delete
     caso.deleted_at = datetime.now(timezone.utc)
