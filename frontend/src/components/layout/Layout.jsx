@@ -21,7 +21,7 @@ export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNot
           <div className="pt-20 flex">
             <Sidebar 
               active={
-                currentPage === 'soporte' ? 'Soporte' : 
+                currentPage === 'soporte' ? 'Dudas' :
                 currentPage === 'indicadores' ? 'Indicadores' :
                 currentPage === 'notarial' ? 'Notarial' :
                 currentPage === 'ala' ? 'ALA' :

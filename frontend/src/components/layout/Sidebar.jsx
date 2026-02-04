@@ -37,7 +37,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
     { key: 'Indicadores', icon: BarChart3, label: 'Indicadores', action: onIndicadoresToggle },
-    { key: 'Soporte', icon: HelpCircle, label: 'Soporte', action: onSoporteToggle },
+    { key: 'Dudas', icon: HelpCircle, label: 'Dudas', action: onSoporteToggle },
     { key: 'Configuración', icon: Settings, label: 'Configuración' },
   ];
 
@@ -58,7 +58,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
         return true;
       })
     : (() => {
-        const baseKeys = ['Dashboard', 'Soporte', 'Indicadores'];
+        const baseKeys = ['Dashboard', 'Dudas', 'Indicadores'];
         const extraKeys = [...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []), ...(veALa ? ['ALA'] : [])];
         const visibleKeys = [...baseKeys, ...extraKeys];
         return allItems.filter(item => visibleKeys.includes(item.key));
@@ -81,7 +81,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
                   ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-semibold'
                   : key === 'Indicadores'
                   ? 'text-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'
-                  : key === 'Soporte'
+                  : key === 'Dudas'
                   ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
                   : 'text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800'
               )}

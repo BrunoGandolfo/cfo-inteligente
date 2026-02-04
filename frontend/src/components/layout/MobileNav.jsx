@@ -39,7 +39,7 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: () => { onOpsToggle?.(); onClose(); } },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: () => { onChatToggle?.(); onClose(); }, highlight: true },
     { key: 'Indicadores', icon: BarChart3, label: 'Indicadores', action: () => { onIndicadoresToggle?.(); onClose(); }, indicadorItem: true },
-    { key: 'Soporte', icon: HelpCircle, label: 'Soporte', action: () => { onSoporteToggle?.(); onClose(); }, supportItem: true },
+    { key: 'Dudas', icon: HelpCircle, label: 'Dudas', action: () => { onSoporteToggle?.(); onClose(); }, supportItem: true },
   ];
 
   // Lógica de filtrado de items según rol y permisos
@@ -59,7 +59,7 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
         return true;
       })
     : (() => {
-        const baseKeys = ['Dashboard', 'Soporte', 'Indicadores'];
+        const baseKeys = ['Dashboard', 'Dudas', 'Indicadores'];
         const extraKeys = [...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []), ...(veALa ? ['ALA'] : [])];
         const visibleKeys = [...baseKeys, ...extraKeys];
         return allItems.filter(item => visibleKeys.includes(item.key));

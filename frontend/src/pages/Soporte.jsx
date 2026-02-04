@@ -130,7 +130,7 @@ export default function Soporte({ onNavigate }) {
             <HelpCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Soporte</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Dudas</h1>
             <p className="text-sm text-gray-500 dark:text-slate-400">Asistente del sistema</p>
           </div>
         </div>
@@ -155,10 +155,10 @@ export default function Soporte({ onNavigate }) {
                 <HelpCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                ¡Hola! Soy el asistente de soporte 👋
+                ¡Hola! 👋
               </h2>
               <p className="text-gray-600 dark:text-slate-400">
-                {textoAyuda}
+                Estoy para ayudarte. Preguntame lo que quieras sobre el sistema y su funcionamiento.
               </p>
             </div>
             
