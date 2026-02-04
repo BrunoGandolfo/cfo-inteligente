@@ -7,6 +7,7 @@ import Indicadores from './pages/Indicadores';
 import Expedientes from './pages/Expedientes';
 import Contratos from './pages/Contratos';
 import Casos from './pages/Casos';
+import ALA from './pages/ALA';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import { Toaster } from 'react-hot-toast';
@@ -141,6 +142,8 @@ function App() {
         return <Expedientes />;
       case 'notarial':
         return <Contratos />;
+      case 'ala':
+        return <ALA />;
       case 'casos':
         return <Casos />;
       case 'soporte':
@@ -159,6 +162,7 @@ function App() {
         onNavigate={setCurrentPage} 
         currentPage={currentPage}
         onNotarialToggle={() => setCurrentPage('notarial')}
+        onALAToggle={() => setCurrentPage('ala')}
         onCasosToggle={() => setCurrentPage('casos')}
       >
         {renderContent()}

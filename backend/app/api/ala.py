@@ -11,6 +11,7 @@ from uuid import UUID
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -22,6 +23,8 @@ from app.schemas.verificacion_ala import (
     VerificacionALAUpdate,
 )
 from app.services import ala_service
+from app.services.ala_busquedas_service import ejecutar_busquedas_art44
+from app.services.ala_pdf_service import generar_certificado_ala
 
 logger = logging.getLogger(__name__)
 
@@ -296,6 +299,148 @@ def obtener_metadata_listas(
         raise HTTPException(
             status_code=500,
             detail=f"Error al obtener metadata de listas: {str(e)}"
+        )
+
+
+@router.post("/verificaciones/{verificacion_id}/busquedas-art44", response_model=VerificacionALAResponse)
+def ejecutar_busquedas_art44_endpoint(
+    verificacion_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    Ejecuta búsquedas automáticas Art. 44 C.4 para una verificación.
+    
+    Busca en:
+    - Wikipedia (API pública)
+    - Google/análisis IA (Claude)
+    - Noticias/análisis IA (Claude)
+    
+    ⚠️ Este endpoint puede demorar 10-20 segundos (3 búsquedas).
+    
+    Decreto 379/018 - Art. 44 C.4
+    """
+    logger.info(
+        f"🔍 Iniciando búsquedas Art. 44 C.4 - Verificación: {verificacion_id}, "
+        f"Usuario: {current_user.email}"
+    )
+    
+    # Obtener verificación
+    verificacion = ala_service.obtener_verificacion(db, verificacion_id)
+    
+    if verificacion is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Verificación no encontrada"
+        )
+    
+    # Verificar permisos
+    _verificar_permiso_verificacion(verificacion, current_user, "ejecutar búsquedas Art. 44")
+    
+    try:
+        # Ejecutar las 3 búsquedas
+        resultado = ejecutar_busquedas_art44(
+            nombre_completo=verificacion.nombre_completo,
+            nacionalidad=verificacion.nacionalidad or "UY",
+            tipo_documento=verificacion.tipo_documento or "CI",
+            numero_documento=verificacion.numero_documento or "",
+        )
+        
+        # Actualizar la verificación con los resultados
+        # Google
+        if resultado.get("google"):
+            verificacion.busqueda_google_realizada = resultado["google"].get("realizada", False)
+            verificacion.busqueda_google_observaciones = resultado["google"].get("observaciones", "")
+        
+        # Noticias
+        if resultado.get("noticias"):
+            verificacion.busqueda_news_realizada = resultado["noticias"].get("realizada", False)
+            verificacion.busqueda_news_observaciones = resultado["noticias"].get("observaciones", "")
+        
+        # Wikipedia
+        if resultado.get("wikipedia"):
+            verificacion.busqueda_wikipedia_realizada = resultado["wikipedia"].get("realizada", False)
+            obs_wiki = resultado["wikipedia"].get("observaciones", "")
+            # Agregar URLs si hay resultados
+            if resultado["wikipedia"].get("resultados"):
+                urls = [r.get("url", "") for r in resultado["wikipedia"]["resultados"][:3]]
+                obs_wiki += "\n\nURLs: " + " | ".join(urls)
+            verificacion.busqueda_wikipedia_observaciones = obs_wiki
+        
+        verificacion.updated_at = datetime.now(timezone.utc)
+        
+        db.commit()
+        db.refresh(verificacion)
+        
+        logger.info(
+            f"✅ Búsquedas Art. 44 completadas - Verificación: {verificacion_id}, "
+            f"Todas completadas: {resultado.get('todas_completadas', False)}"
+        )
+        
+        return verificacion
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error ejecutando búsquedas Art. 44: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al ejecutar búsquedas: {str(e)}"
+        )
+
+
+@router.post("/verificaciones/{verificacion_id}/certificado-pdf")
+def generar_certificado_pdf(
+    verificacion_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    Genera y descarga certificado PDF de debida diligencia ALA.
+    
+    Retorna el PDF como archivo descargable.
+    
+    Decreto 379/018 - Arts. 17-18, 44.
+    """
+    logger.info(
+        f"📄 Generando certificado PDF - Verificación: {verificacion_id}, "
+        f"Usuario: {current_user.email}"
+    )
+    
+    # Obtener verificación
+    verificacion = ala_service.obtener_verificacion(db, verificacion_id)
+    
+    if verificacion is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Verificación no encontrada"
+        )
+    
+    # Verificar permisos
+    _verificar_permiso_verificacion(verificacion, current_user, "generar certificado PDF")
+    
+    try:
+        # Generar PDF
+        pdf_bytes = generar_certificado_ala(verificacion)
+        
+        # Nombre del archivo
+        hash_corto = verificacion.hash_verificacion[:8] if verificacion.hash_verificacion else "cert"
+        filename = f"certificado_ala_{hash_corto}.pdf"
+        
+        logger.info(f"✅ Certificado PDF generado: {filename} ({len(pdf_bytes)} bytes)")
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generando certificado PDF: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al generar certificado PDF: {str(e)}"
         )
 
 

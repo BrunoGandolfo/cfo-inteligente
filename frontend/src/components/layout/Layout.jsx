@@ -8,7 +8,7 @@ import ChatPanel from '../chat/ChatPanel';
 import OperationsPanel from '../operations/OperationsPanel';
 import MobileNav from './MobileNav';
 
-export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNotarialToggle }) {
+export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNotarialToggle, onALAToggle }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [opsOpen, setOpsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -24,6 +24,7 @@ export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNot
                 currentPage === 'soporte' ? 'Soporte' : 
                 currentPage === 'indicadores' ? 'Indicadores' :
                 currentPage === 'notarial' ? 'Notarial' :
+                currentPage === 'ala' ? 'ALA' :
                 currentPage === 'expedientes' ? 'Expedientes' :
                 currentPage === 'casos' ? 'Casos' :
                 'Dashboard'
@@ -36,6 +37,7 @@ export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNot
               onExpedientesToggle={() => onNavigate?.('expedientes')}
               onCasosToggle={onCasosToggle}
               onNotarialToggle={onNotarialToggle}
+              onALAToggle={onALAToggle}
             />
             <main className="flex-1 p-4 lg:p-6 overflow-y-auto">{children}</main>
             <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
@@ -53,6 +55,7 @@ export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNot
               onExpedientesToggle={() => { setMobileNavOpen(false); onNavigate?.('expedientes'); }}
               onCasosToggle={() => { setMobileNavOpen(false); onCasosToggle?.(); }}
               onNotarialToggle={() => { setMobileNavOpen(false); onNotarialToggle?.(); }}
+              onALAToggle={() => { setMobileNavOpen(false); onALAToggle?.(); }}
               onDashboardToggle={() => { setMobileNavOpen(false); onNavigate?.('dashboard'); }}
             />
           </div>
@@ -66,6 +69,7 @@ Layout.propTypes = {
   onNavigate: PropTypes.func,
   currentPage: PropTypes.string,
   onCasosToggle: PropTypes.func,
-  onNotarialToggle: PropTypes.func
+  onNotarialToggle: PropTypes.func,
+  onALAToggle: PropTypes.func
 };
 export default Layout;

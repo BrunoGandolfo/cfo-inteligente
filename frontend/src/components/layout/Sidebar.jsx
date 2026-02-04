@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle, BarChart3, Scale, Briefcase } from 'lucide-react';
+import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle, BarChart3, Scale, Briefcase, Shield } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 
-export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle }) {
+export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onALAToggle }) {
   // Solo estos usuarios ven Expedientes y Casos (socios ya no tienen acceso automático)
   const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
     "gferrari@grupoconexion.uy",   // Gerardo
@@ -27,6 +27,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
     { key: 'Dashboard', icon: Home, label: 'Dashboard', action: onDashboardToggle },
     { key: 'Expedientes', icon: Scale, label: 'Expedientes', action: onExpedientesToggle },
     { key: 'Notarial', icon: FileText, label: 'Notarial', action: onNotarialToggle },
+    { key: 'ALA', icon: Shield, label: 'ALA', action: onALAToggle },
     { key: 'Casos', icon: Briefcase, label: 'Casos', action: onCasosToggle },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
@@ -123,5 +124,6 @@ Sidebar.propTypes = {
   onExpedientesToggle: PropTypes.func,
   onCasosToggle: PropTypes.func,
   onNotarialToggle: PropTypes.func,
+  onALAToggle: PropTypes.func,
 };
 export default Sidebar;

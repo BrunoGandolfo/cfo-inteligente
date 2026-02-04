@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Home, FileText, Sparkles, Lock, Users, LogOut, HelpCircle, BarChart3, Scale, Briefcase } from 'lucide-react';
+import { X, Home, FileText, Sparkles, Lock, Users, LogOut, HelpCircle, BarChart3, Scale, Briefcase, Shield } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -7,7 +7,7 @@ import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 import toast from 'react-hot-toast';
 
-export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onDashboardToggle }) {
+export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onALAToggle, onDashboardToggle }) {
   // Solo estos usuarios ven Expedientes y Casos (socios ya no tienen acceso automático)
   const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
     "gferrari@grupoconexion.uy",   // Gerardo
@@ -29,6 +29,7 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
     { key: 'Dashboard', icon: Home, label: 'Dashboard', action: () => { onDashboardToggle?.(); onClose(); } },
     { key: 'Expedientes', icon: Scale, label: 'Expedientes', action: () => { onExpedientesToggle?.(); onClose(); } },
     { key: 'Notarial', icon: FileText, label: 'Notarial', action: () => { onNotarialToggle?.(); onClose(); } },
+    { key: 'ALA', icon: Shield, label: 'ALA', action: () => { onALAToggle?.(); onClose(); } },
     { key: 'Casos', icon: Briefcase, label: 'Casos', action: () => { onCasosToggle?.(); onClose(); } },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: () => { onOpsToggle?.(); onClose(); } },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: () => { onChatToggle?.(); onClose(); }, highlight: true },
@@ -175,6 +176,7 @@ MobileNav.propTypes = {
   onExpedientesToggle: PropTypes.func,
   onCasosToggle: PropTypes.func,
   onNotarialToggle: PropTypes.func,
+  onALAToggle: PropTypes.func,
   onDashboardToggle: PropTypes.func,
 };
 
