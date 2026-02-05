@@ -67,6 +67,14 @@ class ResetPasswordResponse(BaseModel):
     message: str
     temp_password: str
 
+class CambiarPasswordPublicoRequest(BaseModel):
+    prefijo_email: str
+    password_actual: str
+    password_nueva: str
+
+class CambiarPasswordPublicoResponse(BaseModel):
+    message: str
+
 # ═══════════════════════════════════════════════════════════════
 # ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
@@ -223,6 +231,67 @@ async def change_password(
     db.commit()
     
     return ChangePasswordResponse(message="Contraseña actualizada correctamente")
+
+
+@router.post("/cambiar-password-publico", response_model=CambiarPasswordPublicoResponse)
+def cambiar_password_publico(
+    request: CambiarPasswordPublicoRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Cambiar contraseña sin autenticación (público).
+    Usado cuando un usuario tiene contraseña temporal y quiere cambiarla.
+    """
+    # Construir email completo
+    prefijo = request.prefijo_email.lower().strip()
+    if not prefijo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El usuario de email es requerido"
+        )
+    
+    if "@" in prefijo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Solo ingresa tu usuario, sin @"
+        )
+    
+    email = construir_email(prefijo)
+    
+    # Buscar usuario por email
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+    
+    # Verificar contraseña actual
+    if not verify_password(request.password_actual, usuario.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Contraseña actual incorrecta"
+        )
+    
+    # Validar longitud mínima
+    if len(request.password_nueva) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nueva contraseña debe tener al menos 6 caracteres"
+        )
+    
+    # Validar que sea diferente a la actual
+    if request.password_actual == request.password_nueva:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nueva contraseña debe ser diferente a la actual"
+        )
+    
+    # Hashear y guardar nueva contraseña
+    usuario.password_hash = hash_password(request.password_nueva)
+    db.commit()
+    
+    return CambiarPasswordPublicoResponse(message="Contraseña actualizada correctamente")
 
 
 # ═══════════════════════════════════════════════════════════════

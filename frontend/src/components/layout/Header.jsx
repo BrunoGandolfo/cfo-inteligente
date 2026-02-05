@@ -64,16 +64,14 @@ export function Header({ onMobileMenuToggle }) {
     <header className={`fixed top-0 w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 z-50 ${esSocio ? 'h-16' : 'h-20'}`}>
       <div className="h-full flex items-center min-w-0">
         
-        {/* Botón hamburguesa - SOLO MÓVIL Y SOLO SOCIOS */}
-        {esSocio && (
-          <button
-            onClick={onMobileMenuToggle}
-            className="lg:hidden p-3 ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 shrink-0"
-            aria-label="Abrir menú"
-          >
-            <Menu className="w-6 h-6 text-gray-700 dark:text-slate-200" />
-          </button>
-        )}
+        {/* Botón hamburguesa - SOLO MÓVIL, visible para todos los usuarios */}
+        <button
+          onClick={onMobileMenuToggle}
+          className="lg:hidden p-3 ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 shrink-0"
+          aria-label="Abrir menú"
+        >
+          <Menu className="w-6 h-6 text-gray-700 dark:text-slate-200" />
+        </button>
         
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* HEADER PARA COLABORADORES */}
