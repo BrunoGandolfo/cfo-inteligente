@@ -266,13 +266,16 @@ def sincronizar_expediente(
     
     logger.info(f"Sincronizando expediente {data.iue} - Usuario: {current_user.email}")
     
+    # Si no se especifica responsable, asignar al usuario actual
+    responsable_final = data.responsable_id if data.responsable_id else str(current_user.id)
+    
     try:
         expediente, nuevos = expediente_service.sincronizar_expediente(
             db=db,
             iue=data.iue,
             cliente_id=data.cliente_id,
             area_id=data.area_id,
-            responsable_id=data.responsable_id
+            responsable_id=responsable_final
         )
         
         if expediente is None:
