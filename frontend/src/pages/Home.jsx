@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, BarChart3, FileText, Users, Lock, CheckCircle } from 'lucide-react';
+import { Shield, BarChart3, FileText, Users, Lock, CheckCircle, Mail } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -19,6 +19,15 @@ export default function Home({ onLoginSuccess }) {
   });
   const [registerLoading, setRegisterLoading] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [changePasswordData, setChangePasswordData] = useState({
+    usuario: '',
+    passwordActual: '',
+    passwordNueva: '',
+    passwordConfirmar: ''
+  });
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,6 +77,64 @@ export default function Home({ onLoginSuccess }) {
       toast.error(message);
     } finally {
       setRegisterLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setChangePasswordError('');
+    
+    // Validaciones frontend
+    if (!changePasswordData.usuario || !changePasswordData.passwordActual || 
+        !changePasswordData.passwordNueva || !changePasswordData.passwordConfirmar) {
+      setChangePasswordError('Todos los campos son requeridos');
+      return;
+    }
+    
+    if (changePasswordData.passwordNueva.length < 6) {
+      setChangePasswordError('La nueva contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    
+    if (changePasswordData.passwordNueva !== changePasswordData.passwordConfirmar) {
+      setChangePasswordError('Las contraseñas no coinciden');
+      return;
+    }
+    
+    if (changePasswordData.passwordActual === changePasswordData.passwordNueva) {
+      setChangePasswordError('La nueva contraseña debe ser diferente a la actual');
+      return;
+    }
+    
+    setChangePasswordLoading(true);
+    
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_URL || 'https://cfo-inteligente-production.up.railway.app'}/api/auth/cambiar-password-publico`,
+        {
+          prefijo_email: changePasswordData.usuario,
+          password_actual: changePasswordData.passwordActual,
+          password_nueva: changePasswordData.passwordNueva
+        }
+      );
+      
+      toast.success('Contraseña actualizada. Ya podés iniciar sesión.');
+      setShowChangePassword(false);
+      setChangePasswordData({ usuario: '', passwordActual: '', passwordNueva: '', passwordConfirmar: '' });
+      setChangePasswordError('');
+    } catch (error) {
+      if (error.response?.status === 404) {
+        toast.error('Usuario no encontrado');
+      } else if (error.response?.status === 400) {
+        const message = error.response?.data?.detail || 'Error al cambiar contraseña';
+        toast.error(message);
+        setChangePasswordError(message);
+      } else {
+        toast.error('Error al cambiar contraseña');
+        setChangePasswordError('Error al cambiar contraseña');
+      }
+    } finally {
+      setChangePasswordLoading(false);
     }
   };
 
@@ -301,6 +368,128 @@ export default function Home({ onLoginSuccess }) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Link discreto para cambiar contraseña */}
+      <div className="max-w-7xl mx-auto px-6 -mt-8 mb-8">
+        <div className="flex justify-center">
+          <button
+            onClick={() => setShowChangePassword(!showChangePassword)}
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-amber-500/10 border border-amber-500/30 text-sm text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50 transition-colors"
+          >
+            <Lock className="w-4 h-4 text-amber-400" />
+            <span>¿Necesitás cambiar tu contraseña?</span>
+          </button>
+        </div>
+        
+        {/* Formulario expandible */}
+        {showChangePassword && (
+          <div className="mt-6 max-w-md mx-auto">
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 backdrop-blur">
+              <form onSubmit={handleChangePassword} className="space-y-6">
+                {changePasswordError && (
+                  <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-sm text-red-300">
+                    {changePasswordError}
+                  </div>
+                )}
+                
+                {/* Usuario */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Usuario
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3.5 h-5 w-5 text-slate-500" />
+                    <input
+                      type="text"
+                      required
+                      value={changePasswordData.usuario}
+                      onChange={(e) => setChangePasswordData({...changePasswordData, usuario: e.target.value.toLowerCase().replace(/[@\s]/g, '')})}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                      placeholder="Tu usuario ej: gferrari"
+                    />
+                  </div>
+                </div>
+                
+                {/* Contraseña actual */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Contraseña actual
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-slate-500" />
+                    <input
+                      type="password"
+                      required
+                      value={changePasswordData.passwordActual}
+                      onChange={(e) => setChangePasswordData({...changePasswordData, passwordActual: e.target.value})}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </div>
+                
+                {/* Contraseña nueva */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Contraseña nueva
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-slate-500" />
+                    <input
+                      type="password"
+                      required
+                      value={changePasswordData.passwordNueva}
+                      onChange={(e) => setChangePasswordData({...changePasswordData, passwordNueva: e.target.value})}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                      placeholder="Mínimo 6 caracteres"
+                    />
+                  </div>
+                </div>
+                
+                {/* Confirmar contraseña nueva */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Confirmar contraseña nueva
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-slate-500" />
+                    <input
+                      type="password"
+                      required
+                      value={changePasswordData.passwordConfirmar}
+                      onChange={(e) => setChangePasswordData({...changePasswordData, passwordConfirmar: e.target.value})}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </div>
+                
+                {/* Botones */}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowChangePassword(false);
+                      setChangePasswordData({ usuario: '', passwordActual: '', passwordNueva: '', passwordConfirmar: '' });
+                      setChangePasswordError('');
+                    }}
+                    className="flex-1 py-3 px-4 border border-slate-700 rounded-lg text-slate-300 hover:text-white hover:border-slate-600 transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={changePasswordLoading}
+                    className="flex-1 py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-medium rounded-lg hover:from-amber-600 hover:to-amber-700 transition disabled:opacity-50"
+                  >
+                    {changePasswordLoading ? 'Cambiando...' : 'Cambiar contraseña'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* System Capabilities */}
