@@ -16,8 +16,6 @@ Fecha: Octubre 2025
 import pytest
 from datetime import date
 from decimal import Decimal
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from uuid import uuid4
 
 from app.services.operacion_service import (
@@ -35,41 +33,7 @@ from app.models import Operacion, TipoOperacion, Moneda, Localidad, Area, Socio,
 # ══════════════════════════════════════════════════════════════
 # FIXTURES
 # ══════════════════════════════════════════════════════════════
-
-from app.core.config import settings
-TEST_DATABASE_URL = settings.test_database_url  # IMPORTANTE: Usar BD de test, NO producción
-
-@pytest.fixture(scope="function")
-def db_session():
-    """Fixture que proporciona sesión de BD real para tests"""
-    engine = create_engine(TEST_DATABASE_URL)
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
-    
-    yield session
-    
-    session.close()
-
-
-@pytest.fixture(scope="function")
-def area_test(db_session):
-    """Fixture que retorna un área de prueba"""
-    area = db_session.query(Area).filter(Area.nombre == "Jurídica").first()
-    if not area:
-        # Si no existe, usar cualquier área activa
-        area = db_session.query(Area).filter(Area.activo == True).first()
-    return area
-
-
-@pytest.fixture(scope="function")
-def socios_test(db_session):
-    """Fixture que retorna los 5 socios del sistema"""
-    socios = {}
-    for nombre in ['Agustina', 'Viviana', 'Gonzalo', 'Pancho', 'Bruno']:
-        socio = db_session.query(Socio).filter(Socio.nombre == nombre).first()
-        if socio:
-            socios[nombre.lower()] = socio
-    return socios
+# Nota: db_session, areas_test y socios_test vienen de conftest.py
 
 
 # ══════════════════════════════════════════════════════════════
@@ -156,7 +120,7 @@ class TestCrearOperacionBase:
     """Tests de la función base refactorizada (elimina duplicación)"""
     
     @pytest.mark.integration
-    def test_crear_operacion_base_ingreso(self, db_session, area_test):
+    def test_crear_operacion_base_ingreso(self, db_session, areas_test):
         """Función base debe crear ingreso correctamente"""
         operacion = _crear_operacion_base(
             db=db_session,
@@ -165,7 +129,7 @@ class TestCrearOperacionBase:
             monto_original=Decimal('10000'),
             moneda_original='UYU',
             tipo_cambio=Decimal('40.00'),
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             localidad='Montevideo',
             descripcion='Test ingreso',
             cliente='Cliente Test',
@@ -182,7 +146,7 @@ class TestCrearOperacionBase:
         assert operacion.monto_usd == Decimal('250')  # 10000/40
     
     @pytest.mark.integration
-    def test_crear_operacion_base_gasto(self, db_session, area_test):
+    def test_crear_operacion_base_gasto(self, db_session, areas_test):
         """Función base debe crear gasto correctamente"""
         operacion = _crear_operacion_base(
             db=db_session,
@@ -191,7 +155,7 @@ class TestCrearOperacionBase:
             monto_original=Decimal('500'),
             moneda_original='USD',
             tipo_cambio=Decimal('40.00'),
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             localidad='Mercedes',
             descripcion='Test gasto',
             cliente=None,
@@ -208,7 +172,7 @@ class TestCrearOperacionBase:
         assert operacion.monto_uyu == Decimal('20000')  # 500*40
     
     @pytest.mark.integration
-    def test_crear_operacion_base_localidad_normalizada(self, db_session, area_test):
+    def test_crear_operacion_base_localidad_normalizada(self, db_session, areas_test):
         """Localidad debe normalizarse correctamente"""
         operacion = _crear_operacion_base(
             db=db_session,
@@ -217,7 +181,7 @@ class TestCrearOperacionBase:
             monto_original=Decimal('1000'),
             moneda_original='UYU',
             tipo_cambio=Decimal('40.00'),
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             localidad='montevideo',  # Minúsculas
             descripcion='Test',
             cliente='Test'
@@ -235,11 +199,11 @@ class TestCrearIngreso:
     """Tests de crear_ingreso (usa función base)"""
     
     @pytest.mark.integration
-    def test_crear_ingreso_uyu(self, db_session, area_test):
+    def test_crear_ingreso_uyu(self, db_session, areas_test):
         """Crear ingreso en pesos uruguayos"""
         data = IngresoCreate(
             cliente="Cliente Test",
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             monto_original=Decimal('15000'),
             moneda_original='UYU',
             tipo_cambio=Decimal('40.00'),
@@ -256,11 +220,11 @@ class TestCrearIngreso:
         assert operacion.monto_usd == Decimal('375')  # 15000/40
     
     @pytest.mark.integration
-    def test_crear_ingreso_usd(self, db_session, area_test):
+    def test_crear_ingreso_usd(self, db_session, areas_test):
         """Crear ingreso en dólares"""
         data = IngresoCreate(
             cliente="Cliente USA",
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             monto_original=Decimal('2500'),
             moneda_original='USD',
             tipo_cambio=Decimal('40.50'),
@@ -285,11 +249,11 @@ class TestCrearGasto:
     """Tests de crear_gasto (usa función base)"""
     
     @pytest.mark.integration
-    def test_crear_gasto_uyu(self, db_session, area_test):
+    def test_crear_gasto_uyu(self, db_session, areas_test):
         """Crear gasto en pesos uruguayos"""
         data = GastoCreate(
             proveedor="Proveedor Test",
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             monto_original=Decimal('8000'),
             moneda_original='UYU',
             tipo_cambio=Decimal('40.00'),
@@ -306,11 +270,11 @@ class TestCrearGasto:
         assert operacion.monto_usd == Decimal('200')  # 8000/40
     
     @pytest.mark.integration
-    def test_crear_gasto_usd(self, db_session, area_test):
+    def test_crear_gasto_usd(self, db_session, areas_test):
         """Crear gasto en dólares"""
         data = GastoCreate(
             proveedor="AWS Inc",
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             monto_original=Decimal('350'),
             moneda_original='USD',
             tipo_cambio=Decimal('40.00'),
@@ -607,11 +571,11 @@ class TestCasosEdge:
         assert monto_usd == Decimal('1000')
     
     @pytest.mark.integration
-    def test_crear_ingreso_sin_cliente(self, db_session, area_test):
+    def test_crear_ingreso_sin_cliente(self, db_session, areas_test):
         """Ingreso sin cliente debe funcionar (cliente puede ser null)"""
         data = IngresoCreate(
             cliente=None,
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             monto_original=Decimal('5000'),
             moneda_original='UYU',
             tipo_cambio=Decimal('40.00'),
@@ -699,7 +663,7 @@ class TestFiltrosPorLocalidadArea:
     """Tests de filtros por localidad y área"""
     
     @pytest.mark.integration
-    def test_crear_operaciones_diferentes_localidades(self, db_session, area_test):
+    def test_crear_operaciones_diferentes_localidades(self, db_session, areas_test):
         """Crear operaciones en Montevideo y Mercedes"""
         # Montevideo
         op_mvd = _crear_operacion_base(
@@ -709,7 +673,7 @@ class TestFiltrosPorLocalidadArea:
             monto_original=Decimal('10000'),
             moneda_original='UYU',
             tipo_cambio=Decimal('40.00'),
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             localidad='Montevideo',
             descripcion='Test MVD',
             cliente='Cliente MVD'
@@ -723,7 +687,7 @@ class TestFiltrosPorLocalidadArea:
             monto_original=Decimal('8000'),
             moneda_original='UYU',
             tipo_cambio=Decimal('40.00'),
-            area_id=area_test.id,
+            area_id=areas_test["Jurídica"].id,
             localidad='Mercedes',
             descripcion='Test MER',
             cliente='Cliente MER'

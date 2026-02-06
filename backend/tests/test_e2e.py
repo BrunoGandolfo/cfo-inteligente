@@ -15,7 +15,7 @@ Fecha: Octubre 2025
 
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from pathlib import Path
 
 from app.main import app
@@ -27,24 +27,14 @@ from app.main import app
 
 ARCHIVO_PREGUNTAS = Path(__file__).parent.parent / "scripts" / "preguntas_reales_test.txt"
 
-@pytest.fixture(scope="module")
-def mock_user():
-    """Usuario mockeado para tests E2E - usa ID real de BD para evitar FK errors"""
-    from app.models import Usuario
-    user = Mock(spec=Usuario)
-    # Usar un ID de usuario REAL de la BD para evitar errores de FK
-    user.id = "e85916c0-898a-46e0-84a5-c9c2ff92eaea"  # agustina@conexion.uy
-    user.email = "agustina@conexion.uy"
-    user.nombre = "Agustina"
-    user.es_socio = True
-    user.activo = True
-    return user
-
-@pytest.fixture(scope="module")
-def client_api(mock_user):
-    """Cliente de FastAPI para tests E2E con autenticación mockeada"""
+@pytest.fixture(scope="function")
+def client_api(usuario_test, db_session):
+    """Cliente de FastAPI para tests E2E con autenticación y BD mockeadas"""
     from app.core.security import get_current_user
-    app.dependency_overrides[get_current_user] = lambda: mock_user
+    from app.core.database import get_db
+    
+    app.dependency_overrides[get_current_user] = lambda: usuario_test
+    app.dependency_overrides[get_db] = lambda: db_session
     yield TestClient(app)
     app.dependency_overrides.clear()
 

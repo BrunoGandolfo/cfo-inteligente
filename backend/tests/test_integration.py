@@ -17,8 +17,7 @@ Fecha: Octubre 2025
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 from unittest.mock import Mock, patch
 from datetime import datetime, date
 
@@ -33,44 +32,16 @@ from app.services.validador_sql import ValidadorSQL
 # CONFIGURACIÓN DE BD DE TEST
 # ══════════════════════════════════════════════════════════════
 
-from app.core.config import settings
-TEST_DATABASE_URL = settings.test_database_url  # IMPORTANTE: Usar BD de test, NO producción
-
 @pytest.fixture(scope="function")
-def db_session():
+def client_api(usuario_test, db_session):
     """
-    Fixture que proporciona sesión de BD real
-    Scope: function (nueva sesión por test)
-    """
-    engine = create_engine(TEST_DATABASE_URL)
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
-    
-    yield session
-    
-    session.close()
-
-
-@pytest.fixture(scope="function")
-def mock_user():
-    """Usuario mockeado para tests - usa ID real de BD para evitar FK errors"""
-    from app.models import Usuario
-    user = Mock(spec=Usuario)
-    # Usar un ID de usuario REAL de la BD para evitar errores de FK
-    user.id = "e85916c0-898a-46e0-84a5-c9c2ff92eaea"  # agustina@conexion.uy
-    user.email = "agustina@conexion.uy"
-    user.nombre = "Agustina"
-    user.es_socio = True
-    user.activo = True
-    return user
-
-@pytest.fixture(scope="function")
-def client_api(mock_user):
-    """
-    Fixture que proporciona cliente de FastAPI con autenticación mockeada
+    Fixture que proporciona cliente de FastAPI con autenticación y BD mockeadas
     """
     from app.core.security import get_current_user
-    app.dependency_overrides[get_current_user] = lambda: mock_user
+    from app.core.database import get_db
+    
+    app.dependency_overrides[get_current_user] = lambda: usuario_test
+    app.dependency_overrides[get_db] = lambda: db_session
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -283,7 +254,7 @@ class TestSQLRouterIntegration:
     """Tests del SQL Router con BD real"""
     
     @patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql')
-    def test_sql_ejecutable_en_bd(self, mock_claude_gen, db_session):
+    def test_sql_ejecutable_en_bd(self, mock_claude_gen, db_session, operaciones_test):
         """SQL generado debe ser ejecutable en BD real"""
         # Arrange
         sql = "SELECT COUNT(*) as total FROM operaciones WHERE deleted_at IS NULL"
@@ -500,7 +471,7 @@ class TestFlujoCompletoEndToEnd:
 class TestQueriesReales:
     """Tests con queries reales que ejecutan en BD"""
     
-    def test_query_conteo_operaciones(self, db_session):
+    def test_query_conteo_operaciones(self, db_session, operaciones_test):
         """Query de conteo debe retornar número correcto"""
         # Act
         sql = "SELECT COUNT(*) as total FROM operaciones WHERE deleted_at IS NULL"
@@ -512,7 +483,7 @@ class TestQueriesReales:
         total = row[0]
         assert total > 0  # Al menos hay operaciones en la BD
     
-    def test_query_sum_ingresos(self, db_session):
+    def test_query_sum_ingresos(self, db_session, operaciones_test):
         """Query de suma de ingresos debe retornar valor razonable"""
         # Act
         sql = """
@@ -529,9 +500,9 @@ class TestQueriesReales:
         total = float(row[0]) if row[0] else 0
         assert total > 0
         # Verificar que está en rango razonable (basado en datos conocidos)
-        assert total > 1_000_000  # Al menos 1M
+        assert total > 500_000  # Al menos 500K (ajustado para datos de prueba)
     
-    def test_query_distribuciones_por_socio(self, db_session):
+    def test_query_distribuciones_por_socio(self, db_session, operaciones_test):
         """Query de distribuciones debe retornar 5 socios"""
         # Act
         sql = """
@@ -605,7 +576,7 @@ class TestValidacionCasosReales:
 class TestChainOfThoughtAvanzado:
     """Tests avanzados de Chain-of-Thought con BD real"""
     
-    def test_proyeccion_fin_año_con_metadatos(self, db_session):
+    def test_proyeccion_fin_año_con_metadatos(self, db_session, operaciones_test):
         """Proyección debe usar metadatos reales de BD"""
         # Arrange - Obtener metadatos
         sql_meta = ChainOfThoughtSQL.generar_sql_metadatos()
@@ -647,7 +618,7 @@ class TestChainOfThoughtAvanzado:
             mes_anterior = rows[1][0]
             assert mes_actual > mes_anterior  # Ordenados
     
-    def test_tendencia_ultimos_3_meses(self, db_session):
+    def test_tendencia_ultimos_3_meses(self, db_session, operaciones_test):
         """Tendencia de últimos meses debe retornar datos"""
         # Act
         sql = """
@@ -667,7 +638,7 @@ class TestChainOfThoughtAvanzado:
         assert len(rows) > 0
         assert len(rows) <= 3
     
-    def test_conversion_moneda_multiple(self, db_session):
+    def test_conversion_moneda_multiple(self, db_session, operaciones_test):
         """Query con conversiones debe retornar ambas monedas"""
         # Act
         sql = """
@@ -737,7 +708,7 @@ class TestChainOfThoughtAvanzado:
         # Assert
         assert metadatos['meses_con_datos_2025'] == meses_reales
     
-    def test_ultimo_mes_con_datos(self, db_session):
+    def test_ultimo_mes_con_datos(self, db_session, operaciones_test):
         """Último mes con datos debe obtenerse correctamente"""
         # Act
         sql_meta = ChainOfThoughtSQL.generar_sql_metadatos()
@@ -746,8 +717,9 @@ class TestChainOfThoughtAvanzado:
         
         # Assert
         assert metadatos['ultimo_mes_con_datos'] is not None
-        # Debe ser una fecha en 2025 o 2024
-        assert '2024' in str(metadatos['ultimo_mes_con_datos']) or '2025' in str(metadatos['ultimo_mes_con_datos'])
+        # Debe ser una fecha reciente (2024, 2025 o 2026)
+        fecha_str = str(metadatos['ultimo_mes_con_datos'])
+        assert '2024' in fecha_str or '2025' in fecha_str or '2026' in fecha_str
 
 
 # ══════════════════════════════════════════════════════════════
@@ -758,7 +730,7 @@ class TestChainOfThoughtAvanzado:
 class TestValidadorPostSQLReal:
     """Tests de validación post-SQL con resultados reales"""
     
-    def test_porcentaje_usd_uyu_real(self, db_session):
+    def test_porcentaje_usd_uyu_real(self, db_session, operaciones_test):
         """Porcentaje USD vs UYU con datos reales"""
         # Act
         sql = """
