@@ -73,8 +73,6 @@ app.include_router(indicadores_router)
 from app.api.expedientes import router as expedientes_router
 app.include_router(expedientes_router)
 
-from app.api.leyes import router as leyes_router
-app.include_router(leyes_router)
 from app.api.casos import router as casos_router
 app.include_router(casos_router)
 from app.api.contratos import router as contratos_router

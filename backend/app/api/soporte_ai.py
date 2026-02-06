@@ -152,7 +152,6 @@ def _obtener_modulos_usuario(usuario: Usuario) -> str:
     # Todos los usuarios pueden:
     modulos.append("- Cambiar su contraseña")
     modulos.append("- Ver indicadores económicos (UI, UR, BPC, cotizaciones)")
-    modulos.append("- Consultar leyes uruguayas")
     modulos.append("- Ver contratos notariales")
     
     # Operaciones

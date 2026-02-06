@@ -1,17 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import axios from 'axios';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Soporte from './pages/Soporte';
-import Indicadores from './pages/Indicadores';
-import Expedientes from './pages/Expedientes';
-import Contratos from './pages/Contratos';
-import Casos from './pages/Casos';
-import ALA from './pages/ALA';
-import Layout from './components/layout/Layout';
 import Home from './pages/Home';
+import Layout from './components/layout/Layout';
 import { Toaster } from 'react-hot-toast';
 import WelcomeModal from './components/modals/WelcomeModal';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Soporte = lazy(() => import('./pages/Soporte'));
+const Indicadores = lazy(() => import('./pages/Indicadores'));
+const Expedientes = lazy(() => import('./pages/Expedientes'));
+const Contratos = lazy(() => import('./pages/Contratos'));
+const Casos = lazy(() => import('./pages/Casos'));
+const ALA = lazy(() => import('./pages/ALA'));
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -156,6 +157,12 @@ function App() {
     }
   };
 
+  const fallback = (
+    <div className="flex items-center justify-center h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  );
+
   return (
     <>
       <Layout 
@@ -165,7 +172,9 @@ function App() {
         onALAToggle={() => setCurrentPage('ala')}
         onCasosToggle={() => setCurrentPage('casos')}
       >
-        {renderContent()}
+        <Suspense fallback={fallback}>
+          {renderContent()}
+        </Suspense>
       </Layout>
       <Toaster position="top-right" />
       <WelcomeModal 
