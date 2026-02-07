@@ -69,7 +69,8 @@ def _tiene_acceso_contratos(usuario: Usuario) -> bool:
 
 @router.get("/categorias", response_model=List[str])
 def listar_categorias(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Lista todas las categorías únicas disponibles.
@@ -97,7 +98,8 @@ def buscar_contratos(
     q: str = Query(..., description="Texto a buscar (requerido)"),
     categoria: Optional[str] = Query(None, description="Filtrar por categoría"),
     limit: int = Query(20, ge=1, le=100, description="Límite de resultados"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Búsqueda full-text en título y contenido de contratos.
@@ -149,7 +151,8 @@ def listar_contratos(
     activo: Optional[bool] = Query(True, description="Solo contratos activos"),
     skip: int = Query(0, ge=0, description="Offset para paginación"),
     limit: int = Query(50, ge=1, le=100, description="Límite de resultados"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Lista contratos con filtros y paginación.
@@ -211,7 +214,8 @@ def listar_contratos(
 @router.get("/{contrato_id}", response_model=ContratoResponse)
 def obtener_contrato(
     contrato_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Obtiene un contrato por ID (sin contenido_docx).
@@ -245,7 +249,8 @@ def obtener_contrato(
 @router.get("/{contrato_id}/descargar")
 def descargar_contrato(
     contrato_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
 ):
     """
     Descarga el archivo DOCX del contrato.
