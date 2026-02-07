@@ -12,7 +12,8 @@ class TestGetDb:
 
     def test_get_db_yields_session_and_closes(self):
         mock_session = MagicMock()
-        with patch("app.core.dependencies.SessionLocal", return_value=mock_session):
+        # get_db viene de app.core.database; parchear SessionLocal donde se usa
+        with patch("app.core.database.SessionLocal", return_value=mock_session):
             gen = dependencies.get_db()
             db = next(gen)
             assert db is mock_session

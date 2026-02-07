@@ -194,7 +194,7 @@ def _verificar_socio(current_user: Usuario) -> None:
     """Verifica que el usuario tenga acceso al módulo de Expedientes, o lanza 403."""
     if current_user.email.lower() in [email.lower() for email in USUARIOS_ACCESO_EXPEDIENTES]:
         return
-    logger.warning(f"Usuario {current_user.email} intentó acceder a expedientes sin permiso")
+    logger.warning(f"Usuario ID: {current_user.id} intentó acceder a expedientes sin permiso")
     raise HTTPException(
         status_code=403, 
         detail="No tienes permiso para acceder a expedientes judiciales"
@@ -264,7 +264,7 @@ def sincronizar_expediente(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"Sincronizando expediente {data.iue} - Usuario: {current_user.email}")
+    logger.info(f"Sincronizando expediente {data.iue} - Usuario ID: {current_user.id}")
     
     # Si no se especifica responsable, asignar al usuario actual
     responsable_final = data.responsable_id if data.responsable_id else str(current_user.id)
@@ -323,7 +323,7 @@ def listar_expedientes(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"Listando expedientes - Usuario: {current_user.email}")
+    logger.info(f"Listando expedientes - Usuario ID: {current_user.id}")
     
     # Forzar filtro por responsable para usuarios específicos
     if current_user.email.lower() in USUARIOS_FILTRO_EXPEDIENTES:
@@ -376,7 +376,7 @@ def sincronizar_todos_expedientes(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"🔄 Iniciando sincronización masiva - Usuario: {current_user.email}")
+    logger.info(f"🔄 Iniciando sincronización masiva - Usuario ID: {current_user.id}")
     
     try:
         resultado = expediente_service.sincronizar_todos_los_expedientes(db)
@@ -409,7 +409,7 @@ def obtener_resumen_sync(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"📊 Consultando resumen de sincronización - Usuario: {current_user.email}")
+    logger.info(f"📊 Consultando resumen de sincronización - Usuario ID: {current_user.id}")
     
     resumen = expediente_service.obtener_resumen_sincronizacion(db)
     
@@ -429,7 +429,7 @@ def listar_movimientos_pendientes(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"Consultando movimientos pendientes - Usuario: {current_user.email}")
+    logger.info(f"Consultando movimientos pendientes - Usuario ID: {current_user.id}")
     
     movimientos = expediente_service.obtener_movimientos_sin_notificar(db)
     
@@ -453,7 +453,7 @@ def marcar_movimientos_notificados(
     if not movimiento_ids:
         raise HTTPException(status_code=400, detail="Se requiere al menos un ID de movimiento")
     
-    logger.info(f"Marcando {len(movimiento_ids)} movimientos como notificados - Usuario: {current_user.email}")
+    logger.info(f"Marcando {len(movimiento_ids)} movimientos como notificados - Usuario ID: {current_user.id}")
     
     actualizados = expediente_service.marcar_movimientos_notificados(db, movimiento_ids)
     
@@ -475,7 +475,7 @@ def enviar_notificacion_test(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"📱 Enviando WhatsApp de prueba a {data.numero} - Usuario: {current_user.email}")
+    logger.info(f"📱 Enviando WhatsApp de prueba a {data.numero} - Usuario ID: {current_user.id}")
     
     resultado = twilio_service.enviar_test(data.numero)
     
@@ -509,7 +509,7 @@ def enviar_notificacion_movimientos(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"📱 Enviando notificación de movimientos a {data.numero} - Usuario: {current_user.email}")
+    logger.info(f"📱 Enviando notificación de movimientos a {data.numero} - Usuario ID: {current_user.id}")
     
     # Obtener movimientos pendientes
     movimientos = expediente_service.obtener_movimientos_sin_notificar(db)
@@ -564,7 +564,7 @@ def obtener_historia_expediente(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"Generando historia del expediente {expediente_id} - Usuario: {current_user.email}")
+    logger.info(f"Generando historia del expediente {expediente_id} - Usuario ID: {current_user.id}")
     
     try:
         exp_uuid = UUID(expediente_id)
@@ -687,7 +687,7 @@ def obtener_por_iue(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"Buscando expediente por IUE: {iue} - Usuario: {current_user.email}")
+    logger.info(f"Buscando expediente por IUE: {iue} - Usuario ID: {current_user.id}")
     
     expediente = expediente_service.obtener_expediente_por_iue(db, iue)
     
@@ -716,7 +716,7 @@ def obtener_expediente(
     logger.info(
         f"Obteniendo expediente - ID recibido: '{expediente_id}' "
         f"(tipo: {type(expediente_id).__name__}, len: {len(expediente_id)}) - "
-        f"Usuario: {current_user.email}"
+        f"Usuario ID: {current_user.id}"
     )
     
     try:
@@ -754,7 +754,7 @@ def resincronizar_expediente(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"Re-sincronizando expediente {expediente_id} - Usuario: {current_user.email}")
+    logger.info(f"Re-sincronizando expediente {expediente_id} - Usuario ID: {current_user.id}")
     
     try:
         exp_uuid = UUID(expediente_id)
@@ -814,7 +814,7 @@ def eliminar_expediente(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"Eliminando expediente {expediente_id} - Usuario: {current_user.email}")
+    logger.info(f"Eliminando expediente {expediente_id} - Usuario ID: {current_user.id}")
     
     try:
         exp_uuid = UUID(expediente_id)
@@ -859,7 +859,7 @@ def actualizar_expediente(
     """
     _verificar_socio(current_user)
     
-    logger.info(f"Actualizando relaciones expediente {expediente_id} - Usuario: {current_user.email}")
+    logger.info(f"Actualizando relaciones expediente {expediente_id} - Usuario ID: {current_user.id}")
     
     try:
         exp_uuid = UUID(expediente_id)

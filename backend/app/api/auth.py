@@ -154,13 +154,12 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
             detail="El registro no está permitido para este dominio de correo"
         )
     
-    # Validar contraseña mínima (para crear y para completar registro)
     if len(body.password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña debe tener al menos 6 caracteres"
         )
-    
+
     # Buscar usuario por email
     existing = db.query(Usuario).filter(Usuario.email == email).first()
     
@@ -240,13 +239,12 @@ async def change_password(
             detail="La nueva contraseña debe ser diferente a la actual"
         )
     
-    # Validar longitud mínima
     if len(request.new_password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La nueva contraseña debe tener al menos 6 caracteres"
         )
-    
+
     # Hashear y guardar nueva contraseña
     current_user.password_hash = hash_password(request.new_password)
     db.commit()
@@ -296,13 +294,12 @@ def cambiar_password_publico(
             detail="Contraseña actual incorrecta"
         )
     
-    # Validar longitud mínima
     if len(body.password_nueva) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La nueva contraseña debe tener al menos 6 caracteres"
         )
-    
+
     # Validar que sea diferente a la actual
     if body.password_actual == body.password_nueva:
         raise HTTPException(

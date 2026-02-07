@@ -306,7 +306,9 @@ class TrendsCalculator(BaseCalculator):
                 x_future,
                 confidence_level=0.95
             )
-            
+            # Evitar división por cero si las listas vienen vacías
+            if not y_pred or not y_upper or not y_lower:
+                return None
             # Retornar dict completo (no solo promedio)
             return {
                 'promedio': sum(y_pred) / len(y_pred),

@@ -69,7 +69,7 @@ def _verificar_acceso_ala(current_user: Usuario, accion: str = "realizar esta ac
     """
     if _tiene_acceso_ala(current_user):
         return
-    logger.warning(f"Usuario {current_user.email} intentó {accion} sin permiso ALA")
+    logger.warning(f"Usuario ID: {current_user.id} intentó {accion} sin permiso ALA")
     raise HTTPException(
         status_code=403,
         detail=f"Solo socios pueden {accion}"
@@ -95,7 +95,7 @@ def _verificar_permiso_verificacion(
     
     if verificacion.usuario_id != current_user.id:
         logger.warning(
-            f"Usuario {current_user.email} intentó {accion} verificación "
+            f"Usuario ID: {current_user.id} intentó {accion} verificación "
             f"{verificacion.id} sin permiso"
         )
         raise HTTPException(
@@ -124,7 +124,7 @@ def crear_verificacion(
     Decreto 379/018 - Arts. 17-18, 44.
     """
     logger.info(
-        f"🔍 Iniciando verificación ALA - Usuario: {current_user.email}, "
+        f"🔍 Iniciando verificación ALA - Usuario ID: {current_user.id}, "
         f"Nombre: {datos.nombre_completo[:50]}..."
     )
     
@@ -167,7 +167,7 @@ def listar_verificaciones(
     - Socios: ven todas las verificaciones
     - No socios: solo ven las propias
     """
-    logger.info(f"Listando verificaciones ALA - Usuario: {current_user.email}")
+    logger.info(f"Listando verificaciones ALA - Usuario ID: {current_user.id}")
     
     # Socios y colaboradores con acceso ALA completo ven todas; resto solo las propias
     usuario_id = None if _tiene_acceso_ala(current_user) else current_user.id
@@ -214,7 +214,7 @@ def obtener_verificacion(
     - No socios: solo pueden ver las propias
     """
     logger.info(
-        f"Obteniendo verificación ALA {verificacion_id} - Usuario: {current_user.email}"
+        f"Obteniendo verificación ALA {verificacion_id} - Usuario ID: {current_user.id}"
     )
     
     verificacion = ala_service.obtener_verificacion(db, verificacion_id)
@@ -246,7 +246,7 @@ def actualizar_verificacion(
     - busqueda_wikipedia_realizada / busqueda_wikipedia_observaciones
     """
     logger.info(
-        f"Actualizando verificación ALA {verificacion_id} - Usuario: {current_user.email}"
+        f"Actualizando verificación ALA {verificacion_id} - Usuario ID: {current_user.id}"
     )
     
     verificacion = ala_service.obtener_verificacion(db, verificacion_id)
@@ -298,7 +298,7 @@ def obtener_metadata_listas(
     """
     _verificar_acceso_ala(current_user, "ver metadata de listas ALA")
     
-    logger.info(f"Consultando metadata de listas ALA - Usuario: {current_user.email}")
+    logger.info(f"Consultando metadata de listas ALA - Usuario ID: {current_user.id}")
     
     try:
         metadata_list = ala_service.obtener_metadata_listas(db)
@@ -348,7 +348,7 @@ def ejecutar_busquedas_art44_endpoint(
     """
     logger.info(
         f"🔍 Iniciando búsquedas Art. 44 C.4 - Verificación: {verificacion_id}, "
-        f"Usuario: {current_user.email}"
+        f"Usuario ID: {current_user.id}"
     )
     
     # Obtener verificación
@@ -429,7 +429,7 @@ def generar_certificado_pdf(
     """
     logger.info(
         f"📄 Generando certificado PDF - Verificación: {verificacion_id}, "
-        f"Usuario: {current_user.email}"
+        f"Usuario ID: {current_user.id}"
     )
     
     # Obtener verificación
@@ -484,7 +484,7 @@ def eliminar_verificacion(
     _verificar_acceso_ala(current_user, "eliminar verificaciones ALA")
     
     logger.info(
-        f"Eliminando verificación ALA {verificacion_id} - Usuario: {current_user.email}"
+        f"Eliminando verificación ALA {verificacion_id} - Usuario ID: {current_user.id}"
     )
     
     verificacion = ala_service.obtener_verificacion(db, verificacion_id)

@@ -9,42 +9,17 @@ Fecha: Octubre 2025
 """
 
 import os
-from typing import Generator, Dict, Any
+from typing import Dict, Any
 from functools import lru_cache
 
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, get_db
 from app.services.ai.claude_client import ClaudeClient
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-# ═══════════════════════════════════════════════════════════════
-# DATABASE SESSION
-# ═══════════════════════════════════════════════════════════════
-
-def get_db() -> Generator[Session, None, None]:
-    """
-    Provee sesión de base de datos.
-    
-    Patrón: Context Manager (cierra automáticamente).
-    
-    Yields:
-        Session de SQLAlchemy
-        
-    Uso en endpoint:
-        @app.get("/...")
-        def endpoint(db: Session = Depends(get_db)):
-            ...
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # ═══════════════════════════════════════════════════════════════

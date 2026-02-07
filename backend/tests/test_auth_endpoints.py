@@ -277,7 +277,7 @@ class TestRegister:
         assert usuario_creado.activo is True
     
     def test_register_password_corto_retorna_400(self, client):
-        """Password menor a 6 caracteres debe retornar 400"""
+        """Password que no cumple política (8 chars, mayúscula, minúscula, número) retorna 400"""
         test_client, mock_db = client
         mock_db.query.return_value.filter.return_value.first.return_value = None
         

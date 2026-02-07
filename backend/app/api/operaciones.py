@@ -11,7 +11,7 @@ from app.models.cliente import Cliente
 from app.models.proveedor import Proveedor
 from app.models import Usuario
 from app.schemas.operacion import (
-    IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
+    IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate, OperacionUpdate
 )
 from app.services import operacion_service
 import uuid
@@ -220,7 +220,7 @@ def _actualizar_montos(operacion: Operacion, data: dict) -> None:
 @router.patch("/{operacion_id}")
 def actualizar_operacion(
     operacion_id: str,
-    data: dict,
+    data: OperacionUpdate,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
@@ -233,14 +233,15 @@ def actualizar_operacion(
     Si se modifican monto_original, moneda_original o tipo_cambio, se recalculan
     automáticamente monto_uyu y monto_usd.
     """
+    payload = data.model_dump(exclude_unset=True)
     # 1. Obtener operación (valida UUID y existencia)
     operacion = _obtener_operacion_o_404(db, operacion_id)
     
     # 2. Actualizar campos básicos
-    _actualizar_campos_basicos(operacion, data)
+    _actualizar_campos_basicos(operacion, payload)
     
     # 3. Actualizar montos (con recálculo si necesario)
-    _actualizar_montos(operacion, data)
+    _actualizar_montos(operacion, payload)
     
     # 4. Guardar cambios
     operacion.updated_at = datetime.now(timezone.utc)

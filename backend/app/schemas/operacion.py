@@ -106,3 +106,16 @@ class DistribucionCreate(OperacionBase):
     pancho_usd: Optional[Decimal] = None
     bruno_uyu: Optional[Decimal] = None
     bruno_usd: Optional[Decimal] = None
+
+
+class OperacionUpdate(BaseModel):
+    """Schema para PATCH de operaciones: todos los campos opcionales."""
+    fecha: Optional[date] = None
+    monto_original: Optional[Decimal] = None
+    moneda_original: Optional[str] = None
+    tipo_cambio: Optional[Decimal] = None
+    area_id: Optional[str] = None
+    localidad: Optional[str] = None
+    descripcion: Optional[str] = None
+    cliente: Optional[str] = None
+    proveedor: Optional[str] = None

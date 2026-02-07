@@ -54,7 +54,7 @@ def _verificar_acceso_casos(current_user: Usuario) -> None:
     """Verifica que el usuario tenga acceso al módulo de Casos, o lanza 403."""
     if current_user.email.lower() in [email.lower() for email in USUARIOS_ACCESO_CASOS]:
         return
-    logger.warning(f"Usuario {current_user.email} intentó acceder a casos sin permiso")
+    logger.warning(f"Usuario ID: {current_user.id} intentó acceder a casos sin permiso")
     raise HTTPException(
         status_code=403,
         detail="No tienes permiso para acceder a casos legales"
@@ -83,7 +83,7 @@ def listar_casos(
     """
     _verificar_acceso_casos(current_user)
     
-    logger.info(f"Listando casos - Usuario: {current_user.email}")
+    logger.info(f"Listando casos - Usuario ID: {current_user.id}")
     
     # Query base: casos no eliminados
     query = db.query(Caso).filter(
@@ -143,7 +143,7 @@ def obtener_caso(
     """
     _verificar_acceso_casos(current_user)
     
-    logger.info(f"Obteniendo caso {caso_id} - Usuario: {current_user.email}")
+    logger.info(f"Obteniendo caso {caso_id} - Usuario ID: {current_user.id}")
     
     try:
         caso_uuid = UUID(caso_id)
@@ -189,7 +189,7 @@ def crear_caso(
     """
     _verificar_acceso_casos(current_user)
     
-    logger.info(f"Creando caso - Usuario: {current_user.email}")
+    logger.info(f"Creando caso - Usuario ID: {current_user.id}")
     
     # Manejar vinculación con expediente por IUE
     expediente_id = data.expediente_id  # Por compatibilidad
@@ -246,7 +246,7 @@ def crear_caso(
     db.commit()
     db.refresh(caso)
     
-    logger.info(f"Caso creado: {caso.id} - Usuario: {current_user.email}")
+    logger.info(f"Caso creado: {caso.id} - Usuario ID: {current_user.id}")
     
     return caso
 
@@ -267,7 +267,7 @@ def actualizar_caso(
     """
     _verificar_acceso_casos(current_user)
     
-    logger.info(f"Actualizando caso {caso_id} - Usuario: {current_user.email}")
+    logger.info(f"Actualizando caso {caso_id} - Usuario ID: {current_user.id}")
     
     try:
         caso_uuid = UUID(caso_id)
@@ -310,7 +310,7 @@ def actualizar_caso(
     db.commit()
     db.refresh(caso)
     
-    logger.info(f"Caso actualizado: {caso.id} - Usuario: {current_user.email}")
+    logger.info(f"Caso actualizado: {caso.id} - Usuario ID: {current_user.id}")
     
     return caso
 
@@ -330,7 +330,7 @@ def eliminar_caso(
     """
     _verificar_acceso_casos(current_user)
     
-    logger.info(f"Eliminando caso {caso_id} - Usuario: {current_user.email}")
+    logger.info(f"Eliminando caso {caso_id} - Usuario ID: {current_user.id}")
     
     try:
         caso_uuid = UUID(caso_id)
@@ -363,7 +363,7 @@ def eliminar_caso(
     caso.deleted_at = datetime.now(timezone.utc)
     db.commit()
     
-    logger.info(f"Caso eliminado (soft delete): {caso.id} - Usuario: {current_user.email}")
+    logger.info(f"Caso eliminado (soft delete): {caso.id} - Usuario ID: {current_user.id}")
     
     return {
         "mensaje": f"Caso '{caso.titulo}' eliminado",

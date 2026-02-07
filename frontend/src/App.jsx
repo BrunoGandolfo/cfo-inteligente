@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Layout from './components/layout/Layout';
 import { Toaster } from 'react-hot-toast';
 import WelcomeModal from './components/modals/WelcomeModal';
+import ErrorBoundary from './components/shared/ErrorBoundary';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Soporte = lazy(() => import('./pages/Soporte'));
@@ -99,43 +100,6 @@ function App() {
     checkAuth();
   }, [currentPage, validateToken]);
 
-  // Mostrar loading mientras valida
-  if (isValidating) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-slate-400">Verificando sesión...</div>
-      </div>
-    );
-  }
-
-  if (currentPage === 'home') {
-    return (
-      <>
-        <Home onLoginSuccess={handleLoginSuccess} />
-        <Toaster position="top-right" />
-      </>
-    );
-  }
-
-  if (currentPage === 'login') {
-    return (
-      <>
-        <Login onLoginSuccess={handleLoginSuccess} />
-        <Toaster position="top-right" />
-      </>
-    );
-  }
-
-  const token = localStorage.getItem('token');
-  if (!token) {
-    return (
-      <>
-        <Home />
-        <Toaster position="top-right" />
-      </>
-    );
-  }
-
   // Función para renderizar el contenido según la página
   const renderContent = () => {
     switch (currentPage) {
@@ -163,27 +127,52 @@ function App() {
     </div>
   );
 
+  const token = localStorage.getItem('token');
+
   return (
-    <>
-      <Layout 
-        onNavigate={setCurrentPage} 
-        currentPage={currentPage}
-        onNotarialToggle={() => setCurrentPage('notarial')}
-        onALAToggle={() => setCurrentPage('ala')}
-        onCasosToggle={() => setCurrentPage('casos')}
-      >
-        <Suspense fallback={fallback}>
-          {renderContent()}
-        </Suspense>
-      </Layout>
-      <Toaster position="top-right" />
-      <WelcomeModal 
-        isOpen={showWelcome} 
-        onClose={handleCloseWelcome}
-        frasePreCargada={welcomeFrase}
-        fraseLoading={welcomeFraseLoading}
-      />
-    </>
+    <ErrorBoundary>
+      {isValidating ? (
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+          <div className="text-slate-400">Verificando sesión...</div>
+        </div>
+      ) : currentPage === 'home' ? (
+        <>
+          <Home onLoginSuccess={handleLoginSuccess} />
+          <Toaster position="top-right" />
+        </>
+      ) : currentPage === 'login' ? (
+        <>
+          <Login onLoginSuccess={handleLoginSuccess} />
+          <Toaster position="top-right" />
+        </>
+      ) : !token ? (
+        <>
+          <Home />
+          <Toaster position="top-right" />
+        </>
+      ) : (
+        <>
+          <Layout 
+            onNavigate={setCurrentPage} 
+            currentPage={currentPage}
+            onNotarialToggle={() => setCurrentPage('notarial')}
+            onALAToggle={() => setCurrentPage('ala')}
+            onCasosToggle={() => setCurrentPage('casos')}
+          >
+            <Suspense fallback={fallback}>
+              {renderContent()}
+            </Suspense>
+          </Layout>
+          <Toaster position="top-right" />
+          <WelcomeModal 
+            isOpen={showWelcome} 
+            onClose={handleCloseWelcome}
+            frasePreCargada={welcomeFrase}
+            fraseLoading={welcomeFraseLoading}
+          />
+        </>
+      )}
+    </ErrorBoundary>
   );
 }
 
