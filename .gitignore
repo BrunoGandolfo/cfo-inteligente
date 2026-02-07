@@ -62,3 +62,9 @@ backend/scripts/investigacion_estado_proyecto.py
 backend/scripts/verificar_leyes_impo.py
 backend/scripts/verificar_tabla_leyes.py
 backend/test_*.py
+
+# Logs y archivos temporales
+backend/logs/
+*.log.*
+backend/poc_*
+backend/certificado_*
