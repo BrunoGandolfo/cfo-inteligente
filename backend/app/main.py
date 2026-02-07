@@ -1,9 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 import logging
 import os
 from app.core.config import settings
+from app.core.rate_limiter import limiter
 from app.api.auth import router as auth_router
 from app.api.operaciones import router as operaciones_router
 from app.api.tipo_cambio import router as tipo_cambio_router
@@ -15,6 +19,19 @@ app = FastAPI(
     description="Sistema Financiero Conexión Consultora",
     version="0.1.0"
 )
+
+# Exception handler global: evita exponer tracebacks en respuestas
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Error no capturado: {type(exc).__name__}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Error interno del servidor"}
+    )
+
+# Rate limiting: limiter compartido para auth y otros endpoints públicos
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Middleware para manejar headers de proxy (X-Forwarded-Proto, X-Forwarded-For)
 # Necesario para que Railway preserve HTTPS en redirects
@@ -33,6 +50,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
+from app.core.security_headers import SecurityHeadersMiddleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Incluir routers
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])

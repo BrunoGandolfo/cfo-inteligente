@@ -1,1 +1,18 @@
-2025-12-29 09:33:27 - app.services.claude_sql_generator - INFO - ClaudeSQLGenerator inicializado con AIOrchestrator
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - INFO - Chain-of-Thought detectada pregunta temporal compleja
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - INFO - Chain-of-Thought obteniendo metadatos temporales
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - INFO - Metadatos obtenidos: Fecha=2025-12-29, Meses datos=1, Restantes=0
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - INFO - Chain-of-Thought generando SQL final con contexto temporal
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - INFO - Chain-of-Thought SQL generado exitosamente
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - INFO - Chain-of-Thought detectada pregunta temporal compleja
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - INFO - Chain-of-Thought obteniendo metadatos temporales
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - INFO - Metadatos obtenidos: Fecha=2025-12-29, Meses datos=9, Restantes=0
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - INFO - Chain-of-Thought generando SQL final con contexto temporal
+2025-12-29 09:33:27 - app.services.chain_of_thought_sql - ERROR - Error en Chain-of-Thought: 'ClaudeSQLGenerator' object has no attribute 'DDL_CONTEXT'
+Traceback (most recent call last):
+  File "/home/brunogandolfo/cfo-inteligente/backend/app/services/chain_of_thought_sql.py", line 226, in generar_con_chain_of_thought
+    sql_final = ChainOfThoughtSQL.generar_sql_con_contexto(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brunogandolfo/cfo-inteligente/backend/app/services/chain_of_thought_sql.py", line 128, in generar_sql_con_contexto
+    prompt_enriquecido = f"""{claude_gen.DDL_CONTEXT}
+                              ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'ClaudeSQLGenerator' object has no attribute 'DDL_CONTEXT'

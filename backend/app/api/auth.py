@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import secrets
+import string
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from app.core.database import get_db
+from app.core.rate_limiter import limiter
 from app.models import Usuario
 from app.core.security import verify_password, create_access_token, hash_password, get_current_user
 
@@ -19,6 +22,17 @@ DOMINIOS_EXCEPCION = {
 
 # Lista de prefijos de email autorizados como socios
 SOCIOS_AUTORIZADOS = ["aborio", "falgorta", "vcaresani", "gtaborda", "bgandolfo"]
+
+# Dominios permitidos para registro (evita registro abierto con cualquier dominio)
+# Solo estos dominios pueden registrar; el email se construye con construir_email(prefijo).
+DOMINIOS_PERMITIDOS = ["cgmasociados.com", "grupoconexion.uy"]
+
+
+def _generar_password_temporal(length: int = 12) -> str:
+    """Genera una contraseña temporal aleatoria y segura."""
+    alphabet = string.ascii_letters + string.digits + "!@#$%"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
 
 def construir_email(prefijo: str) -> str:
     """Construye el email completo según el prefijo."""
@@ -80,12 +94,13 @@ class CambiarPasswordPublicoResponse(BaseModel):
 # ═══════════════════════════════════════════════════════════════
 
 @router.post("/login", response_model=LoginResponse)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     """Iniciar sesión con email y contraseña."""
     # Buscar usuario
-    usuario = db.query(Usuario).filter(Usuario.email == request.email).first()
+    usuario = db.query(Usuario).filter(Usuario.email == body.email).first()
     
-    if not usuario or not verify_password(request.password, usuario.password_hash):
+    if not usuario or not verify_password(body.password, usuario.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email o contraseña incorrectos"
@@ -110,31 +125,37 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
-def register(request: RegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)):
     """
-    Registro público - cualquiera puede crear su cuenta.
-    El dominio del email se asigna automáticamente según el prefijo.
+    Registro restringido por dominio: solo se permiten cuentas con email en DOMINIOS_PERMITIDOS.
+    El email se construye a partir de prefijo_email (sin @) + dominio autorizado.
     """
     # Validar que el prefijo no esté vacío
-    prefijo = request.prefijo_email.lower().strip()
+    prefijo = body.prefijo_email.lower().strip()
     if not prefijo:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El usuario de email es requerido"
         )
-    
-    # Validar que no contenga @
+    # Impedir que se inyecte un email completo de otro dominio
     if "@" in prefijo:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Solo ingresa tu usuario, sin @"
         )
-    
     # Construir email completo
     email = construir_email(prefijo)
+    # Restringir registro solo a dominios permitidos
+    dominio_email = email.split("@")[-1]
+    if dominio_email not in DOMINIOS_PERMITIDOS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="El registro no está permitido para este dominio de correo"
+        )
     
     # Validar contraseña mínima (para crear y para completar registro)
-    if len(request.password) < 6:
+    if len(body.password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña debe tener al menos 6 caracteres"
@@ -150,7 +171,7 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
                 detail="Este usuario ya está registrado"
             )
         # Completar registro: usuario existe sin contraseña
-        existing.password_hash = hash_password(request.password)
+        existing.password_hash = hash_password(body.password)
         db.commit()
         return RegisterResponse(
             message="Registro completado. Ya puedes iniciar sesión.",
@@ -162,8 +183,8 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     es_socio = prefijo in SOCIOS_AUTORIZADOS
     nuevo_usuario = Usuario(
         email=email,
-        nombre=request.nombre.strip(),
-        password_hash=hash_password(request.password),
+        nombre=body.nombre.strip(),
+        password_hash=hash_password(body.password),
         es_socio=es_socio,
         activo=True
     )
@@ -234,8 +255,10 @@ async def change_password(
 
 
 @router.post("/cambiar-password-publico", response_model=CambiarPasswordPublicoResponse)
+@limiter.limit("10/minute")
 def cambiar_password_publico(
-    request: CambiarPasswordPublicoRequest,
+    request: Request,
+    body: CambiarPasswordPublicoRequest,
     db: Session = Depends(get_db)
 ):
     """
@@ -243,7 +266,7 @@ def cambiar_password_publico(
     Usado cuando un usuario tiene contraseña temporal y quiere cambiarla.
     """
     # Construir email completo
-    prefijo = request.prefijo_email.lower().strip()
+    prefijo = body.prefijo_email.lower().strip()
     if not prefijo:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -267,28 +290,28 @@ def cambiar_password_publico(
         )
     
     # Verificar contraseña actual
-    if not verify_password(request.password_actual, usuario.password_hash):
+    if not verify_password(body.password_actual, usuario.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Contraseña actual incorrecta"
         )
     
     # Validar longitud mínima
-    if len(request.password_nueva) < 6:
+    if len(body.password_nueva) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La nueva contraseña debe tener al menos 6 caracteres"
         )
     
     # Validar que sea diferente a la actual
-    if request.password_actual == request.password_nueva:
+    if body.password_actual == body.password_nueva:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La nueva contraseña debe ser diferente a la actual"
         )
     
     # Hashear y guardar nueva contraseña
-    usuario.password_hash = hash_password(request.password_nueva)
+    usuario.password_hash = hash_password(body.password_nueva)
     db.commit()
     
     return CambiarPasswordPublicoResponse(message="Contraseña actualizada correctamente")
@@ -349,7 +372,7 @@ def reset_password(
             detail="No puedes resetear tu propia contraseña. Usa 'Cambiar contraseña'"
         )
     
-    temp_password = "Temporal123"
+    temp_password = _generar_password_temporal()
     usuario.password_hash = hash_password(temp_password)
     db.commit()
     

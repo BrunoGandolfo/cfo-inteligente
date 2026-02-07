@@ -43,10 +43,16 @@ def client():
     
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = lambda: mock_user
-    
+
+    # Deshabilitar rate limiting en tests para no obtener 429 en múltiples requests
+    limiter = getattr(app.state, "limiter", None)
+    if limiter is not None:
+        original_enabled = limiter.enabled
+        limiter.enabled = False
     with TestClient(app) as test_client:
         yield test_client, mock_db
-    
+    if limiter is not None:
+        limiter.enabled = original_enabled
     app.dependency_overrides.clear()
 
 

@@ -1,0 +1,38 @@
+{
+  "fecha": "2026-02-02T19:01:23.719520+00:00",
+  "persona": {
+    "nombre": "Bruno Gaston Gandolfo Dos Santos",
+    "ci": "28677475"
+  },
+  "pep": {
+    "es_pep": false,
+    "match_ci": false,
+    "match_nombre": false,
+    "cargo": null,
+    "organismo": null,
+    "similitud": 0.3333333333333333
+  },
+  "onu": {
+    "aparece": false,
+    "nombres_encontrados": [],
+    "listas_consultadas": [
+      "1267",
+      "1988",
+      "1989",
+      "1718",
+      "1737",
+      "2231",
+      "1373"
+    ]
+  },
+  "riesgo": {
+    "nivel": "BAJO",
+    "factores": [
+      "Sin factores de riesgo",
+      "Elegible diligencia simplificada (LUC 2020)"
+    ],
+    "diligencia": "SIMPLIFICADA",
+    "valido_para_escritura": true
+  },
+  "hash": "sha256:32b5c034a79ce746c1fcfe7598ee1de5"
+}
