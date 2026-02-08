@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { steps } from './data/steps';
 import { useProgress } from './hooks/useProgress';
 import { useKeyboardNav } from './hooks/useKeyboardNav';
@@ -22,9 +22,24 @@ export default function App() {
   } = useProgress();
 
   const [view, setView] = useState<AppView>('setup');
+  const previousView = useRef<AppView | null>(null);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
 
   useKeyboardNav(currentStep, goToStep);
+
+  const handleChangeView = useCallback((newView: AppView) => {
+    previousView.current = view;
+    setView(newView);
+    window.scrollTo(0, 0);
+  }, [view]);
+
+  const handleGoBack = useCallback(() => {
+    if (previousView.current) {
+      setView(previousView.current);
+      previousView.current = null;
+      window.scrollTo(0, 0);
+    }
+  }, []);
 
   const handleGoToStep = useCallback(
     (i: number) => { goToStep(i); window.scrollTo(0, 0); },
@@ -51,7 +66,9 @@ export default function App() {
         percentage={percentage}
         currentPhase={currentPhase}
         currentView={view}
-        onChangeView={setView}
+        previousView={previousView.current}
+        onChangeView={handleChangeView}
+        onGoBack={handleGoBack}
         completed={completed}
         timestamps={timestamps}
       />

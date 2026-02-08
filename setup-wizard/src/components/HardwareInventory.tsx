@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useHardware } from '../hooks/useHardware';
-import type { HardwareItem } from '../types';
+import { CardExplainer } from './CardExplainer';
+import type { HardwareItem, DetectionResult } from '../types';
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   installed: { label: 'Instalado', className: 'hw-installed' },
@@ -38,15 +39,38 @@ function AddForm({ onAdd, onCancel }: { onAdd: (item: Omit<HardwareItem, 'id'>) 
   );
 }
 
+// Convert a HardwareItem into a DetectionResult-like object for the CardExplainer
+function hwToDetection(item: HardwareItem): DetectionResult {
+  return {
+    id: `hw_${item.id}`,
+    name: `${item.model}`,
+    category: 'hardware',
+    status: item.status === 'installed' ? 'ok' : 'warning',
+    message: item.specs,
+    details: [
+      `Categoria: ${item.category}`,
+      `Modelo: ${item.model}`,
+      `Specs: ${item.specs}`,
+      `Estado: ${item.status}`,
+      item.price ? `Precio: USD $${item.price}` : '',
+      item.notes ? `Notas: ${item.notes}` : '',
+    ].filter(Boolean).join('\n'),
+  };
+}
+
 export function HardwareInventory() {
   const { installed, pending, totalCost, loading, addItem, updateItem, deleteItem } = useHardware();
   const [showForm, setShowForm] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   if (loading) return <div className="view-container"><p>Cargando inventario...</p></div>;
 
   const handleDownloadDocx = () => {
     window.open('/api/docs/plan-maestro', '_blank');
   };
+
+  const allItems = [...installed, ...pending];
+  const expandedItem = expandedCard ? allItems.find(i => i.id === expandedCard) : null;
 
   return (
     <div className="view-container">
@@ -76,7 +100,14 @@ export function HardwareInventory() {
           <h3 className="hw-section-title">Instalado</h3>
           <div className="hw-grid">
             {installed.map(item => (
-              <HardwareCard key={item.id} item={item} onUpdate={updateItem} onDelete={deleteItem} />
+              <HardwareCard
+                key={item.id}
+                item={item}
+                isExpanded={expandedCard === item.id}
+                onToggleExplainer={() => setExpandedCard(prev => prev === item.id ? null : item.id)}
+                onUpdate={updateItem}
+                onDelete={deleteItem}
+              />
             ))}
           </div>
         </>
@@ -87,10 +118,24 @@ export function HardwareInventory() {
           <h3 className="hw-section-title">Pedido / Pendiente</h3>
           <div className="hw-grid">
             {pending.map(item => (
-              <HardwareCard key={item.id} item={item} onUpdate={updateItem} onDelete={deleteItem} />
+              <HardwareCard
+                key={item.id}
+                item={item}
+                isExpanded={expandedCard === item.id}
+                onToggleExplainer={() => setExpandedCard(prev => prev === item.id ? null : item.id)}
+                onUpdate={updateItem}
+                onDelete={deleteItem}
+              />
             ))}
           </div>
         </>
+      )}
+
+      {expandedItem && (
+        <CardExplainer
+          component={hwToDetection(expandedItem)}
+          onClose={() => setExpandedCard(null)}
+        />
       )}
     </div>
   );
@@ -98,20 +143,33 @@ export function HardwareInventory() {
 
 function HardwareCard({
   item,
+  isExpanded,
+  onToggleExplainer,
   onUpdate,
   onDelete,
 }: {
   item: HardwareItem;
+  isExpanded: boolean;
+  onToggleExplainer: () => void;
   onUpdate: (id: string, u: Partial<HardwareItem>) => void;
   onDelete: (id: string) => void;
 }) {
   const cfg = statusConfig[item.status] || statusConfig.pending;
 
   return (
-    <div className={`hw-card ${cfg.className}`}>
+    <div className={`hw-card ${cfg.className} ${isExpanded ? 'hw-card-active' : ''}`}>
       <div className="hw-card-header">
         <span className="hw-category">{item.category}</span>
-        <span className={`hw-status-badge ${cfg.className}`}>{cfg.label}</span>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <button
+            className={`learn-btn ${isExpanded ? 'learn-btn-active' : ''}`}
+            onClick={onToggleExplainer}
+            title={isExpanded ? 'Cerrar explicacion' : 'Aprender sobre este componente'}
+          >
+            {isExpanded ? '✕' : '📖'}
+          </button>
+          <span className={`hw-status-badge ${cfg.className}`}>{cfg.label}</span>
+        </div>
       </div>
       <div className="hw-model">{item.model}</div>
       <div className="hw-specs">{item.specs}</div>

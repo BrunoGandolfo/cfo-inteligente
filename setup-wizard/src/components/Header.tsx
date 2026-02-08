@@ -6,7 +6,9 @@ interface HeaderProps {
   percentage: number;
   currentPhase: number;
   currentView: AppView;
+  previousView: AppView | null;
   onChangeView: (view: AppView) => void;
+  onGoBack: () => void;
   completed: ProgressState['completed'];
   timestamps: ProgressState['timestamps'];
 }
@@ -17,7 +19,7 @@ const tabs: { id: AppView; label: string }[] = [
   { id: 'sistema', label: 'Sistema' },
 ];
 
-export function Header({ percentage, currentPhase, currentView, onChangeView, completed, timestamps }: HeaderProps) {
+export function Header({ percentage, currentPhase, currentView, previousView, onChangeView, onGoBack, completed, timestamps }: HeaderProps) {
   const { exportMarkdown } = useExport({ completed, timestamps, percentage });
 
   return (
@@ -25,9 +27,14 @@ export function Header({ percentage, currentPhase, currentView, onChangeView, co
       <div className="header-top">
         <div>
           <h1 className="header-title">Centro de Control — Dual RTX 5090</h1>
-          <p className="header-subtitle">Infraestructura de IA local para CFO Inteligente</p>
+          <p className="header-subtitle">Infraestructura de IA local</p>
         </div>
         <div className="header-right">
+          {previousView && currentView !== 'setup' && (
+            <button className="back-btn" onClick={onGoBack} title="Volver">
+              ← Volver
+            </button>
+          )}
           <button className="export-btn" onClick={exportMarkdown} title="Exportar progreso a Markdown">
             Exportar .md
           </button>

@@ -113,3 +113,80 @@ claudeRoutes.post('/ask', async (req, res) => {
     res.status(500).json({ error: 'Error llamando a Claude', details: String(err) });
   }
 });
+
+// ============================================================
+//  Endpoint pedagogico — chat conversacional por componente
+// ============================================================
+
+const TEACHER_PROMPT = `Eres un profesor experto en infraestructura de IA y hardware de computadoras. Tu estudiante es un desarrollador de software que orquesta IAs pero necesita aprender sobre hardware y sistemas.
+
+REGLAS PEDAGOGICAS:
+- Responde en espanol
+- Explica como si hablaras con alguien inteligente que simplemente no tiene experiencia en hardware
+- Usa analogias del mundo real cuando sea posible
+- Cuando expliques un concepto, menciona POR QUE importa para su caso de uso (IA local con dual RTX 5090)
+- Si el componente tiene un estado problematico, explica que significa y como resolverlo
+- Usa formato con saltos de linea para que sea facil de leer
+- Cuando tenga sentido, describe un diagrama conceptual en texto (usa caracteres como ┌─┐│└─┘ para diagramas simples)
+- Se amigable y motivador — el usuario esta aprendiendo y eso es valioso
+
+HARDWARE DEL USUARIO:
+{HARDWARE}`;
+
+claudeRoutes.post('/explain', async (req, res) => {
+  const client = getClient();
+  if (!client) {
+    return res.status(503).json({ error: 'API key no configurada' });
+  }
+
+  const { componentId, componentName, componentStatus, componentMessage, componentDetails, messages } = req.body;
+
+  if (!componentId || !messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Faltan campos requeridos (componentId, messages)' });
+  }
+
+  const hardware = loadHardwareContext();
+  const systemPrompt = TEACHER_PROMPT.replace('{HARDWARE}', hardware);
+
+  // Build the context about the component
+  const componentContext = [
+    `COMPONENTE: ${componentName || componentId}`,
+    `ESTADO: ${componentStatus || 'desconocido'}`,
+    componentMessage ? `INFO: ${componentMessage}` : '',
+    componentDetails ? `DETALLES:\n${componentDetails}` : '',
+  ].filter(Boolean).join('\n');
+
+  // Build conversation messages, injecting component context in first user message
+  const apiMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    if (i === 0 && msg.role === 'user') {
+      // First message gets component context prepended
+      apiMessages.push({
+        role: 'user',
+        content: `${componentContext}\n\n${msg.content}`,
+      });
+    } else {
+      apiMessages.push({ role: msg.role, content: msg.content });
+    }
+  }
+
+  try {
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 3000,
+      system: systemPrompt,
+      messages: apiMessages,
+    });
+
+    const text = message.content
+      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      .map(b => b.text)
+      .join('\n');
+
+    res.json({ response: text, model: message.model, usage: message.usage });
+  } catch (err) {
+    res.status(500).json({ error: 'Error llamando a Claude', details: String(err) });
+  }
+});

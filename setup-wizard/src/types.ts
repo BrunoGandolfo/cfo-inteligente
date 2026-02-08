@@ -37,14 +37,29 @@ export interface ProgressState {
 }
 
 // System detection
+export type DetectionCategory = 'hardware' | 'ai_runtime' | 'ai_frameworks' | 'ai_servers' | 'dev_tools';
+
 export interface DetectionResult {
   id: string;
   name: string;
+  category: DetectionCategory;
   status: 'ok' | 'warning' | 'error' | 'not_installed';
   version?: string;
   details?: string;
   message: string;
 }
+
+export const CATEGORY_LABELS: Record<DetectionCategory, string> = {
+  hardware: 'Hardware',
+  ai_runtime: 'Runtime IA (CUDA, Drivers)',
+  ai_frameworks: 'Frameworks IA',
+  ai_servers: 'Servidores IA',
+  dev_tools: 'Herramientas de Desarrollo',
+};
+
+export const CATEGORY_ORDER: DetectionCategory[] = [
+  'hardware', 'ai_runtime', 'ai_frameworks', 'ai_servers', 'dev_tools',
+];
 
 export interface SystemDetection {
   timestamp: string;
