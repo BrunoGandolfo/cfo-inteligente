@@ -1,0 +1,108 @@
+[
+  {
+    "id": "cpu",
+    "category": "CPU",
+    "model": "Intel Core Ultra 9 285K",
+    "specs": "24 cores, Arrow Lake, LGA 1851, PCIe 5.0",
+    "status": "installed"
+  },
+  {
+    "id": "gpu1",
+    "category": "GPU",
+    "model": "NVIDIA RTX 5090",
+    "specs": "32 GB GDDR7, Driver 581.80, Compute 12.0 (Blackwell)",
+    "status": "installed"
+  },
+  {
+    "id": "ram-current",
+    "category": "RAM",
+    "model": "DDR5",
+    "specs": "~48 GB (configuracion actual)",
+    "status": "installed"
+  },
+  {
+    "id": "storage-1tb",
+    "category": "Almacenamiento",
+    "model": "NVMe 1TB",
+    "specs": "580 GB libres",
+    "status": "installed"
+  },
+  {
+    "id": "gpu2",
+    "category": "GPU",
+    "model": "MSI GeForce RTX 5090 Gaming Trio OC",
+    "specs": "32 GB GDDR7 — segunda GPU",
+    "status": "ordered",
+    "price": 4135
+  },
+  {
+    "id": "mobo",
+    "category": "Motherboard",
+    "model": "MSI MEG Z890 ACE",
+    "specs": "LGA 1851, DDR5, 2x PCIe 5.0 x16 (x16/x8 con dual GPU), 5x M.2",
+    "status": "ordered"
+  },
+  {
+    "id": "psu",
+    "category": "Fuente",
+    "model": "Seasonic Prime PX-1600 ATX 3.1",
+    "specs": "1600W Platinum, cables nativos 12V-2x6",
+    "status": "ordered",
+    "price": 671
+  },
+  {
+    "id": "case",
+    "category": "Gabinete",
+    "model": "Corsair 9000D RGB Airflow",
+    "specs": "Full Tower, E-ATX, soporte dual GPU con separacion",
+    "status": "ordered",
+    "price": 597
+  },
+  {
+    "id": "ram-upgrade",
+    "category": "RAM",
+    "model": "Corsair Dominator Platinum DDR5 6000MHz",
+    "specs": "4x48 GB = 192 GB total",
+    "status": "ordered",
+    "price": 2313
+  },
+  {
+    "id": "storage-4tb-1",
+    "category": "Almacenamiento",
+    "model": "M.2 4TB (disco 1)",
+    "specs": "Recomendado: slot M2_1 (Gen5, CPU). Para modelos IA.",
+    "status": "pending",
+    "notes": "Ya lo tiene Daniel"
+  },
+  {
+    "id": "storage-4tb-2",
+    "category": "Almacenamiento",
+    "model": "M.2 4TB (disco 2)",
+    "specs": "Cualquier slot M2_2-M2_5 (Gen4, chipset). Almacenamiento general.",
+    "status": "pending",
+    "notes": "Ya lo tiene Daniel"
+  },
+  {
+    "id": "cooling",
+    "category": "Ventilacion",
+    "model": "Corsair iCUE Link LX120 + QL120 RGB x3",
+    "specs": "9+ ventiladores para disipar ~1,300W",
+    "status": "ordered",
+    "price": 413
+  },
+  {
+    "id": "psu-adapter",
+    "category": "Adaptador",
+    "model": "Add2PSU o similar",
+    "specs": "Sincroniza encendido de 2 fuentes",
+    "status": "pending",
+    "notes": "Daniel resuelve montaje en gabinete"
+  },
+  {
+    "id": "psu2",
+    "category": "Fuente",
+    "model": "Fuente secundaria (actual o nueva)",
+    "specs": "Para segunda GPU. Daniel evalua si la actual sirve.",
+    "status": "pending"
+  }
+]
