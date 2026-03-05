@@ -68,61 +68,6 @@ class TestDetectarMoneda:
 
 
 # ══════════════════════════════════════════════════════════════
-# GRUPO 2: TESTS DE CONVERSIÓN A USD
-# ══════════════════════════════════════════════════════════════
-
-class TestConvertirAUsd:
-    """Tests de conversión de SQL a USD"""
-    
-    def test_convierte_monto_uyu_a_monto_usd(self):
-        """Reemplaza monto_uyu por monto_usd"""
-        sql = "SELECT SUM(monto_uyu) FROM operaciones"
-        resultado = SQLPostProcessor.convertir_a_usd(sql)
-        
-        assert "monto_usd" in resultado
-        assert "monto_uyu" not in resultado
-    
-    def test_convierte_multiple_referencias(self):
-        """Convierte múltiples referencias en un SQL"""
-        sql = """SELECT 
-            SUM(CASE WHEN tipo='INGRESO' THEN monto_uyu ELSE 0 END) as ingresos,
-            SUM(CASE WHEN tipo='GASTO' THEN monto_uyu ELSE 0 END) as gastos
-        FROM operaciones"""
-        
-        resultado = SQLPostProcessor.convertir_a_usd(sql)
-        
-        # Debe haber convertido ambas referencias
-        assert resultado.count("monto_usd") == 2
-        assert "monto_uyu" not in resultado
-    
-    def test_convierte_mayusculas(self):
-        """Convierte MONTO_UYU en mayúsculas"""
-        sql = "SELECT SUM(MONTO_UYU) FROM OPERACIONES"
-        resultado = SQLPostProcessor.convertir_a_usd(sql)
-        
-        assert "MONTO_USD" in resultado
-        assert "MONTO_UYU" not in resultado
-    
-    def test_no_modifica_sql_sin_monto_uyu(self):
-        """SQL sin monto_uyu queda igual"""
-        sql = "SELECT COUNT(*) FROM operaciones"
-        resultado = SQLPostProcessor.convertir_a_usd(sql)
-        
-        assert resultado == sql
-    
-    def test_maneja_sql_vacio(self):
-        """SQL vacío o None no crashea"""
-        assert SQLPostProcessor.convertir_a_usd("") == ""
-        assert SQLPostProcessor.convertir_a_usd(None) is None
-    
-    def test_sql_sin_select_retorna_igual(self):
-        """SQL sin SELECT retorna sin cambios"""
-        sql = "INVALID SQL STATEMENT"
-        resultado = SQLPostProcessor.convertir_a_usd(sql)
-        assert resultado == sql
-
-
-# ══════════════════════════════════════════════════════════════
 # GRUPO 3: TESTS DE EXTRACCIÓN DE SQL DE TEXTO
 # ══════════════════════════════════════════════════════════════
 

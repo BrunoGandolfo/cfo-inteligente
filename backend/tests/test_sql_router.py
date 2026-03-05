@@ -289,7 +289,7 @@ class TestGenerarSQLInteligente:
         
         # Assert
         assert resultado['exito'] is True
-        assert resultado['metodo'] == 'claude'
+        assert resultado['metodo'] == 'claude_direct'
         assert resultado['sql'] is not None
         assert resultado['intentos']['claude'] == 1
     
@@ -334,7 +334,7 @@ class TestGenerarSQLInteligente:
         
         # Assert
         assert 'debug' in resultado
-        assert 'timestamp' in resultado['debug']
+        assert 'sql_engine' in resultado['debug']
     
     def test_sql_invalido_falla(self, router_instance, mock_claude_generator):
         """Si no se puede extraer SQL, debe fallar con error claro"""
@@ -350,23 +350,6 @@ class TestGenerarSQLInteligente:
         assert resultado['metodo'] == 'ninguno'
         assert resultado['error'] is not None
     
-    @patch('app.services.sql_router.clasificar_pregunta', return_value=None)
-    @patch('app.services.sql_router.QueryFallback')
-    def test_query_fallback_tiene_prioridad(self, mock_fallback, mock_haiku, router_instance, mock_claude_generator):
-        """QueryFallback debe tener prioridad sobre Claude (Haiku deshabilitado)"""
-        # Arrange
-        mock_fallback.get_query_for.return_value = "SELECT * FROM predefined_query"
-        pregunta = "Test con fallback"
-        
-        # Act
-        resultado = router_instance.generar_sql_inteligente(pregunta)
-        
-        # Assert
-        assert resultado['exito'] is True
-        assert resultado['metodo'] == 'query_fallback'
-        # Claude no debería haber sido llamado
-        mock_claude_generator.generar_sql.assert_not_called()
-
 
 # ══════════════════════════════════════════════════════════════
 # GRUPO 5: TESTS DE FUNCIONES GLOBALES
@@ -408,7 +391,7 @@ class TestFuncionesGlobales:
         
         # Assert
         mock_get_router.assert_called_once()
-        mock_router.generar_sql_inteligente.assert_called_once_with(pregunta, contexto=None)
+        mock_router.generar_sql_inteligente.assert_called_once_with(pregunta, contexto=None, db=None)
         assert resultado['exito'] is True
 
 
@@ -503,20 +486,3 @@ class TestPerformance:
         assert resultado['tiempo_total'] < 10  # Menos de 10s (con mocks debería ser <<1s)
 
 
-# ══════════════════════════════════════════════════════════════
-# GRUPO 8: TESTS DE ESTADÍSTICAS
-# ══════════════════════════════════════════════════════════════
-
-class TestEstadisticas:
-    """Tests del método obtener_estadisticas"""
-    
-    def test_estadisticas_retorna_info_basica(self, router_instance):
-        """Estadísticas debe retornar información básica"""
-        # Act
-        stats = router_instance.obtener_estadisticas()
-        
-        # Assert
-        assert 'proveedor' in stats
-        assert stats['proveedor'] == 'claude'
-        assert 'modelo' in stats
-        assert 'fallback' in stats

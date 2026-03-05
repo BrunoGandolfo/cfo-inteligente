@@ -26,6 +26,38 @@ from app.services.sql_router import generar_sql_inteligente
 from app.services.validador_sql import ValidadorSQL
 
 
+# SQLs válidos para el pipeline actual (evitan rechazo de validación pre-SQL)
+SQL_VALIDO_CONTEO = """
+SELECT COUNT(*) as total
+FROM operaciones
+WHERE deleted_at IS NULL
+  AND DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
+"""
+
+SQL_VALIDO_FACTURACION = """
+SELECT SUM(monto_uyu) as total
+FROM operaciones
+WHERE tipo_operacion = 'INGRESO'
+  AND deleted_at IS NULL
+  AND DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
+"""
+
+SQL_VALIDO_RENTABILIDAD = """
+SELECT
+    ROUND(
+        (
+            (SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END) -
+             SUM(CASE WHEN tipo_operacion='GASTO' THEN monto_uyu ELSE 0 END))
+            / NULLIF(SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END), 0)
+        ) * 100,
+        2
+    ) AS rentabilidad
+FROM operaciones
+WHERE deleted_at IS NULL
+  AND DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
+"""
+
+
 # ══════════════════════════════════════════════════════════════
 # CONFIGURACIÓN DE BD DE TEST
 # ══════════════════════════════════════════════════════════════
@@ -57,7 +89,7 @@ class TestEndpointCFOAsk:
     def test_endpoint_pregunta_simple(self, mock_orchestrator, mock_claude_gen, client_api):
         """Endpoint con pregunta simple debe retornar respuesta"""
         # Arrange
-        mock_claude_gen.return_value = "SELECT COUNT(*) as total FROM operaciones WHERE deleted_at IS NULL"
+        mock_claude_gen.return_value = SQL_VALIDO_CONTEO
         
         # Mock AIOrchestrator narrativo
         mock_orchestrator.return_value = "Hay 2,290 operaciones en total."
@@ -147,7 +179,7 @@ class TestEndpointCFOAsk:
         """Response debe tener formato correcto siempre"""
         # Arrange
         with patch('app.services.claude_sql_generator.ClaudeSQLGenerator.generar_sql') as mock_gen:
-            mock_gen.return_value = "SELECT 1 as numero"
+            mock_gen.return_value = SQL_VALIDO_CONTEO
             
             with patch('app.api.cfo_ai._orchestrator.complete') as mock_orchestrator:
                 mock_orchestrator.return_value = "El número es 1"
@@ -320,7 +352,7 @@ class TestFlujoCompletoEndToEnd:
     def test_flujo_completo_pregunta_facturacion(self, mock_orchestrator, mock_sql_gen, client_api):
         """Flujo completo: Pregunta → SQL → BD → Narrativa → Response"""
         # Arrange
-        sql = "SELECT SUM(monto_uyu) as total FROM operaciones WHERE tipo_operacion='INGRESO' AND deleted_at IS NULL"
+        sql = SQL_VALIDO_FACTURACION
         mock_sql_gen.return_value = sql
         
         # Mock AIOrchestrator narrativo
@@ -337,7 +369,7 @@ class TestFlujoCompletoEndToEnd:
         
         # Verificar flujo completo
         assert data['status'] == 'success'
-        assert data['sql_generado'] == sql
+        assert data['sql_generado'].strip() == sql.strip()
         assert 'datos_raw' in data
         assert len(data['datos_raw']) > 0
         assert 'total' in data['datos_raw'][0]
@@ -780,7 +812,7 @@ class TestCFOAIFallback:
     def test_respuesta_no_es_vacia_nunca(self, mock_orchestrator, mock_claude_gen, client_api):
         """La respuesta nunca debe ser vacía cuando hay datos"""
         # Arrange
-        mock_claude_gen.return_value = "SELECT SUM(monto_uyu) as total FROM operaciones WHERE deleted_at IS NULL"
+        mock_claude_gen.return_value = SQL_VALIDO_FACTURACION
         mock_orchestrator.return_value = "Respuesta válida con contenido suficiente."
         
         # Act
@@ -809,7 +841,7 @@ class TestCFOAIContenido:
     def test_respuesta_facturacion_contiene_monto(self, mock_orchestrator, mock_claude_gen, client_api):
         """Una pregunta sobre facturación debe retornar montos"""
         # Arrange
-        mock_claude_gen.return_value = "SELECT SUM(monto_uyu) as total FROM operaciones WHERE tipo_operacion = 'INGRESO'"
+        mock_claude_gen.return_value = SQL_VALIDO_FACTURACION
         mock_orchestrator.return_value = "La facturación total es de $12,340,659.99 UYU"
         
         # Act
@@ -833,7 +865,7 @@ class TestCFOAIContenido:
     def test_respuesta_rentabilidad_contiene_porcentaje(self, mock_orchestrator, mock_claude_gen, client_api):
         """Una pregunta sobre rentabilidad debe retornar porcentaje"""
         # Arrange
-        mock_claude_gen.return_value = "SELECT (ingresos-gastos)/ingresos*100 as rentabilidad FROM ..."
+        mock_claude_gen.return_value = SQL_VALIDO_RENTABILIDAD
         mock_orchestrator.return_value = "La rentabilidad del período es **68.30%**"
         
         # Act
@@ -854,7 +886,7 @@ class TestCFOAIContenido:
     def test_sql_generado_se_incluye_en_response(self, mock_orchestrator, mock_claude_gen, client_api):
         """El SQL generado debe incluirse en la respuesta para auditoría"""
         # Arrange
-        sql_esperado = "SELECT COUNT(*) as total FROM operaciones WHERE deleted_at IS NULL"
+        sql_esperado = SQL_VALIDO_CONTEO
         mock_claude_gen.return_value = sql_esperado
         mock_orchestrator.return_value = "Hay 2,391 operaciones."
         
@@ -875,7 +907,7 @@ class TestCFOAIContenido:
     def test_metadata_incluye_informacion_util(self, mock_orchestrator, mock_claude_gen, client_api):
         """La metadata debe incluir información útil para debugging"""
         # Arrange
-        mock_claude_gen.return_value = "SELECT 1"
+        mock_claude_gen.return_value = SQL_VALIDO_CONTEO
         mock_orchestrator.return_value = "Respuesta de prueba"
         
         # Act
