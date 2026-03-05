@@ -565,7 +565,6 @@ def _query_concentracion_clientes() -> str:
               AND deleted_at IS NULL
               AND fecha >= :fecha_desde
               AND fecha <= :fecha_hasta
-              AND cliente IS NOT NULL AND cliente != ''
         ),
         ranking AS (
             SELECT
