@@ -10,3 +10,17 @@ test_reporte_*.pdf
 test_*.pdf
 ANALISIS_FORENSE_PDF_COMPLETO.md
 .coverage
+
+# Archivos temporales de debug/testing
+.env.production.bak
+scripts/baseline_results_*.json
+scripts/analizar_shadow.py
+scripts/test_100_preguntas.py
+scripts/test_chat_cfo_full.py
+scripts/test_dispatch.py
+scripts/test_e2e_100_preguntas.py
+scripts/test_exhaustive_post_fix.py
+scripts/test_exhaustivo_haiku.py
+scripts/test_golden_baseline.py
+scripts/test_haiku_router_real.py
+docs/test_*.json
