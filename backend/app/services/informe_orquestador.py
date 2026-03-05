@@ -600,8 +600,8 @@ def _query_capital_trabajo() -> str:
     """
     Capital de trabajo y ratios de sostenibilidad.
 
-    Calcula cuánto queda en la empresa después de gastos, retiros y distribuciones,
-    y los ratios de extracción sobre ingresos y sobre resultado neto.
+    Calcula cuánto queda en la empresa después de gastos y distribuciones,
+    y los ratios de distribuciones sobre ingresos y sobre resultado neto.
     """
     return """
         SELECT
@@ -613,26 +613,23 @@ def _query_capital_trabajo() -> str:
             SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) AS resultado_neto_uyu,
             SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -
             SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) -
-            SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END) -
             SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) AS capital_trabajo_uyu,
             CASE
                 WHEN SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) = 0 THEN 0
                 ELSE ROUND(
-                    (SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END) +
-                     SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END)) * 100.0 /
+                    SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) * 100.0 /
                     SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END), 1
                 )
-            END AS ratio_extracciones_sobre_ingresos,
+            END AS ratio_distribuciones_sobre_ingresos,
             CASE
                 WHEN (SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -
                       SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END)) = 0 THEN 0
                 ELSE ROUND(
-                    (SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END) +
-                     SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END)) * 100.0 /
+                    SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) * 100.0 /
                     (SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -
                      SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END)), 1
                 )
-            END AS ratio_extracciones_sobre_resultado
+            END AS ratio_distribuciones_sobre_resultado
         FROM operaciones
         WHERE deleted_at IS NULL
           AND fecha >= :fecha_desde
@@ -643,7 +640,7 @@ def _query_capital_trabajo() -> str:
 def _query_evolucion_trimestral() -> str:
     """
     Evolución trimestral con ingresos, gastos, resultado, rentabilidad,
-    retiros, distribuciones y capital retenido por Q.
+    capital retenido por Q (considerando distribuciones).
     """
     return """
         SELECT
@@ -665,7 +662,6 @@ def _query_evolucion_trimestral() -> str:
             SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) AS distribuciones_uyu,
             SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -
             SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) -
-            SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END) -
             SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) AS capital_retenido_uyu,
             COUNT(*) AS total_operaciones
         FROM operaciones
@@ -816,10 +812,9 @@ def _ensamblar_totales(filas_tipo: list[dict]) -> dict:
         "rentabilidad": round((ing - gas) / ing * 100, 1) if ing > 0 else 0,
     }
     # Capital de trabajo
-    ret = totales.get("retiros", {}).get("uyu", 0) or 0
     dist = totales.get("distribuciones", {}).get("uyu", 0) or 0
     totales["capital_de_trabajo"] = {
-        "uyu": round(ing - gas - ret - dist, 2),
+        "uyu": round(ing - gas - dist, 2),
     }
 
     return totales
@@ -1039,8 +1034,8 @@ def _formatear_informe_para_narrativa(informe: dict) -> str:
     if cap:
         lineas.append("RATIOS DE SOSTENIBILIDAD:")
         lineas.append(f"  Capital disponible:             {_fmt_uyu(cap.get('capital_trabajo_uyu', 0))}")
-        lineas.append(f"  Ratio extracciones/ingresos:    {_fmt_pct(cap.get('ratio_extracciones_sobre_ingresos', 0))}")
-        lineas.append(f"  Ratio extracciones/resultado:   {_fmt_pct(cap.get('ratio_extracciones_sobre_resultado', 0))}")
+        lineas.append(f"  Ratio distribuciones/ingresos:  {_fmt_pct(cap.get('ratio_distribuciones_sobre_ingresos', 0))}")
+        lineas.append(f"  Ratio distribuciones/resultado: {_fmt_pct(cap.get('ratio_distribuciones_sobre_resultado', 0))}")
         lineas.append("")
 
     # --- POR ÁREA ---
@@ -1494,8 +1489,8 @@ def _formatear_comparativo_para_narrativa(resultado_comparativo: dict) -> str:
             f"{per_act}: {_fmt_uyu(cap_act.get('capital_trabajo_uyu', 0))}"
         )
         lineas.append(
-            f"  Ratio extracciones  {per_ant}: {_fmt_pct(cap_ant.get('ratio_extracciones_sobre_resultado', 0))}  "
-            f"{per_act}: {_fmt_pct(cap_act.get('ratio_extracciones_sobre_resultado', 0))}"
+            f"  Ratio distribuciones {per_ant}: {_fmt_pct(cap_ant.get('ratio_distribuciones_sobre_resultado', 0))}  "
+            f"{per_act}: {_fmt_pct(cap_act.get('ratio_distribuciones_sobre_resultado', 0))}"
         )
         lineas.append("")
 

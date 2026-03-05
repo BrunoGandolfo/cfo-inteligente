@@ -107,9 +107,15 @@ def crear_retiro(db: Session, data: RetiroCreate):
         monto_original = data.monto_usd
         moneda_original = Moneda.USD
     
-    # Para RETIRO, calcular totales sumando ambos componentes pesificados/dolarizados
-    total_pesificado = monto_uyu + (monto_usd * data.tipo_cambio)
-    total_dolarizado = monto_usd + (monto_uyu / data.tipo_cambio)
+    # Para RETIRO, calcular totales pesificados/dolarizados
+    if data.monto_uyu and data.monto_usd:
+        # Retiro mixto: ambos montos son independientes → sumar ambos componentes
+        total_pesificado = monto_uyu + (monto_usd * data.tipo_cambio)
+        total_dolarizado = monto_usd + (monto_uyu / data.tipo_cambio)
+    else:
+        # Un solo monto: el otro es derivado → usar directamente
+        total_pesificado = monto_uyu
+        total_dolarizado = monto_usd
     
     operacion = Operacion(
         tipo_operacion=TipoOperacion.RETIRO,

@@ -299,8 +299,8 @@ class TestEnsamblarTotales:
         assert totales["resultado_neto"]["uyu"] == 11400000.0
         assert totales["resultado_neto"]["rentabilidad"] == 33.0
 
-        # Capital de trabajo = ingresos - gastos - retiros - distribuciones
-        esperado_capital = 34500000 - 23100000 - 7443006 - 22975209
+        # Capital de trabajo = ingresos - gastos - distribuciones
+        esperado_capital = 34500000 - 23100000 - 22975209
         assert totales["capital_de_trabajo"]["uyu"] == esperado_capital
 
     def test_sin_retiros_ni_distribuciones(self):
@@ -538,7 +538,7 @@ class TestEjecutarInforme:
         result = ejecutar_informe(db, "informe completo 2025")
 
         capital = result["totales"]["capital_de_trabajo"]["uyu"]
-        esperado = 34500000.0 - 23100000.0 - 7443006.0 - 22975209.0
+        esperado = 34500000.0 - 23100000.0 - 22975209.0
         assert capital == esperado
 
     def test_informe_sin_anio_retorna_none(self):

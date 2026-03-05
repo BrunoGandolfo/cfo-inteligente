@@ -71,7 +71,7 @@ class TestInicializacion:
         # Verificar reglas importantes
         reglas_esperadas = [
             'REGLA ABSOLUTA: Resultado neto = Ingresos - Gastos',
-            'Capital de trabajo = Ingresos - Gastos - Retiros - Distribuciones.',
+            'Capital de trabajo = Ingresos - Gastos - Distribuciones.',
             "Fecha actual: {FECHA_ACTUAL}",
             "DATE_TRUNC('month', CURRENT_DATE)",
         ]

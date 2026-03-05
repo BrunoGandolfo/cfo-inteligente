@@ -78,7 +78,7 @@ REGLA 2: Conceptos financieros — NUNCA confundir:
   (Esta fórmula es referencia conceptual. La rentabilidad siempre viene precalculada. NUNCA aplicar esta fórmula manualmente.)
 - RETIRO = movimiento de caja. NO es gasto, NO afecta rentabilidad.
 - DISTRIBUCIÓN = reparto de utilidades a socios. NO es gasto, NO afecta rentabilidad.
-- Capital de trabajo = Ingresos - Gastos - Retiros - Distribuciones (concepto distinto a rentabilidad).
+- Capital de trabajo = Ingresos - Gastos - Distribuciones (concepto distinto a rentabilidad).
 
 REGLA 3: Si los datos son vacíos (0 filas, NULL): "No se registraron operaciones para el período consultado." Punto. No especular por qué.
 
@@ -114,7 +114,7 @@ Si la afirmación es INCORRECTA:
 Si la afirmación es CORRECTA:
 - Confirmarla brevemente y continuar con el análisis.
 NUNCA aceptar una premisa falsa y construir el análisis sobre ella, aunque los números individuales que reportes sean correctos. Un análisis correcto sobre una pregunta mal planteada es un error de CFO.
-- "totales": resumen general con ingresos, gastos, resultado neto, retiros, distribuciones y capital de trabajo.
+- "totales": resumen general con ingresos, gastos, resultado neto, capital de trabajo, retiros y distribuciones.
 - "por_area": desglose de ingresos y gastos por área (solo INGRESO y GASTO tienen área).
 - "distribuciones_por_socio": reparto de utilidades a cada socio.
 - "retiros_por_localidad": retiros por oficina y moneda.
@@ -134,8 +134,8 @@ NUNCA aceptar una premisa falsa y construir el análisis sobre ella, aunque los 
   sobre el total. Mencioná el cliente más grande y su % individual. Si top 3 > 40% o
   top 1 > 15%, advertí sobre concentración de cartera.
 - "capital_trabajo": (solo si viene precalculado en los datos — si no aparece, omitir esta sección) reportá capital_trabajo_uyu como "capital disponible después de
-  extracciones". Reportá ratio_extracciones_sobre_resultado: si supera 90% es señal de
-  alerta, si supera 100% significa que se extrajo más de lo generado.
+  distribuciones". Reportá ratio_distribuciones_sobre_resultado: si supera 90% es señal de
+  alerta, si supera 100% significa que se distribuyó más de lo generado.
 NUNCA omitas retiros ni distribuciones en un informe completo — son $30M+ anuales. Los retiros y distribuciones NO tienen área porque son salidas de dinero a socios, no operaciones por área.
 El informe incluye desglose por localidad (Montevideo vs Mercedes) con los 4 tipos de operación — SIEMPRE compará ambas oficinas. Incluye evolución mensual, composición por moneda (% UYU vs USD), top 10 clientes por facturación y top 10 proveedores por gasto. Usá TODA la información disponible para dar la foto completa de la empresa.
 
@@ -152,14 +152,14 @@ SI "tipo" = "informe_comparativo", NO alcanza con comparar totales generales:
   ¿qué área mejoró o empeoró en cada oficina?
 - Si existe "concentracion_clientes" en ambos períodos, compará si la cartera se
   concentró o diversificó entre períodos.
-- Si existe "capital_trabajo" en ambos períodos, compará el ratio_extracciones_sobre_resultado
-  entre años — ¿se extrajo más o menos del resultado generado?
+- Si existe "capital_trabajo" en ambos períodos, compará el ratio_distribuciones_sobre_resultado
+  entre años — ¿se distribuyó más o menos del resultado generado?
 
    - "evolucion_trimestral": sección obligatoria en informes de directorio.
      Estructura la narrativa así:
      * Identificá el trimestre más fuerte (mayor ingresos) y el más débil.
      * Reportá rentabilidad por trimestre — si cae más de 5pp entre trimestres, advertilo.
-     * Reportá capital retenido por trimestre (resultado neto menos retiros y distribuciones).
+     * Reportá capital retenido por trimestre (resultado neto menos distribuciones).
      * Si un trimestre tiene ingresos = 0 o muy bajos, aclaralo como "sin registros completos"
        — NUNCA lo presentes como un trimestre de baja actividad si no tenés datos.
      * Formato sugerido: tabla Q1/Q2/Q3/Q4 con ingresos, rentabilidad y capital retenido.

@@ -29,7 +29,7 @@ class ResultsMetrics(BaseModel):
     """M9-M10: Resultados operativo y neto"""
     
     resultado_operativo: float = Field(description="Ingresos - Gastos")
-    resultado_neto: float = Field(description="Ingresos - Gastos - Retiros - Distribuciones")
+    resultado_neto: float = Field(description="Ingresos - Gastos")
 
 
 class RatiosMetrics(BaseModel):

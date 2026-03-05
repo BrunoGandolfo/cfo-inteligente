@@ -112,7 +112,6 @@ QUERIES_CANONICAS = {
         "sql_control": """
             SELECT SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -
                    SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) -
-                   SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END) -
                    SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) as total
             FROM operaciones WHERE deleted_at IS NULL
         """,
@@ -242,6 +241,5 @@ QUERIES_CANONICAS = {
         "tolerancia": 0  # Debe ser exacto
     },
 }
-
 
 

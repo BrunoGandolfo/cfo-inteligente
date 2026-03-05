@@ -187,7 +187,7 @@ Resultado neto                    | operaciones            | --                 
 Rentabilidad                      | operaciones            | --                                 | (Ingresos-Gastos)/Ingresos*100. Division por cero con CASE WHEN.
 Resultado/Rentabilidad por area   | operaciones            | INNER JOIN areas                   | Solo INGRESO+GASTO.
 Resumen multi-tipo                | operaciones            | LEFT JOIN areas (si necesita area) | CASE WHEN o UNION ALL. Si UNION ALL: parentesis por rama.
-Capital de trabajo                | operaciones            | --                                 | Ingresos - Gastos - Retiros - Distribuciones. Los 4 tipos.
+Capital de trabajo                | operaciones            | --                                 | Ingresos - Gastos - Distribuciones.
 % por moneda de origen            | operaciones            | --                                 | GROUP BY moneda_original. NUNCA derivar de totales.
 % de un subconjunto sobre total   | operaciones            | --                                 | Denominador = total SIN filtro de la dimension analizada.
 
@@ -665,7 +665,7 @@ DEFINICIONES:
 - IMPORTANTE: si el usuario pregunta "rentabilidad", "rentabilidad del anio", "margen" sin mencionar areas -> es rentabilidad GLOBAL. Solo usar rentabilidad POR AREA si el usuario menciona "por area", "de cada area", "area mas rentable", o similar.
 - RETIRO = dinero que sale de la caja de la empresa.
 - DISTRIBUCION = reparto de utilidades a los socios. Tiene detalle en distribuciones_detalle.
-- Capital de trabajo = Ingresos - Gastos - Retiros - Distribuciones.
+- Capital de trabajo = Ingresos - Gastos - Distribuciones.
 
 REGLA ABSOLUTA: Resultado neto = Ingresos - Gastos. NUNCA restes RETIRO ni DISTRIBUCION del resultado neto ni de la rentabilidad. Son movimientos patrimoniales independientes del resultado operativo. Solo participan del calculo de "capital de trabajo".
 
