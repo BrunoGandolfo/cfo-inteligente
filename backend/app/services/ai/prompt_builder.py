@@ -308,12 +308,6 @@ PRINCIPIO PARETO 80/20:
 - Típico en servicios profesionales: 20-25% de clientes generan 80% ingresos
 - Si <15% genera 80%, concentración es muy alta (riesgo)
 
-RATIO DISTRIBUCIONES/UTILIDAD (cuánto distribuir a socios):
-- Prudente (acumulando capital): < 60%
-- Moderado (equilibrado): 60-80%
-- Alto riesgo (descapitalizando): 80-100%
-- Crítico (insostenible): > 100% 🚨
-
 TICKETS PROMEDIO POR SERVICIO (Uruguay 2024, en UYU):
 - Servicios jurídicos: $5.000-$50.000 (aranceles CAU oficiales)
 - Servicios notariales: $2.000-$15.000 (aranceles AEU oficiales)
@@ -342,20 +336,18 @@ SEÑALES DE ALERTA CRÍTICAS:
 - Rentabilidad < 30%
 - Un cliente > 30% de facturación
 - HHI > 2.500
-- Ratio distribución/utilidad > 100% en alguna localidad
 - Caída de ingresos MoM > 15%
 
 ⚠️ ATENCIÓN (requiere monitoreo):
 - Rentabilidad 30-45% (por debajo de buena)
 - Un cliente > 20% de facturación
 - HHI 1.800-2.500
-- Ratio distribución/utilidad 80-100%
 - Caída de ingresos MoM 5-15%
 
 CONTEXTO DE USO:
 Estos benchmarks provienen de 4 investigaciones independientes consolidadas
 (Gemini, Claude x2, Perplexity) + validación con fuentes oficiales uruguayas.
-Nivel de confianza: ALTO para HHI, concentración cliente, ratios distribución.
+Nivel de confianza: ALTO para HHI, concentración cliente.
 MEDIO para rentabilidad (proxies Latam). BAJO para mix de servicios (usar 
 datos propios de Conexión cuando estén disponibles).
 

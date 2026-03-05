@@ -11,17 +11,19 @@ Cada query tiene:
 Extraído de validador_canonico.py para mejor mantenibilidad.
 """
 
+from app.core.constants import ANIO_ACTUAL
+
 QUERIES_CANONICAS = {
     # ══════════════════════════════════════════════════════════════
     # FACTURACIÓN
     # ══════════════════════════════════════════════════════════════
-    "facturacion_2025": {
-        "patrones": ["facturación 2025", "facturamos 2025", "ingresos 2025", 
+    "facturacion_anio_actual": {
+        "patrones": [f"facturación {ANIO_ACTUAL}", f"facturamos {ANIO_ACTUAL}", f"ingresos {ANIO_ACTUAL}", 
                     "facturación este año", "facturamos este año", "ingresos este año"],
-        "sql_control": """
+        "sql_control": f"""
             SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
-            AND EXTRACT(YEAR FROM fecha) = 2025
+            AND EXTRACT(YEAR FROM fecha) = {ANIO_ACTUAL}
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01  # 1%
@@ -50,12 +52,12 @@ QUERIES_CANONICAS = {
     # ══════════════════════════════════════════════════════════════
     # GASTOS
     # ══════════════════════════════════════════════════════════════
-    "gastos_2025": {
-        "patrones": ["gastos 2025", "gastamos 2025", "gastos este año"],
-        "sql_control": """
+    "gastos_anio_actual": {
+        "patrones": [f"gastos {ANIO_ACTUAL}", f"gastamos {ANIO_ACTUAL}", "gastos este año"],
+        "sql_control": f"""
             SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'GASTO' AND deleted_at IS NULL 
-            AND EXTRACT(YEAR FROM fecha) = 2025
+            AND EXTRACT(YEAR FROM fecha) = {ANIO_ACTUAL}
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
@@ -74,15 +76,15 @@ QUERIES_CANONICAS = {
     # ══════════════════════════════════════════════════════════════
     # RENTABILIDAD
     # ══════════════════════════════════════════════════════════════
-    "rentabilidad_2025": {
-        "patrones": ["rentabilidad 2025", "rentabilidad este año", "margen 2025"],
-        "sql_control": """
+    "rentabilidad_anio_actual": {
+        "patrones": [f"rentabilidad {ANIO_ACTUAL}", "rentabilidad este año", f"margen {ANIO_ACTUAL}"],
+        "sql_control": f"""
             SELECT ROUND(
                 (SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -
                  SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END)) /
                 NULLIF(SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END), 0) * 100
             , 2) as porcentaje FROM operaciones 
-            WHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025
+            WHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = {ANIO_ACTUAL}
         """,
         "campo_resultado": "porcentaje",
         "tolerancia": 0.5  # 0.5 puntos porcentuales
@@ -112,7 +114,7 @@ QUERIES_CANONICAS = {
                    SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) -
                    SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END) -
                    SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) as total
-            FROM operaciones WHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025
+            FROM operaciones WHERE deleted_at IS NULL
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
@@ -121,24 +123,24 @@ QUERIES_CANONICAS = {
     # ══════════════════════════════════════════════════════════════
     # POR LOCALIDAD
     # ══════════════════════════════════════════════════════════════
-    "facturacion_montevideo_2025": {
-        "patrones": ["facturación montevideo 2025", "facturamos montevideo", 
-                    "ingresos montevideo 2025", "montevideo 2025 facturación"],
-        "sql_control": """
+    "facturacion_montevideo_anio_actual": {
+        "patrones": [f"facturación montevideo {ANIO_ACTUAL}", "facturamos montevideo", 
+                    f"ingresos montevideo {ANIO_ACTUAL}", f"montevideo {ANIO_ACTUAL} facturación"],
+        "sql_control": f"""
             SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
-            AND EXTRACT(YEAR FROM fecha) = 2025 AND localidad = 'MONTEVIDEO'
+            AND EXTRACT(YEAR FROM fecha) = {ANIO_ACTUAL} AND localidad = 'MONTEVIDEO'
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
     },
-    "facturacion_mercedes_2025": {
-        "patrones": ["facturación mercedes 2025", "facturamos mercedes", 
-                    "ingresos mercedes 2025", "mercedes 2025 facturación"],
-        "sql_control": """
+    "facturacion_mercedes_anio_actual": {
+        "patrones": [f"facturación mercedes {ANIO_ACTUAL}", "facturamos mercedes", 
+                    f"ingresos mercedes {ANIO_ACTUAL}", f"mercedes {ANIO_ACTUAL} facturación"],
+        "sql_control": f"""
             SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL 
-            AND EXTRACT(YEAR FROM fecha) = 2025 AND localidad = 'MERCEDES'
+            AND EXTRACT(YEAR FROM fecha) = {ANIO_ACTUAL} AND localidad = 'MERCEDES'
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
@@ -147,38 +149,38 @@ QUERIES_CANONICAS = {
     # ══════════════════════════════════════════════════════════════
     # POR ÁREA
     # ══════════════════════════════════════════════════════════════
-    "facturacion_juridica_2025": {
-        "patrones": ["facturación jurídica 2025", "jurídica 2025", 
-                    "área jurídica 2025", "ingresos jurídica"],
-        "sql_control": """
+    "facturacion_juridica_anio_actual": {
+        "patrones": [f"facturación jurídica {ANIO_ACTUAL}", f"jurídica {ANIO_ACTUAL}", 
+                    f"área jurídica {ANIO_ACTUAL}", "ingresos jurídica"],
+        "sql_control": f"""
             SELECT SUM(o.total_pesificado) as total FROM operaciones o
             JOIN areas a ON o.area_id = a.id
             WHERE o.tipo_operacion = 'INGRESO' AND o.deleted_at IS NULL 
-            AND EXTRACT(YEAR FROM o.fecha) = 2025 AND a.nombre = 'Jurídica'
+            AND EXTRACT(YEAR FROM o.fecha) = {ANIO_ACTUAL} AND a.nombre = 'Jurídica'
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
     },
-    "facturacion_notarial_2025": {
-        "patrones": ["facturación notarial 2025", "notarial 2025", 
-                    "área notarial 2025", "ingresos notarial"],
-        "sql_control": """
+    "facturacion_notarial_anio_actual": {
+        "patrones": [f"facturación notarial {ANIO_ACTUAL}", f"notarial {ANIO_ACTUAL}", 
+                    f"área notarial {ANIO_ACTUAL}", "ingresos notarial"],
+        "sql_control": f"""
             SELECT SUM(o.total_pesificado) as total FROM operaciones o
             JOIN areas a ON o.area_id = a.id
             WHERE o.tipo_operacion = 'INGRESO' AND o.deleted_at IS NULL 
-            AND EXTRACT(YEAR FROM o.fecha) = 2025 AND a.nombre = 'Notarial'
+            AND EXTRACT(YEAR FROM o.fecha) = {ANIO_ACTUAL} AND a.nombre = 'Notarial'
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
     },
-    "facturacion_contable_2025": {
-        "patrones": ["facturación contable 2025", "contable 2025", 
-                    "área contable 2025", "ingresos contable"],
-        "sql_control": """
+    "facturacion_contable_anio_actual": {
+        "patrones": [f"facturación contable {ANIO_ACTUAL}", f"contable {ANIO_ACTUAL}", 
+                    f"área contable {ANIO_ACTUAL}", "ingresos contable"],
+        "sql_control": f"""
             SELECT SUM(o.total_pesificado) as total FROM operaciones o
             JOIN areas a ON o.area_id = a.id
             WHERE o.tipo_operacion = 'INGRESO' AND o.deleted_at IS NULL 
-            AND EXTRACT(YEAR FROM o.fecha) = 2025 AND a.nombre = 'Contable'
+            AND EXTRACT(YEAR FROM o.fecha) = {ANIO_ACTUAL} AND a.nombre = 'Contable'
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
@@ -187,14 +189,14 @@ QUERIES_CANONICAS = {
     # ══════════════════════════════════════════════════════════════
     # DISTRIBUCIONES
     # ══════════════════════════════════════════════════════════════
-    "distribuciones_2025": {
-        "patrones": ["distribuciones 2025", "distribuciones este año", 
-                    "total distribuido 2025", "cuánto se distribuyó 2025"],
-        "sql_control": """
+    "distribuciones_anio_actual": {
+        "patrones": [f"distribuciones {ANIO_ACTUAL}", "distribuciones este año", 
+                    f"total distribuido {ANIO_ACTUAL}", f"cuánto se distribuyó {ANIO_ACTUAL}"],
+        "sql_control": f"""
             SELECT SUM(total_pesificado) as total 
             FROM operaciones
             WHERE tipo_operacion = 'DISTRIBUCION' AND deleted_at IS NULL
-            AND EXTRACT(YEAR FROM fecha) = 2025
+            AND EXTRACT(YEAR FROM fecha) = {ANIO_ACTUAL}
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
@@ -215,12 +217,12 @@ QUERIES_CANONICAS = {
     # ══════════════════════════════════════════════════════════════
     # RETIROS
     # ══════════════════════════════════════════════════════════════
-    "retiros_2025": {
-        "patrones": ["retiros 2025", "retiros este año", "total retiros 2025"],
-        "sql_control": """
+    "retiros_anio_actual": {
+        "patrones": [f"retiros {ANIO_ACTUAL}", "retiros este año", f"total retiros {ANIO_ACTUAL}"],
+        "sql_control": f"""
             SELECT SUM(total_pesificado) as total FROM operaciones 
             WHERE tipo_operacion = 'RETIRO' AND deleted_at IS NULL 
-            AND EXTRACT(YEAR FROM fecha) = 2025
+            AND EXTRACT(YEAR FROM fecha) = {ANIO_ACTUAL}
         """,
         "campo_resultado": "total",
         "tolerancia": 0.01
@@ -229,12 +231,12 @@ QUERIES_CANONICAS = {
     # ══════════════════════════════════════════════════════════════
     # OPERACIONES
     # ══════════════════════════════════════════════════════════════
-    "cantidad_operaciones_2025": {
-        "patrones": ["cuántas operaciones 2025", "operaciones este año", 
-                    "cantidad operaciones 2025"],
-        "sql_control": """
+    "cantidad_operaciones_anio_actual": {
+        "patrones": [f"cuántas operaciones {ANIO_ACTUAL}", "operaciones este año", 
+                    f"cantidad operaciones {ANIO_ACTUAL}"],
+        "sql_control": f"""
             SELECT COUNT(*) as total FROM operaciones 
-            WHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025
+            WHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = {ANIO_ACTUAL}
         """,
         "campo_resultado": "total",
         "tolerancia": 0  # Debe ser exacto

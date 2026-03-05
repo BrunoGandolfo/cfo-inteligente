@@ -13,6 +13,7 @@ import time
 from typing import Optional
 
 from app.core.config import settings
+from app.core.constants import CLAUDE_MODEL as _CLAUDE_MODEL
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -23,7 +24,7 @@ class AIOrchestrator:
     Orquestador de IA - Solo usa Claude (Anthropic).
     
     Configuración:
-    - Modelo: claude-sonnet-4-20250514
+    - Modelo: CLAUDE_MODEL (desde constants.py)
     - Reintentos: 3 intentos con 2 segundos de delay
     - Timeout: 30 segundos por intento
     
@@ -41,7 +42,7 @@ class AIOrchestrator:
     """
     
     # Configuración de Claude
-    CLAUDE_MODEL = "claude-sonnet-4-20250514"
+    CLAUDE_MODEL = _CLAUDE_MODEL
     DEFAULT_TIMEOUT = 45
     MAX_RETRIES = 3
     RETRY_DELAY = 2  # segundos entre reintentos

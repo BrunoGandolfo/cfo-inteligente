@@ -5,7 +5,6 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 import logging
-import os
 from app.core.config import settings
 from app.core.rate_limiter import limiter
 from app.api.auth import router as auth_router
@@ -37,11 +36,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Necesario para que Railway preserve HTTPS en redirects
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
-# CORS - lee orígenes de variable de entorno
-cors_origins = os.getenv(
-    "CORS_ORIGINS", 
-    "http://localhost:3000,http://localhost:5173,http://localhost:5174"
-).split(",")
+# CORS - lee orígenes desde .env usando pydantic-settings
+cors_origins = settings.cors_origins.split(",")
 
 app.add_middleware(
     CORSMiddleware,

@@ -17,6 +17,7 @@ import anthropic
 import requests
 
 from app.core.config import settings
+from app.core.constants import CLAUDE_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 WIKIPEDIA_TIMEOUT = 15  # segundos
 CLAUDE_TIMEOUT = 30  # segundos
-CLAUDE_MODEL = "claude-sonnet-4-20250514"
+# CLAUDE_MODEL importado de app.core.constants
 
 # Headers requeridos por Wikipedia API
 WIKIPEDIA_HEADERS = {

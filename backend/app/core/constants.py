@@ -8,6 +8,8 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
+from datetime import datetime
+
 # ══════════════════════════════════════════════════════════════
 # URLs Y ENDPOINTS
 # ══════════════════════════════════════════════════════════════
@@ -19,6 +21,7 @@ FRONTEND_BASE_URL = "http://localhost:5173"
 # Anthropic API
 ANTHROPIC_API_URL = "https://api.anthropic.com"
 CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
+HAIKU_CLASSIFIER_MODEL = "claude-haiku-4-5-20251001"
 
 # PostgreSQL
 DEFAULT_PG_HOST = "localhost"
@@ -101,7 +104,7 @@ KEYWORDS_TEMPORALES = [
     'promedio', 'media',
     'basado en', 'en base a',
     'fin de año', 'fin del año', 'cierre',
-    'comparar', 'vs anterior', 'versus',
+    'vs anterior', 'versus',
     'crecimiento', 'variación', 'variacion',
     'estimar', 'estimación', 'estimacion'
 ]
@@ -114,7 +117,7 @@ KEYWORDS_TEMPORALES = [
 SOCIOS = ['Agustina', 'Viviana', 'Gonzalo', 'Pancho', 'Bruno']
 
 # Áreas de negocio
-AREAS = ['Jurídica', 'Notarial', 'Contable', 'Recuperación', 'Otros Gastos']
+AREAS = ['Jurídica', 'Notarial', 'Contable', 'Recuperación', 'Otros Gastos', 'Administración']
 
 # Localidades
 LOCALIDADES = ['MONTEVIDEO', 'MERCEDES']
@@ -126,5 +129,5 @@ TIPOS_OPERACION = ['INGRESO', 'GASTO', 'RETIRO', 'DISTRIBUCION']
 MONEDAS = ['UYU', 'USD']
 
 # Año actual del sistema
-ANIO_ACTUAL = 2025
+ANIO_ACTUAL = datetime.now().year
 

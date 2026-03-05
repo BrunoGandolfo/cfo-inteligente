@@ -31,14 +31,24 @@ class SQLPreValidators:
         cls._validar_proyecciones(pregunta_lower, sql_upper, sql, problemas)
         cls._validar_porcentaje_moneda(pregunta_lower, sql_upper, sql, problemas)
         cls._validar_filtro_temporal(pregunta_lower, sql_upper, problemas)
+        cls._validar_window_en_having(sql_upper, problemas)
+        cls._validar_union_order_by(sql_upper, sql, problemas)
+        cls._validar_union_enum_literal(sql_upper, problemas)
+        cls._validar_union_excesivo(sql_upper, problemas)
         
         # Sugerencia de fallback si hay problemas
         sugerencia = cls._obtener_sugerencia_fallback(pregunta, problemas)
-        
+        # Problemas que deben BLOQUEAR ejecución (ej.: enum en UNION ALL sin cast, mega-UNION)
+        bloqueante = any(
+            ('UNION ALL' in p and ('columna enum' in p or 'literal' in p))
+            or ('6+ ramas UNION' in p)
+            for p in problemas
+        )
         return {
             'valido': len(problemas) == 0,
             'problemas': problemas,
-            'sugerencia_fallback': sugerencia
+            'sugerencia_fallback': sugerencia,
+            'bloqueante': bloqueante,
         }
     
     @staticmethod
@@ -76,6 +86,156 @@ class SQLPreValidators:
                 problemas.append("Porcentaje de moneda debe usar columna moneda_original, no monto_usd/uyu")
     
     @staticmethod
+    def _validar_window_en_having(sql_upper: str, problemas: list) -> None:
+        """Detecta window functions dentro de HAVING (PostgreSQL no lo permite)."""
+        if 'HAVING' not in sql_upper:
+            return
+        idx = sql_upper.find('HAVING')
+        fragment = sql_upper[idx:]
+        # Recortar hasta ORDER BY, LIMIT o ; (fin de sentencia)
+        for sep in (' ORDER BY ', ' LIMIT ', ';'):
+            pos = fragment.find(sep)
+            if pos != -1:
+                fragment = fragment[:pos]
+        window_markers = [
+            'OVER (', 'OVER(',
+            'ROW_NUMBER', 'RANK(', 'DENSE_RANK', 'NTILE(', 'LAG(', 'LEAD(',
+        ]
+        if any(m in fragment for m in window_markers):
+            problemas.append(
+                "Window functions no permitidas en HAVING. Usar subconsulta o CTE."
+            )
+
+    @staticmethod
+    def _validar_union_order_by(sql_upper: str, sql: str, problemas: list) -> None:
+        """
+        ORDER BY en UNION/INTERSECT/EXCEPT solo permite nombres de columnas.
+        No expresiones, casts (::) ni funciones. Envolver en subquery si hace falta.
+        """
+        keywords = ['UNION ALL', 'UNION', 'INTERSECT', 'EXCEPT']
+        if not any(kw in sql_upper for kw in keywords):
+            return
+        # Posición del último keyword de compound (para tomar el ORDER BY que aplica al resultado)
+        last_pos = -1
+        for kw in keywords:
+            idx = sql_upper.rfind(kw)
+            if idx != -1 and idx > last_pos:
+                last_pos = idx
+        if last_pos == -1:
+            return
+        suffix_upper = sql_upper[last_pos:]
+        order_by_idx = suffix_upper.find('ORDER BY')
+        if order_by_idx == -1:
+            return
+        # Extraer la cláusula ORDER BY hasta LIMIT, ; o fin
+        clause_start = last_pos + order_by_idx
+        clause_snippet = sql_upper[clause_start:]
+        end = len(clause_snippet)
+        for sep in (' LIMIT ', ';'):
+            pos = clause_snippet.find(sep)
+            if pos != -1:
+                end = min(end, pos)
+        order_by_clause = clause_snippet[:end]
+        # En el ORDER BY no debe haber casts (::) ni llamadas a funciones (...)
+        if '::' in order_by_clause or ('(' in order_by_clause and ')' in order_by_clause):
+            problemas.append(
+                "ORDER BY en UNION/INTERSECT/EXCEPT no permite expresiones ni casts. Envolver en subquery."
+            )
+
+    @staticmethod
+    def _validar_union_enum_literal(sql_upper: str, problemas: list) -> None:
+        """
+        En UNION ALL: Detecta mezcla de literales string con columnas enum que causa
+        type mismatch. Solo bloquea cuando hay literal ('TOTAL', 'TOTALES', etc.)
+        en una rama y la columna enum real en otra. Si todas las ramas usan la misma
+        columna enum de la tabla, es valido en PostgreSQL (mismo tipo en ambas ramas).
+        """
+        if 'UNION ALL' not in sql_upper:
+            return
+        literales = ("'TOTAL GENERAL'", "'TOTAL'", "'TOTALES'")
+        aliases_sensibles = (
+            " AS LOCALIDAD", " AS TIPO_OPERACION", " AS MONEDA_ORIGINAL",
+            " AS AREA", " AS NOMBRE", " AS SOCIO",
+        )
+        columnas_enum = ('localidad', 'tipo_operacion', 'moneda_original')
+
+        def _recortar_hasta_fin_rama(seg: str) -> str:
+            for sep in (' ORDER BY ', ' LIMIT ', ';'):
+                idx = seg.find(sep)
+                if idx != -1:
+                    seg = seg[:idx]
+            return seg
+
+        def _extraer_select_portion(seg: str) -> str:
+            seg_lower = seg.lower()
+            from_idx = seg_lower.find(' from ')
+            return seg_lower[:from_idx] if from_idx != -1 else seg_lower
+
+        partes = sql_upper.split('UNION ALL')
+
+        # CHECK 1: literal 'TOTAL'/'TOTALES' asignado a alias de columna enum (siempre malo)
+        for i in range(1, len(partes)):
+            segmento = _recortar_hasta_fin_rama(partes[i])
+            if any(lit in segmento for lit in literales) and any(
+                al in segmento for al in aliases_sensibles
+            ):
+                problemas.append(
+                    "UNION ALL asigna literal 'TOTAL'/'TOTAL GENERAL' a columna enum/CHECK (localidad, area, etc.). "
+                    "Usar CAST(col AS TEXT) o col::TEXT en la rama de datos."
+                )
+                return
+
+        # CHECK 2: columna enum sin cast — SOLO bloquear si alguna rama tiene
+        # un literal string donde se espera la columna (type mismatch real).
+        # Si TODAS las ramas usan la misma columna enum de la tabla, es valido.
+        hay_rama_con_literal = any(
+            any(lit in _recortar_hasta_fin_rama(partes[i]) for lit in literales)
+            for i in range(len(partes))
+        )
+
+        if not hay_rama_con_literal:
+            # Todas las ramas usan columnas reales de la tabla — no hay type mismatch
+            return
+
+        # Hay mezcla de literal + columna enum: verificar si la columna tiene CAST
+        for col in columnas_enum:
+            for i in range(len(partes)):
+                select_portion = _extraer_select_portion(
+                    _recortar_hasta_fin_rama(partes[i])
+                )
+                if col not in select_portion:
+                    continue
+                if f"{col}::text" in select_portion:
+                    continue
+                if f"cast({col} as text)" in select_portion or f"cast( {col} as text)" in select_portion:
+                    continue
+                problemas.append(
+                    "UNION ALL mezcla columna enum sin CAST con literal string. "
+                    "Usar col::TEXT o CAST(col AS TEXT) en todas las ramas."
+                )
+                return
+
+    @staticmethod
+    def _validar_union_excesivo(sql_upper: str, problemas: list) -> None:
+        """
+        Detecta UNION ALL con demasiadas ramas (señal de mega-query problemática).
+
+        4+ ramas = warning (riesgo de type mismatch).
+        6+ ramas = bloqueante (casi siempre falla en PostgreSQL por tipos incompatibles).
+        """
+        count = sql_upper.count('UNION ALL')
+        if count >= 5:
+            problemas.append(
+                f"SQL con 6+ ramas UNION ALL ({count + 1} ramas): "
+                "alto riesgo de type mismatch. Usar GROUP BY en vez de UNION ALL."
+            )
+        elif count >= 3:
+            problemas.append(
+                f"SQL con {count + 1} ramas UNION ALL: "
+                "riesgo de type mismatch entre ramas. Verificar tipos de columnas."
+            )
+
+    @staticmethod
     def _validar_filtro_temporal(pregunta: str, sql_upper: str, problemas: list) -> None:
         """Valida pregunta genérica sin filtro temporal."""
         keywords_temporal = [
@@ -95,13 +255,7 @@ class SQLPreValidators:
         """Obtiene sugerencia de fallback si hay problemas."""
         if not problemas:
             return None
-        
-        try:
-            from app.services.query_fallback import QueryFallback
-            sql_predefinido = QueryFallback.get_query_for(pregunta)
-            return 'query_predefinida' if sql_predefinido else 'vanna_fallback'
-        except Exception:
-            return 'vanna_fallback'
+        return 'regenerar'
     
     @staticmethod
     def validar_sintaxis_basica(sql: str) -> Dict[str, Any]:
@@ -145,3 +299,6 @@ class SQLPreValidators:
             'problemas': problemas
         }
 
+
+# Alias retrocompatible para imports legacy.
+ValidadorPreSQL = SQLPreValidators

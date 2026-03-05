@@ -19,6 +19,15 @@ class Settings(BaseSettings):
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
     google_ai_key: str = Field(default="", alias="GOOGLE_AI_KEY")
     
+    # SQL Engine: "haiku" (pipeline completo) | "claude" (bypass directo a Claude)
+    sql_engine: str = Field(default="haiku", alias="SQL_ENGINE")
+
+    # CORS - Lee desde .env usando pydantic-settings
+    cors_origins: str = Field(
+        default="http://localhost:3000,http://localhost:5173,http://localhost:5174",
+        alias="CORS_ORIGINS"
+    )
+    
     model_config = ConfigDict(
         env_file=".env",
         case_sensitive=False,  # Permite minúsculas y MAYÚSCULAS

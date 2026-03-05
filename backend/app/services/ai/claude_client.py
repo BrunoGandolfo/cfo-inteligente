@@ -12,6 +12,7 @@ Fecha: Diciembre 2025
 
 from typing import Optional
 
+from app.core.constants import CLAUDE_MODEL
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -34,7 +35,7 @@ class ClaudeClient:
     
     Configuración:
     - API Key desde env var ANTHROPIC_API_KEY
-    - Modelo default: claude-sonnet-4-20250514
+    - Modelo default: CLAUDE_MODEL (desde constants.py)
     - Timeout default: 30 segundos
     
     Ejemplo:
@@ -48,10 +49,8 @@ class ClaudeClient:
         "Análisis: Los ingresos aumentaron..."
     """
     
-    # Modelos disponibles (actualizado Octubre 2025)
-    MODEL_SONNET_4 = "claude-sonnet-4-20250514"
-    MODEL_OPUS_4 = "claude-opus-4-20250514"
-    MODEL_HAIKU_4 = "claude-4-haiku-20250514"
+    # Modelo centralizado desde constants.py
+    MODEL_SONNET_4 = CLAUDE_MODEL
     
     # Singleton del orchestrator (compartido entre instancias)
     _orchestrator = None
