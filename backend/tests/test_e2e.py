@@ -386,7 +386,7 @@ class TestMetricasPrecision:
             # Campos obligatorios en metadata
             assert 'metodo_generacion_sql' in metadata
             assert metadata['metodo_generacion_sql'] in [
-                'claude', 'vanna_fallback', 'claude_chain_of_thought',
+                'claude', 'claude_direct', 'vanna_fallback', 'claude_chain_of_thought',
                 'claude_fallback_predefinido', 'claude_con_advertencias'
             ]
     

@@ -187,7 +187,7 @@ class BaseAggregator(ABC):
         # Cálculos derivados
         rentabilidad = ((ingresos['uyu'] - gastos['uyu']) / ingresos['uyu'] * 100) if ingresos['uyu'] > 0 else 0.0
         resultado_operativo = ingresos['uyu'] - gastos['uyu']
-        resultado_neto = resultado_operativo - retiros['uyu'] - distribuciones['uyu']
+        resultado_neto = resultado_operativo
         
         return {
             'ingresos': {'uyu': round(ingresos['uyu'], 2), 'cantidad_operaciones': ingresos['cantidad']},
@@ -205,7 +205,10 @@ class BaseAggregator(ABC):
         
         for op in operaciones:
             if op.tipo_operacion in totales:
-                totales[op.tipo_operacion]['uyu'] += float(op.monto_uyu or 0)
+                if op.tipo_operacion.value in ('RETIRO', 'DISTRIBUCION'):
+                    totales[op.tipo_operacion]['uyu'] += float(op.total_pesificado or 0)
+                else:
+                    totales[op.tipo_operacion]['uyu'] += float(op.monto_uyu or 0)
                 totales[op.tipo_operacion]['cantidad'] += 1
         
         return totales

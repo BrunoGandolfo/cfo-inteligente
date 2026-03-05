@@ -350,9 +350,10 @@ class TestGenerarSQLInteligente:
         assert resultado['metodo'] == 'ninguno'
         assert resultado['error'] is not None
     
+    @patch('app.services.sql_router.clasificar_pregunta', return_value=None)
     @patch('app.services.sql_router.QueryFallback')
-    def test_query_fallback_tiene_prioridad(self, mock_fallback, router_instance, mock_claude_generator):
-        """QueryFallback debe tener prioridad sobre Claude"""
+    def test_query_fallback_tiene_prioridad(self, mock_fallback, mock_haiku, router_instance, mock_claude_generator):
+        """QueryFallback debe tener prioridad sobre Claude (Haiku deshabilitado)"""
         # Arrange
         mock_fallback.get_query_for.return_value = "SELECT * FROM predefined_query"
         pregunta = "Test con fallback"

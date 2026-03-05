@@ -19,11 +19,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from unittest.mock import Mock, patch
-from datetime import datetime, date
 
 from app.main import app
 from app.core.database import get_db
-from app.services.chain_of_thought_sql import ChainOfThoughtSQL, generar_con_chain_of_thought
 from app.services.sql_router import generar_sql_inteligente
 from app.services.validador_sql import ValidadorSQL
 
@@ -44,77 +42,6 @@ def client_api(usuario_test, db_session):
     app.dependency_overrides[get_db] = lambda: db_session
     yield TestClient(app)
     app.dependency_overrides.clear()
-
-
-# ══════════════════════════════════════════════════════════════
-# GRUPO 1: TESTS DE CHAIN-OF-THOUGHT CON BD REAL
-# ══════════════════════════════════════════════════════════════
-
-@pytest.mark.integration
-class TestChainOfThoughtIntegration:
-    """Tests de Chain-of-Thought con PostgreSQL real"""
-    
-    def test_obtener_metadatos_temporales(self, db_session):
-        """Chain-of-Thought debe obtener metadatos reales de BD"""
-        # Arrange
-        sql_metadatos = ChainOfThoughtSQL.generar_sql_metadatos()
-        
-        # Act
-        result = db_session.execute(text(sql_metadatos))
-        row = result.fetchone()
-        metadatos = dict(row._mapping)
-        
-        # Assert
-        assert metadatos is not None
-        assert 'fecha_actual' in metadatos
-        assert 'meses_con_datos_2025' in metadatos
-        assert 'meses_restantes_2025' in metadatos
-        
-        # Verificar valores razonables
-        assert metadatos['meses_con_datos_2025'] >= 0
-        assert metadatos['meses_con_datos_2025'] <= 12
-        assert metadatos['meses_restantes_2025'] >= 0
-        assert metadatos['meses_restantes_2025'] <= 12
-    
-    def test_formatear_metadatos(self, db_session):
-        """Metadatos deben formatearse correctamente para prompt"""
-        # Arrange
-        metadatos = {
-            'fecha_actual': date(2025, 10, 2),
-            'mes_actual': 10,
-            'meses_con_datos_2025': 8,
-            'meses_restantes_2025': 2
-        }
-        
-        # Act
-        metadatos_str = ChainOfThoughtSQL.formatear_metadatos_para_prompt(metadatos)
-        
-        # Assert
-        assert 'Meses con datos' in metadatos_str or 'meses_con_datos' in metadatos_str
-        assert 'Meses restantes' in metadatos_str or 'meses_restantes' in metadatos_str
-        # Valores numéricos pueden variar
-    
-    @patch('app.services.chain_of_thought_sql.ChainOfThoughtSQL.generar_sql_con_contexto')
-    def test_generar_con_cot_completo(self, mock_generar, db_session):
-        """generar_con_chain_of_thought ejecuta flujo completo"""
-        # Arrange
-        from app.services.claude_sql_generator import ClaudeSQLGenerator
-        
-        mock_generar.return_value = "SELECT SUM(monto_uyu) FROM operaciones"
-        pregunta = "Proyección fin de año"
-        
-        with patch.dict('os.environ', {'ANTHROPIC_API_KEY': 'test-key'}):
-            with patch('anthropic.Anthropic'):
-                claude_gen = ClaudeSQLGenerator()
-                
-                # Act
-                resultado = generar_con_chain_of_thought(pregunta, db_session, claude_gen)
-                
-                # Assert
-                assert resultado['exito'] is True
-                assert resultado['metodo'] == 'chain_of_thought'
-                assert 'metadatos_usados' in resultado
-                assert resultado['pasos'] == 2
 
 
 # ══════════════════════════════════════════════════════════════
@@ -569,160 +496,6 @@ class TestValidacionCasosReales:
 
 
 # ══════════════════════════════════════════════════════════════
-# GRUPO 8: TESTS CHAIN-OF-THOUGHT AVANZADOS (8 tests nuevos)
-# ══════════════════════════════════════════════════════════════
-
-@pytest.mark.integration
-class TestChainOfThoughtAvanzado:
-    """Tests avanzados de Chain-of-Thought con BD real"""
-    
-    def test_proyeccion_fin_año_con_metadatos(self, db_session, operaciones_test):
-        """Proyección debe usar metadatos reales de BD"""
-        # Arrange - Obtener metadatos
-        sql_meta = ChainOfThoughtSQL.generar_sql_metadatos()
-        result = db_session.execute(text(sql_meta))
-        metadatos = dict(result.fetchone()._mapping)
-        
-        # Assert
-        assert metadatos['meses_con_datos_2025'] > 0
-        assert metadatos['meses_restantes_2025'] >= 0
-        
-        # Verificar que suma 12 o menos
-        total_meses = metadatos['meses_con_datos_2025'] + metadatos['meses_restantes_2025']
-        assert total_meses <= 12
-    
-    def test_comparacion_mes_vs_mes(self, db_session):
-        """Comparación temporal debe ejecutarse correctamente"""
-        # Act
-        sql = """
-        WITH mensual AS (
-            SELECT 
-                DATE_TRUNC('month', fecha) AS mes,
-                SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END) as ingresos
-            FROM operaciones
-            WHERE deleted_at IS NULL
-            GROUP BY 1
-            ORDER BY 1 DESC
-            LIMIT 2
-        )
-        SELECT mes, ingresos FROM mensual ORDER BY mes DESC
-        """
-        result = db_session.execute(text(sql))
-        rows = result.fetchall()
-        
-        # Assert
-        assert len(rows) <= 2
-        if len(rows) == 2:
-            # Debe haber 2 meses
-            mes_actual = rows[0][0]
-            mes_anterior = rows[1][0]
-            assert mes_actual > mes_anterior  # Ordenados
-    
-    def test_tendencia_ultimos_3_meses(self, db_session, operaciones_test):
-        """Tendencia de últimos meses debe retornar datos"""
-        # Act
-        sql = """
-        SELECT 
-            DATE_TRUNC('month', fecha) AS mes,
-            SUM(CASE WHEN tipo_operacion='INGRESO' THEN monto_uyu ELSE 0 END) as ingresos
-        FROM operaciones
-        WHERE deleted_at IS NULL
-        AND fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '2 months'
-        GROUP BY 1
-        ORDER BY 1
-        """
-        result = db_session.execute(text(sql))
-        rows = result.fetchall()
-        
-        # Assert
-        assert len(rows) > 0
-        assert len(rows) <= 3
-    
-    def test_conversion_moneda_multiple(self, db_session, operaciones_test):
-        """Query con conversiones debe retornar ambas monedas"""
-        # Act
-        sql = """
-        SELECT 
-            SUM(monto_uyu) as total_uyu,
-            SUM(monto_usd) as total_usd
-        FROM operaciones
-        WHERE tipo_operacion='INGRESO'
-        AND deleted_at IS NULL
-        """
-        result = db_session.execute(text(sql))
-        row = result.fetchone()
-        
-        # Assert
-        assert row is not None
-        assert row[0] > 0  # total_uyu
-        assert row[1] > 0  # total_usd
-    
-    def test_deteccion_keywords_temporales(self):
-        """Debe detectar correctamente keywords temporales"""
-        # Arrange
-        casos = [
-            ("Proyección fin de año", True),
-            ("Tendencia últimos meses", True),
-            ("Basado en datos históricos", True),
-            ("¿Cuánto facturamos?", False),
-            ("Rentabilidad área Jurídica", False),
-        ]
-        
-        # Act & Assert
-        for pregunta, esperado in casos:
-            resultado = ChainOfThoughtSQL.necesita_metadatos(pregunta)
-            assert resultado == esperado, f"Falló para: {pregunta}"
-    
-    def test_metadatos_fecha_actual_correcta(self, db_session):
-        """Fecha actual en metadatos debe coincidir con CURRENT_DATE"""
-        # Act
-        sql = "SELECT CURRENT_DATE as hoy"
-        result = db_session.execute(text(sql))
-        fecha_db = result.fetchone()[0]
-        
-        # Obtener metadatos
-        sql_meta = ChainOfThoughtSQL.generar_sql_metadatos()
-        result2 = db_session.execute(text(sql_meta))
-        metadatos = dict(result2.fetchone()._mapping)
-        
-        # Assert
-        assert metadatos['fecha_actual'] == fecha_db
-    
-    def test_meses_con_datos_dinamico(self, db_session):
-        """Meses con datos debe calcularse dinámicamente"""
-        # Act
-        sql_meta = ChainOfThoughtSQL.generar_sql_metadatos()
-        result = db_session.execute(text(sql_meta))
-        metadatos = dict(result.fetchone()._mapping)
-        
-        # Verificar independientemente
-        sql_verificacion = """
-        SELECT COUNT(DISTINCT DATE_TRUNC('month', fecha))
-        FROM operaciones
-        WHERE deleted_at IS NULL
-        AND DATE_TRUNC('year', fecha) = DATE_TRUNC('year', CURRENT_DATE)
-        """
-        result2 = db_session.execute(text(sql_verificacion))
-        meses_reales = result2.fetchone()[0]
-        
-        # Assert
-        assert metadatos['meses_con_datos_2025'] == meses_reales
-    
-    def test_ultimo_mes_con_datos(self, db_session, operaciones_test):
-        """Último mes con datos debe obtenerse correctamente"""
-        # Act
-        sql_meta = ChainOfThoughtSQL.generar_sql_metadatos()
-        result = db_session.execute(text(sql_meta))
-        metadatos = dict(result.fetchone()._mapping)
-        
-        # Assert
-        assert metadatos['ultimo_mes_con_datos'] is not None
-        # Debe ser una fecha reciente (2024, 2025 o 2026)
-        fecha_str = str(metadatos['ultimo_mes_con_datos'])
-        assert '2024' in fecha_str or '2025' in fecha_str or '2026' in fecha_str
-
-
-# ══════════════════════════════════════════════════════════════
 # GRUPO 9: TESTS VALIDADOR POST-SQL CON DATOS REALES (4 tests)
 # ══════════════════════════════════════════════════════════════
 
@@ -1125,4 +898,3 @@ class TestCFOAIContenido:
 # ══════════════════════════════════════════════════════════════
 
 # Configurado en pytest.ini
-

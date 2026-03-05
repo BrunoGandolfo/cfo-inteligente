@@ -164,7 +164,7 @@ class DistributionCalculator(BaseCalculator):
                 if hasattr(op, 'distribuciones') and op.distribuciones:
                     for detalle in op.distribuciones:
                         socio_nombre = detalle.socio.nombre if detalle.socio else 'Sin Socio'
-                        distribuciones_por_socio[socio_nombre] += detalle.monto_uyu
+                        distribuciones_por_socio[socio_nombre] += detalle.total_pesificado
         
         # Calcular porcentajes
         porcentajes = {}

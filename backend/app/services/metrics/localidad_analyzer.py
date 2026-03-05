@@ -1,8 +1,7 @@
 """
 LocalidadAnalyzer - Analiza métricas por localidad
 
-Calcula utilidad neta, distribuciones y ratios por localidad.
-CRÍTICO para detectar descapitalización por oficina.
+Calcula utilidad neta y distribuciones por localidad.
 
 Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
@@ -25,13 +24,6 @@ class LocalidadAnalyzer(BaseCalculator):
     Métricas calculadas:
     - Utilidad neta por localidad
     - Distribuciones por localidad
-    - Ratio distribución/utilidad por localidad (CRÍTICO)
-    
-    Ratio Distribución/Utilidad:
-        < 50%: ✅ Prudente (acumulando)
-        50-80%: ⚠️ Moderado
-        > 80%: ⚠️ Alto riesgo
-        > 100%: 🚨 DESCAPITALIZANDO (distribuyendo más de lo ganado)
     """
     
     def __init__(self, operaciones: List[Operacion]):
@@ -47,14 +39,12 @@ class LocalidadAnalyzer(BaseCalculator):
         return {
             'utilidad_neta_por_localidad': self._calc_utilidad_neta_por_localidad(),
             'distribuciones_por_localidad': self._calc_distribuciones_por_localidad(),
-            'ratio_distribucion_utilidad': self._calc_ratio_distribucion_utilidad()
         }
     
     def get_metric_names(self) -> List[str]:
         return [
             'utilidad_neta_por_localidad',
             'distribuciones_por_localidad',
-            'ratio_distribucion_utilidad'
         ]
     
     # ═══════════════════════════════════════════════════════════════
@@ -106,56 +96,7 @@ class LocalidadAnalyzer(BaseCalculator):
         for op in self.operaciones:
             if op.tipo_operacion == TipoOperacion.DISTRIBUCION:
                 loc = op.localidad.value if op.localidad else 'Sin Localidad'
-                distribuciones_loc[loc] += op.monto_uyu
+                distribuciones_loc[loc] += float(op.total_pesificado or 0)
         
         return {loc: float(monto) for loc, monto in distribuciones_loc.items()}
     
-    def _calc_ratio_distribucion_utilidad(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Calcula ratio distribución/utilidad por localidad.
-        
-        CRÍTICO para detectar descapitalización.
-        
-        Returns:
-            Dict {localidad: {
-                'utilidad': float,
-                'distribuciones': float,
-                'ratio_porcentaje': float,
-                'estado': str
-            }}
-        """
-        utilidad_loc = self._calc_utilidad_neta_por_localidad()
-        dist_loc = self._calc_distribuciones_por_localidad()
-        
-        ratios = {}
-        for loc, utilidad in utilidad_loc.items():
-            distribuciones = dist_loc.get(loc, 0.0)
-            
-            if utilidad > 0:
-                ratio_pct = (distribuciones / utilidad) * 100
-                
-                # Determinar estado
-                if ratio_pct > 100:
-                    estado = 'DESCAPITALIZANDO'
-                elif ratio_pct > 80:
-                    estado = 'ALTO_RIESGO'
-                elif ratio_pct > 50:
-                    estado = 'MODERADO'
-                else:
-                    estado = 'PRUDENTE'
-                
-                ratios[loc] = {
-                    'utilidad': utilidad,
-                    'distribuciones': distribuciones,
-                    'ratio_porcentaje': ratio_pct,
-                    'estado': estado
-                }
-            else:
-                ratios[loc] = {
-                    'utilidad': utilidad,
-                    'distribuciones': distribuciones,
-                    'ratio_porcentaje': 0.0,
-                    'estado': 'SIN_DATOS'
-                }
-        
-        return ratios

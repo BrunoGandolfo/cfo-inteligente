@@ -158,12 +158,12 @@ class PnLLocalidadGenerator:
         ).scalar() or 0
         
         # Retiros
-        retiros = self.db.query(func.coalesce(func.sum(Operacion.monto_uyu), 0)).filter(
+        retiros = self.db.query(func.coalesce(func.sum(Operacion.total_pesificado), 0)).filter(
             and_(base_filter, Operacion.tipo_operacion == TipoOperacion.RETIRO)
         ).scalar() or 0
         
         # Distribuciones
-        distribuciones = self.db.query(func.coalesce(func.sum(Operacion.monto_uyu), 0)).filter(
+        distribuciones = self.db.query(func.coalesce(func.sum(Operacion.total_pesificado), 0)).filter(
             and_(base_filter, Operacion.tipo_operacion == TipoOperacion.DISTRIBUCION)
         ).scalar() or 0
         
@@ -177,11 +177,8 @@ class PnLLocalidadGenerator:
         distribuciones = float(distribuciones)
         
         resultado_neto = ingresos - gastos
-        total_extraido = retiros + distribuciones
-        retenido = resultado_neto - total_extraido
         
         rentabilidad = (resultado_neto / ingresos * 100) if ingresos > 0 else 0
-        ratio_extraccion = (total_extraido / resultado_neto * 100) if resultado_neto > 0 else 0
         
         return {
             'ingresos': round(ingresos, 2),
@@ -190,9 +187,6 @@ class PnLLocalidadGenerator:
             'rentabilidad': round(rentabilidad, 2),
             'retiros': round(retiros, 2),
             'distribuciones': round(distribuciones, 2),
-            'total_extraido': round(total_extraido, 2),
-            'retenido': round(retenido, 2),
-            'ratio_extraccion': round(ratio_extraccion, 2),
             'cantidad_operaciones': cant_operaciones,
         }
     
@@ -213,20 +207,17 @@ class PnLLocalidadGenerator:
             and_(base_filter, Operacion.tipo_operacion == TipoOperacion.GASTO)
         ).scalar() or 0)
         
-        retiros = float(self.db.query(func.coalesce(func.sum(Operacion.monto_uyu), 0)).filter(
+        retiros = float(self.db.query(func.coalesce(func.sum(Operacion.total_pesificado), 0)).filter(
             and_(base_filter, Operacion.tipo_operacion == TipoOperacion.RETIRO)
         ).scalar() or 0)
         
-        distribuciones = float(self.db.query(func.coalesce(func.sum(Operacion.monto_uyu), 0)).filter(
+        distribuciones = float(self.db.query(func.coalesce(func.sum(Operacion.total_pesificado), 0)).filter(
             and_(base_filter, Operacion.tipo_operacion == TipoOperacion.DISTRIBUCION)
         ).scalar() or 0)
         
         resultado_neto = ingresos - gastos
-        total_extraido = retiros + distribuciones
-        retenido = resultado_neto - total_extraido
         
         rentabilidad = (resultado_neto / ingresos * 100) if ingresos > 0 else 0
-        ratio_extraccion = (total_extraido / resultado_neto * 100) if resultado_neto > 0 else 0
         
         return {
             'ingresos': round(ingresos, 2),
@@ -235,9 +226,6 @@ class PnLLocalidadGenerator:
             'rentabilidad': round(rentabilidad, 2),
             'retiros': round(retiros, 2),
             'distribuciones': round(distribuciones, 2),
-            'total_extraido': round(total_extraido, 2),
-            'retenido': round(retenido, 2),
-            'ratio_extraccion': round(ratio_extraccion, 2),
         }
     
     def _calcular_variaciones(

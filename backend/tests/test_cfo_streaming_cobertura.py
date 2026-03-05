@@ -133,7 +133,6 @@ def mock_streaming_dependencies():
     with patch('app.api.cfo_streaming.generar_sql_inteligente') as mock_sql, \
          patch('app.api.cfo_streaming.ejecutar_consulta_cfo') as mock_ejecutar, \
          patch('app.api.cfo_streaming.client') as mock_client, \
-         patch('app.api.cfo_streaming.ChainOfThoughtSQL.necesita_metadatos') as mock_cot, \
          patch('app.api.cfo_streaming.ValidadorSQL.validar_sql_antes_ejecutar') as mock_validar_pre, \
          patch('app.api.cfo_streaming.ValidadorSQL.validar_resultado') as mock_validar_post, \
          patch('app.api.cfo_streaming.SQLPostProcessor.procesar_sql') as mock_post_proc, \
@@ -149,7 +148,6 @@ def mock_streaming_dependencies():
             'success': True,
             'data': [{'total': 2391}]
         }
-        mock_cot.return_value = False
         mock_validar_pre.return_value = {'valido': True, 'problemas': []}
         mock_validar_post.return_value = {'valido': True}
         mock_post_proc.return_value = {
@@ -169,7 +167,6 @@ def mock_streaming_dependencies():
             'sql': mock_sql,
             'ejecutar': mock_ejecutar,
             'client': mock_client,
-            'cot': mock_cot,
             'validar_pre': mock_validar_pre,
             'validar_post': mock_validar_post,
             'post_proc': mock_post_proc,
@@ -299,27 +296,6 @@ class TestStreamingGeneracionSQL:
         # Debe contener evento de error
         assert 'error' in content.lower()
     
-    def test_streaming_chain_of_thought_usado(self, client_api, mock_streaming_dependencies):
-        """Chain-of-Thought debe usarse cuando se detecta necesidad"""
-        mock_streaming_dependencies['cot'].return_value = True
-        
-        with patch('app.api.cfo_streaming.generar_con_chain_of_thought') as mock_gen_cot:
-            mock_gen_cot.return_value = {
-                'exito': True,
-                'sql': 'SELECT * FROM metadatos'
-            }
-            
-            response = client_api.post("/api/cfo/ask-stream", json={
-                "pregunta": "¿Cuántos socios activos hay?"
-            })
-            
-            # Consumir stream
-            _ = response.content
-            
-            # Chain-of-thought debe haberse llamado
-            mock_gen_cot.assert_called_once()
-
-
 @pytest.mark.integration
 class TestStreamingEjecucionSQL:
     """Tests de la fase de ejecución SQL"""
@@ -493,4 +469,3 @@ class TestStreamingUnidades:
         conv_id = uuid4()
         data2 = PreguntaCFOStream(pregunta="Test", conversation_id=conv_id)
         assert data2.conversation_id == conv_id
-

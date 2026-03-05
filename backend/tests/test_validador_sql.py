@@ -715,6 +715,85 @@ class TestCasosEdge:
 # CONFIGURACIÓN DE PYTEST
 # ══════════════════════════════════════════════════════════════
 
+# ══════════════════════════════════════════════════════════════
+# GRUPO 14: TESTS DE VALIDACIÓN UNION ALL EXCESIVO
+# ══════════════════════════════════════════════════════════════
+
+class TestValidarUnionExcesivo:
+    """Tests para _validar_union_excesivo en SQLPreValidators."""
+
+    def test_sin_union_all_sin_problemas(self):
+        """SQL sin UNION ALL no debe generar problemas."""
+        pregunta = "¿Cuánto facturamos en 2025?"
+        sql = "SELECT SUM(total_pesificado) FROM operaciones WHERE EXTRACT(YEAR FROM fecha) = 2025"
+        result = ValidadorSQL.validar_sql_antes_ejecutar(pregunta, sql)
+        problemas_union = [p for p in result['problemas'] if 'UNION ALL' in p]
+        assert len(problemas_union) == 0
+
+    def test_2_ramas_union_all_ok(self):
+        """2 ramas UNION ALL (1 UNION ALL) no debe generar warning."""
+        pregunta = "Facturación 2025"
+        sql = "SELECT a FROM t WHERE EXTRACT(YEAR FROM fecha)=2025 UNION ALL SELECT b FROM t WHERE EXTRACT(YEAR FROM fecha)=2025"
+        result = ValidadorSQL.validar_sql_antes_ejecutar(pregunta, sql)
+        problemas_union = [p for p in result['problemas'] if 'ramas UNION ALL' in p]
+        assert len(problemas_union) == 0
+
+    def test_4_ramas_union_all_warning(self):
+        """4 ramas UNION ALL (3 UNION ALL) debe generar warning no-bloqueante."""
+        partes = ["SELECT x FROM t WHERE EXTRACT(YEAR FROM fecha)=2025"] * 4
+        sql = " UNION ALL ".join(partes)
+        pregunta = "Informe completo 2025"
+        result = ValidadorSQL.validar_sql_antes_ejecutar(pregunta, sql)
+        problemas_union = [p for p in result['problemas'] if 'ramas UNION ALL' in p]
+        assert len(problemas_union) == 1
+        assert '4 ramas' in problemas_union[0]
+        assert result['bloqueante'] is False
+
+    def test_5_ramas_union_all_warning(self):
+        """5 ramas (4 UNION ALL) debe generar warning no-bloqueante."""
+        partes = ["SELECT x FROM t WHERE EXTRACT(YEAR FROM fecha)=2025"] * 5
+        sql = " UNION ALL ".join(partes)
+        pregunta = "Informe 2025"
+        result = ValidadorSQL.validar_sql_antes_ejecutar(pregunta, sql)
+        problemas_union = [p for p in result['problemas'] if 'ramas UNION ALL' in p]
+        assert len(problemas_union) == 1
+        assert '5 ramas' in problemas_union[0]
+        assert result['bloqueante'] is False
+
+    def test_6_ramas_union_all_bloqueante(self):
+        """6 ramas (5 UNION ALL) debe ser bloqueante."""
+        partes = ["SELECT x FROM t WHERE EXTRACT(YEAR FROM fecha)=2025"] * 6
+        sql = " UNION ALL ".join(partes)
+        pregunta = "Informe 2025"
+        result = ValidadorSQL.validar_sql_antes_ejecutar(pregunta, sql)
+        problemas_union = [p for p in result['problemas'] if '6+ ramas UNION' in p]
+        assert len(problemas_union) == 1
+        assert result['bloqueante'] is True
+
+    def test_8_ramas_union_all_bloqueante(self):
+        """8 ramas (7 UNION ALL) debe ser bloqueante."""
+        partes = ["SELECT x FROM t WHERE EXTRACT(YEAR FROM fecha)=2025"] * 8
+        sql = " UNION ALL ".join(partes)
+        pregunta = "Mega informe 2025"
+        result = ValidadorSQL.validar_sql_antes_ejecutar(pregunta, sql)
+        problemas_union = [p for p in result['problemas'] if '6+ ramas UNION' in p]
+        assert len(problemas_union) == 1
+        assert result['bloqueante'] is True
+
+    def test_3_ramas_no_genera_warning(self):
+        """3 ramas (2 UNION ALL) no debe generar warning de exceso."""
+        partes = ["SELECT x FROM t WHERE EXTRACT(YEAR FROM fecha)=2025"] * 3
+        sql = " UNION ALL ".join(partes)
+        pregunta = "Comparación 2025"
+        result = ValidadorSQL.validar_sql_antes_ejecutar(pregunta, sql)
+        problemas_union = [p for p in result['problemas'] if 'ramas UNION ALL' in p]
+        assert len(problemas_union) == 0
+
+
+# ══════════════════════════════════════════════════════════════
+# CONFIGURACIÓN DE PYTEST
+# ══════════════════════════════════════════════════════════════
+
 @pytest.fixture
 def validador():
     """Fixture que retorna instancia de ValidadorSQL"""

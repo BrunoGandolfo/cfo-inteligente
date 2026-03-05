@@ -19,6 +19,7 @@ import re
 from pathlib import Path
 
 from app.core.security import get_current_user
+from app.core.constants import CLAUDE_MODEL
 from app.models.usuario import Usuario
 
 router = APIRouter(prefix="/api/soporte", tags=["Soporte AI"])
@@ -270,7 +271,7 @@ async def soporte_ask(
         )
         
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=CLAUDE_MODEL,
             max_tokens=2000,
             system=system_prompt_final,
             messages=messages
@@ -322,7 +323,7 @@ async def soporte_ask_stream(
             client = anthropic.Anthropic(api_key=api_key)
             
             with client.messages.stream(
-                model="claude-sonnet-4-20250514",
+                model=CLAUDE_MODEL,
                 max_tokens=2000,
                 system=system_prompt_final,
                 messages=messages

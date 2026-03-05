@@ -48,6 +48,8 @@ class DimensionCalculators:
                 areas_data[area_nombre]['gastos'] += float(op.monto_uyu)
         
         # Calcular rentabilidad por área
+        # Incluir todas las áreas en el cálculo de rentabilidad,
+        # incluyendo "Otros Gastos" como centro de costo legítimo.
         resultado = []
         for area_nombre, data in areas_data.items():
             rentabilidad = 0.0
@@ -135,8 +137,8 @@ class DimensionCalculators:
                     'cantidad_distribuciones': 0
                 }
             
-            socios_data[socio_nombre]['total_uyu'] += float(detalle.monto_uyu or 0)
-            socios_data[socio_nombre]['total_usd'] += float(detalle.monto_usd or 0)
+            socios_data[socio_nombre]['total_uyu'] += float(detalle.total_pesificado or 0)
+            socios_data[socio_nombre]['total_usd'] += float(detalle.total_dolarizado or 0)
             socios_data[socio_nombre]['cantidad_distribuciones'] += 1
         
         resultado = [

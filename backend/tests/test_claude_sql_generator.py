@@ -70,10 +70,10 @@ class TestInicializacion:
         """BUSINESS_CONTEXT debe tener reglas críticas"""
         # Verificar reglas importantes
         reglas_esperadas = [
-            'PORCENTAJES DE MONEDA',
-            'RANKINGS',
-            'DISTRIBUCIONES',
-            'deleted_at IS NULL',
+            'REGLA ABSOLUTA: Resultado neto = Ingresos - Gastos',
+            'Capital de trabajo = Ingresos - Gastos - Retiros - Distribuciones.',
+            "Fecha actual: {FECHA_ACTUAL}",
+            "DATE_TRUNC('month', CURRENT_DATE)",
         ]
         
         for regla in reglas_esperadas:
@@ -118,27 +118,27 @@ class TestGenerarSQL:
         assert 'prompt' in call_kwargs
         assert pregunta in call_kwargs['prompt']
     
-    def test_generar_sql_incluye_ddl_en_prompt(self, mock_orchestrator):
-        """Prompt debe incluir DDL_CONTEXT"""
+    def test_generar_sql_incluye_ddl_en_system_prompt(self, mock_orchestrator):
+        """System prompt debe incluir esquema de tablas"""
         generator = ClaudeSQLGenerator()
         pregunta = "Test"
-        
+
         generator.generar_sql(pregunta)
-        
+
         call_kwargs = mock_orchestrator.complete.call_args.kwargs
-        prompt = call_kwargs['prompt']
-        assert 'CREATE TABLE operaciones' in prompt
-    
-    def test_generar_sql_incluye_business_context(self, mock_orchestrator):
-        """Prompt debe incluir BUSINESS_CONTEXT"""
+        system_prompt = call_kwargs.get('system_prompt', '')
+        assert 'CREATE TABLE operaciones' in system_prompt
+
+    def test_generar_sql_incluye_reglas_en_system_prompt(self, mock_orchestrator):
+        """System prompt debe incluir reglas de negocio"""
         generator = ClaudeSQLGenerator()
         pregunta = "Test"
-        
+
         generator.generar_sql(pregunta)
-        
+
         call_kwargs = mock_orchestrator.complete.call_args.kwargs
-        prompt = call_kwargs['prompt']
-        assert 'deleted_at IS NULL' in prompt
+        system_prompt = call_kwargs.get('system_prompt', '')
+        assert 'deleted_at IS NULL' in system_prompt
     
     def test_generar_sql_con_contexto(self, mock_orchestrator):
         """Genera SQL con contexto de conversación"""
@@ -258,35 +258,35 @@ class TestManejoErrores:
 class TestReglasNegocio:
     """Tests de reglas de negocio en SQL generado"""
     
-    def test_regla_deleted_at_en_contexto(self, mock_orchestrator):
-        """Contexto debe mencionar deleted_at IS NULL"""
+    def test_regla_deleted_at_en_system_prompt(self, mock_orchestrator):
+        """System prompt debe mencionar deleted_at IS NULL"""
         generator = ClaudeSQLGenerator()
         generator.generar_sql("Test")
-        
+
         call_kwargs = mock_orchestrator.complete.call_args.kwargs
-        prompt = call_kwargs['prompt']
-        
-        assert 'deleted_at IS NULL' in prompt
-    
-    def test_regla_tipo_operacion_en_contexto(self, mock_orchestrator):
-        """Contexto debe explicar tipos de operación"""
+        system_prompt = call_kwargs.get('system_prompt', '')
+
+        assert 'deleted_at IS NULL' in system_prompt
+
+    def test_regla_tipo_operacion_en_system_prompt(self, mock_orchestrator):
+        """System prompt debe explicar tipos de operacion"""
         generator = ClaudeSQLGenerator()
         generator.generar_sql("Test")
-        
+
         call_kwargs = mock_orchestrator.complete.call_args.kwargs
-        prompt = call_kwargs['prompt']
-        
-        assert 'INGRESO' in prompt or 'tipo_operacion' in prompt
-    
-    def test_regla_monedas_en_contexto(self, mock_orchestrator):
-        """Contexto debe explicar manejo de monedas"""
+        system_prompt = call_kwargs.get('system_prompt', '')
+
+        assert 'INGRESO' in system_prompt and 'tipo_operacion' in system_prompt
+
+    def test_regla_monedas_en_system_prompt(self, mock_orchestrator):
+        """System prompt debe explicar manejo de monedas"""
         generator = ClaudeSQLGenerator()
         generator.generar_sql("Test")
-        
+
         call_kwargs = mock_orchestrator.complete.call_args.kwargs
-        prompt = call_kwargs['prompt']
-        
-        assert 'UYU' in prompt or 'monto_uyu' in prompt
+        system_prompt = call_kwargs.get('system_prompt', '')
+
+        assert 'UYU' in system_prompt and 'total_pesificado' in system_prompt
 
 
 # ══════════════════════════════════════════════════════════════

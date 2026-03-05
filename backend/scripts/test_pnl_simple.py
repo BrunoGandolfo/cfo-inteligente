@@ -75,10 +75,7 @@ def get_metricas_localidad(conn, fecha_inicio, fecha_fin, localidad):
     distribuciones = float(result[3])
     
     resultado_neto = ingresos - gastos
-    total_extraido = retiros + distribuciones
-    retenido = resultado_neto - total_extraido
     rentabilidad = (resultado_neto / ingresos * 100) if ingresos > 0 else 0
-    ratio_extraccion = (total_extraido / resultado_neto * 100) if resultado_neto > 0 else 0
     
     return {
         'ingresos': round(ingresos, 2),
@@ -87,9 +84,6 @@ def get_metricas_localidad(conn, fecha_inicio, fecha_fin, localidad):
         'rentabilidad': round(rentabilidad, 2),
         'retiros': round(retiros, 2),
         'distribuciones': round(distribuciones, 2),
-        'total_extraido': round(total_extraido, 2),
-        'retenido': round(retenido, 2),
-        'ratio_extraccion': round(ratio_extraccion, 2),
     }
 
 
@@ -114,20 +108,17 @@ MONTEVIDEO:
 - Gastos: ${mvd['gastos']:,.0f}
 - Resultado Neto: ${mvd['resultado_neto']:,.0f}
 - Rentabilidad: {mvd['rentabilidad']:.1f}%
-- Ratio Extracción: {mvd['ratio_extraccion']:.1f}%
 
 MERCEDES:
 - Ingresos: ${mer['ingresos']:,.0f} ({mer['ingresos']/total['ingresos']*100:.1f}% del total)
 - Gastos: ${mer['gastos']:,.0f}
 - Resultado Neto: ${mer['resultado_neto']:,.0f}
 - Rentabilidad: {mer['rentabilidad']:.1f}%
-- Ratio Extracción: {mer['ratio_extraccion']:.1f}%
 
 TOTALES CONSOLIDADOS:
 - Ingresos: ${total['ingresos']:,.0f}
 - Resultado Neto: ${total['resultado_neto']:,.0f}
 - Rentabilidad: {total['rentabilidad']:.1f}%
-- Ratio Extracción Total: {total['ratio_extraccion']:.1f}%
 
 GENERA UN ANÁLISIS EN FORMATO JSON:
 
@@ -136,7 +127,6 @@ GENERA UN ANÁLISIS EN FORMATO JSON:
   "analisis_montevideo": "Párrafo analizando Montevideo. Máximo 80 palabras.",
   "analisis_mercedes": "Párrafo analizando Mercedes. Máximo 80 palabras.",
   "comparativa": "Párrafo comparando ambas oficinas. Máximo 80 palabras.",
-  "alerta_extracciones": "Advertencia si ratio >70%, o 'Sin alertas de extracción.'",
   "fortaleza_1": "Primera fortaleza (1 oración)",
   "fortaleza_2": "Segunda fortaleza (1 oración)",
   "atencion_1": "Primer punto de atención (1 oración)",
@@ -183,10 +173,9 @@ def generar_narrativas_fallback(datos):
     
     return {
         "resumen_ejecutivo": f"En {datos['metadata']['periodo_label']}, Conexión Consultora registró ingresos de ${total['ingresos']:,.0f} con una rentabilidad del {total['rentabilidad']:.1f}%. {lider} lideró la facturación con el {pct_lider:.1f}% del total.",
-        "analisis_montevideo": f"Montevideo generó ${mvd['ingresos']:,.0f} con rentabilidad de {mvd['rentabilidad']:.1f}%. El ratio de extracción fue {mvd['ratio_extraccion']:.1f}%.",
-        "analisis_mercedes": f"Mercedes generó ${mer['ingresos']:,.0f} con rentabilidad de {mer['rentabilidad']:.1f}%. El ratio de extracción fue {mer['ratio_extraccion']:.1f}%.",
+        "analisis_montevideo": f"Montevideo generó ${mvd['ingresos']:,.0f} con rentabilidad de {mvd['rentabilidad']:.1f}%.",
+        "analisis_mercedes": f"Mercedes generó ${mer['ingresos']:,.0f} con rentabilidad de {mer['rentabilidad']:.1f}%.",
         "comparativa": f"{lider} concentra la mayor parte de los ingresos del período.",
-        "alerta_extracciones": "Revisar política de extracciones." if total['ratio_extraccion'] > 70 else "Sin alertas de extracción.",
         "fortaleza_1": f"Rentabilidad consolidada del {total['rentabilidad']:.1f}%.",
         "fortaleza_2": f"Resultado neto positivo de ${total['resultado_neto']:,.0f}.",
         "atencion_1": "Monitorear equilibrio entre localidades.",
@@ -215,11 +204,8 @@ def main():
             'resultado_neto': mvd['resultado_neto'] + mer['resultado_neto'],
             'retiros': mvd['retiros'] + mer['retiros'],
             'distribuciones': mvd['distribuciones'] + mer['distribuciones'],
-            'total_extraido': mvd['total_extraido'] + mer['total_extraido'],
-            'retenido': mvd['retenido'] + mer['retenido'],
         }
         total['rentabilidad'] = (total['resultado_neto'] / total['ingresos'] * 100) if total['ingresos'] > 0 else 0
-        total['ratio_extraccion'] = (total['total_extraido'] / total['resultado_neto'] * 100) if total['resultado_neto'] > 0 else 0
         
         print("=== DATOS GENERADOS (Noviembre 2025) ===")
         print(f"\nMONTEVIDEO:")

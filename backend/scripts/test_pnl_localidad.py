@@ -39,13 +39,11 @@ def main():
         print(f"  Ingresos: ${datos['montevideo']['actual']['ingresos']:,.2f}")
         print(f"  Resultado: ${datos['montevideo']['actual']['resultado_neto']:,.2f}")
         print(f"  Rentabilidad: {datos['montevideo']['actual']['rentabilidad']}%")
-        print(f"  Ratio Extracción: {datos['montevideo']['actual']['ratio_extraccion']}%")
         
         print(f"\nMERCEDES:")
         print(f"  Ingresos: ${datos['mercedes']['actual']['ingresos']:,.2f}")
         print(f"  Resultado: ${datos['mercedes']['actual']['resultado_neto']:,.2f}")
         print(f"  Rentabilidad: {datos['mercedes']['actual']['rentabilidad']}%")
-        print(f"  Ratio Extracción: {datos['mercedes']['actual']['ratio_extraccion']}%")
         
         print(f"\nTOTAL:")
         print(f"  Ingresos: ${datos['total']['actual']['ingresos']:,.2f}")

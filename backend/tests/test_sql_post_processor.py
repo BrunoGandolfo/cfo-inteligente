@@ -279,6 +279,192 @@ SELECT SUM(monto_uyu) FROM operaciones
 # GRUPO 5: TESTS DE CASOS EDGE
 # ══════════════════════════════════════════════════════════════
 
+# ══════════════════════════════════════════════════════════════
+# GRUPO 5: TESTS DE PARENTIZAR UNION ALL
+# ══════════════════════════════════════════════════════════════
+
+class TestParentizarUnionAll:
+    """Tests de parentización automática de UNION ALL con ORDER BY/LIMIT"""
+
+    def test_parentiza_union_all_con_order_by_limit(self):
+        """Ramas con ORDER BY + LIMIT se envuelven en paréntesis"""
+        sql = (
+            "SELECT nombre, total FROM ingresos ORDER BY total DESC LIMIT 5 "
+            "UNION ALL "
+            "SELECT nombre, total FROM gastos ORDER BY total DESC LIMIT 5"
+        )
+        resultado = SQLPostProcessor.parentizar_union_all(sql)
+
+        assert resultado.startswith("(")
+        assert "UNION ALL" in resultado
+        # Cada rama debe estar parentizada
+        assert resultado.count("(SELECT") == 2
+
+    def test_parentiza_union_all_con_solo_order_by(self):
+        """Ramas con solo ORDER BY (sin LIMIT) se parentiza"""
+        sql = (
+            "SELECT nombre FROM ingresos ORDER BY nombre "
+            "UNION ALL "
+            "SELECT nombre FROM gastos ORDER BY nombre"
+        )
+        resultado = SQLPostProcessor.parentizar_union_all(sql)
+
+        assert "(SELECT" in resultado
+
+    def test_preserva_order_by_final_del_union(self):
+        """ORDER BY final que aplica al UNION completo se preserva fuera"""
+        sql = (
+            "SELECT nombre, total FROM ingresos ORDER BY total DESC LIMIT 5 "
+            "UNION ALL "
+            "SELECT nombre, total FROM gastos ORDER BY total DESC LIMIT 5 "
+            "ORDER BY total DESC"
+        )
+        resultado = SQLPostProcessor.parentizar_union_all(sql)
+
+        # El ORDER BY final debe estar fuera de los paréntesis
+        assert resultado.rstrip().endswith("ORDER BY total DESC")
+        # Las ramas deben estar parentizadas
+        assert "(SELECT" in resultado
+
+    def test_no_modifica_sin_union(self):
+        """SQL sin UNION no se modifica"""
+        sql = "SELECT * FROM operaciones ORDER BY fecha DESC LIMIT 10"
+        resultado = SQLPostProcessor.parentizar_union_all(sql)
+
+        assert resultado == sql
+
+    def test_no_modifica_sin_order_by_ni_limit(self):
+        """UNION ALL sin ORDER BY/LIMIT en ramas no necesita paréntesis"""
+        sql = (
+            "SELECT nombre FROM ingresos "
+            "UNION ALL "
+            "SELECT nombre FROM gastos"
+        )
+        resultado = SQLPostProcessor.parentizar_union_all(sql)
+
+        assert resultado == sql
+
+    def test_no_modifica_ya_parentizado(self):
+        """SQL ya parentizado no se toca"""
+        sql = (
+            "(SELECT nombre FROM ingresos ORDER BY nombre LIMIT 5) "
+            "UNION ALL "
+            "(SELECT nombre FROM gastos ORDER BY nombre LIMIT 5)"
+        )
+        resultado = SQLPostProcessor.parentizar_union_all(sql)
+
+        assert resultado == sql
+
+    def test_no_modifica_sql_vacio(self):
+        """SQL vacío retorna igual"""
+        assert SQLPostProcessor.parentizar_union_all("") == ""
+        assert SQLPostProcessor.parentizar_union_all(None) is None
+
+    def test_union_simple_sin_all(self):
+        """UNION (sin ALL) con ORDER BY/LIMIT también se parentiza"""
+        sql = (
+            "SELECT nombre FROM ingresos ORDER BY nombre LIMIT 5 "
+            "UNION "
+            "SELECT nombre FROM gastos ORDER BY nombre LIMIT 5"
+        )
+        resultado = SQLPostProcessor.parentizar_union_all(sql)
+
+        assert "(SELECT" in resultado
+
+    def test_order_by_con_limit_pertenece_a_rama(self):
+        """ORDER BY seguido de LIMIT en última rama NO se extrae como final"""
+        sql = (
+            "SELECT nombre, total FROM ingresos ORDER BY total DESC LIMIT 5 "
+            "UNION ALL "
+            "SELECT nombre, total FROM gastos ORDER BY total DESC LIMIT 5"
+        )
+        resultado = SQLPostProcessor.parentizar_union_all(sql)
+
+        # Ambas ramas deben conservar su ORDER BY + LIMIT dentro de paréntesis
+        partes = resultado.split("UNION ALL")
+        assert "ORDER BY" in partes[0]
+        assert "LIMIT" in partes[0]
+        assert "ORDER BY" in partes[1]
+        assert "LIMIT" in partes[1]
+
+    def test_integracion_procesar_sql(self):
+        """parentizar_union_all se ejecuta via procesar_sql"""
+        sql = (
+            "SELECT nombre, total FROM ingresos ORDER BY total DESC LIMIT 5 "
+            "UNION ALL "
+            "SELECT nombre, total FROM gastos ORDER BY total DESC LIMIT 5"
+        )
+        resultado = SQLPostProcessor.procesar_sql("cualquier pregunta", sql)
+
+        assert resultado["modificado"] is True
+        assert any("UNION ALL" in c or "Parentizado" in c for c in resultado["cambios"])
+        assert "(SELECT" in resultado["sql"]
+
+
+# ══════════════════════════════════════════════════════════════
+# GRUPO 6: TESTS DE CORRECCIÓN DE ACENTOS EN ÁREAS
+# ══════════════════════════════════════════════════════════════
+
+class TestCorregirAcentosAreas:
+    """Tests del safety net que corrige nombres de áreas sin tilde"""
+
+    def test_corrige_juridica(self):
+        """'Juridica' sin tilde se corrige a 'Jurídica'"""
+        sql = "SELECT * FROM operaciones o JOIN areas a ON o.area_id = a.id WHERE a.nombre = 'Juridica'"
+        resultado = SQLPostProcessor.corregir_acentos_areas(sql)
+        assert "'Jurídica'" in resultado
+        assert "'Juridica'" not in resultado
+
+    def test_corrige_recuperacion(self):
+        """'Recuperacion' sin tilde se corrige a 'Recuperación'"""
+        sql = "WHERE a.nombre = 'Recuperacion'"
+        resultado = SQLPostProcessor.corregir_acentos_areas(sql)
+        assert "'Recuperación'" in resultado
+
+    def test_corrige_administracion(self):
+        """'Administracion' sin tilde se corrige a 'Administración'"""
+        sql = "WHERE a.nombre = 'Administracion'"
+        resultado = SQLPostProcessor.corregir_acentos_areas(sql)
+        assert "'Administración'" in resultado
+
+    def test_no_modifica_con_tildes_correctas(self):
+        """SQL con tildes correctas no se modifica"""
+        sql = "WHERE a.nombre = 'Jurídica'"
+        resultado = SQLPostProcessor.corregir_acentos_areas(sql)
+        assert resultado == sql
+
+    def test_no_modifica_areas_sin_tildes(self):
+        """Áreas que no tienen tildes (Notarial, Contable) no se tocan"""
+        sql = "WHERE a.nombre IN ('Notarial', 'Contable', 'Otros Gastos')"
+        resultado = SQLPostProcessor.corregir_acentos_areas(sql)
+        assert resultado == sql
+
+    def test_corrige_multiples(self):
+        """Corrige múltiples áreas en un solo SQL"""
+        sql = "WHERE a.nombre IN ('Juridica', 'Recuperacion', 'Administracion')"
+        resultado = SQLPostProcessor.corregir_acentos_areas(sql)
+        assert "'Jurídica'" in resultado
+        assert "'Recuperación'" in resultado
+        assert "'Administración'" in resultado
+
+    def test_maneja_sql_vacio(self):
+        """SQL vacío o None no crashea"""
+        assert SQLPostProcessor.corregir_acentos_areas("") == ""
+        assert SQLPostProcessor.corregir_acentos_areas(None) is None
+
+    def test_integracion_procesar_sql(self):
+        """corregir_acentos_areas se ejecuta via procesar_sql"""
+        sql = "SELECT * FROM operaciones o JOIN areas a ON o.area_id = a.id WHERE a.nombre = 'Juridica'"
+        resultado = SQLPostProcessor.procesar_sql("gastos de jurídica", sql)
+        assert "'Jurídica'" in resultado["sql"]
+        assert resultado["modificado"] is True
+        assert any("acentos" in c.lower() for c in resultado["cambios"])
+
+
+# ══════════════════════════════════════════════════════════════
+# GRUPO 7: TESTS DE CASOS EDGE
+# ══════════════════════════════════════════════════════════════
+
 class TestCasosEdge:
     """Tests de casos límite"""
     

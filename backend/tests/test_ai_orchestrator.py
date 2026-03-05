@@ -377,7 +377,7 @@ class TestAIOrchestatorConfig:
         """Claude debe usar el modelo configurado"""
         from app.services.ai.ai_orchestrator import AIOrchestrator
         
-        assert AIOrchestrator.CLAUDE_MODEL == "claude-sonnet-4-20250514"
+        assert AIOrchestrator.CLAUDE_MODEL == "claude-sonnet-4-5-20250929"
     
     def test_max_retries_es_3(self):
         """Max retries debe ser 3"""

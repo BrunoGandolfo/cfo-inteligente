@@ -4,6 +4,7 @@ from app.core.logger import get_logger
 from app.models.usuario import Usuario
 import anthropic
 from app.core.config import settings
+from app.core.constants import HAIKU_CLASSIFIER_MODEL
 
 logger = get_logger(__name__)
 
@@ -59,7 +60,7 @@ REGLAS:
 Responde SOLO con la frase, sin comillas ni explicación."""
 
         response = client.messages.create(
-            model="claude-3-5-haiku-20241022",
+            model=HAIKU_CLASSIFIER_MODEL,
             max_tokens=100,
             messages=[{"role": "user", "content": prompt}]
         )
