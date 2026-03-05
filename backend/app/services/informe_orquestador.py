@@ -197,6 +197,39 @@ def extraer_periodo_informe(pregunta: str) -> Optional[dict]:
                 "descripcion": f"semestre {kw} {anio}",
             }
 
+    # Detectar rango de meses (ej: "de marzo a junio 2026")
+    meses_regex = "|".join(sorted(_MESES_MAP.keys(), key=len, reverse=True))
+    match_rango = re.search(
+        rf"(?:de\s+)?({meses_regex})\s+(?:a|hasta)\s+({meses_regex})\b",
+        p
+    )
+    if match_rango:
+        mes_desde_nombre = match_rango.group(1)
+        mes_hasta_nombre = match_rango.group(2)
+        mes_desde = _MESES_MAP[mes_desde_nombre]
+        mes_hasta = _MESES_MAP[mes_hasta_nombre]
+        if mes_desde > mes_hasta:
+            mes_desde, mes_hasta = mes_hasta, mes_desde
+            mes_desde_nombre, mes_hasta_nombre = mes_hasta_nombre, mes_desde_nombre
+        return {
+            "tipo": "periodo",
+            "anio": anio,
+            "fecha_desde": f"{anio}-{mes_desde:02d}-01",
+            "fecha_hasta": f"{anio}-{mes_hasta:02d}-{_ultimo_dia_mes(anio, mes_hasta):02d}",
+            "descripcion": f"{mes_desde_nombre} a {mes_hasta_nombre} {anio}",
+        }
+
+    # Detectar mes individual (ej: "febrero 2026")
+    for nombre_mes, numero_mes in _MESES_MAP.items():
+        if re.search(rf"\b{re.escape(nombre_mes)}\b", p):
+            return {
+                "tipo": "periodo",
+                "anio": anio,
+                "fecha_desde": f"{anio}-{numero_mes:02d}-01",
+                "fecha_hasta": f"{anio}-{numero_mes:02d}-{_ultimo_dia_mes(anio, numero_mes):02d}",
+                "descripcion": f"{nombre_mes} {anio}",
+            }
+
     # Año completo (caso mas comun)
     return _periodo_anio_completo(anio)
 
@@ -214,6 +247,12 @@ def _periodo_anio_completo(anio: int) -> dict:
 
 def _ultimo_dia(anio: int, mes: int) -> int:
     """Retorna el ultimo dia del mes."""
+    import calendar
+    return calendar.monthrange(anio, mes)[1]
+
+
+def _ultimo_dia_mes(anio: int, mes: int) -> int:
+    """Retorna el último día del mes considerando bisiestos."""
     import calendar
     return calendar.monthrange(anio, mes)[1]
 
