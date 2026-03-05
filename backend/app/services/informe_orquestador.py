@@ -1007,6 +1007,9 @@ def _formatear_informe_para_narrativa(informe: dict) -> str:
         return "Sin datos disponibles."
 
     lineas = []
+    lineas.append("TIPO: informe_completo")
+    lineas.append("INSTRUCCIÓN: Este es un informe financiero multi-sección. Narrar TODAS las secciones que aparecen abajo.")
+    lineas.append("")
     periodo = informe.get("periodo", {})
     desc_periodo = periodo.get("descripcion", periodo) if isinstance(periodo, dict) else str(periodo)
     lineas.append(f"PERÍODO: {desc_periodo}")

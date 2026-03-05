@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.logger import get_logger
 from app.core.security import get_current_user
+from app.core.constants import CLAUDE_MAX_TOKENS, CLAUDE_MAX_TOKENS_INFORME
 from app.services.cfo_ai_service import ejecutar_consulta_cfo
 
 logger = get_logger(__name__)
@@ -215,7 +216,7 @@ def generar_respuesta_narrativa(pregunta: str, datos: list, sql_generado: str, c
         respuesta = _orchestrator.complete(
             prompt=user_msg,
             system_prompt=CFO_NARRATIVE_SYSTEM_PROMPT,
-            max_tokens=4000,
+            max_tokens=CLAUDE_MAX_TOKENS,
             temperature=0.1
         )
         
@@ -394,7 +395,7 @@ def _generar_respuesta_informe(db, data, texto_narrativa: str, resultado_informe
     respuesta_narrativa = _orchestrator.complete(
         prompt=user_msg,
         system_prompt=CFO_NARRATIVE_SYSTEM_PROMPT,
-        max_tokens=4000,
+        max_tokens=CLAUDE_MAX_TOKENS_INFORME,
         temperature=0.1,
     )
 

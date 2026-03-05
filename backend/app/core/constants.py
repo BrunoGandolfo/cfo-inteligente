@@ -57,6 +57,7 @@ MAX_TIPO_CAMBIO = 50
 
 # Claude Sonnet 4.5
 CLAUDE_MAX_TOKENS = 4000
+CLAUDE_MAX_TOKENS_INFORME = 12000
 CLAUDE_TEMPERATURE = 0.0  # Determinístico
 CLAUDE_TIMEOUT_SECONDS = 600
 
@@ -130,4 +131,3 @@ MONEDAS = ['UYU', 'USD']
 
 # Año actual del sistema
 ANIO_ACTUAL = datetime.now().year
-
