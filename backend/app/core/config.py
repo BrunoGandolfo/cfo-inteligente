@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     google_ai_key: str = Field(default="", alias="GOOGLE_AI_KEY")
     
     # SQL Engine: "haiku" (pipeline completo) | "claude" (bypass directo a Claude)
-    sql_engine: str = Field(default="haiku", alias="SQL_ENGINE")
+    sql_engine: str = Field(default="claude", alias="SQL_ENGINE")
 
     # CORS - Lee desde .env usando pydantic-settings
     cors_origins: str = Field(
