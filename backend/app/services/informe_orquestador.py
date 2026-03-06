@@ -64,6 +64,12 @@ _KEYWORDS_INFORME = [
     "informe general",
     "resumen general del año",
     "resumen general del ano",
+    "informe de",
+    "informe del",
+    "reporte de",
+    "reporte del",
+    "resumen de",
+    "resumen del",
 ]
 
 # Keywords que EXCLUYEN la intención informe (preguntas puntuales)
@@ -173,7 +179,12 @@ def extraer_periodo_informe(pregunta: str) -> Optional[dict]:
         if any(kw in p for kw in ["este año", "este ano", "el año", "el ano", "del año", "del ano"]):
             anio = date.today().year
         else:
-            return None
+            # Si hay un mes mencionado pero no año, asumir año actual
+            tiene_mes = any(mes in p for mes in _MESES_MAP)
+            if tiene_mes:
+                anio = date.today().year
+            else:
+                return None
 
     # Detectar trimestre
     for kw, (mes_desde, mes_hasta) in _TRIMESTRES.items():
