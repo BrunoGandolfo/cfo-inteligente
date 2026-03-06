@@ -26,6 +26,7 @@ from app.services.ai.ai_orchestrator import AIOrchestrator
 from app.services.informe_orquestador import (
     es_pregunta_informe,
     ejecutar_informe,
+    computar_resumen_informe,
     _formatear_informe_para_narrativa,
     _formatear_comparativo_para_narrativa,
 )
@@ -371,19 +372,7 @@ def _generar_respuesta_informe(db, data, texto_narrativa: str, resultado_informe
     """Genera respuesta narrativa para informes del orquestador multi-query."""
     from app.core.cfo_narrative_prompt import CFO_NARRATIVE_SYSTEM_PROMPT, build_cfo_user_message
 
-    totales = resultado_informe.get("totales", {})
-    if not totales and resultado_informe.get("periodos"):
-        totales = resultado_informe["periodos"][-1].get("totales", {})
-
-    resumen_informe = {
-        "sumas": {
-            "ingresos_uyu": totales.get("ingresos", {}).get("uyu", 0),
-            "gastos_uyu": totales.get("gastos", {}).get("uyu", 0),
-            "resultado_neto_uyu": totales.get("resultado_neto", {}).get("uyu", 0),
-            "retiros_uyu": totales.get("retiros", {}).get("uyu", 0),
-            "distribuciones_uyu": totales.get("distribuciones", {}).get("uyu", 0),
-        }
-    }
+    resumen_informe = computar_resumen_informe(resultado_informe)
 
     user_msg = build_cfo_user_message(
         pregunta=data.pregunta,

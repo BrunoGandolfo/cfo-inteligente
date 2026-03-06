@@ -15,6 +15,7 @@ from app.services.informe_orquestador import (
     extraer_periodo_informe,
     ejecutar_informe,
     ejecutar_informe_comparativo,
+    computar_resumen_informe,
     _query_totales_por_tipo,
     _query_operativo_por_area,
     _query_distribuciones_por_socio,
@@ -325,6 +326,65 @@ class TestEnsamblarTotales:
         totales = _ensamblar_totales(filas)
         assert totales["resultado_neto"]["uyu"] == -5000.0
         assert totales["resultado_neto"]["rentabilidad"] == 0  # division por cero evitada
+
+
+# ══════════════════════════════════════════════════════════════
+# GRUPO 4.5: RESUMEN ENRIQUECIDO DE INFORME
+# ══════════════════════════════════════════════════════════════
+
+class TestComputarResumenInforme:
+    """Tests para computar_resumen_informe()."""
+
+    def test_computar_resumen_informe_estructura(self):
+        resultado = {
+            "totales": {
+                "ingresos": {"uyu": 1000000, "usd": 25000, "cantidad": 50},
+                "gastos": {"uyu": 500000, "usd": 12500, "cantidad": 30},
+                "resultado_neto": {"uyu": 500000, "rentabilidad": 50.0},
+                "retiros": {"uyu": 100000, "cantidad": 2},
+                "distribuciones": {"uyu": 100000, "cantidad": 2},
+                "capital_de_trabajo": {"uyu": 300000},
+            },
+            "concentracion_clientes": [
+                {"ranking": 1, "cliente": "A", "participacion_pct": 20.0, "participacion_acumulada_pct": 20.0},
+                {"ranking": 2, "cliente": "B", "participacion_pct": 15.0, "participacion_acumulada_pct": 35.0},
+                {"ranking": 3, "cliente": "C", "participacion_pct": 10.0, "participacion_acumulada_pct": 45.0},
+            ],
+            "top_clientes": [
+                {"cliente": "A", "total_uyu": 200000, "cantidad_operaciones": 5},
+                {"cliente": "B", "total_uyu": 150000, "cantidad_operaciones": 3},
+            ],
+            "top_proveedores": [
+                {"proveedor": "X", "total_uyu": 90000, "cantidad_operaciones": 2},
+            ],
+            "por_area": [
+                {"area": "Jurídica", "ingresos_uyu": 600000, "gastos_uyu": 200000, "rentabilidad": 66.7},
+            ],
+            "por_localidad": [
+                {"localidad": "MONTEVIDEO", "ingresos_uyu": 700000, "gastos_uyu": 300000, "rentabilidad": 57.1},
+            ],
+            "distribuciones_por_socio": [
+                {"socio": "Bruno", "total_pesificado": 50000},
+            ],
+            "capital_trabajo": {
+                "capital_trabajo_uyu": 300000,
+                "ratio_distribuciones_sobre_ingresos": 10.0,
+                "ratio_distribuciones_sobre_resultado": 20.0,
+            },
+        }
+
+        resumen = computar_resumen_informe(resultado)
+        assert "sumas" in resumen
+        assert resumen["sumas"]["ingresos_uyu"] == 1000000
+        assert "concentracion" in resumen
+        assert resumen["concentracion"]["top_3_pct"] == 45.0
+        assert "top_clientes" in resumen
+        assert len(resumen["top_clientes"]) == 2
+        assert "top_proveedores" in resumen
+        assert "por_area" in resumen
+        assert "por_localidad" in resumen
+        assert "distribuciones_por_socio" in resumen
+        assert "ratios_sostenibilidad" in resumen
 
 
 # ══════════════════════════════════════════════════════════════

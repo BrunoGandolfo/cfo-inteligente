@@ -946,6 +946,189 @@ def _ensamblar_evolucion_trimestral(filas: list[dict]) -> list[dict]:
 
 
 # ══════════════════════════════════════════════════════════════
+# RESUMEN PRE-CALCULADO PARA NARRATIVA DE INFORMES
+# ══════════════════════════════════════════════════════════════
+
+def computar_resumen_informe(resultado_informe: dict) -> dict:
+    """
+    Construye un resumen rico para narrativa de informes.
+
+    Incluye secciones clave (sumas, concentración, top clientes/proveedores,
+    desgloses por área/localidad, distribuciones y ratios de sostenibilidad)
+    para que la capa narrativa use cifras estructuradas en lugar de parsear
+    únicamente texto largo.
+
+    Soporta:
+    - informe_completo (totales en raíz)
+    - informe_comparativo (usa periodos[-1] como base y adjunta variaciones)
+    """
+    if not isinstance(resultado_informe, dict) or not resultado_informe:
+        return {}
+
+    def _as_float(val, default: float = 0.0) -> float:
+        try:
+            return float(val if val is not None else default)
+        except (TypeError, ValueError):
+            return float(default)
+
+    def _round_monto(val) -> float:
+        return round(_as_float(val), 0)
+
+    def _round_pct(val) -> float:
+        return round(_as_float(val), 1)
+
+    informe_base = resultado_informe
+    totales = informe_base.get("totales", {})
+
+    # Comparativo: usar periodo actual como base para el resumen.
+    if (not totales) and isinstance(resultado_informe.get("periodos"), list) and resultado_informe["periodos"]:
+        ultimo_periodo = resultado_informe["periodos"][-1] or {}
+        if isinstance(ultimo_periodo, dict):
+            informe_base = ultimo_periodo
+            totales = ultimo_periodo.get("totales", {}) or {}
+
+    resumen: dict[str, Any] = {}
+
+    if isinstance(totales, dict) and totales:
+        ingresos = totales.get("ingresos", {}) or {}
+        gastos = totales.get("gastos", {}) or {}
+        resultado_neto = totales.get("resultado_neto", {}) or {}
+        retiros = totales.get("retiros", {}) or {}
+        distribuciones = totales.get("distribuciones", {}) or {}
+        capital_trabajo = totales.get("capital_de_trabajo", {}) or {}
+
+        resumen["sumas"] = {
+            "ingresos_uyu": _round_monto(ingresos.get("uyu", 0)),
+            "gastos_uyu": _round_monto(gastos.get("uyu", 0)),
+            "resultado_neto_uyu": _round_monto(resultado_neto.get("uyu", 0)),
+            "retiros_uyu": _round_monto(retiros.get("uyu", 0)),
+            "distribuciones_uyu": _round_monto(distribuciones.get("uyu", 0)),
+            "rentabilidad_pct": _round_pct(resultado_neto.get("rentabilidad", 0)),
+            "capital_de_trabajo_uyu": _round_monto(capital_trabajo.get("uyu", 0)),
+        }
+
+    concentracion = informe_base.get("concentracion_clientes", [])
+    if isinstance(concentracion, list) and concentracion:
+        filas_concentracion = sorted(
+            [c for c in concentracion if isinstance(c, dict)],
+            key=lambda x: _as_float(x.get("ranking", 0))
+        )
+
+        if filas_concentracion:
+            top_3 = next(
+                (c.get("participacion_acumulada_pct") for c in filas_concentracion if int(_as_float(c.get("ranking"))) == 3),
+                None,
+            )
+            top_5 = next(
+                (c.get("participacion_acumulada_pct") for c in filas_concentracion if int(_as_float(c.get("ranking"))) == 5),
+                None,
+            )
+            top_10 = next(
+                (c.get("participacion_acumulada_pct") for c in filas_concentracion if int(_as_float(c.get("ranking"))) == 10),
+                None,
+            )
+
+            if top_3 is None:
+                top_3 = sum(_as_float(c.get("participacion_pct", 0)) for c in filas_concentracion[:3])
+            if top_5 is None and len(filas_concentracion) >= 5:
+                top_5 = sum(_as_float(c.get("participacion_pct", 0)) for c in filas_concentracion[:5])
+            if top_10 is None and len(filas_concentracion) >= 10:
+                top_10 = _as_float(filas_concentracion[9].get("participacion_acumulada_pct", 0))
+
+            resumen_concentracion = {"top_3_pct": _round_pct(top_3)}
+            if top_5 is not None:
+                resumen_concentracion["top_5_pct"] = _round_pct(top_5)
+            if top_10 is not None:
+                resumen_concentracion["top_10_pct"] = _round_pct(top_10)
+            resumen["concentracion"] = resumen_concentracion
+
+    top_clientes = informe_base.get("top_clientes", [])
+    if isinstance(top_clientes, list) and top_clientes:
+        participacion_por_cliente = {}
+        if isinstance(concentracion, list):
+            for fila in concentracion:
+                if isinstance(fila, dict):
+                    participacion_por_cliente[fila.get("cliente")] = _round_pct(fila.get("participacion_pct", 0))
+
+        resumen["top_clientes"] = []
+        for i, c in enumerate(top_clientes, 1):
+            if not isinstance(c, dict):
+                continue
+            resumen["top_clientes"].append({
+                "ranking": int(_as_float(c.get("ranking", i), i)),
+                "cliente": c.get("cliente", "No especificado"),
+                "total_uyu": _round_monto(c.get("total_uyu", 0)),
+                "participacion_pct": participacion_por_cliente.get(c.get("cliente"), _round_pct(c.get("participacion_pct", 0))),
+                "operaciones": int(_as_float(c.get("cantidad_operaciones", 0))),
+            })
+
+    top_proveedores = informe_base.get("top_proveedores", [])
+    if isinstance(top_proveedores, list) and top_proveedores:
+        resumen["top_proveedores"] = []
+        for i, p in enumerate(top_proveedores, 1):
+            if not isinstance(p, dict):
+                continue
+            resumen["top_proveedores"].append({
+                "ranking": int(_as_float(p.get("ranking", i), i)),
+                "proveedor": p.get("proveedor", "No especificado"),
+                "total_uyu": _round_monto(p.get("total_uyu", 0)),
+                "operaciones": int(_as_float(p.get("cantidad_operaciones", 0))),
+            })
+
+    por_area = informe_base.get("por_area", [])
+    if isinstance(por_area, list) and por_area:
+        resumen["por_area"] = []
+        for fila in por_area:
+            if not isinstance(fila, dict):
+                continue
+            resumen["por_area"].append({
+                "area": fila.get("area", "No especificado"),
+                "ingresos_uyu": _round_monto(fila.get("ingresos_uyu", 0)),
+                "gastos_uyu": _round_monto(fila.get("gastos_uyu", 0)),
+                "rentabilidad_pct": _round_pct(fila.get("rentabilidad", 0)),
+            })
+
+    por_localidad = informe_base.get("por_localidad", [])
+    if isinstance(por_localidad, list) and por_localidad:
+        resumen["por_localidad"] = []
+        for fila in por_localidad:
+            if not isinstance(fila, dict):
+                continue
+            resumen["por_localidad"].append({
+                "localidad": fila.get("localidad", "No especificado"),
+                "ingresos_uyu": _round_monto(fila.get("ingresos_uyu", 0)),
+                "gastos_uyu": _round_monto(fila.get("gastos_uyu", 0)),
+                "rentabilidad_pct": _round_pct(fila.get("rentabilidad", 0)),
+            })
+
+    distribuciones = informe_base.get("distribuciones_por_socio", [])
+    if isinstance(distribuciones, list) and distribuciones:
+        resumen["distribuciones_por_socio"] = []
+        for fila in distribuciones:
+            if not isinstance(fila, dict):
+                continue
+            total_pesificado = fila.get("total_pesificado", fila.get("monto_uyu", 0))
+            resumen["distribuciones_por_socio"].append({
+                "socio": fila.get("socio", "No especificado"),
+                "total_pesificado": _round_monto(total_pesificado),
+            })
+
+    capital = informe_base.get("capital_trabajo", {})
+    if isinstance(capital, dict) and capital:
+        resumen["ratios_sostenibilidad"] = {
+            "capital_trabajo_uyu": _round_monto(capital.get("capital_trabajo_uyu", 0)),
+            "ratio_dist_sobre_ingresos_pct": _round_pct(capital.get("ratio_distribuciones_sobre_ingresos", 0)),
+            "ratio_dist_sobre_resultado_pct": _round_pct(capital.get("ratio_distribuciones_sobre_resultado", 0)),
+        }
+
+    variaciones = resultado_informe.get("variaciones")
+    if isinstance(variaciones, dict) and variaciones:
+        resumen["variaciones"] = variaciones
+
+    return resumen
+
+
+# ══════════════════════════════════════════════════════════════
 # FORMATEADORES PARA NARRATIVA
 # ══════════════════════════════════════════════════════════════
 

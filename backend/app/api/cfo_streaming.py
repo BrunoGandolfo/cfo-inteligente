@@ -31,6 +31,7 @@ from app.services.validador_canonico import validar_respuesta_cfo
 from app.services.informe_orquestador import (
     es_pregunta_informe,
     ejecutar_informe,
+    computar_resumen_informe,
     _formatear_informe_para_narrativa,
     _formatear_comparativo_para_narrativa,
 )
@@ -303,17 +304,8 @@ def preguntar_cfo_stream(
                         "preview": {"tipo": resultado_informe.get("tipo"), "periodo": resultado_informe.get("periodo")},
                     })
 
-                    # Pre-computar resumen sobre los totales del informe
-                    totales = resultado_informe.get("totales", {})
-                    resumen_informe = {
-                        "sumas": {
-                            "ingresos_uyu": totales.get("ingresos", {}).get("uyu", 0),
-                            "gastos_uyu": totales.get("gastos", {}).get("uyu", 0),
-                            "resultado_neto_uyu": totales.get("resultado_neto", {}).get("uyu", 0),
-                            "retiros_uyu": totales.get("retiros", {}).get("uyu", 0),
-                            "distribuciones_uyu": totales.get("distribuciones", {}).get("uyu", 0),
-                        }
-                    }
+                    # Resumen rico para narrativa de informes (evita alucinación de cifras).
+                    resumen_informe = computar_resumen_informe(resultado_informe)
 
                     # Narrativa con datos del informe
                     yield sse_format("status", {"message": "Generando respuesta narrativa..."})
