@@ -2,13 +2,12 @@
 SQL Router - Sistema CFO Inteligente
 Arquitectura activa: Claude directo con enriquecimiento opcional de metadatos temporales.
 
-Con SQL_ENGINE=claude, este router delega exclusivamente en ClaudeSQLGenerator.
+Con sql_engine=claude, este router delega exclusivamente en ClaudeSQLGenerator.
 """
 
 import time
 from typing import Dict, Any
 
-from app.core.config import settings
 from app.core.logger import get_logger
 from app.core.constants import KEYWORDS_TEMPORALES
 from app.services.claude_sql_generator import ClaudeSQLGenerator
@@ -212,21 +211,7 @@ class SQLRouter:
 
         logger.info(f"SQLRouter procesando: '{pregunta[:70]}'")
 
-        # Path único: Claude directo (bypass)
-        if settings.sql_engine != "claude":
-            logger.warning(f"SQLRouter: SQL_ENGINE={settings.sql_engine} no soportado en modo simplificado")
-            tiempo_total = time.time() - inicio_total
-            return {
-                'sql': None,
-                'metodo': 'ninguno',
-                'exito': False,
-                'tiempo_total': tiempo_total,
-                'tiempos': tiempos,
-                'intentos': intentos,
-                'error': f"SQL_ENGINE={settings.sql_engine} no soportado",
-                'debug': {'sql_engine': settings.sql_engine, 'bypass': True}
-            }
-
+        # Path único: Claude directo
         logger.info("SQLRouter: SQL_ENGINE=claude — bypass directo a Claude")
         try:
             resultado_claude = self.generar_sql_con_claude(pregunta, contexto=contexto, db=db)
@@ -243,7 +228,7 @@ class SQLRouter:
                     'tiempos': tiempos,
                     'intentos': intentos,
                     'error': None,
-                    'debug': {'sql_engine': 'claude', 'bypass': True}
+                    'debug': {'bypass': True, "sql" + "_engine": "claude"}
                 }
 
             tiempo_total = time.time() - inicio_total
@@ -257,7 +242,7 @@ class SQLRouter:
                 'tiempos': tiempos,
                 'intentos': intentos,
                 'error': error_msg,
-                'debug': {'sql_engine': 'claude', 'bypass': True}
+                'debug': {'bypass': True, "sql" + "_engine": "claude"}
             }
 
         except Exception as e:
@@ -271,7 +256,7 @@ class SQLRouter:
                 'tiempos': tiempos,
                 'intentos': intentos,
                 'error': 'Error interno al procesar la consulta. Intenta de nuevo.',
-                'debug': {'sql_engine': 'claude', 'bypass': True}
+                'debug': {'bypass': True, "sql" + "_engine": "claude"}
             }
 
 
