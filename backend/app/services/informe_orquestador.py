@@ -70,6 +70,7 @@ _KEYWORDS_INFORME = [
     "reporte del",
     "resumen de",
     "resumen del",
+    "informe",
 ]
 
 # Keywords que EXCLUYEN la intención informe (preguntas puntuales)
