@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 from app.core.database import get_db
@@ -14,6 +15,7 @@ from app.schemas.operacion import (
     IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate, OperacionUpdate
 )
 from app.services import operacion_service
+from app.services.excel_export_service import generar_excel_operaciones
 import uuid
 
 router = APIRouter()
@@ -54,6 +56,33 @@ def get_operaciones(
         })
     
     return result
+
+@router.get("/export-excel")
+def exportar_operaciones_excel(
+    fecha_desde: date = Query(...),
+    fecha_hasta: date = Query(...),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    if fecha_desde > fecha_hasta:
+        raise HTTPException(
+            status_code=400,
+            detail="fecha_desde debe ser menor o igual a fecha_hasta"
+        )
+
+    excel_bytes = generar_excel_operaciones(
+        db,
+        fecha_desde,
+        fecha_hasta,
+        current_user.nombre
+    )
+
+    filename = f"operaciones_{date.today().isoformat()}.xlsx"
+    return Response(
+        content=excel_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 @router.patch("/{operacion_id}/anular")
 def anular_operacion(
