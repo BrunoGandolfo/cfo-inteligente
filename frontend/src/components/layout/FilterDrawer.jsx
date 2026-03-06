@@ -1,4 +1,4 @@
-import { X, Filter } from 'lucide-react';
+import { X, Filter, Loader2 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
 import MonedaToggle from '../filters/MonedaToggle';
@@ -35,7 +35,9 @@ export function FilterDrawer({
   setLocalidad,
   apply,
   onClearFilters,
-  activeFiltersCount 
+  activeFiltersCount,
+  onExportExcel,
+  exportingExcel
 }) {
   
   // Cerrar con ESC key
@@ -155,21 +157,44 @@ export function FilterDrawer({
           </div>
 
           {/* Acciones del drawer */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-800">
-            <button
-              onClick={onClearFilters}
-              disabled={activeFiltersCount === 0}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Limpiar filtros
-            </button>
-            
-            <button
-              onClick={onClose}
-              className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              Aplicar y cerrar
-            </button>
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-slate-800">
+            {onExportExcel && (
+              <button
+                onClick={onExportExcel}
+                disabled={exportingExcel}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-green-600 text-green-500 hover:bg-green-600/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Exportar operaciones a Excel"
+              >
+                {exportingExcel ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="none">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#185C37"/>
+                    <path d="M14 2v6h6" fill="#21A366"/>
+                    <path d="M14 2L20 8H14V2z" fill="#33C481"/>
+                    <path d="M2 7h10v10H2z" fill="#107C41" rx="1"/>
+                    <text x="7" y="15" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold" fontFamily="Arial">X</text>
+                  </svg>
+                )}
+                <span className="text-sm font-medium">Excel</span>
+              </button>
+            )}
+            <div className="flex items-center gap-3 ml-auto">
+              <button
+                onClick={onClearFilters}
+                disabled={activeFiltersCount === 0}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Limpiar filtros
+              </button>
+
+              <button
+                onClick={onClose}
+                className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                Aplicar y cerrar
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -188,8 +213,9 @@ FilterDrawer.propTypes = {
   setLocalidad: PropTypes.func.isRequired,
   apply: PropTypes.func.isRequired,
   onClearFilters: PropTypes.func.isRequired,
-  activeFiltersCount: PropTypes.number
+  activeFiltersCount: PropTypes.number,
+  onExportExcel: PropTypes.func,
+  exportingExcel: PropTypes.bool
 };
 
 export default FilterDrawer;
-

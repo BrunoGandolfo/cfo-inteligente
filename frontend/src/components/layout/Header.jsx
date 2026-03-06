@@ -1,4 +1,4 @@
-import { Bell, Filter, TrendingUp, Menu } from 'lucide-react';
+import { Bell, Filter, TrendingUp, Menu, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import ThemeToggle from './ThemeToggle';
@@ -11,10 +11,12 @@ import MonedaToggle from '../filters/MonedaToggle';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import axiosClient from '../../services/api/axiosClient';
 
 export function Header({ onMobileMenuToggle }) {
   const [now, setNow] = useState(new Date());
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   
   // Verificar si el usuario es socio (colaboradores no ven filtros)
   const esSocio = localStorage.getItem('esSocio') === 'true';
@@ -57,6 +59,41 @@ export function Header({ onMobileMenuToggle }) {
     
     apply();
     setIsFilterDrawerOpen(false);
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setExportingExcel(true);
+      const params = new URLSearchParams();
+      params.append('fecha_desde', format(from, 'yyyy-MM-dd'));
+      params.append('fecha_hasta', format(to, 'yyyy-MM-dd'));
+
+      const response = await axiosClient.get(
+        `/api/operaciones/export-excel?${params.toString()}`,
+        { responseType: 'blob' }
+      );
+
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const contentDisposition = response.headers['content-disposition'];
+      a.download = contentDisposition
+        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
+        : `operaciones_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Excel descargado');
+    } catch (error) {
+      console.error('Error exportando Excel:', error);
+      toast.error('Error al exportar Excel');
+    } finally {
+      setExportingExcel(false);
+    }
   };
 
   return (
@@ -115,14 +152,9 @@ export function Header({ onMobileMenuToggle }) {
         ) : (
           <>
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* HEADER PARA SOCIOS (sin cambios) */}
+          {/* HEADER PARA SOCIOS */}
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* ZONA 1: Logo (oculto en móvil, visible en lg+) */}
-          <div className="hidden lg:flex w-[250px] items-center px-4 xl:px-6 border-r border-gray-200 dark:border-slate-800 shrink-0">
-            <img src="/logo-conexion.png" alt="Conexión" className="h-14 xl:h-16 w-auto object-contain" />
-          </div>
-
-          {/* ZONA 2: Centro - ADAPTATIVO */}
+          {/* ZONA 1: Centro - ADAPTATIVO */}
           <div className="flex-1 min-w-0 flex items-center justify-center px-2 xl:px-6">
             <div className="flex items-center gap-2 xl:gap-3 text-sm min-w-0">
               
@@ -170,11 +202,30 @@ export function Header({ onMobileMenuToggle }) {
                       onTo={(d) => { setTo(d); apply(); }}
                       compact={false}
                     />
-                    <LocalityFilter 
-                      value={localidad} 
+                    <LocalityFilter
+                      value={localidad}
                       onChange={(v) => { setLocalidad(v); apply(); }}
                       compact={false}
                     />
+                    <button
+                      onClick={handleExportExcel}
+                      disabled={exportingExcel}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-green-600 text-green-500 hover:bg-green-600/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                      title="Exportar operaciones a Excel"
+                    >
+                      {exportingExcel ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="none">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#185C37"/>
+                          <path d="M14 2v6h6" fill="#21A366"/>
+                          <path d="M14 2L20 8H14V2z" fill="#33C481"/>
+                          <path d="M2 7h10v10H2z" fill="#107C41" rx="1"/>
+                          <text x="7" y="15" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold" fontFamily="Arial">X</text>
+                        </svg>
+                      )}
+                      <span className="hidden 2xl:inline text-sm font-medium">Excel</span>
+                    </button>
                   </div>
                 </>
               )}
@@ -233,6 +284,8 @@ export function Header({ onMobileMenuToggle }) {
           apply={apply}
           onClearFilters={handleClearFilters}
           activeFiltersCount={activeFiltersCount}
+          onExportExcel={handleExportExcel}
+          exportingExcel={exportingExcel}
         />
       )}
     </>
