@@ -1,8 +1,18 @@
 import PropTypes from 'prop-types';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Card from '../ui/Card';
 
+function valueSizeClass(value) {
+  const len = String(value ?? '').length;
+  if (len >= 12) return 'text-lg xl:text-xl';
+  if (len >= 9) return 'text-xl xl:text-2xl';
+  return 'text-2xl xl:text-3xl';
+}
+
 export function MetricCard({ title, value, icon: Icon, colorClass, iconBgClass }) {
+  const sizeClass = useMemo(() => valueSizeClass(value), [value]);
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       <Card className="p-5 xl:p-6">
@@ -14,7 +24,7 @@ export function MetricCard({ title, value, icon: Icon, colorClass, iconBgClass }
           ) : null}
           <div className="flex-1 min-w-0">
             <p className="text-sm text-text-secondary mb-1 truncate">{title}</p>
-            <p className="text-2xl xl:text-3xl font-semibold tabular-nums tracking-tight text-text-primary">
+            <p className={`${sizeClass} font-semibold tabular-nums tracking-tight text-text-primary truncate`}>
               {value}
             </p>
           </div>
