@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle, BarChart3, Scale, Briefcase, Shield } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
@@ -74,41 +74,49 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
       })();
 
   return (
-    <aside className="hidden lg:flex lg:flex-col w-[250px] shrink-0 border-r bg-white dark:bg-slate-900 dark:border-slate-800 pt-16 justify-between">
-      <nav className="p-2 space-y-1">
+    <aside className="hidden lg:flex lg:flex-col w-[250px] shrink-0 border-r border-border bg-surface pt-16 justify-between">
+      <nav className="p-2 space-y-0.5">
         {items.map(({ key, icon: Icon, label, action, highlight }) => {
           const isActive = active === key;
+          const isToolSection = key === 'CFO AI';
           return (
-            <button
-              key={key}
-              onClick={action}
-              className={clsx(
-                'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
-                isActive
-                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-l-4 border-blue-600'
-                  : highlight
-                  ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-semibold'
-                  : key === 'Indicadores'
-                  ? 'text-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'
-                  : key === 'Dudas'
-                  ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
-                  : 'text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800'
-              )}
-            >
-              <Icon className={clsx('w-5 h-5', highlight && 'animate-pulse')} />
-              <span>{label}</span>
-              {highlight && (
-                <span className="ml-auto text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                  Beta
-                </span>
-              )}
-            </button>
+            <React.Fragment key={key}>
+              {isToolSection ? (
+                <div className="my-2 mx-4 border-t border-border" />
+              ) : null}
+              <button
+                onClick={action}
+                className={clsx(
+                  'relative w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                  isActive
+                    ? 'bg-accent-soft/70 text-accent'
+                    : highlight
+                    ? 'text-accent hover:bg-accent-soft/50 font-semibold'
+                    : key === 'Indicadores'
+                    ? 'text-orange-500 dark:text-orange-400 hover:bg-surface-alt/60'
+                    : key === 'Dudas'
+                    ? 'text-green-600 dark:text-green-400 hover:bg-surface-alt/60'
+                    : 'text-text-secondary hover:bg-surface-alt/60'
+                )}
+              >
+                {isActive ? (
+                  <div className="absolute left-1 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-accent" />
+                ) : null}
+                <Icon className="w-5 h-5" />
+                <span>{label}</span>
+                {highlight ? (
+                  <span className="ml-auto text-xs bg-accent-soft text-accent px-2 py-0.5 rounded-full">
+                    Beta
+                  </span>
+                ) : null}
+              </button>
+            </React.Fragment>
           );
         })}
       </nav>
       
       {/* Botones de administración */}
-      <div className="p-2 border-t border-gray-200 dark:border-slate-700">
+      <div className="p-2 border-t border-border">
         {/* Administrar usuarios - solo socios */}
         {esSocio && (
           <button
@@ -123,7 +131,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
         {/* Cambiar Contraseña - visible para todos */}
         <button
           onClick={() => setShowPasswordModal(true)}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
         >
           <Lock className="w-5 h-5" />
           <span>Cambiar contraseña</span>

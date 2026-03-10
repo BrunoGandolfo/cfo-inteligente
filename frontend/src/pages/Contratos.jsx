@@ -63,6 +63,8 @@ function Contratos() {
   const contratosOrdenados = [...contratosDisponibles].sort((a, b) => 
     a.titulo.localeCompare(b.titulo)
   );
+  const tieneContratoSeleccionado = Boolean(contratoActual) && Boolean(contratoSeleccionadoId);
+  const tieneCamposEditables = (contratoActual?.campos_editables?.campos?.length || 0) > 0;
 
   const handleSelectContrato = (e) => {
     setContratoSeleccionadoId(e.target.value);
@@ -120,55 +122,57 @@ function Contratos() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 lg:p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl md:text-3xl font-bold text-text-primary">
           Módulo Notarial
         </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-text-secondary">
           Gestión de Contratos
         </p>
       </div>
 
-      {/* Estadísticas */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-        <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <span className="text-lg font-semibold text-gray-900 dark:text-white">
-            Total de contratos: <span className="text-blue-600 dark:text-blue-400">{total}</span>
-          </span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Estadísticas */}
+        <div className="bg-surface border border-border rounded-lg shadow-sm p-4 md:p-6">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-accent" />
+            <span className="text-lg font-semibold text-text-primary">
+              Total de contratos: <span className="text-accent">{total}</span>
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* Dropdown de selección */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-        <div className="relative">
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-          <select
-            value={contratoSeleccionadoId}
-            onChange={handleSelectContrato}
-            className="w-full pl-4 pr-10 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-          >
-            <option value="">Seleccionar contrato...</option>
-            {contratosOrdenados.map((contrato) => (
-              <option key={contrato.id} value={contrato.id}>
-                {contrato.titulo}
-              </option>
-            ))}
-          </select>
+        {/* Dropdown de selección */}
+        <div className="bg-surface border border-border rounded-lg shadow-sm p-4 md:p-6">
+          <div className="relative">
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-muted pointer-events-none" />
+            <select
+              value={contratoSeleccionadoId}
+              onChange={handleSelectContrato}
+              className="w-full pl-4 pr-10 py-3 border border-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent appearance-none"
+            >
+              <option value="">Seleccionar contrato...</option>
+              {contratosOrdenados.map((contrato) => (
+                <option key={contrato.id} value={contrato.id}>
+                  {contrato.titulo}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Mensaje de advertencia */}
-      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+      <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <span className="text-amber-600 dark:text-amber-400 text-xl">⚠️</span>
+          <span className="text-warning text-xl">⚠️</span>
           <div>
-            <p className="font-semibold text-amber-800 dark:text-amber-300 mb-1">
+            <p className="font-semibold text-warning mb-1">
               Importante sobre los contratos
             </p>
-            <p className="text-sm text-amber-700 dark:text-amber-400">
+            <p className="text-sm text-text-secondary">
               Algunos contratos están completos y listos para usar. Otros son <strong>modelos de ejemplo</strong> donde, al completar los campos, algunos valores aparecerán en el documento y otros no. Los datos ingresados quedarán en los lugares correctos. <strong>El documento Word descargado puede requerir revisión y ajustes adicionales.</strong>
             </p>
           </div>
@@ -176,56 +180,58 @@ function Contratos() {
       </div>
 
       {/* Detalle del contrato seleccionado */}
-      {contratoActual && contratoSeleccionadoId && (
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+      {tieneContratoSeleccionado ? (
+        <div className="bg-surface border border-border rounded-lg shadow-sm p-4 md:p-6">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <h2 className="text-xl md:text-2xl font-bold text-text-primary mb-2">
               {contratoActual.titulo}
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-text-secondary">
               Categoría: <span className="font-medium">{contratoActual.categoria?.charAt(0).toUpperCase() + contratoActual.categoria?.slice(1).replace(/_/g, ' ') || 'Sin categoría'}</span>
             </p>
-            {contratoActual.campos_editables && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {contratoActual.campos_editables ? (
+              <p className="text-sm text-text-muted mt-1">
                 {contratoActual.campos_editables.total_campos || 0} campos editables
               </p>
-            )}
+            ) : null}
           </div>
 
           {/* Formulario de campos */}
-          {contratoActual.campos_editables?.campos && contratoActual.campos_editables.campos.length > 0 ? (
+          {tieneCamposEditables ? (
             <form onSubmit={handleGenerarContrato} className="space-y-4">
-              <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <p className="text-sm text-green-700 dark:text-green-400">
+              <div className="mb-4 p-3 bg-success/10 border border-success/30 rounded-lg">
+                <p className="text-sm text-success">
                   Todos los campos son opcionales. Complete solo los que necesite.
                 </p>
               </div>
-              {contratoActual.campos_editables.campos
-                .sort((a, b) => (a.orden || 0) - (b.orden || 0))
-                .map((campo) => (
-                  <div key={campo.id} className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {campo.nombre}
-                    </label>
-                    <input
-                      type="text"
-                      value={valoresCampos[campo.id] || ''}
-                      onChange={(e) => handleCampoChange(campo.id, e.target.value)}
-                      placeholder={campo.placeholder_original || campo.contexto || 'Ingrese el valor...'}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    {campo.contexto && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                        {campo.contexto}
-                      </p>
-                    )}
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {contratoActual.campos_editables.campos
+                  .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+                  .map((campo) => (
+                    <div key={campo.id} className="space-y-1">
+                      <label className="block text-sm font-medium text-text-secondary">
+                        {campo.nombre}
+                      </label>
+                      <input
+                        type="text"
+                        value={valoresCampos[campo.id] || ''}
+                        onChange={(e) => handleCampoChange(campo.id, e.target.value)}
+                        placeholder={campo.placeholder_original || campo.contexto || 'Ingrese el valor...'}
+                        className="w-full px-4 py-2 border border-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent"
+                      />
+                      {campo.contexto ? (
+                        <p className="text-xs text-text-muted italic">
+                          {campo.contexto}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+              </div>
               
-              <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
+              <div className="pt-4 border-t border-border">
                 <button
                   type="submit"
-                  className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  className="w-full px-6 py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors"
                 >
                   <FileCheck className="w-5 h-5" />
                   Generar Contrato
@@ -234,45 +240,45 @@ function Contratos() {
             </form>
           ) : (
             <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">
+              <FileText className="w-12 h-12 text-text-muted mx-auto mb-4" />
+              <p className="text-text-secondary">
                 Este contrato no tiene campos editables disponibles
               </p>
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* Estado inicial - sin contrato seleccionado */}
-      {!contratoSeleccionadoId && (
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
+      {!contratoSeleccionadoId ? (
+        <div className="bg-surface border border-border rounded-lg shadow-sm">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando contratos...</p>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+              <p className="mt-4 text-text-secondary">Cargando contratos...</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center">
-              <p className="text-red-600 dark:text-red-400">
+              <p className="text-danger">
                 {typeof error === 'string' ? error : error?.message || error?.msg || 'Error desconocido'}
               </p>
             </div>
           ) : contratosOrdenados.length === 0 ? (
             <div className="p-8 text-center">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">
+              <FileText className="w-12 h-12 text-text-muted mx-auto mb-4" />
+              <p className="text-text-secondary">
                 No hay contratos disponibles
               </p>
             </div>
           ) : (
             <div className="p-8 text-center">
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-text-secondary">
                 Selecciona un contrato del dropdown para comenzar
               </p>
             </div>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

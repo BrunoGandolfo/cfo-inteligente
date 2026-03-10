@@ -29,6 +29,8 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
     return prefijo ? `${prefijo}@${dominio}` : '';
   }, [formData.prefijoEmail, dominio]);
 
+  const shouldShowEmailPreview = Boolean(emailCompleto) && !errors.prefijoEmail;
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -99,29 +101,29 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
   const inputClass = (fieldName) => `
     w-full pl-10 pr-3 py-2 border 
-    ${errors[fieldName] ? 'border-red-400' : 'border-gray-300 dark:border-slate-600'} 
-    rounded-md bg-white dark:bg-slate-700 
-    text-gray-900 dark:text-white 
-    placeholder-gray-400 
-    focus:outline-none focus:ring-2 focus:ring-indigo-500
+    ${errors[fieldName] ? 'border-danger' : 'border-border'} 
+    rounded-md bg-surface 
+    text-text-primary 
+    placeholder:text-text-muted 
+    focus:outline-none focus:ring-2 focus:ring-accent
   `;
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {errors.submit && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex items-center gap-2">
+      {errors.submit ? (
+        <div className="bg-danger/10 border border-danger/30 text-danger px-4 py-3 rounded flex items-center gap-2">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <span>{errors.submit}</span>
         </div>
-      )}
+      ) : null}
       
       {/* Nombre */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+        <label className="block text-sm font-medium text-text-secondary mb-1">
           Nombre completo
         </label>
         <div className="relative">
-          <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          <User className="absolute left-3 top-2.5 h-5 w-5 text-text-muted" />
           <input
             type="text"
             name="nombre"
@@ -131,29 +133,29 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
             placeholder="Ej: Natalia Araujo"
           />
         </div>
-        {errors.nombre && <p className="mt-1 text-sm text-red-600">{errors.nombre}</p>}
+        {errors.nombre ? <p className="mt-1 text-sm text-danger">{errors.nombre}</p> : null}
       </div>
       
       {/* Email con autocompletado de dominio */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+        <label className="block text-sm font-medium text-text-secondary mb-1">
           Email corporativo
         </label>
         <div className="relative">
           {/* Capa visual: muestra prefijo + dominio en gris */}
           <div 
-            className={`absolute inset-0 flex items-center px-3 py-2 pointer-events-none border rounded-md bg-white dark:bg-slate-700 ${
-              errors.prefijoEmail ? 'border-red-400' : 'border-gray-300 dark:border-slate-600'
+            className={`absolute inset-0 flex items-center px-3 py-2 pointer-events-none border rounded-md bg-surface ${
+              errors.prefijoEmail ? 'border-danger' : 'border-border'
             }`}
             aria-hidden="true"
           >
             {formData.prefijoEmail ? (
               <>
-                <span className="text-gray-900 dark:text-white">{formData.prefijoEmail}</span>
-                <span className="text-gray-400 dark:text-slate-500">@{dominio}</span>
+                <span className="text-text-primary">{formData.prefijoEmail}</span>
+                <span className="text-text-muted">@{dominio}</span>
               </>
             ) : (
-              <span className="text-gray-400 dark:text-slate-500">tunombre@{dominio}</span>
+              <span className="text-text-muted">tunombre@{dominio}</span>
             )}
           </div>
           {/* Input real: invisible pero funcional */}
@@ -162,28 +164,28 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
             name="prefijoEmail"
             value={formData.prefijoEmail}
             onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md bg-transparent text-transparent caret-gray-900 dark:caret-white focus:outline-none focus:ring-2 focus:ring-indigo-500 relative z-10 ${
-              errors.prefijoEmail ? 'border-red-400' : 'border-gray-300 dark:border-slate-600'
+            className={`w-full px-3 py-2 border rounded-md bg-transparent text-transparent caret-text-primary focus:outline-none focus:ring-2 focus:ring-accent relative z-10 ${
+              errors.prefijoEmail ? 'border-danger' : 'border-border'
             }`}
             autoComplete="off"
             spellCheck="false"
           />
         </div>
-        {errors.prefijoEmail && <p className="mt-1 text-sm text-red-600">{errors.prefijoEmail}</p>}
-        {emailCompleto && !errors.prefijoEmail && (
-          <p className="mt-1 text-sm text-green-600 dark:text-green-400">
+        {errors.prefijoEmail ? <p className="mt-1 text-sm text-danger">{errors.prefijoEmail}</p> : null}
+        {shouldShowEmailPreview ? (
+          <p className="mt-1 text-sm text-success">
             Tu email será: {emailCompleto}
           </p>
-        )}
+        ) : null}
       </div>
       
       {/* Contraseña */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+        <label className="block text-sm font-medium text-text-secondary mb-1">
           Contraseña
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          <Lock className="absolute left-3 top-2.5 h-5 w-5 text-text-muted" />
           <input
             type="password"
             name="password"
@@ -193,16 +195,16 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
             placeholder="Mínimo 6 caracteres"
           />
         </div>
-        {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+        {errors.password ? <p className="mt-1 text-sm text-danger">{errors.password}</p> : null}
       </div>
       
       {/* Confirmar Contraseña */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+        <label className="block text-sm font-medium text-text-secondary mb-1">
           Confirmar contraseña
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          <Lock className="absolute left-3 top-2.5 h-5 w-5 text-text-muted" />
           <input
             type="password"
             name="confirmPassword"
@@ -212,32 +214,32 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
             placeholder="Repetir contraseña"
           />
         </div>
-        {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+        {errors.confirmPassword ? <p className="mt-1 text-sm text-danger">{errors.confirmPassword}</p> : null}
       </div>
       
       {/* Botón Submit */}
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-success hover:bg-success/90 focus:outline-none focus:ring-2 focus:ring-success disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         <UserPlus className="w-5 h-5" />
         {loading ? 'Creando cuenta...' : 'Crear cuenta'}
       </button>
       
       {/* Link para volver a login */}
-      {onSwitchToLogin && (
-        <p className="text-center text-sm text-gray-600 dark:text-slate-400">
+      {onSwitchToLogin ? (
+        <p className="text-center text-sm text-text-secondary">
           ¿Ya tienes cuenta?{' '}
           <button
             type="button"
             onClick={onSwitchToLogin}
-            className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+            className="font-medium text-accent hover:text-accent-hover"
           >
             Iniciar sesión
           </button>
         </p>
-      )}
+      ) : null}
     </form>
   );
 }

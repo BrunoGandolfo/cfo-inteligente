@@ -49,6 +49,11 @@ const DILIGENCIA_COLORS = {
   SIMPLIFICADA: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
 };
 
+const PANEL_CLASS = 'bg-surface rounded-lg shadow p-6';
+const FIELD_LABEL_CLASS = 'block text-sm font-medium text-text-secondary mb-1';
+const FIELD_INPUT_CLASS = 'w-full px-4 py-2 border border-border rounded-lg bg-surface text-text-primary placeholder:text-text-muted focus:ring-2 focus:ring-info focus:border-transparent';
+const FIELD_TEXTAREA_CLASS = 'w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface text-text-primary placeholder:text-text-muted resize-none focus:ring-2 focus:ring-info focus:border-transparent';
+
 function ALA() {
   const {
     verificaciones,
@@ -200,6 +205,8 @@ function ALA() {
     verificacionActual.busqueda_news_realizada ||
     verificacionActual.busqueda_wikipedia_realizada
   );
+  const shouldShowHistoryLoading = loading && verificaciones.length === 0;
+  const shouldShowGlobalError = Boolean(error) && !loading;
 
   const handleNuevaVerificacion = () => {
     limpiarVerificacionActual();
@@ -246,14 +253,14 @@ function ALA() {
     return (
       <div key={nombre} className="flex items-center gap-2 py-2">
         <Icon className={`w-5 h-5 ${colorIcon}`} />
-        <span className="font-medium text-gray-700 dark:text-gray-300">{nombre}</span>
-        {totalRegistros && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="font-medium text-text-secondary">{nombre}</span>
+        {totalRegistros ? (
+          <span className="text-xs text-text-muted">
             ({totalRegistros.toLocaleString()} registros)
           </span>
-        )}
-        <span className="text-gray-600 dark:text-gray-400">—</span>
-        <span className={esPositivo ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-600 dark:text-gray-400'}>
+        ) : null}
+        <span className="text-text-muted">—</span>
+        <span className={esPositivo ? 'text-red-600 dark:text-red-400 font-medium' : 'text-text-secondary'}>
           {mensaje}
         </span>
       </div>
@@ -266,36 +273,36 @@ function ALA() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-text-primary flex items-center gap-3">
           <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           Módulo ALA
         </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-text-secondary">
           Anti-Lavado de Activos — Verificación de Debida Diligencia
         </p>
       </div>
 
       {/* Sección 1: Formulario de Verificación */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+      <div className={PANEL_CLASS}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
             <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             Nueva Verificación ALA
           </h2>
-          {verificacionActual && (
+          {verificacionActual ? (
             <button
               onClick={handleNuevaVerificacion}
               className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
             >
               Limpiar y empezar nueva
             </button>
-          )}
+          ) : null}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Nombre completo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className={FIELD_LABEL_CLASS}>
               Nombre completo *
             </label>
             <input
@@ -305,14 +312,14 @@ function ALA() {
               onChange={handleInputChange}
               placeholder="Ej: Juan Pérez García"
               required
-              className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={FIELD_INPUT_CLASS}
             />
           </div>
 
           {/* Tipo y número de documento */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className={FIELD_LABEL_CLASS}>
                 Tipo de documento
               </label>
               <div className="relative">
@@ -320,17 +327,17 @@ function ALA() {
                   name="tipo_documento"
                   value={formData.tipo_documento}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 appearance-none"
+                  className={`${FIELD_INPUT_CLASS} appearance-none`}
                 >
                   <option value="CI">Cédula de Identidad</option>
                   <option value="RUT">RUT</option>
                   <option value="PASAPORTE">Pasaporte</option>
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className={FIELD_LABEL_CLASS}>
                 Número de documento
               </label>
               <input
@@ -339,7 +346,7 @@ function ALA() {
                 value={formData.numero_documento}
                 onChange={handleInputChange}
                 placeholder="Ej: 1.234.567-8"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={FIELD_INPUT_CLASS}
               />
             </div>
           </div>
@@ -347,7 +354,7 @@ function ALA() {
           {/* Nacionalidad y fecha de nacimiento */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className={FIELD_LABEL_CLASS}>
                 Nacionalidad (código ISO)
               </label>
               <input
@@ -357,11 +364,11 @@ function ALA() {
                 onChange={handleInputChange}
                 placeholder="UY"
                 maxLength={3}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                className={`${FIELD_INPUT_CLASS} uppercase`}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className={FIELD_LABEL_CLASS}>
                 Fecha de nacimiento
               </label>
               <input
@@ -369,7 +376,7 @@ function ALA() {
                 name="fecha_nacimiento"
                 value={formData.fecha_nacimiento}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={FIELD_INPUT_CLASS}
               />
             </div>
           </div>
@@ -382,20 +389,20 @@ function ALA() {
                 name="es_persona_juridica"
                 checked={formData.es_persona_juridica}
                 onChange={handleInputChange}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 border-border rounded focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Persona jurídica</span>
+              <span className="text-sm text-text-secondary">Persona jurídica</span>
             </label>
-            {formData.es_persona_juridica && (
+            {formData.es_persona_juridica ? (
               <input
                 type="text"
                 name="razon_social"
                 value={formData.razon_social}
                 onChange={handleInputChange}
                 placeholder="Razón social"
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`flex-1 ${FIELD_INPUT_CLASS}`}
               />
-            )}
+            ) : null}
           </div>
 
           {/* Botón submit */}
@@ -422,9 +429,9 @@ function ALA() {
       </div>
 
       {/* Sección 2: Resultado de verificación */}
-      {verificacionActual && (
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      {verificacionActual ? (
+        <div className={PANEL_CLASS}>
+          <h2 className="text-xl font-semibold text-text-primary mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             Resultado de Verificación
           </h2>
@@ -433,7 +440,7 @@ function ALA() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {/* Nivel de Riesgo */}
             <div className={`rounded-lg p-4 border ${riesgoColors.bg} ${riesgoColors.border}`}>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Nivel de Riesgo</p>
+              <p className="text-sm font-medium text-text-secondary mb-1">Nivel de Riesgo</p>
               <div className="flex items-center gap-2">
                 <span className={`w-3 h-3 rounded-full ${riesgoColors.dot}`}></span>
                 <span className={`text-xl font-bold ${riesgoColors.text}`}>
@@ -443,8 +450,8 @@ function ALA() {
             </div>
 
             {/* Nivel de Diligencia */}
-            <div className={`rounded-lg p-4 border ${DILIGENCIA_COLORS[verificacionActual.nivel_diligencia] || 'bg-gray-100'}`}>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Diligencia Requerida</p>
+            <div className={`rounded-lg p-4 border ${DILIGENCIA_COLORS[verificacionActual.nivel_diligencia] || 'bg-surface-alt'}`}>
+              <p className="text-sm font-medium text-text-secondary mb-1">Diligencia Requerida</p>
               <span className="text-xl font-bold">
                 {verificacionActual.nivel_diligencia}
               </span>
@@ -456,7 +463,7 @@ function ALA() {
                 ? 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700' 
                 : 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700'
             }`}>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Puede Operar</p>
+              <p className="text-sm font-medium text-text-secondary mb-1">Puede Operar</p>
               <div className="flex items-center gap-2">
                 {verificacionActual.nivel_riesgo === 'CRITICO' ? (
                   <>
@@ -474,7 +481,7 @@ function ALA() {
           </div>
 
           {/* PEP Badge */}
-          {verificacionActual.es_pep && (
+          {verificacionActual.es_pep ? (
             <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-orange-500" />
@@ -486,14 +493,14 @@ function ALA() {
                 Requiere diligencia intensificada según Art. 44 del Decreto 379/018
               </p>
             </div>
-          )}
+          ) : null}
 
           {/* Detalle por lista */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <h3 className="text-sm font-semibold text-text-secondary mb-2">
               Detalle por lista:
             </h3>
-            <div className="space-y-1 bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4">
+            <div className="space-y-1 bg-surface-alt rounded-lg p-4">
               {renderResultadoLista('PEP Uruguay', verificacionActual.resultado_pep, 5737)}
               {renderResultadoLista('ONU', verificacionActual.resultado_onu, 726)}
               {renderResultadoLista('OFAC', verificacionActual.resultado_ofac, 18598)}
@@ -504,9 +511,9 @@ function ALA() {
 
           {/* Hash de verificación y botón PDF */}
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-text-muted">
               <span className="font-medium">Hash: </span>
-              <code className="bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">
+              <code className="bg-surface-alt px-2 py-1 rounded">
                 {verificacionActual.hash_verificacion?.substring(0, 24)}...
               </code>
             </div>
@@ -530,14 +537,14 @@ function ALA() {
           </div>
 
           {/* Búsquedas complementarias Art. 44 C.4 */}
-          <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+          <div className="border-t border-border pt-4">
+            <h3 className="text-sm font-semibold text-text-secondary mb-3 flex items-center gap-2">
               <Clock className="w-4 h-4" />
               Art. 44 C.4 — Búsquedas Complementarias (Decreto 379/018)
             </h3>
             
             {/* Botón ejecutar búsquedas automáticas */}
-            {!busquedasYaRealizadas && (
+            {!busquedasYaRealizadas ? (
               <button
                 onClick={handleEjecutarBusquedasArt44}
                 disabled={loadingBusquedas || loading}
@@ -555,72 +562,72 @@ function ALA() {
                   </>
                 )}
               </button>
-            )}
+            ) : null}
 
             {/* Resultados de búsquedas */}
-            {busquedasYaRealizadas && (
+            {busquedasYaRealizadas ? (
               <div className="space-y-4 mb-4">
                 {/* Google / Análisis IA */}
-                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-surface-alt rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Globe className="w-5 h-5 text-blue-500" />
-                    <span className="font-medium text-gray-800 dark:text-gray-200">Google / Análisis IA</span>
+                    <span className="font-medium text-text-primary">Google / Análisis IA</span>
                     {verificacionActual.busqueda_google_realizada ? (
                       <CheckCircle className="w-4 h-4 text-green-500" />
                     ) : (
-                      <XCircle className="w-4 h-4 text-gray-400" />
+                      <XCircle className="w-4 h-4 text-text-muted" />
                     )}
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-text-muted">
                       {verificacionActual.busqueda_google_realizada ? 'Realizada' : 'No realizada'}
                     </span>
                   </div>
-                  {verificacionActual.busqueda_google_observaciones && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                  {verificacionActual.busqueda_google_observaciones ? (
+                    <p className="text-sm text-text-secondary whitespace-pre-wrap">
                       {verificacionActual.busqueda_google_observaciones}
                     </p>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Noticias / Análisis IA */}
-                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-surface-alt rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Newspaper className="w-5 h-5 text-orange-500" />
-                    <span className="font-medium text-gray-800 dark:text-gray-200">Noticias / Análisis IA</span>
+                    <span className="font-medium text-text-primary">Noticias / Análisis IA</span>
                     {verificacionActual.busqueda_news_realizada ? (
                       <CheckCircle className="w-4 h-4 text-green-500" />
                     ) : (
-                      <XCircle className="w-4 h-4 text-gray-400" />
+                      <XCircle className="w-4 h-4 text-text-muted" />
                     )}
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-text-muted">
                       {verificacionActual.busqueda_news_realizada ? 'Realizada' : 'No realizada'}
                     </span>
                   </div>
-                  {verificacionActual.busqueda_news_observaciones && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                  {verificacionActual.busqueda_news_observaciones ? (
+                    <p className="text-sm text-text-secondary whitespace-pre-wrap">
                       {verificacionActual.busqueda_news_observaciones}
                     </p>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Wikipedia */}
-                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-surface-alt rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <BookOpen className="w-5 h-5 text-green-500" />
-                    <span className="font-medium text-gray-800 dark:text-gray-200">Wikipedia</span>
+                    <span className="font-medium text-text-primary">Wikipedia</span>
                     {verificacionActual.busqueda_wikipedia_realizada ? (
                       <CheckCircle className="w-4 h-4 text-green-500" />
                     ) : (
-                      <XCircle className="w-4 h-4 text-gray-400" />
+                      <XCircle className="w-4 h-4 text-text-muted" />
                     )}
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-text-muted">
                       {verificacionActual.busqueda_wikipedia_realizada ? 'Realizada' : 'No realizada'}
                     </span>
                   </div>
-                  {verificacionActual.busqueda_wikipedia_observaciones && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                  {verificacionActual.busqueda_wikipedia_observaciones ? (
+                    <p className="text-sm text-text-secondary whitespace-pre-wrap">
                       {verificacionActual.busqueda_wikipedia_observaciones}
                     </p>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Botón para volver a ejecutar */}
@@ -632,11 +639,11 @@ function ALA() {
                   {loadingBusquedas ? 'Ejecutando...' : '↻ Volver a ejecutar búsquedas'}
                 </button>
               </div>
-            )}
+            ) : null}
 
             {/* Observaciones manuales adicionales */}
-            <div className="border-t border-gray-200 dark:border-slate-600 pt-4 mt-4">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <div className="border-t border-border pt-4 mt-4">
+              <h4 className="text-sm font-medium text-text-secondary mb-2">
                 Observaciones adicionales (manual)
               </h4>
               <textarea
@@ -648,7 +655,7 @@ function ALA() {
                 }))}
                 placeholder="Agregar observaciones manuales sobre las búsquedas realizadas..."
                 rows={3}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white resize-none"
+                className={FIELD_TEXTAREA_CLASS}
               />
               <button
                 onClick={handleGuardarObservaciones}
@@ -662,39 +669,39 @@ function ALA() {
           </div>
 
           {/* Botón Nueva Verificación */}
-          <div className="border-t border-gray-200 dark:border-slate-700 pt-4 mt-4">
+          <div className="border-t border-border pt-4 mt-4">
             <button
               onClick={handleNuevaVerificacion}
-              className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 font-medium rounded-lg flex items-center gap-2 transition-colors"
+              className="px-4 py-2 border border-border text-text-secondary hover:bg-surface-alt font-medium rounded-lg flex items-center gap-2 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               Nueva Verificación
             </button>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Sección 3: Historial */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className={PANEL_CLASS}>
+        <h2 className="text-xl font-semibold text-text-primary mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           Historial de Verificaciones
-          {totalVerificaciones > 0 && (
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+          {totalVerificaciones > 0 ? (
+            <span className="text-sm font-normal text-text-muted">
               ({totalVerificaciones} total)
             </span>
-          )}
+          ) : null}
         </h2>
 
-        {loading && verificaciones.length === 0 ? (
+        {shouldShowHistoryLoading ? (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando historial...</p>
+            <p className="mt-4 text-text-secondary">Cargando historial...</p>
           </div>
         ) : verificaciones.length === 0 ? (
           <div className="text-center py-8">
-            <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">
+            <Shield className="w-12 h-12 text-text-muted mx-auto mb-4" />
+            <p className="text-text-secondary">
               No hay verificaciones registradas
             </p>
           </div>
@@ -702,12 +709,12 @@ function ALA() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-slate-700">
-                  <th className="text-left py-3 px-2 font-semibold text-gray-700 dark:text-gray-300">Nombre</th>
-                  <th className="text-left py-3 px-2 font-semibold text-gray-700 dark:text-gray-300">Documento</th>
-                  <th className="text-left py-3 px-2 font-semibold text-gray-700 dark:text-gray-300">Riesgo</th>
-                  <th className="text-left py-3 px-2 font-semibold text-gray-700 dark:text-gray-300">Fecha</th>
-                  <th className="text-center py-3 px-2 font-semibold text-gray-700 dark:text-gray-300 w-16"></th>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-2 font-semibold text-text-secondary">Nombre</th>
+                  <th className="text-left py-3 px-2 font-semibold text-text-secondary">Documento</th>
+                  <th className="text-left py-3 px-2 font-semibold text-text-secondary">Riesgo</th>
+                  <th className="text-left py-3 px-2 font-semibold text-text-secondary">Fecha</th>
+                  <th className="text-center py-3 px-2 font-semibold text-text-secondary w-16"></th>
                 </tr>
               </thead>
               <tbody>
@@ -717,13 +724,13 @@ function ALA() {
                   return (
                     <tr 
                       key={v.id} 
-                      className={`border-b border-gray-100 dark:border-slate-700/50 hover:bg-blue-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors ${
+                      className={`border-b border-border/60 hover:bg-info/10 cursor-pointer transition-colors ${
                         isSelected ? 'bg-blue-100 dark:bg-blue-900/30' : ''
                       }`}
                       onClick={() => handleVerDetalle(v.id)}
                       title="Click para ver detalle"
                     >
-                      <td className="py-3 px-2 text-gray-900 dark:text-white">
+                      <td className="py-3 px-2 text-text-primary">
                         <div className="flex items-center gap-2">
                           <Eye className="w-4 h-4 text-blue-500 opacity-50" />
                           {v.nombre_completo?.length > 30 
@@ -731,7 +738,7 @@ function ALA() {
                             : v.nombre_completo}
                         </div>
                       </td>
-                      <td className="py-3 px-2 text-gray-600 dark:text-gray-400">
+                      <td className="py-3 px-2 text-text-secondary">
                         {v.tipo_documento} {v.numero_documento?.substring(0, 8)}
                         {v.numero_documento?.length > 8 ? '...' : ''}
                       </td>
@@ -741,7 +748,7 @@ function ALA() {
                           {v.nivel_riesgo}
                         </span>
                       </td>
-                      <td className="py-3 px-2 text-gray-600 dark:text-gray-400">
+                      <td className="py-3 px-2 text-text-secondary">
                         {v.created_at 
                           ? new Date(v.created_at).toLocaleDateString('es-UY', {
                               day: '2-digit',
@@ -769,14 +776,14 @@ function ALA() {
       </div>
 
       {/* Error global */}
-      {error && !loading && (
+      {shouldShowGlobalError ? (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg p-4">
           <div className="flex items-center gap-2">
             <XCircle className="w-5 h-5 text-red-500" />
             <span className="text-red-700 dark:text-red-300">{error}</span>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -64,109 +64,109 @@ function AdminUsersModal({ isOpen, onClose }) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-bg/70 transition-opacity"
         onClick={handleClose}
       />
       
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl p-6">
+        <div className="relative bg-surface border border-border rounded-lg shadow-xl w-full max-w-2xl p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Users className="w-5 h-5" />
+            <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+              <Users className="w-5 h-5 text-accent" />
               Administrar Usuarios
             </h3>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="text-text-muted hover:text-text-secondary"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Mensaje de contraseña temporal */}
-          {tempPassword && (
-            <div className="mb-4 p-4 bg-green-100 dark:bg-green-900/30 border border-green-400 rounded-lg">
+          {tempPassword ? (
+            <div className="mb-4 p-4 bg-success/10 border border-success/30 rounded-lg">
               <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
+                <CheckCircle className="w-5 h-5 text-success mt-0.5" />
                 <div>
-                  <p className="font-medium text-green-800 dark:text-green-300">
+                  <p className="font-medium text-success">
                     Contraseña reseteada para {tempPassword.nombre}
                   </p>
-                  <p className="mt-1 text-sm text-green-700 dark:text-green-400">
-                    Nueva contraseña temporal: <code className="bg-green-200 dark:bg-green-800 px-2 py-0.5 rounded font-mono">{tempPassword.password}</code>
+                  <p className="mt-1 text-sm text-text-secondary">
+                    Nueva contraseña temporal: <code className="bg-success/15 px-2 py-0.5 rounded font-mono text-success">{tempPassword.password}</code>
                   </p>
-                  <p className="mt-1 text-xs text-green-600 dark:text-green-500">
+                  <p className="mt-1 text-xs text-text-secondary">
                     El usuario deberá cambiarla en su próximo inicio de sesión.
                   </p>
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Error */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 rounded-lg flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-              <span className="text-red-700 dark:text-red-400">{error}</span>
+          {error ? (
+            <div className="mb-4 p-4 bg-danger/10 border border-danger/30 rounded-lg flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-danger" />
+              <span className="text-danger">{error}</span>
             </div>
-          )}
+          ) : null}
 
           {/* Lista de usuarios */}
-          <div className="border dark:border-slate-700 rounded-lg overflow-x-auto">
+          <div className="border border-border rounded-lg overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-50 dark:bg-slate-700">
+              <thead className="bg-surface-alt">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Usuario
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Email
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Rol
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+              <tbody className="divide-y divide-border bg-surface">
                 {loading ? (
                   <tr>
-                    <td colSpan="4" className="px-4 py-8 text-center text-gray-500 dark:text-slate-400">
-                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <td colSpan="4" className="px-4 py-8 text-center text-text-secondary">
+                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-accent" />
                       Cargando usuarios...
                     </td>
                   </tr>
                 ) : usuarios.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="px-4 py-8 text-center text-gray-500 dark:text-slate-400">
+                    <td colSpan="4" className="px-4 py-8 text-center text-text-secondary">
                       No hay usuarios registrados
                     </td>
                   </tr>
                 ) : (
                   usuarios.map((usuario) => (
-                    <tr key={usuario.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                    <tr key={usuario.id} className="hover:bg-surface-alt">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900 dark:text-white">
+                          <span className="font-medium text-text-primary">
                             {usuario.nombre}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-slate-400">
+                      <td className="px-4 py-3 text-sm text-text-secondary">
                         {usuario.email}
                       </td>
                       <td className="px-4 py-3">
                         {usuario.es_socio ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-accent-soft text-accent rounded-full">
                             <Shield className="w-3 h-3" />
                             Socio
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-slate-300 rounded-full">
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-surface-alt text-text-secondary rounded-full">
                             Colaborador
                           </span>
                         )}
@@ -175,7 +175,7 @@ function AdminUsersModal({ isOpen, onClose }) {
                         <button
                           onClick={() => handleResetPassword(usuario.id, usuario.nombre)}
                           disabled={resetting === usuario.id}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 rounded-md transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-warning bg-warning/10 hover:bg-warning/20 rounded-md transition-colors disabled:opacity-50"
                         >
                           <RefreshCw className={`w-3 h-3 ${resetting === usuario.id ? 'animate-spin' : ''}`} />
                           {resetting === usuario.id ? 'Reseteando...' : 'Resetear'}
@@ -192,7 +192,7 @@ function AdminUsersModal({ isOpen, onClose }) {
           <div className="mt-6 flex justify-end">
             <button
               onClick={handleClose}
-              className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+              className="px-4 py-2 border border-border rounded-md text-text-secondary hover:bg-surface-alt transition-colors"
             >
               Cerrar
             </button>

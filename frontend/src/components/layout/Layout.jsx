@@ -16,7 +16,7 @@ export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNot
   return (
     <ThemeProvider>
       <FilterProvider>
-        <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+        <div className="min-h-screen bg-bg">
           <Header onMobileMenuToggle={() => setMobileNavOpen(true)} />
           <div className="pt-20 flex">
             <Sidebar 
@@ -39,7 +39,9 @@ export function Layout({ children, onNavigate, currentPage, onCasosToggle, onNot
               onNotarialToggle={onNotarialToggle}
               onALAToggle={onALAToggle}
             />
-            <main className="flex-1 p-4 lg:p-6 overflow-y-auto">{children}</main>
+            <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
+              <div className="max-w-[1100px] mx-auto w-full">{children}</div>
+            </main>
             <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
             <OperationsPanel 
               isOpen={opsOpen} 

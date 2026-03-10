@@ -138,10 +138,13 @@ export default function Home({ onLoginSuccess }) {
     }
   };
 
+  const authFieldClass = 'w-full px-4 py-3 bg-surface-alt border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition';
+  const authFieldWithIconClass = 'w-full pl-10 pr-4 py-3 bg-surface-alt border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none transition';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="dark min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Header */}
-      <header className="border-b border-slate-800/50 backdrop-blur">
+      <header className="border-b border-border/60 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
           <div></div>
           <div className="flex items-center gap-2">
@@ -149,7 +152,7 @@ export default function Home({ onLoginSuccess }) {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
             </span>
-            <span className="text-sm text-slate-400">Sistema Online</span>
+            <span className="text-sm text-text-secondary">Sistema Online</span>
           </div>
         </div>
       </header>
@@ -158,14 +161,14 @@ export default function Home({ onLoginSuccess }) {
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Hero */}
-          <div>
-            <h1 className="text-5xl font-bold text-white mb-4">
+          <div className="animate-fade-in">
+            <h1 className="text-5xl font-bold text-text-primary mb-4">
               CFO Inteligente
             </h1>
-            <p className="text-2xl text-slate-400 mb-6">
+            <p className="text-2xl text-text-secondary mb-6">
               Sistema Financiero Integral de Conexión Consultora
             </p>
-            <p className="text-slate-500 mb-8">
+            <p className="text-text-muted mb-8">
               Plataforma profesional de gestión y análisis financiero con 
               capacidades de inteligencia artificial para optimizar la toma 
               de decisiones empresariales.
@@ -173,15 +176,15 @@ export default function Home({ onLoginSuccess }) {
             
             {/* Security badges */}
             <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 text-sm text-text-muted">
                 <Shield className="w-4 h-4 text-green-500" />
                 <span>Encriptación SSL</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 text-sm text-text-muted">
                 <Lock className="w-4 h-4 text-green-500" />
                 <span>Acceso Seguro</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 text-sm text-text-muted">
                 <CheckCircle className="w-4 h-4 text-green-500" />
                 <span>Respaldos Diarios</span>
               </div>
@@ -189,15 +192,15 @@ export default function Home({ onLoginSuccess }) {
           </div>
 
           {/* Right: Login Card */}
-          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 backdrop-blur">
+          <div className="bg-surface/80 border border-border rounded-2xl p-8 backdrop-blur animate-fade-in-up">
             {/* Tabs */}
             <div className="flex gap-4 mb-6">
               <button
                 onClick={() => setActiveTab('login')}
                 className={`pb-2 px-1 text-sm font-medium transition ${
                   activeTab === 'login' 
-                    ? 'text-white border-b-2 border-blue-500' 
-                    : 'text-slate-300 hover:text-white'
+                    ? 'text-text-primary border-b-2 border-accent' 
+                    : 'text-text-secondary hover:text-text-primary'
                 }`}
               >
                 Iniciar Sesión
@@ -206,8 +209,8 @@ export default function Home({ onLoginSuccess }) {
                 onClick={() => setActiveTab('register')}
                 className={`px-3 py-1 text-sm font-medium transition rounded-md border ${
                   activeTab === 'register' 
-                    ? 'text-white border-slate-400 bg-slate-800/50' 
-                    : 'text-slate-300 border-slate-600 hover:text-white hover:border-slate-500'
+                    ? 'text-text-primary border-border-strong bg-surface-alt/80' 
+                    : 'text-text-secondary border-border hover:text-text-primary hover:border-border-strong'
                 }`}
               >
                 Registrarse
@@ -217,13 +220,13 @@ export default function Home({ onLoginSuccess }) {
             {activeTab === 'login' ? (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Email
                   </label>
                   <input
                     type="email"
                     required
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    className={authFieldClass}
                     placeholder="tu@conexionconsultora.uy"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -231,13 +234,13 @@ export default function Home({ onLoginSuccess }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Contraseña
                   </label>
                   <input
                     type="password"
                     required
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    className={authFieldClass}
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -252,7 +255,7 @@ export default function Home({ onLoginSuccess }) {
                       checked={formData.remember}
                       onChange={(e) => setFormData({...formData, remember: e.target.checked})}
                     />
-                    <span className="text-sm text-slate-400">Recordarme</span>
+                    <span className="text-sm text-text-secondary">Recordarme</span>
                   </label>
                   <button 
                     type="button"
@@ -263,16 +266,16 @@ export default function Home({ onLoginSuccess }) {
                   </button>
                 </div>
                 
-                {showHelp && (
-                  <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-slate-300">
+                {showHelp ? (
+                  <div className="p-3 bg-surface-alt/80 border border-border rounded-lg text-sm text-text-secondary">
                     Contacta al administrador del sistema para restablecer tu contraseña.
                   </div>
-                )}
+                ) : null}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50"
+                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200 disabled:opacity-50"
                 >
                   {loading ? 'Ingresando...' : 'Ingresar al Sistema'}
                 </button>
@@ -280,13 +283,13 @@ export default function Home({ onLoginSuccess }) {
             ) : (
               <form onSubmit={handleRegister} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Nombre completo
                   </label>
                   <input
                     type="text"
                     required
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    className={authFieldClass}
                     placeholder="Juan Pérez"
                     value={registerData.nombre}
                     onChange={(e) => setRegisterData({...registerData, nombre: e.target.value})}
@@ -294,22 +297,22 @@ export default function Home({ onLoginSuccess }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Usuario
                   </label>
                   <div className="relative">
                     {/* Capa visual: muestra usuario + dominio en gris */}
                     <div 
-                      className="absolute inset-0 flex items-center px-4 py-3 pointer-events-none border border-slate-700 rounded-lg bg-slate-800"
+                      className="absolute inset-0 flex items-center px-4 py-3 pointer-events-none border border-border rounded-lg bg-surface-alt"
                       aria-hidden="true"
                     >
                       {registerData.usuario ? (
                         <>
-                          <span className="text-white">{registerData.usuario}</span>
-                          <span className="text-slate-400">@grupoconexion.uy</span>
+                          <span className="text-text-primary">{registerData.usuario}</span>
+                          <span className="text-text-secondary">@grupoconexion.uy</span>
                         </>
                       ) : (
-                        <span className="text-slate-500">tunombre@grupoconexion.uy</span>
+                        <span className="text-text-muted">tunombre@grupoconexion.uy</span>
                       )}
                     </div>
                     {/* Input real: invisible pero funcional */}
@@ -318,7 +321,7 @@ export default function Home({ onLoginSuccess }) {
                       required
                       value={registerData.usuario}
                       onChange={(e) => setRegisterData({...registerData, usuario: e.target.value.toLowerCase().replace(/[@\s]/g, '')})}
-                      className="w-full px-4 py-3 border border-slate-700 rounded-lg bg-transparent text-transparent caret-white focus:outline-none focus:ring-2 focus:ring-blue-500 relative z-10"
+                      className="w-full px-4 py-3 border border-border rounded-lg bg-transparent text-transparent caret-text-primary focus:outline-none focus:ring-2 focus:ring-accent relative z-10"
                       autoComplete="off"
                       spellCheck="false"
                     />
@@ -326,13 +329,13 @@ export default function Home({ onLoginSuccess }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Contraseña
                   </label>
                   <input
                     type="password"
                     required
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    className={authFieldClass}
                     placeholder="••••••••"
                     value={registerData.password}
                     onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
@@ -340,13 +343,13 @@ export default function Home({ onLoginSuccess }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Confirmar Contraseña
                   </label>
                   <input
                     type="password"
                     required
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    className={authFieldClass}
                     placeholder="••••••••"
                     value={registerData.confirmPassword}
                     onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
@@ -361,7 +364,7 @@ export default function Home({ onLoginSuccess }) {
                   {registerLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
                 </button>
 
-                <p className="text-xs text-center text-slate-500">
+                <p className="text-xs text-center text-text-muted">
                   Al registrarte, ingresarás como colaborador. Un administrador puede ascenderte a socio.
                 </p>
               </form>
@@ -383,29 +386,29 @@ export default function Home({ onLoginSuccess }) {
         </div>
         
         {/* Formulario expandible */}
-        {showChangePassword && (
+        {showChangePassword ? (
           <div className="mt-6 max-w-md mx-auto">
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 backdrop-blur">
+            <div className="bg-surface/80 border border-border rounded-2xl p-8 backdrop-blur">
               <form onSubmit={handleChangePassword} className="space-y-6">
-                {changePasswordError && (
+                {changePasswordError ? (
                   <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-sm text-red-300">
                     {changePasswordError}
                   </div>
-                )}
+                ) : null}
                 
                 {/* Usuario */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Usuario
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3.5 h-5 w-5 text-slate-500" />
+                    <Mail className="absolute left-3 top-3.5 h-5 w-5 text-text-muted" />
                     <input
                       type="text"
                       required
                       value={changePasswordData.usuario}
                       onChange={(e) => setChangePasswordData({...changePasswordData, usuario: e.target.value.toLowerCase().replace(/[@\s]/g, '')})}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                      className={`${authFieldWithIconClass} focus:border-warning`}
                       placeholder="Tu usuario ej: gferrari"
                     />
                   </div>
@@ -413,17 +416,17 @@ export default function Home({ onLoginSuccess }) {
                 
                 {/* Contraseña actual */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Contraseña actual
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-slate-500" />
+                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-text-muted" />
                     <input
                       type="password"
                       required
                       value={changePasswordData.passwordActual}
                       onChange={(e) => setChangePasswordData({...changePasswordData, passwordActual: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                      className={`${authFieldWithIconClass} focus:border-warning`}
                       placeholder="••••••••"
                     />
                   </div>
@@ -431,17 +434,17 @@ export default function Home({ onLoginSuccess }) {
                 
                 {/* Contraseña nueva */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Contraseña nueva
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-slate-500" />
+                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-text-muted" />
                     <input
                       type="password"
                       required
                       value={changePasswordData.passwordNueva}
                       onChange={(e) => setChangePasswordData({...changePasswordData, passwordNueva: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                      className={`${authFieldWithIconClass} focus:border-warning`}
                       placeholder="Mínimo 6 caracteres"
                     />
                   </div>
@@ -449,17 +452,17 @@ export default function Home({ onLoginSuccess }) {
                 
                 {/* Confirmar contraseña nueva */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Confirmar contraseña nueva
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-slate-500" />
+                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-text-muted" />
                     <input
                       type="password"
                       required
                       value={changePasswordData.passwordConfirmar}
                       onChange={(e) => setChangePasswordData({...changePasswordData, passwordConfirmar: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                      className={`${authFieldWithIconClass} focus:border-warning`}
                       placeholder="••••••••"
                     />
                   </div>
@@ -474,7 +477,7 @@ export default function Home({ onLoginSuccess }) {
                       setChangePasswordData({ usuario: '', passwordActual: '', passwordNueva: '', passwordConfirmar: '' });
                       setChangePasswordError('');
                     }}
-                    className="flex-1 py-3 px-4 border border-slate-700 rounded-lg text-slate-300 hover:text-white hover:border-slate-600 transition"
+                    className="flex-1 py-3 px-4 border border-border rounded-lg text-text-secondary hover:text-text-primary hover:border-border-strong transition"
                   >
                     Cancelar
                   </button>
@@ -489,51 +492,49 @@ export default function Home({ onLoginSuccess }) {
               </form>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* System Capabilities */}
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <h2 className="text-2xl font-semibold text-white text-center mb-8">
+        <h2 className="text-2xl font-semibold text-text-primary text-center mb-8">
           Capacidades del Sistema
         </h2>
         <div className="grid md:grid-cols-4 gap-6">
-          <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:bg-slate-900/50 transition">
+          <div className="bg-surface/60 border border-border rounded-xl p-6 hover:bg-surface/80 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
             <FileText className="w-10 h-10 text-blue-500 mb-4" />
-            <h3 className="font-semibold text-white mb-2">Registro de Operaciones</h3>
-            <p className="text-sm text-slate-400">18+ operaciones procesadas diariamente</p>
+            <h3 className="font-semibold text-text-primary mb-2">Registro de Operaciones</h3>
+            <p className="text-sm text-text-secondary">18+ operaciones procesadas diariamente</p>
           </div>
-          <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:bg-slate-900/50 transition">
+          <div className="bg-surface/60 border border-border rounded-xl p-6 hover:bg-surface/80 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
             <BarChart3 className="w-10 h-10 text-green-500 mb-4" />
-            <h3 className="font-semibold text-white mb-2">Análisis en Tiempo Real</h3>
-            <p className="text-sm text-slate-400">3 gráficos interactivos con datos actualizados</p>
+            <h3 className="font-semibold text-text-primary mb-2">Análisis en Tiempo Real</h3>
+            <p className="text-sm text-text-secondary">3 gráficos interactivos con datos actualizados</p>
           </div>
-          <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:bg-slate-900/50 transition">
+          <div className="bg-surface/60 border border-border rounded-xl p-6 hover:bg-surface/80 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
             <Shield className="w-10 h-10 text-purple-500 mb-4" />
-            <h3 className="font-semibold text-white mb-2">Reportes Inteligentes</h3>
-            <p className="text-sm text-slate-400">Powered by AI (próximamente)</p>
+            <h3 className="font-semibold text-text-primary mb-2">Reportes Inteligentes</h3>
+            <p className="text-sm text-text-secondary">Powered by AI (próximamente)</p>
           </div>
-          <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:bg-slate-900/50 transition">
+          <div className="bg-surface/60 border border-border rounded-xl p-6 hover:bg-surface/80 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
             <Users className="w-10 h-10 text-orange-500 mb-4" />
-            <h3 className="font-semibold text-white mb-2">Multi-usuario</h3>
-            <p className="text-sm text-slate-400">9 usuarios con permisos diferenciados</p>
+            <h3 className="font-semibold text-text-primary mb-2">Multi-usuario</h3>
+            <p className="text-sm text-text-secondary">9 usuarios con permisos diferenciados</p>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 mt-16 py-8">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between text-sm text-slate-500">
-          <span>© 2025 Conexión Consultora - Uruguay</span>
+      <footer className="border-t border-border mt-16 py-8">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between text-sm text-text-muted">
+          <span>© 2026 Conexión Consultora - Uruguay</span>
           <div className="flex gap-6">
             <span>Versión 2.1.0</span>
-            <a href="#" className="hover:text-slate-300">Soporte Técnico</a>
-            <a href="#" className="hover:text-slate-300">Políticas de Privacidad</a>
+            <a href="#" className="hover:text-text-secondary">Soporte Técnico</a>
+            <a href="#" className="hover:text-text-secondary">Políticas de Privacidad</a>
           </div>
         </div>
       </footer>
     </div>
   );
 }
-
-
