@@ -2,6 +2,9 @@ import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianG
 import Card from '../ui/Card';
 
 const COLORS = ['#10B981', '#EF4444', '#3B82F6', '#8B5CF6', '#F59E0B'];
+const CHART_TICK = { fill: 'rgb(148,163,184)', fontSize: 12 };
+const CHART_AXIS_LINE = { stroke: 'rgba(148,163,184,0.15)' };
+const CHART_LEGEND_STYLE = { fontSize: 12, color: 'rgb(148,163,184)' };
 
 export function ChartsSection({ operaciones }) {
   // 🔍 DIAGNÓSTICO: Ver qué datos recibe el componente
@@ -13,11 +16,11 @@ export function ChartsSection({ operaciones }) {
       const gastos = payload[1]?.value || 0;
       const margen = ingresos > 0 ? ((ingresos - gastos) / ingresos * 100).toFixed(1) : 0;
       return (
-        <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700">
-          <p className="font-semibold text-gray-900 dark:text-white mb-2">{label}</p>
-          <p className="text-sm text-green-600 dark:text-green-400">Ingresos: ${ingresos.toLocaleString('es-UY')}</p>
-          <p className="text-sm text-red-600 dark:text-red-400">Gastos: ${gastos.toLocaleString('es-UY')}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 pt-1 border-t border-gray-200 dark:border-slate-700">Margen: {margen}%</p>
+        <div className="bg-surface p-3 rounded-lg shadow-lg border border-border">
+          <p className="font-semibold text-text-primary mb-2">{label}</p>
+          <p className="text-sm text-success">Ingresos: ${ingresos.toLocaleString('es-UY')}</p>
+          <p className="text-sm text-danger">Gastos: ${gastos.toLocaleString('es-UY')}</p>
+          <p className="text-xs text-text-secondary mt-1 pt-1 border-t border-border">Margen: {margen}%</p>
         </div>
       );
     }
@@ -29,10 +32,10 @@ export function ChartsSection({ operaciones }) {
       const data = payload[0];
       const percentage = data.payload.percentage || ((data.value / data.payload.total) * 100);
       return (
-        <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700">
-          <p className="font-semibold text-gray-900 dark:text-white">{data.name}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">${data.value.toLocaleString('es-UY')}</p>
-          <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{Number(percentage).toFixed(1)}% del total</p>
+        <div className="bg-surface p-3 rounded-lg shadow-lg border border-border">
+          <p className="font-semibold text-text-primary">{data.name}</p>
+          <p className="text-sm text-text-secondary">${data.value.toLocaleString('es-UY')}</p>
+          <p className="text-sm font-medium text-info">{Number(percentage).toFixed(1)}% del total</p>
         </div>
       );
     }
@@ -45,11 +48,11 @@ export function ChartsSection({ operaciones }) {
       const gastos = payload.find(p => p.dataKey === 'gastos')?.value || 0;
       const rentabilidad = ingresos > 0 ? ((ingresos - gastos) / ingresos * 100).toFixed(1) : 0;
       return (
-        <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700">
-          <p className="font-semibold text-gray-900 dark:text-white mb-2">{label}</p>
-          <p className="text-sm text-green-600 dark:text-green-400">Ingresos: ${ingresos.toLocaleString('es-UY')}</p>
-          <p className="text-sm text-red-600 dark:text-red-400">Gastos: ${gastos.toLocaleString('es-UY')}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 pt-1 border-t border-gray-200 dark:border-slate-700">Rentabilidad: {rentabilidad}%</p>
+        <div className="bg-surface p-3 rounded-lg shadow-lg border border-border">
+          <p className="font-semibold text-text-primary mb-2">{label}</p>
+          <p className="text-sm text-success">Ingresos: ${ingresos.toLocaleString('es-UY')}</p>
+          <p className="text-sm text-danger">Gastos: ${gastos.toLocaleString('es-UY')}</p>
+          <p className="text-xs text-text-secondary mt-1 pt-1 border-t border-border">Rentabilidad: {rentabilidad}%</p>
         </div>
       );
     }
@@ -60,14 +63,16 @@ export function ChartsSection({ operaciones }) {
   const locationData = prepareLocationData(operaciones || []);
 
   return (
-    <section className="px-4 xl:px-6 mb-8 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6">
-      <Card className="p-4 xl:p-6">
-        <h3 className="text-base xl:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Evolución Mensual</h3>
-        <ResponsiveContainer width="100%" height={250}>
+    <section className="px-4 xl:px-6 mb-8 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-5">
+      <Card className="p-5 xl:p-6">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-text-secondary mb-5">Evolución Mensual</h3>
+        <ResponsiveContainer width="100%" height={280}>
           <LineChart data={evolutionData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="mes" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
+            <XAxis dataKey="mes" tick={CHART_TICK} axisLine={CHART_AXIS_LINE} />
             <YAxis 
+              tick={CHART_TICK}
+              axisLine={CHART_AXIS_LINE}
               tickFormatter={(value) => {
                 if (value >= 1000000) return `$${(value/1000000).toFixed(1)}M`;
                 if (value >= 1000) return `$${(value/1000).toFixed(0)}K`;
@@ -76,16 +81,16 @@ export function ChartsSection({ operaciones }) {
               width={80}
             />
             <Tooltip content={<CustomTooltipEvolution />} />
-            <Legend />
+            <Legend wrapperStyle={CHART_LEGEND_STYLE} />
             <Line type="monotone" dataKey="ingresos" stroke="#10B981" strokeWidth={2} />
             <Line type="monotone" dataKey="gastos" stroke="#EF4444" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </Card>
 
-      <Card className="p-4 xl:p-6">
-        <h3 className="text-base xl:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Distribución por Área</h3>
-        <ResponsiveContainer width="100%" height={250}>
+      <Card className="p-5 xl:p-6">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-text-secondary mb-5">Distribución por Área</h3>
+        <ResponsiveContainer width="100%" height={280}>
           <PieChart>
             <Pie data={areaData} cx="50%" cy="50%" labelLine={false}
                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -99,13 +104,15 @@ export function ChartsSection({ operaciones }) {
         </ResponsiveContainer>
       </Card>
 
-      <Card className="p-4 xl:p-6">
-        <h3 className="text-base xl:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Comparación por Localidad</h3>
-        <ResponsiveContainer width="100%" height={250}>
+      <Card className="p-5 xl:p-6">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-text-secondary mb-5">Comparación por Localidad</h3>
+        <ResponsiveContainer width="100%" height={280}>
           <BarChart data={locationData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="localidad" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
+            <XAxis dataKey="localidad" tick={CHART_TICK} axisLine={CHART_AXIS_LINE} />
             <YAxis 
+              tick={CHART_TICK}
+              axisLine={CHART_AXIS_LINE}
               tickFormatter={(value) => {
                 if (value >= 1000000) return `$${(value/1000000).toFixed(1)}M`;
                 if (value >= 1000) return `$${(value/1000).toFixed(0)}K`;
@@ -114,7 +121,7 @@ export function ChartsSection({ operaciones }) {
               width={80}
             />
             <Tooltip content={<CustomTooltipBars />} />
-            <Legend />
+            <Legend wrapperStyle={CHART_LEGEND_STYLE} />
             <Bar dataKey="ingresos" fill="#10B981" />
             <Bar dataKey="gastos" fill="#EF4444" />
           </BarChart>
@@ -209,5 +216,3 @@ function prepareLocationData(operaciones) {
 }
 
 export default ChartsSection;
-
-

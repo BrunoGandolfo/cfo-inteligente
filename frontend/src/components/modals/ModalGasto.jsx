@@ -117,27 +117,27 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"
-      borderColor="border-red-500"
+      borderColor="border-danger"
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Fecha</label>
+          <label className="block text-xs font-medium text-text-secondary">Fecha</label>
           <input
             type="date"
             required
             value={formData.fecha}
             max={new Date().toISOString().split('T')[0]}
             onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Área *</label>
+          <label className="block text-xs font-medium text-text-secondary">Área *</label>
           <select
             required
             value={formData.area_id}
             onChange={(e) => setFormData({...formData, area_id: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           >
             <option value="">Seleccione...</option>
             {areas.map(area => (
@@ -146,11 +146,11 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Local</label>
+          <label className="block text-xs font-medium text-text-secondary">Local</label>
           <select
             value={formData.localidad}
             onChange={(e) => setFormData({...formData, localidad: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           >
             <option value="Montevideo">MVD</option>
             <option value="Mercedes">Mercedes</option>
@@ -159,31 +159,31 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Proveedor *</label>
+        <label className="block text-xs font-medium text-text-secondary">Proveedor *</label>
         <input
           type="text"
           required
           value={formData.proveedor}
           onChange={(e) => setFormData({...formData, proveedor: e.target.value})}
-          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+          className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           placeholder="Nombre del proveedor"
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Moneda</label>
+          <label className="block text-xs font-medium text-text-secondary">Moneda</label>
           <select
             value={formData.moneda_original}
             onChange={(e) => setFormData({...formData, moneda_original: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           >
             <option value="UYU">UYU</option>
             <option value="USD">USD</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto *</label>
+          <label className="block text-xs font-medium text-text-secondary">Monto *</label>
           <input
             type="number"
             required
@@ -191,12 +191,12 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
             min="0.01"
             value={formData.monto_original}
             onChange={(e) => setFormData({...formData, monto_original: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
             placeholder="0.00"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">T.C.</label>
+          <label className="block text-xs font-medium text-text-secondary">T.C.</label>
           <input
             type="number"
             required
@@ -204,17 +204,17 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
             min="0.01"
             value={formData.tipo_cambio}
             onChange={(e) => setFormData({...formData, tipo_cambio: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           />
         </div>
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Descripción</label>
+        <label className="block text-xs font-medium text-text-secondary">Descripción</label>
         <textarea
           value={formData.descripcion}
           onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+          className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           rows="1"
           placeholder="Opcional"
         />
@@ -224,4 +224,3 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
 }
 
 export default ModalGasto;
-

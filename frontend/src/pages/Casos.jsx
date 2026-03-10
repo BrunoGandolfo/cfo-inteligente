@@ -160,8 +160,8 @@ function Casos() {
 
   if (loading && casos.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-slate-200">Cargando casos...</div>
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="text-text-secondary">Cargando casos...</div>
       </div>
     );
   }
@@ -171,12 +171,12 @@ function Casos() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          <FileText className="w-8 h-8 text-accent" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-text-primary">
               Casos Legales
             </h1>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-text-secondary mt-1">
               Gestión y seguimiento de casos legales
             </p>
           </div>
@@ -193,8 +193,8 @@ function Casos() {
 
       {/* Tabla de Casos */}
       <Card className="overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-800">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="text-lg font-semibold text-text-primary">
             Casos ({casos.length})
           </h3>
         </div>
@@ -202,18 +202,18 @@ function Casos() {
         {loading ? (
           <div className="p-6">
             <div className="animate-pulse space-y-3">
-              <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded w-1/3" />
-              <div className="h-10 bg-gray-100 dark:bg-slate-900 rounded" />
-              <div className="h-10 bg-gray-100 dark:bg-slate-900 rounded" />
+              <div className="h-4 bg-surface-alt rounded w-1/3" />
+              <div className="h-10 bg-bg rounded" />
+              <div className="h-10 bg-bg rounded" />
             </div>
           </div>
         ) : casos.length === 0 ? (
           <div className="p-12 text-center">
-            <FileText className="w-16 h-16 text-gray-400 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            <FileText className="w-16 h-16 text-text-muted mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-text-primary mb-2">
               No hay casos
             </h3>
-            <p className="text-gray-500 dark:text-slate-400 mb-4">
+            <p className="text-text-secondary mb-4">
               Crea tu primer caso para comenzar
             </p>
             <Button variant="primary" onClick={() => handleOpenModal()}>
@@ -224,26 +224,26 @@ function Casos() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-50 dark:bg-slate-800/50">
+              <thead className="bg-surface-alt">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">
                     Título
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">
                     Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">
                     Prioridad
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">
                     Fecha Vencimiento
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-text-secondary uppercase">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
+              <tbody className="bg-surface divide-y divide-border">
                 {casos.map((caso) => {
                   const fechaVencimiento = caso.fecha_vencimiento 
                     ? new Date(caso.fecha_vencimiento)
@@ -255,10 +255,10 @@ function Casos() {
                   return (
                     <tr
                       key={caso.id}
-                      className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
+                      className="hover:bg-surface-alt transition-colors"
                     >
                       <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white max-w-md">
+                        <div className="text-sm font-medium text-text-primary max-w-md">
                           {caso.titulo}
                         </div>
                       </td>
@@ -271,30 +271,28 @@ function Casos() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {fechaVencimiento ? (
                           <div className="flex items-center gap-1 text-sm">
-                            <Calendar className={`w-4 h-4 ${vencido ? 'text-red-500' : 'text-gray-400'}`} />
-                            <span className={vencido ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-600 dark:text-slate-400'}>
+                            <Calendar className={`w-4 h-4 ${vencido ? 'text-danger' : 'text-text-muted'}`} />
+                            <span className={vencido ? 'text-danger font-medium' : 'text-text-secondary'}>
                               {format(fechaVencimiento, 'dd/MM/yyyy', { locale: es })}
                             </span>
-                            {vencido && (
-                              <AlertCircle className="w-4 h-4 text-red-500" />
-                            )}
+                            {vencido ? <AlertCircle className="w-4 h-4 text-danger" /> : null}
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-400 dark:text-slate-500">-</span>
+                          <span className="text-sm text-text-muted">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => handleOpenModal(caso)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-accent hover:bg-accent-soft rounded-md transition-colors"
                           >
                             <Edit className="w-4 h-4" />
                             Editar
                           </button>
                           <button
                             onClick={() => handleDelete(caso.id)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-danger hover:bg-danger/10 rounded-md transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                             Eliminar
@@ -311,23 +309,23 @@ function Casos() {
       </Card>
 
       {/* Modal Crear/Editar Caso */}
-      {showModal && (
+      {showModal ? (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-surface border border-border rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-bold text-text-primary">
                 {editMode ? 'Editar Caso' : 'Nuevo Caso'}
               </h2>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="text-text-muted hover:text-text-secondary"
               >
                 ✕
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Título *
                 </label>
                 <input
@@ -337,20 +335,20 @@ function Casos() {
                   placeholder="Título del caso"
                   maxLength={300}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-border rounded-md bg-surface text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Estado *
                   </label>
                   <select
                     value={formData.estado}
                     onChange={(e) => setFormData({...formData, estado: e.target.value})}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-md bg-surface text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent"
                   >
                     <option value="pendiente">Pendiente</option>
                     <option value="en_proceso">En Proceso</option>
@@ -360,14 +358,14 @@ function Casos() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Prioridad *
                   </label>
                   <select
                     value={formData.prioridad}
                     onChange={(e) => setFormData({...formData, prioridad: e.target.value})}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-md bg-surface text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent"
                   >
                     <option value="baja">Baja</option>
                     <option value="media">Media</option>
@@ -378,19 +376,19 @@ function Casos() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Fecha de Vencimiento
                 </label>
                 <input
                   type="date"
                   value={formData.fecha_vencimiento}
                   onChange={(e) => setFormData({...formData, fecha_vencimiento: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-border rounded-md bg-surface text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   IUE del Expediente (opcional)
                 </label>
                 <input
@@ -398,7 +396,7 @@ function Casos() {
                   value={formData.iue}
                   onChange={(e) => setFormData({...formData, iue: e.target.value})}
                   placeholder="Ej: 2-12345/2023"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-border rounded-md bg-surface text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>
 
@@ -428,7 +426,7 @@ function Casos() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

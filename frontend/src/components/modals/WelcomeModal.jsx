@@ -114,39 +114,39 @@ export default function WelcomeModal({ isOpen, onClose, frasePreCargada, fraseLo
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm"
         >
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3 }}
-            className="relative mx-4 max-w-md w-full bg-slate-900 border border-slate-700/50 rounded-lg shadow-xl overflow-hidden"
+            className="relative mx-4 max-w-md w-full bg-surface border border-border rounded-lg shadow-xl overflow-hidden"
           >
             {/* Barra de progreso superior */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-slate-800">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-surface-alt">
               <motion.div
                 initial={{ width: '100%' }}
                 animate={{ width: '0%' }}
                 transition={{ duration: DURATION / 1000, ease: 'linear' }}
-                className="h-full bg-indigo-500"
+                className="h-full bg-accent"
               />
             </div>
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-indigo-400" />
-                <span className="text-sm font-medium text-slate-400">CFO Inteligente</span>
+                <Sparkles className="w-5 h-5 text-accent" />
+                <span className="text-sm font-medium text-text-secondary">CFO Inteligente</span>
               </div>
               <button
                 onClick={onClose}
-                className="text-slate-500 hover:text-slate-300 transition-colors"
+                className="text-text-muted hover:text-text-secondary transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -154,27 +154,27 @@ export default function WelcomeModal({ isOpen, onClose, frasePreCargada, fraseLo
             
             {/* Contenido */}
             <div className="px-5 pb-6">
-              <h2 className="text-lg font-semibold text-white mb-4">
+              <h2 className="text-lg font-semibold text-text-primary mb-4">
                 Bienvenido, {userName}
               </h2>
               
               {loading ? (
                 <div className="flex items-center gap-2 py-2">
-                  <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-slate-400 text-sm">Preparando tu mensaje...</span>
+                  <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  <span className="text-text-secondary text-sm">Preparando tu mensaje...</span>
                 </div>
               ) : (
-                <p className="text-slate-300 leading-relaxed min-h-[60px]">
+                <p className="text-text-secondary leading-relaxed min-h-[60px]">
                   {displayedText}
-                  {isTyping && (
-                    <span className="inline-block w-0.5 h-4 bg-indigo-400 ml-0.5 animate-pulse align-middle" />
-                  )}
+                  {isTyping ? (
+                    <span className="inline-block w-0.5 h-4 bg-accent ml-0.5 animate-pulse align-middle" />
+                  ) : null}
                 </p>
               )}
             </div>
           </motion.div>
         </motion.div>
-      )}
+      ) : null}
     </AnimatePresence>
   );
 }

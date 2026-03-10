@@ -46,16 +46,16 @@ export function CalculadoraHonorarios({ valorUR }) {
 
   return (
     <Card className="p-5">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <h3 className="text-lg font-semibold text-text-primary mb-4">
         Honorarios Notariales
       </h3>
-      <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+      <p className="text-sm text-text-secondary mb-4">
         Calcula el arancel base (3%) sobre el monto de la operación.
       </p>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+          <label className="block text-sm font-medium text-text-primary mb-1">
             Monto de la operación ($)
           </label>
           <input
@@ -64,7 +64,7 @@ export function CalculadoraHonorarios({ valorUR }) {
             onChange={(e) => setMonto(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ej: 100000"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white"
+            className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-surface text-text-primary"
           />
         </div>
 
@@ -73,15 +73,15 @@ export function CalculadoraHonorarios({ valorUR }) {
         </Button>
 
         {resultado && (
-          <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg mt-4 space-y-2">
+          <div className="bg-surface-alt p-4 rounded-lg mt-4 space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-slate-400">Honorario (3%):</span>
-              <span className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">
+              <span className="text-sm text-text-secondary">Honorario (3%):</span>
+              <span className="text-lg font-bold text-text-primary tabular-nums">
                 {formatearPesos(resultado.honorario)}
               </span>
             </div>
-            <div className="flex justify-between items-center border-t border-gray-200 dark:border-slate-700 pt-2">
-              <span className="text-sm text-gray-600 dark:text-slate-400">Equivale a:</span>
+            <div className="flex justify-between items-center border-t border-border pt-2">
+              <span className="text-sm text-text-secondary">Equivale a:</span>
               <span className="text-md font-semibold text-cyan-600 dark:text-cyan-400 tabular-nums">
                 {resultado.enUR.toFixed(2)} UR
               </span>

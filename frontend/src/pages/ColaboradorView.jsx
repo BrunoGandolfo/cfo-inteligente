@@ -68,16 +68,16 @@ function ColaboradorView() {
         {/* Tarjeta Ingreso */}
         <button
           onClick={() => setShowIngreso(true)}
-          className="group p-8 rounded-xl border-2 transition-all duration-200 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-500 hover:shadow-lg dark:hover:bg-gray-800/80"
+          className="group p-8 rounded-xl border-2 transition-all duration-200 bg-surface border-border hover:border-emerald-500 hover:shadow-lg"
         >
           <div className="flex flex-col items-center text-center">
             <div className="p-4 rounded-full mb-4 bg-emerald-50 dark:bg-emerald-900/30">
               <ArrowUpCircle className="w-10 h-10 text-emerald-500" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+            <h3 className="text-xl font-semibold mb-2 text-text-primary">
               Registrar Ingreso
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-text-secondary">
               Facturación, cobros y ventas
             </p>
           </div>
@@ -86,16 +86,16 @@ function ColaboradorView() {
         {/* Tarjeta Gasto */}
         <button
           onClick={() => setShowGasto(true)}
-          className="group p-8 rounded-xl border-2 transition-all duration-200 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-red-500 hover:shadow-lg dark:hover:bg-gray-800/80"
+          className="group p-8 rounded-xl border-2 transition-all duration-200 bg-surface border-border hover:border-red-500 hover:shadow-lg"
         >
           <div className="flex flex-col items-center text-center">
             <div className="p-4 rounded-full mb-4 bg-red-50 dark:bg-red-900/30">
               <ArrowDownCircle className="w-10 h-10 text-red-500" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+            <h3 className="text-xl font-semibold mb-2 text-text-primary">
               Registrar Gasto
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-text-secondary">
               Gastos operativos y servicios
             </p>
           </div>
@@ -104,22 +104,22 @@ function ColaboradorView() {
 
       {/* Card de resumen mensual - minimalista */}
       <div className="w-full max-w-2xl">
-        <div className="rounded-xl border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm p-8">
+        <div className="rounded-xl border bg-surface border-border shadow-sm p-8">
           <div className="flex flex-col items-center text-center">
             <div className="p-3 rounded-full mb-4 bg-blue-50 dark:bg-blue-900/20">
               <CalendarCheck className="w-8 h-8 text-blue-500 dark:text-blue-400" />
             </div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+            <p className="text-sm font-medium text-text-secondary mb-2">
               Operaciones este mes
             </p>
             {loading ? (
-              <div className="text-4xl font-bold text-gray-300 dark:text-gray-600">--</div>
+              <div className="text-4xl font-bold text-text-muted">--</div>
             ) : (
-              <div className="text-4xl font-bold text-gray-900 dark:text-white">
+              <div className="text-4xl font-bold text-text-primary">
                 {operacionesDelMes}
               </div>
             )}
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
+            <p className="text-xs text-text-muted mt-3">
               {fraseMotivacional || 'Cargando...'}
             </p>
           </div>
@@ -128,46 +128,46 @@ function ColaboradorView() {
 
       {/* Indicadores del día - estilo Bloomberg terminal */}
       <div className="w-full max-w-4xl mt-8">
-        <div className="bg-gray-900 dark:bg-black rounded-xl p-4 border border-gray-700">
-          <h3 className="text-xs font-mono uppercase tracking-wider text-gray-400 mb-4 text-center">
+        <div className="dark bg-bg rounded-xl p-4 border border-border-strong">
+          <h3 className="text-xs font-mono uppercase tracking-wider text-text-muted mb-4 text-center">
             📊 Indicadores Uruguay • Actualizado hoy
           </h3>
           {loadingIndicadores ? (
-            <div className="text-center text-gray-500 font-mono">Cargando indicadores...</div>
+            <div className="text-center text-text-secondary font-mono">Cargando indicadores...</div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
               {/* Indicadores económicos - VERDE */}
-              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-emerald-500">
-                <p className="text-[10px] font-mono text-gray-500 uppercase">UI</p>
+              <div className="bg-surface rounded-lg p-3 text-center border-l-2 border-emerald-500">
+                <p className="text-[10px] font-mono text-text-muted uppercase">UI</p>
                 <p className="text-lg font-mono font-bold text-emerald-400 tabular-nums">
                   {indicadores?.ui?.valor?.toFixed(4) || '--'}
                 </p>
               </div>
               
-              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-emerald-500">
-                <p className="text-[10px] font-mono text-gray-500 uppercase">UR</p>
+              <div className="bg-surface rounded-lg p-3 text-center border-l-2 border-emerald-500">
+                <p className="text-[10px] font-mono text-text-muted uppercase">UR</p>
                 <p className="text-lg font-mono font-bold text-emerald-400 tabular-nums">
                   {indicadores?.ur?.valor?.toLocaleString('es-UY') || '--'}
                 </p>
               </div>
               
-              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-emerald-500">
-                <p className="text-[10px] font-mono text-gray-500 uppercase">BPC</p>
+              <div className="bg-surface rounded-lg p-3 text-center border-l-2 border-emerald-500">
+                <p className="text-[10px] font-mono text-text-muted uppercase">BPC</p>
                 <p className="text-lg font-mono font-bold text-emerald-400 tabular-nums">
                   {indicadores?.bpc?.valor?.toLocaleString('es-UY') || '--'}
                 </p>
               </div>
               
-              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-emerald-500">
-                <p className="text-[10px] font-mono text-gray-500 uppercase">Inflación</p>
+              <div className="bg-surface rounded-lg p-3 text-center border-l-2 border-emerald-500">
+                <p className="text-[10px] font-mono text-text-muted uppercase">Inflación</p>
                 <p className="text-lg font-mono font-bold text-emerald-400 tabular-nums">
                   {indicadores?.inflacion?.valor?.toFixed(1) || '--'}%
                 </p>
               </div>
               
               {/* Cotizaciones - NARANJA Bloomberg */}
-              <div className="bg-gray-800 rounded-lg p-3 text-center border-l-2 border-orange-500">
-                <p className="text-[10px] font-mono text-gray-500 uppercase">USD</p>
+              <div className="bg-surface rounded-lg p-3 text-center border-l-2 border-orange-500">
+                <p className="text-[10px] font-mono text-text-muted uppercase">USD</p>
                 <p className="text-lg font-mono font-bold text-orange-400 tabular-nums">
                   {indicadores?.cotizaciones?.usd?.venta?.toFixed(2) || '--'}
                 </p>
@@ -178,7 +178,7 @@ function ColaboradorView() {
       </div>
 
       {/* Modales */}
-      {showIngreso && (
+      {showIngreso ? (
         <ModalIngreso
           isOpen={showIngreso}
           onClose={() => setShowIngreso(false)}
@@ -187,8 +187,8 @@ function ColaboradorView() {
             fetchOperaciones();
           }}
         />
-      )}
-      {showGasto && (
+      ) : null}
+      {showGasto ? (
         <ModalGasto
           isOpen={showGasto}
           onClose={() => setShowGasto(false)}
@@ -197,7 +197,7 @@ function ColaboradorView() {
             fetchOperaciones();
           }}
         />
-      )}
+      ) : null}
     </div>
   );
 }

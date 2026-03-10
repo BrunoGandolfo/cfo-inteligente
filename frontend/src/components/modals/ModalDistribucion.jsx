@@ -123,79 +123,79 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading, editMode })
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"
-      borderColor="border-blue-500"
+      borderColor="border-distribucion"
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Fecha</label>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Fecha</label>
           <input
             type="date"
             required
             value={formData.fecha}
             max={new Date().toISOString().split('T')[0]}
             onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-2 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Localidad</label>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Localidad</label>
           <select
             value={formData.localidad}
             onChange={(e) => setFormData({...formData, localidad: e.target.value})}
-            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-2 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           >
             <option value="Montevideo">Montevideo</option>
             <option value="Mercedes">Mercedes</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">T.C.</label>
+          <label className="block text-xs font-medium text-text-secondary mb-1">T.C.</label>
           <input
             type="number"
             step="0.01"
             min="0.01"
             value={formData.tipo_cambio}
             onChange={(e) => setFormData({...formData, tipo_cambio: e.target.value})}
-            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-2 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           />
         </div>
       </div>
 
       <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Montos por Socio</label>
+        <label className="block text-sm font-medium text-text-secondary mb-2">Montos por Socio</label>
         <div className="grid grid-cols-3 gap-2">
-          <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">Socio</div>
-          <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">UYU</div>
-          <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">USD</div>
+          <div className="text-xs font-semibold text-text-secondary">Socio</div>
+          <div className="text-xs font-semibold text-text-secondary">UYU</div>
+          <div className="text-xs font-semibold text-text-secondary">USD</div>
           
-          <div className="text-xs py-1 dark:text-gray-200">Agustina</div>
-          <input type="number" step="0.01" min="0" value={formData.agustina_uyu} onChange={(e) => setFormData({...formData, agustina_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
-          <input type="number" step="0.01" min="0" value={formData.agustina_usd} onChange={(e) => setFormData({...formData, agustina_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
+          <div className="text-xs py-1 text-text-primary">Agustina</div>
+          <input type="number" step="0.01" min="0" value={formData.agustina_uyu} onChange={(e) => setFormData({...formData, agustina_uyu: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
+          <input type="number" step="0.01" min="0" value={formData.agustina_usd} onChange={(e) => setFormData({...formData, agustina_usd: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
           
-          <div className="text-xs py-1 dark:text-gray-200">Viviana</div>
-          <input type="number" step="0.01" min="0" value={formData.viviana_uyu} onChange={(e) => setFormData({...formData, viviana_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
-          <input type="number" step="0.01" min="0" value={formData.viviana_usd} onChange={(e) => setFormData({...formData, viviana_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
+          <div className="text-xs py-1 text-text-primary">Viviana</div>
+          <input type="number" step="0.01" min="0" value={formData.viviana_uyu} onChange={(e) => setFormData({...formData, viviana_uyu: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
+          <input type="number" step="0.01" min="0" value={formData.viviana_usd} onChange={(e) => setFormData({...formData, viviana_usd: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
           
-          <div className="text-xs py-1 dark:text-gray-200">Gonzalo</div>
-          <input type="number" step="0.01" min="0" value={formData.gonzalo_uyu} onChange={(e) => setFormData({...formData, gonzalo_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
-          <input type="number" step="0.01" min="0" value={formData.gonzalo_usd} onChange={(e) => setFormData({...formData, gonzalo_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
+          <div className="text-xs py-1 text-text-primary">Gonzalo</div>
+          <input type="number" step="0.01" min="0" value={formData.gonzalo_uyu} onChange={(e) => setFormData({...formData, gonzalo_uyu: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
+          <input type="number" step="0.01" min="0" value={formData.gonzalo_usd} onChange={(e) => setFormData({...formData, gonzalo_usd: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
           
-          <div className="text-xs py-1 dark:text-gray-200">Pancho</div>
-          <input type="number" step="0.01" min="0" value={formData.pancho_uyu} onChange={(e) => setFormData({...formData, pancho_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
-          <input type="number" step="0.01" min="0" value={formData.pancho_usd} onChange={(e) => setFormData({...formData, pancho_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
+          <div className="text-xs py-1 text-text-primary">Pancho</div>
+          <input type="number" step="0.01" min="0" value={formData.pancho_uyu} onChange={(e) => setFormData({...formData, pancho_uyu: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
+          <input type="number" step="0.01" min="0" value={formData.pancho_usd} onChange={(e) => setFormData({...formData, pancho_usd: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
           
-          <div className="text-xs py-1 dark:text-gray-200">Bruno</div>
-          <input type="number" step="0.01" min="0" value={formData.bruno_uyu} onChange={(e) => setFormData({...formData, bruno_uyu: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
-          <input type="number" step="0.01" min="0" value={formData.bruno_usd} onChange={(e) => setFormData({...formData, bruno_usd: e.target.value})} className="px-1 py-1 border rounded text-xs" placeholder="0.00" />
+          <div className="text-xs py-1 text-text-primary">Bruno</div>
+          <input type="number" step="0.01" min="0" value={formData.bruno_uyu} onChange={(e) => setFormData({...formData, bruno_uyu: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
+          <input type="number" step="0.01" min="0" value={formData.bruno_usd} onChange={(e) => setFormData({...formData, bruno_usd: e.target.value})} className="px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" placeholder="0.00" />
         </div>
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Descripción</label>
+        <label className="block text-xs font-medium text-text-secondary">Descripción</label>
         <textarea
           value={formData.descripcion}
           onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+          className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           rows="2"
           placeholder="Opcional"
         />
@@ -205,4 +205,3 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading, editMode })
 }
 
 export default ModalDistribucion;
-

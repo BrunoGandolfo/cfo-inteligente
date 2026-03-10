@@ -89,26 +89,26 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading, editMode }) {
       onSubmit={handleSubmitInterno}
       isLoading={localLoading}
       size="max-w-2xl"
-      borderColor="border-amber-500"
+      borderColor="border-retiro"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Fecha</label>
+          <label className="block text-xs font-medium text-text-secondary">Fecha</label>
           <input
             type="date"
             required
             value={formData.fecha}
             max={new Date().toISOString().split('T')[0]}
             onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Localidad</label>
+          <label className="block text-xs font-medium text-text-secondary">Localidad</label>
           <select
             value={formData.localidad}
             onChange={(e) => setFormData({...formData, localidad: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           >
             <option value="Montevideo">Montevideo</option>
             <option value="Mercedes">Mercedes</option>
@@ -118,48 +118,48 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading, editMode }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto UYU</label>
+          <label className="block text-xs font-medium text-text-secondary">Monto UYU</label>
           <input
             type="number"
             step="0.01"
             min="0"
             value={formData.monto_uyu}
             onChange={(e) => setFormData({...formData, monto_uyu: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
             placeholder="0.00"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Monto USD</label>
+          <label className="block text-xs font-medium text-text-secondary">Monto USD</label>
           <input
             type="number"
             step="0.01"
             min="0"
             value={formData.monto_usd}
             onChange={(e) => setFormData({...formData, monto_usd: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
             placeholder="0.00"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">T.C.</label>
+          <label className="block text-xs font-medium text-text-secondary">T.C.</label>
           <input
             type="number"
             step="0.01"
             min="0.01"
             value={formData.tipo_cambio}
             onChange={(e) => setFormData({...formData, tipo_cambio: e.target.value})}
-            className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           />
         </div>
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200">Descripción</label>
+        <label className="block text-xs font-medium text-text-secondary">Descripción</label>
         <textarea
           value={formData.descripcion}
           onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
+          className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           rows="1"
           placeholder="Opcional"
         />
@@ -169,4 +169,3 @@ function ModalRetiro({ isOpen, onClose, onSuccess, setLoading, editMode }) {
 }
 
 export default ModalRetiro;
-

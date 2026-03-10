@@ -47,7 +47,7 @@ function Dashboard() {
   // 🔍 DIAGNÓSTICO Dashboard
 
   if (loading) {
-    return <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center text-gray-600 dark:text-slate-200">Cargando...</div>;
+    return <div className="min-h-screen bg-bg flex items-center justify-center text-text-secondary">Cargando...</div>;
   }
 
   const moneda = metricas?.ingresos?.moneda || 'UYU';
@@ -58,77 +58,75 @@ function Dashboard() {
 
   return (
     <>
-      <MetricsGrid
-        ingresos={formatMoney(ingresosVal, moneda)}
-        gastos={formatMoney(gastosVal, moneda)}
-        margenOperativo={margenOperativo}
-        areaLider={areaLider}
-      />
+      <div className="pt-2">
+        <MetricsGrid
+          ingresos={formatMoney(ingresosVal, moneda)}
+          gastos={formatMoney(gastosVal, moneda)}
+          margenOperativo={margenOperativo}
+          areaLider={areaLider}
+        />
 
-      <ActiveFilters />
+        <ActiveFilters />
 
-      <ChartsSection operaciones={chartData || []} />
+        <ChartsSection operaciones={chartData || []} />
 
-      <section className="px-4 xl:px-6 mb-8">
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg shadow-sm p-4 xl:p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg xl:text-xl font-bold text-gray-900 dark:text-white">Registrar Operación</h2>
-          </div>
+        <section className="px-4 xl:px-6 mb-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-text-secondary mb-4">Registrar Operación</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-5">
-            
-            <OperationButton
-              variant="ingreso"
-              title="Registrar Ingreso"
-              description="Facturación, cobros y ventas del estudio"
-              lastActivity={`${getCurrentMonthName()} ${new Date().getFullYear()}: ${formatMoney(ingresosVal, moneda)}`}
-              shortcut="⌘ + 1"
-              icon={TrendingUp}
-              onClick={() => setShowIngreso(true)}
-              loading={loadingIngreso}
-              disabled={loadingIngreso}
-            />
-            
-            <OperationButton
-              variant="gasto"
-              title="Registrar Gasto"
-              description="Gastos operativos, servicios y honorarios"
-              lastActivity={`${getCurrentMonthName()} ${new Date().getFullYear()}: ${formatMoney(gastosVal, moneda)}`}
-              shortcut="⌘ + 2"
-              icon={TrendingDown}
-              onClick={() => setShowGasto(true)}
-              loading={loadingGasto}
-              disabled={loadingGasto}
-            />
-            
-            <OperationButton
-              variant="retiro"
-              title="Retiro de Empresa"
-              description="Retiros vinculados a operaciones de la empresa"
-              lastActivity="Se realiza a fin de mes"
-              shortcut="⌘ + 3"
-              icon={Wallet}
-              onClick={() => setShowRetiro(true)}
-              loading={loadingRetiro}
-              disabled={loadingRetiro}
-            />
-            
-            <OperationButton
-              variant="distribucion"
-              title="Distribución de Utilidades"
-              description="Distribución mensual de utilidades entre socios"
-              lastActivity="Se realiza a fin de mes"
-              shortcut="⌘ + 4"
-              icon={Users}
-              onClick={() => setShowDistrib(true)}
-              loading={loadingDistrib}
-              disabled={loadingDistrib}
-            />
-            
-          </div>
-        </div>
-      </section>
+              
+              <OperationButton
+                variant="ingreso"
+                title="Registrar Ingreso"
+                description="Facturación, cobros y ventas del estudio"
+                lastActivity={`${getCurrentMonthName()} ${new Date().getFullYear()}: ${formatMoney(ingresosVal, moneda)}`}
+                shortcut="⌘ + 1"
+                icon={TrendingUp}
+                onClick={() => setShowIngreso(true)}
+                loading={loadingIngreso}
+                disabled={loadingIngreso}
+              />
+              
+              <OperationButton
+                variant="gasto"
+                title="Registrar Gasto"
+                description="Gastos operativos, servicios y honorarios"
+                lastActivity={`${getCurrentMonthName()} ${new Date().getFullYear()}: ${formatMoney(gastosVal, moneda)}`}
+                shortcut="⌘ + 2"
+                icon={TrendingDown}
+                onClick={() => setShowGasto(true)}
+                loading={loadingGasto}
+                disabled={loadingGasto}
+              />
+              
+              <OperationButton
+                variant="retiro"
+                title="Retiro de Empresa"
+                description="Retiros vinculados a operaciones de la empresa"
+                lastActivity="Se realiza a fin de mes"
+                shortcut="⌘ + 3"
+                icon={Wallet}
+                onClick={() => setShowRetiro(true)}
+                loading={loadingRetiro}
+                disabled={loadingRetiro}
+              />
+              
+              <OperationButton
+                variant="distribucion"
+                title="Distribución de Utilidades"
+                description="Distribución mensual de utilidades entre socios"
+                lastActivity="Se realiza a fin de mes"
+                shortcut="⌘ + 4"
+                icon={Users}
+                onClick={() => setShowDistrib(true)}
+                loading={loadingDistrib}
+                disabled={loadingDistrib}
+              />
+              
+            </div>
+        </section>
+      </div>
 
-      {showIngreso && (
+      {showIngreso ? (
         <ModalIngreso 
           isOpen={showIngreso} 
           onClose={() => setShowIngreso(false)} 
@@ -139,8 +137,8 @@ function Dashboard() {
           }}
           setLoading={setLoadingIngreso}
         />
-      )}
-      {showGasto && (
+      ) : null}
+      {showGasto ? (
         <ModalGasto 
           isOpen={showGasto} 
           onClose={() => setShowGasto(false)} 
@@ -151,8 +149,8 @@ function Dashboard() {
           }}
           setLoading={setLoadingGasto}
         />
-      )}
-      {showRetiro && (
+      ) : null}
+      {showRetiro ? (
         <ModalRetiro 
           isOpen={showRetiro} 
           onClose={() => setShowRetiro(false)} 
@@ -163,8 +161,8 @@ function Dashboard() {
           }}
           setLoading={setLoadingRetiro}
         />
-      )}
-      {showDistrib && (
+      ) : null}
+      {showDistrib ? (
         <ModalDistribucion 
           isOpen={showDistrib} 
           onClose={() => setShowDistrib(false)} 
@@ -175,7 +173,7 @@ function Dashboard() {
           }}
           setLoading={setLoadingDistrib}
         />
-      )}
+      ) : null}
     </>
   );
 }

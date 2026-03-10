@@ -11,7 +11,7 @@ export default function ModalBase({
   submitLabel = 'Guardar',
   isLoading = false,
   size = 'max-w-2xl',
-  borderColor = 'border-gray-300'
+  borderColor = 'border-border-strong'
 }) {
   if (!isOpen) return null;
 
@@ -25,14 +25,14 @@ export default function ModalBase({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full border-t-4 ${borderColor} ${size}`}>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className={`bg-surface rounded-xl shadow-xl w-full border-t-4 transform transition-all duration-200 ease-out ${borderColor} ${size} animate-modal-enter`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
-          <h2 className="text-xl font-semibold dark:text-white">{title}</h2>
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-xl font-semibold text-text-primary">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-text-muted hover:text-text-secondary"
             disabled={isLoading}
           >
             <X size={24} />
@@ -46,11 +46,11 @@ export default function ModalBase({
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 p-6 border-t dark:border-gray-700">
+          <div className="flex justify-end gap-3 p-6 border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              className="px-4 py-2 text-text-secondary hover:bg-surface-alt rounded-lg"
               disabled={isLoading}
             >
               Cancelar
@@ -58,7 +58,7 @@ export default function ModalBase({
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50"
             >
               {isLoading ? 'Guardando...' : submitLabel}
             </button>
@@ -68,4 +68,3 @@ export default function ModalBase({
     </div>
   );
 }
-

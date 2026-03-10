@@ -102,20 +102,20 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 h-full w-[280px] bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 z-50 flex flex-col lg:hidden"
+              className="fixed left-0 top-0 h-full w-[280px] bg-surface border-r border-border z-50 flex flex-col lg:hidden"
             >
               {/* Header del drawer */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-800">
+              <div className="flex items-center justify-between p-4 border-b border-border">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Menú</h2>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">{userName}</p>
+                  <h2 className="text-lg font-bold text-text-primary">Menú</h2>
+                  <p className="text-sm text-text-secondary">{userName}</p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+                  className="p-2 rounded-lg hover:bg-surface-alt"
                   aria-label="Cerrar menú"
                 >
-                  <X className="w-5 h-5 text-gray-600 dark:text-slate-400" />
+                  <X className="w-5 h-5 text-text-secondary" />
                 </button>
               </div>
 
@@ -133,7 +133,7 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
                         ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                         : supportItem
                         ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
-                        : 'text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800'
+                        : 'text-text-primary hover:bg-surface-alt'
                     )}
                   >
                     <Icon className={clsx('w-5 h-5', highlight && 'animate-pulse')} />
@@ -148,7 +148,7 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
               </nav>
 
               {/* Sección inferior */}
-              <div className="p-3 border-t border-gray-200 dark:border-slate-700 space-y-1">
+              <div className="p-3 border-t border-border space-y-1">
                 {/* Administrar usuarios - solo socios */}
                 {esSocio && (
                   <button
@@ -163,7 +163,7 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
                 {/* Cambiar contraseña */}
                 <button
                   onClick={() => setShowPasswordModal(true)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-alt"
                 >
                   <Lock className="w-5 h-5" />
                   <span>Cambiar contraseña</span>

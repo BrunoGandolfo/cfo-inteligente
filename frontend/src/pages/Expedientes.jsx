@@ -132,8 +132,8 @@ function Expedientes() {
 
   if (loading && expedientes.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-slate-200">Cargando expedientes...</div>
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="text-text-secondary">Cargando expedientes...</div>
       </div>
     );
   }
@@ -143,19 +143,19 @@ function Expedientes() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Scale className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          <Scale className="w-8 h-8 text-accent" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-text-primary">
               Expedientes Judiciales
             </h1>
-            {resumen?.movimientos_sin_notificar > 0 && (
+            {resumen?.movimientos_sin_notificar > 0 ? (
               <div className="flex items-center gap-2 mt-1">
-                <Bell className="w-4 h-4 text-orange-500" />
-                <span className="text-sm text-orange-600 dark:text-orange-400">
+                <Bell className="w-4 h-4 text-warning" />
+                <span className="text-sm text-warning">
                   {resumen.movimientos_sin_notificar} movimientos sin notificar
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="flex gap-2">
@@ -184,44 +184,44 @@ function Expedientes() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-slate-400">Total Activos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <p className="text-sm text-text-secondary">Total Activos</p>
+              <p className="text-2xl font-bold text-text-primary mt-1">
                 {resumen?.total_expedientes_activos || 0}
               </p>
             </div>
-            <FileText className="w-8 h-8 text-blue-500" />
+            <FileText className="w-8 h-8 text-accent" />
           </div>
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-slate-400">Sincronizados Hoy</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <p className="text-sm text-text-secondary">Sincronizados Hoy</p>
+              <p className="text-2xl font-bold text-text-primary mt-1">
                 {resumen?.sincronizados_hoy || 0}
               </p>
             </div>
-            <CheckCircle2 className="w-8 h-8 text-green-500" />
+            <CheckCircle2 className="w-8 h-8 text-success" />
           </div>
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-slate-400">Pendientes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <p className="text-sm text-text-secondary">Pendientes</p>
+              <p className="text-2xl font-bold text-text-primary mt-1">
                 {resumen?.movimientos_sin_notificar || 0}
               </p>
             </div>
-            <AlertCircle className="w-8 h-8 text-orange-500" />
+            <AlertCircle className="w-8 h-8 text-warning" />
           </div>
         </Card>
       </div>
 
       {/* Tabla de Expedientes */}
       <Card className="overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-800">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="text-lg font-semibold text-text-primary">
             Expedientes ({expedientes.length})
           </h3>
         </div>
@@ -229,18 +229,18 @@ function Expedientes() {
         {loading ? (
           <div className="p-6">
             <div className="animate-pulse space-y-3">
-              <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded w-1/3" />
-              <div className="h-10 bg-gray-100 dark:bg-slate-900 rounded" />
-              <div className="h-10 bg-gray-100 dark:bg-slate-900 rounded" />
+              <div className="h-4 bg-surface-alt rounded w-1/3" />
+              <div className="h-10 bg-bg rounded" />
+              <div className="h-10 bg-bg rounded" />
             </div>
           </div>
         ) : expedientes.length === 0 ? (
           <div className="p-12 text-center">
-            <FileText className="w-16 h-16 text-gray-400 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            <FileText className="w-16 h-16 text-text-muted mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-text-primary mb-2">
               No hay expedientes
             </h3>
-            <p className="text-gray-500 dark:text-slate-400 mb-4">
+            <p className="text-text-secondary mb-4">
               Agrega tu primer expediente para comenzar
             </p>
             <Button variant="primary" onClick={() => setShowModal(true)}>
@@ -251,67 +251,67 @@ function Expedientes() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-50 dark:bg-slate-800/50">
+              <thead className="bg-surface-alt">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">
                     IUE
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">
                     Carátula
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">
                     Sede
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">
                     Último Movimiento
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-text-secondary uppercase">
                     Movimientos
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-text-secondary uppercase">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
+              <tbody className="bg-surface divide-y divide-border">
                 {expedientes.map((exp) => {
                   return (
                   <tr
                     key={exp.id}
                     onClick={() => handleRowClick(exp.id)}
-                    className="hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                    className="hover:bg-surface-alt cursor-pointer transition-colors"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        <span className="text-sm font-medium text-text-primary">
                           {exp.iue}
                         </span>
                         {/* TODO: Badge "nuevos" si tiene movimientos sin notificar */}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-white max-w-md truncate">
+                      <div className="text-sm text-text-primary max-w-md truncate">
                         {exp.caratula || 'Sin carátula'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-slate-400">
+                      <div className="flex items-center gap-1 text-sm text-text-secondary">
                         <MapPin className="w-4 h-4" />
                         {exp.iue_sede}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {exp.ultimo_movimiento ? (
-                        <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-slate-400">
+                        <div className="flex items-center gap-1 text-sm text-text-secondary">
                           <Calendar className="w-4 h-4" />
                           {format(new Date(exp.ultimo_movimiento), 'dd/MM/yyyy')}
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400 dark:text-slate-500">-</span>
+                        <span className="text-sm text-text-muted">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      <span className="text-sm font-medium text-text-primary">
                         {exp.cantidad_movimientos || 0}
                       </span>
                     </td>
@@ -323,7 +323,7 @@ function Expedientes() {
                             handleReSync(exp.id);
                           }}
                           disabled={syncingId === exp.id}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-accent hover:bg-accent-soft rounded-md transition-colors disabled:opacity-50"
                         >
                           <RefreshCw className={`w-4 h-4 ${syncingId === exp.id ? 'animate-spin' : ''}`} />
                           {syncingId === exp.id ? 'Sincronizando...' : 'Re-sincronizar'}
@@ -344,7 +344,7 @@ function Expedientes() {
                             e.stopPropagation();
                             handleEliminar(exp.id);
                           }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-danger hover:bg-danger/10 rounded-md transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                           Eliminar
@@ -361,28 +361,28 @@ function Expedientes() {
       </Card>
 
       {/* Modal Historia */}
-      {showHistoriaModal && (
+      {showHistoriaModal ? (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
+          <div className="bg-surface border border-border rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+            <div className="px-6 py-4 border-b border-border flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-xl font-bold text-text-primary">
                     Historia del Expediente
                   </h2>
-                  {historiaActual && (
-                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                  {historiaActual ? (
+                    <p className="text-sm text-text-secondary mt-1">
                       {historiaActual.iue} - {historiaActual.caratula}
                     </p>
-                  )}
+                  ) : null}
                 </div>
                 <button 
                   onClick={() => {
                     setShowHistoriaModal(false);
                     setHistoriaActual(null);
                   }} 
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="text-text-muted hover:text-text-secondary"
                 >
                   ✕
                 </button>
@@ -394,37 +394,37 @@ function Expedientes() {
               {loadingHistoria ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-500 dark:text-slate-400">Generando historia...</p>
+                  <p className="mt-2 text-text-secondary">Generando historia...</p>
                 </div>
               ) : historiaActual ? (
-                <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap text-gray-700 dark:text-slate-200">
+                <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap text-text-primary">
                   {historiaActual.resumen}
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-slate-400">No se pudo cargar la historia</p>
+                  <p className="text-text-secondary">No se pudo cargar la historia</p>
                 </div>
               )}
             </div>
             
             {/* Footer */}
-            {historiaActual && (
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
-                <p className="text-xs text-gray-400 dark:text-slate-500">
+            {historiaActual ? (
+              <div className="px-6 py-4 border-t border-border flex-shrink-0">
+                <p className="text-xs text-text-muted">
                   Generado: {format(new Date(historiaActual.generado_en), "dd/MM/yyyy HH:mm", { locale: es })}
                 </p>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Modal Agregar Expediente */}
-      {showModal && (
+      {showModal ? (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-surface border border-border rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-bold text-text-primary">
                 Agregar Expediente
               </h2>
               <button
@@ -432,14 +432,14 @@ function Expedientes() {
                   setShowModal(false);
                   setIueInput('');
                 }}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="text-text-muted hover:text-text-secondary"
               >
                 ✕
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   IUE (Sede-Número/Año)
                 </label>
                 <input
@@ -447,10 +447,10 @@ function Expedientes() {
                   value={iueInput}
                   onChange={(e) => setIueInput(e.target.value)}
                   placeholder="Ej: 2-12345/2023"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-border rounded-md bg-surface text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent"
                   onKeyPress={(e) => e.key === 'Enter' && handleAddExpediente()}
                 />
-                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-text-secondary">
                   Formato: Sede-Número/Año (ej: 2-12345/2023)
                 </p>
               </div>
@@ -474,10 +474,9 @@ function Expedientes() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
 export default Expedientes;
-

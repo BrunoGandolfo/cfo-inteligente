@@ -61,16 +61,16 @@ export function CalculadoraIRPF({ valorUI }) {
 
   return (
     <Card className="p-5">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-semibold text-text-primary mb-2">
         IRPF Incrementos Patrimoniales
       </h3>
-      <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">
+      <p className="text-xs text-text-secondary mb-4">
         Calcula el 12% sobre la ganancia de venta de inmuebles.
       </p>
 
       <div className="space-y-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+          <label className="block text-sm font-medium text-text-primary mb-1">
             Precio de compra ($)
           </label>
           <input
@@ -79,12 +79,12 @@ export function CalculadoraIRPF({ valorUI }) {
             onChange={(e) => setPrecioCompra(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ej: 100000"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white"
+            className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-surface text-text-primary"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+          <label className="block text-sm font-medium text-text-primary mb-1">
             UI al momento de compra
           </label>
           <input
@@ -93,12 +93,12 @@ export function CalculadoraIRPF({ valorUI }) {
             onChange={(e) => setUiCompra(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={`Actual: ${valorUI}`}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white"
+            className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-surface text-text-primary"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+          <label className="block text-sm font-medium text-text-primary mb-1">
             Precio de venta ($)
           </label>
           <input
@@ -107,7 +107,7 @@ export function CalculadoraIRPF({ valorUI }) {
             onChange={(e) => setPrecioVenta(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ej: 150000"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white"
+            className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-surface text-text-primary"
           />
         </div>
 
@@ -116,33 +116,33 @@ export function CalculadoraIRPF({ valorUI }) {
         </Button>
 
         {resultado && (
-          <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg mt-4 space-y-2">
+          <div className="bg-surface-alt p-4 rounded-lg mt-4 space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-slate-400">Compra actualizada:</span>
-              <span className="text-md font-semibold text-gray-900 dark:text-white tabular-nums">
+              <span className="text-sm text-text-secondary">Compra actualizada:</span>
+              <span className="text-md font-semibold text-text-primary tabular-nums">
                 {formatearPesos(resultado.compraActualizada)}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-slate-400">Factor ajuste UI:</span>
-              <span className="text-sm text-gray-700 dark:text-slate-300 tabular-nums">
+              <span className="text-sm text-text-secondary">Factor ajuste UI:</span>
+              <span className="text-sm text-text-primary tabular-nums">
                 {resultado.factorAjuste.toFixed(4)}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-slate-400">Ganancia:</span>
+              <span className="text-sm text-text-secondary">Ganancia:</span>
               <span className={`text-md font-semibold tabular-nums ${resultado.ganancia >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {formatearPesos(resultado.ganancia)}
               </span>
             </div>
-            <div className="flex justify-between items-center border-t border-gray-200 dark:border-slate-700 pt-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">IRPF a pagar (12%):</span>
+            <div className="flex justify-between items-center border-t border-border pt-2">
+              <span className="text-sm font-medium text-text-primary">IRPF a pagar (12%):</span>
               <span className="text-lg font-bold text-rose-600 dark:text-rose-400 tabular-nums">
                 {formatearPesos(resultado.irpf)}
               </span>
             </div>
             {resultado.ganancia <= 0 && (
-              <p className="text-xs text-gray-500 dark:text-slate-500 text-center mt-2">
+              <p className="text-xs text-text-muted text-center mt-2">
                 No hay ganancia, no corresponde IRPF.
               </p>
             )}

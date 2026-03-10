@@ -52,7 +52,7 @@ export default function Indicadores({ onNavigate }) {
       {/* Botón volver */}
       <button
         onClick={() => onNavigate?.('dashboard')}
-        className="flex items-center gap-2 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 mb-3 transition-colors"
+        className="flex items-center gap-2 text-text-secondary hover:text-text-primary mb-3 transition-colors"
       >
         <ArrowLeft size={18} />
         <span className="text-sm">Volver al Dashboard</span>
@@ -61,14 +61,14 @@ export default function Indicadores({ onNavigate }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <div className="p-2 bg-accent-soft rounded-lg">
+            <BarChart3 className="w-6 h-6 text-info" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl font-bold text-text-primary">
               Indicadores Económicos
             </h1>
-            <p className="text-sm text-gray-500 dark:text-slate-400">
+            <p className="text-sm text-text-secondary">
               Uruguay — {fechaActualizacion}
             </p>
           </div>
@@ -76,7 +76,7 @@ export default function Indicadores({ onNavigate }) {
         <button
           onClick={refetch}
           disabled={loading}
-          className="flex items-center gap-2 text-sm bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 px-3 py-2 rounded-lg transition-colors text-gray-700 dark:text-slate-300 disabled:opacity-50"
+          className="flex items-center gap-2 text-sm bg-surface-alt hover:bg-border px-3 py-2 rounded-lg transition-colors text-text-primary disabled:opacity-50"
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           Actualizar
@@ -85,13 +85,13 @@ export default function Indicadores({ onNavigate }) {
 
       {/* Tabs - Solo mostrar si es socio (colaboradores solo ven indicadores) */}
       {esSocio && (
-        <div className="flex gap-1 mb-6 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex gap-1 mb-6 border-b border-border">
           <button
             onClick={() => setActiveTab('indicadores')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'indicadores'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
             }`}
           >
             Indicadores
@@ -100,8 +100,8 @@ export default function Indicadores({ onNavigate }) {
             onClick={() => setActiveTab('calculadoras')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'calculadoras'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
             }`}
           >
             Calculadoras

@@ -41,27 +41,27 @@ export function OperationsPanel({ isOpen, onClose }) {
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={clsx(
               'fixed right-0 top-16 h-[calc(100vh-4rem)] w-full sm:w-[500px] lg:w-[600px]',
-              'bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800',
+              'bg-surface border-l border-border',
               'shadow-2xl z-50 flex flex-col'
             )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-800">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="p-1.5 bg-accent-soft rounded-lg">
+                  <FileText className="w-5 h-5 text-info" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Operaciones</h2>
-                  <p className="text-xs text-gray-500 dark:text-slate-400">Gestión de transacciones</p>
+                  <h2 className="text-lg font-bold text-text-primary">Operaciones</h2>
+                  <p className="text-xs text-text-secondary">Gestión de transacciones</p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-md hover:bg-surface-alt transition-colors"
                 aria-label="Cerrar panel"
               >
-                <X className="w-5 h-5 text-gray-600 dark:text-slate-400" />
+                <X className="w-5 h-5 text-text-secondary" />
               </button>
             </div>
 

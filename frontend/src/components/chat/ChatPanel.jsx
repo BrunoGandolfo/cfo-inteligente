@@ -130,36 +130,36 @@ export function ChatPanel({ isOpen, onClose }) {
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={clsx(
               'fixed right-0 top-16 h-[calc(100vh-4rem)] w-full sm:w-[600px]',
-              'bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800',
+              'bg-surface border-l border-border',
               'shadow-2xl z-50 flex flex-col font-sans'
             )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-800">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="p-1.5 bg-accent-soft rounded-lg">
+                  <Sparkles className="w-5 h-5 text-info" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">CFO AI</h2>
-                  <p className="text-xs text-gray-500 dark:text-slate-400">Asistente Financiero</p>
+                  <h2 className="text-lg font-bold text-text-primary">CFO AI</h2>
+                  <p className="text-xs text-text-secondary">Asistente Financiero</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 {messages.length > 0 && (
                   <button
                     onClick={handleClearHistory}
-                    className="text-xs px-2 py-1 rounded-md text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800"
+                    className="text-xs px-2 py-1 rounded-md text-text-secondary hover:bg-surface-alt"
                   >
                     Limpiar
                   </button>
                 )}
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                  className="p-1.5 rounded-md hover:bg-surface-alt transition-colors"
                   aria-label="Cerrar chat"
                 >
-                  <X className="w-5 h-5 text-gray-600 dark:text-slate-400" />
+                  <X className="w-5 h-5 text-text-secondary" />
                 </button>
               </div>
             </div>
@@ -191,20 +191,20 @@ export function ChatPanel({ isOpen, onClose }) {
             >
               {messages.length === 0 && (
                 <div className="text-center mt-12">
-                  <div className="inline-flex p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-4">
-                    <Sparkles className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  <div className="inline-flex p-4 bg-accent-soft rounded-full mb-4">
+                    <Sparkles className="w-8 h-8 text-info" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-semibold text-text-primary mb-2">
                     ¡Hola! Soy tu CFO AI
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-slate-400 mb-6 px-4">
+                  <p className="text-sm text-text-secondary mb-6 px-4">
                     Pregúntame lo que quieras sobre tus finanzas. Puedo analizar rentabilidad, 
                     ingresos, gastos y más.
                   </p>
                   
                   {/* Sugerencias iniciales */}
                   <div className="space-y-2 px-2">
-                    <p className="text-xs text-gray-400 dark:text-slate-500 font-medium mb-3">
+                    <p className="text-xs text-text-muted font-medium mb-3">
                       Sugerencias para empezar:
                     </p>
                     {sugerencias.map((sug, idx) => (
@@ -213,13 +213,13 @@ export function ChatPanel({ isOpen, onClose }) {
                         onClick={() => handleSuggestionClick(sug.text)}
                         className={clsx(
                           'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left',
-                          'bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-800',
-                          'border border-gray-200 dark:border-slate-700',
+                          'bg-surface-alt/50 hover:bg-surface-alt',
+                          'border border-border',
                           'transition-all duration-200 hover:shadow-sm'
                         )}
                       >
-                        <sug.icon className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                        <span className="text-sm text-gray-700 dark:text-slate-200">{sug.text}</span>
+                        <sug.icon className="w-4 h-4 text-info shrink-0" />
+                        <span className="text-sm text-text-primary">{sug.text}</span>
                       </button>
                     ))}
                   </div>
@@ -235,8 +235,8 @@ export function ChatPanel({ isOpen, onClose }) {
                   )}
                 >
                   {msg.role === 'assistant' && (
-                    <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0 mt-1">
-                      <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                    <div className="w-6 h-6 rounded-full bg-accent-soft flex items-center justify-center shrink-0 mt-1">
+                      <Sparkles className="w-3 h-3 text-info" />
                     </div>
                   )}
                   <div
@@ -244,7 +244,7 @@ export function ChatPanel({ isOpen, onClose }) {
                       'px-3 py-2.5 rounded-2xl text-sm font-sans relative',
                       msg.role === 'user'
                         ? 'bg-blue-600 text-white rounded-tr-sm max-w-[85%]'
-                        : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white rounded-tl-sm max-w-full'
+                        : 'bg-surface-alt text-text-primary rounded-tl-sm max-w-full'
                     )}
                   >
                     {msg.role === 'assistant' ? (
@@ -257,7 +257,7 @@ export function ChatPanel({ isOpen, onClose }) {
                     
                     {/* Botón Exportar PDF - visible después de cada respuesta */}
                     {msg.role === 'assistant' && msg.backendId && !msg.streaming && msg.content && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                      <div className="mt-3 pt-3 border-t border-border">
                         <button
                           onClick={() => exportarPDF(msg.backendId)}
                           disabled={exportando === msg.backendId}
@@ -284,7 +284,7 @@ export function ChatPanel({ isOpen, onClose }) {
                     )}
                   </div>
                   {msg.role === 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center shrink-0 text-xs font-medium text-gray-700 dark:text-slate-200">
+                    <div className="w-8 h-8 rounded-full bg-surface-alt flex items-center justify-center shrink-0 text-xs font-medium text-text-primary">
                       {localStorage.getItem('userName')?.[0]?.toUpperCase() || 'U'}
                     </div>
                   )}
@@ -293,14 +293,14 @@ export function ChatPanel({ isOpen, onClose }) {
               
               {isTyping && (
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className="w-8 h-8 rounded-full bg-accent-soft flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-info" />
                   </div>
-                  <div className="px-4 py-3 rounded-2xl bg-gray-100 dark:bg-slate-800 rounded-tl-sm">
+                  <div className="px-4 py-3 rounded-2xl bg-surface-alt rounded-tl-sm">
                     <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-gray-400 dark:bg-slate-500 rounded-full animate-bounce" />
-                      <span className="w-2 h-2 bg-gray-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <span className="w-2 h-2 bg-gray-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                      <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce" />
+                      <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                     </div>
                   </div>
                 </div>
@@ -335,7 +335,7 @@ export function ChatPanel({ isOpen, onClose }) {
             )}
 
             {/* Input */}
-            <div className="p-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <div className="p-4 border-t border-border bg-surface">
               <div className="flex gap-2 items-end">
                 <textarea
                   ref={textareaRef}
@@ -347,10 +347,10 @@ export function ChatPanel({ isOpen, onClose }) {
                   disabled={isTyping}
                   className={clsx(
                     'flex-1 px-4 py-2.5 rounded-xl resize-none',
-                    'bg-gray-100 dark:bg-slate-800',
-                    'text-gray-900 dark:text-white text-sm',
-                    'placeholder-gray-500 dark:placeholder-slate-400',
-                    'border border-gray-200 dark:border-slate-700',
+                    'bg-surface-alt',
+                    'text-text-primary text-sm',
+                    'placeholder-text-muted',
+                    'border border-border',
                     'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
                     'disabled:opacity-50 disabled:cursor-not-allowed',
                     'transition-all duration-200'
@@ -372,7 +372,7 @@ export function ChatPanel({ isOpen, onClose }) {
                   <Send className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-xs text-gray-400 dark:text-slate-500 mt-2 text-center">
+              <p className="text-xs text-text-muted mt-2 text-center">
                 Presiona Enter para enviar, Shift+Enter para nueva línea
               </p>
             </div>

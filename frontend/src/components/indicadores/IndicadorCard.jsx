@@ -13,25 +13,25 @@ export function IndicadorCard({ titulo, valor, subtitulo, icono: Icon, colorBord
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 border-l-4 ${colorBorde} bg-white dark:bg-slate-900`}
+      className={`rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 border-l-4 ${colorBorde} bg-surface`}
     >
       <Card className="p-5 border-0 shadow-none bg-transparent">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-1">
+            <h3 className="text-sm font-medium text-text-secondary mb-1">
               {titulo}
             </h3>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+            <p className="text-2xl font-bold text-text-primary tabular-nums">
               {valor}
             </p>
             {subtitulo && (
-              <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+              <p className="text-xs text-text-muted mt-1">
                 {subtitulo}
               </p>
             )}
           </div>
           {Icon && (
-            <div className={`p-2 rounded-lg bg-gray-50 dark:bg-slate-800 ${colorIcono}`}>
+            <div className={`p-2 rounded-lg bg-surface-alt ${colorIcono}`}>
               <Icon className="w-5 h-5" />
             </div>
           )}

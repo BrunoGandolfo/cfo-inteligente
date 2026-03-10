@@ -77,8 +77,8 @@ export function FilterDrawer({
       <div 
         className={`
           fixed top-16 left-0 right-0 z-40
-          bg-white dark:bg-slate-900 
-          border-b border-gray-200 dark:border-slate-800
+          bg-surface
+          border-b border-border
           shadow-2xl
           transition-transform duration-300 ease-in-out
           2xl:hidden
@@ -93,14 +93,14 @@ export function FilterDrawer({
           {/* Header del drawer */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <Filter className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="w-10 h-10 bg-accent-soft rounded-lg flex items-center justify-center">
+                <Filter className="w-5 h-5 text-info" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-text-primary">
                   Filtros Avanzados
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-text-secondary">
                   {activeFiltersCount > 0 
                     ? `${activeFiltersCount} filtro${activeFiltersCount > 1 ? 's' : ''} activo${activeFiltersCount > 1 ? 's' : ''}`
                     : 'Todos los datos'
@@ -111,10 +111,10 @@ export function FilterDrawer({
             
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-surface-alt transition-colors"
               aria-label="Cerrar filtros"
             >
-              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <X className="w-5 h-5 text-text-secondary" />
             </button>
           </div>
 
@@ -123,7 +123,7 @@ export function FilterDrawer({
             
             {/* Filtro 1: Moneda */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-text-primary mb-2">
                 Moneda de Visualización
               </label>
               <MonedaToggle />
@@ -131,7 +131,7 @@ export function FilterDrawer({
 
             {/* Filtro 2: Rango de fechas */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-text-primary mb-2">
                 Período de Análisis
               </label>
               <DateRangePicker 
@@ -145,7 +145,7 @@ export function FilterDrawer({
 
             {/* Filtro 3: Localidad */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-text-primary mb-2">
                 Oficina
               </label>
               <LocalityFilter 
@@ -157,7 +157,7 @@ export function FilterDrawer({
           </div>
 
           {/* Acciones del drawer */}
-          <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-slate-800">
+          <div className="flex items-center justify-between pt-4 border-t border-border">
             {onExportExcel && (
               <button
                 onClick={onExportExcel}
@@ -183,7 +183,7 @@ export function FilterDrawer({
               <button
                 onClick={onClearFilters}
                 disabled={activeFiltersCount === 0}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-text-primary bg-surface border border-border rounded-lg hover:bg-surface-alt transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Limpiar filtros
               </button>

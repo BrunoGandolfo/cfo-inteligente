@@ -114,15 +114,15 @@ function Login({ onLoginSuccess }) {
         </div>
         
         {/* Card */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl overflow-hidden">
+        <div className="bg-surface rounded-xl shadow-2xl overflow-hidden">
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 dark:border-slate-700">
+          <div className="flex border-b border-border">
             <button
               onClick={() => setActiveTab('login')}
               className={`flex-1 py-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                 activeTab === 'login'
-                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600'
-                  : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-slate-400 hover:text-gray-700'
+                  ? 'bg-surface text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600'
+                  : 'bg-surface-alt text-text-secondary hover:text-text-primary'
               }`}
             >
               <LogIn className="w-4 h-4" />
@@ -133,8 +133,8 @@ function Login({ onLoginSuccess }) {
               onClick={() => setActiveTab('register')}
               className={`flex-1 py-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                 activeTab === 'register'
-                  ? 'bg-white dark:bg-slate-800 text-green-600 dark:text-green-400 border-b-2 border-green-600'
-                  : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-slate-400 hover:text-gray-700'
+                  ? 'bg-surface text-green-600 dark:text-green-400 border-b-2 border-green-600'
+                  : 'bg-surface-alt text-text-secondary hover:text-text-primary'
               }`}
             >
               <UserPlus className="w-4 h-4" />
@@ -145,8 +145,8 @@ function Login({ onLoginSuccess }) {
               onClick={() => setActiveTab('password')}
               className={`flex-1 py-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                 activeTab === 'password'
-                  ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 border-b-2 border-amber-500'
-                  : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-slate-400 hover:text-gray-700'
+                  ? 'bg-surface text-amber-600 dark:text-amber-400 border-b-2 border-amber-500'
+                  : 'bg-surface-alt text-text-secondary hover:text-text-primary'
               }`}
             >
               <Lock className="w-4 h-4" />
@@ -167,17 +167,17 @@ function Login({ onLoginSuccess }) {
                 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-text-primary mb-1">
                     Email
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-text-muted" />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full pl-10 pr-3 py-2 border border-border rounded-md bg-surface text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="usuario@grupoconexion.uy"
                     />
                   </div>
@@ -185,17 +185,17 @@ function Login({ onLoginSuccess }) {
                 
                 {/* Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-text-primary mb-1">
                     Contraseña
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-text-muted" />
                     <input
                       type="password"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full pl-10 pr-3 py-2 border border-border rounded-md bg-surface text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="Tu contraseña"
                     />
                   </div>
@@ -226,17 +226,17 @@ function Login({ onLoginSuccess }) {
                 
                 {/* Usuario */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-text-primary mb-1">
                     Usuario
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-text-muted" />
                     <input
                       type="text"
                       required
                       value={prefijoEmail}
                       onChange={(e) => setPrefijoEmail(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full pl-10 pr-3 py-2 border border-border rounded-md bg-surface text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-amber-500"
                       placeholder="Tu usuario (ej: gferrari)"
                     />
                   </div>
@@ -244,17 +244,17 @@ function Login({ onLoginSuccess }) {
                 
                 {/* Contraseña actual */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-text-primary mb-1">
                     Contraseña actual
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-text-muted" />
                     <input
                       type="password"
                       required
                       value={passwordActual}
                       onChange={(e) => setPasswordActual(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full pl-10 pr-3 py-2 border border-border rounded-md bg-surface text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-amber-500"
                       placeholder="Tu contraseña actual"
                     />
                   </div>
@@ -262,17 +262,17 @@ function Login({ onLoginSuccess }) {
                 
                 {/* Contraseña nueva */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-text-primary mb-1">
                     Contraseña nueva
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-text-muted" />
                     <input
                       type="password"
                       required
                       value={passwordNueva}
                       onChange={(e) => setPasswordNueva(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full pl-10 pr-3 py-2 border border-border rounded-md bg-surface text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-amber-500"
                       placeholder="Mínimo 6 caracteres"
                     />
                   </div>
@@ -280,17 +280,17 @@ function Login({ onLoginSuccess }) {
                 
                 {/* Confirmar contraseña nueva */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-text-primary mb-1">
                     Confirmar contraseña nueva
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-text-muted" />
                     <input
                       type="password"
                       required
                       value={passwordConfirmar}
                       onChange={(e) => setPasswordConfirmar(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full pl-10 pr-3 py-2 border border-border rounded-md bg-surface text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-amber-500"
                       placeholder="Repetir contraseña nueva"
                     />
                   </div>
