@@ -41,9 +41,13 @@ class Operacion(Base):
     descripcion = Column(String(500))
     cliente = Column(String(200))
     proveedor = Column(String(200))
+    cliente_id = Column(UUID(as_uuid=True), ForeignKey("clientes.id"), nullable=True)
+    proveedor_id = Column(UUID(as_uuid=True), ForeignKey("proveedores.id"), nullable=True)
     deleted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
-    
+
     # Relaciones
     area = relationship("Area", backref="operaciones")
+    cliente_rel = relationship("Cliente", foreign_keys=[cliente_id], lazy="joined")
+    proveedor_rel = relationship("Proveedor", foreign_keys=[proveedor_id], lazy="joined")

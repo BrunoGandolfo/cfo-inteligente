@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axiosClient from '../../services/api/axiosClient';
 import toast from 'react-hot-toast';
 import ModalBase from '../shared/ModalBase';
+import AutocompleteInput from '../shared/AutocompleteInput';
 
 function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
   const [formData, setFormData] = useState({
@@ -159,13 +160,13 @@ function ModalGasto({ isOpen, onClose, onSuccess, setLoading, editMode }) {
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-text-secondary">Proveedor *</label>
-        <input
-          type="text"
+        <AutocompleteInput
+          id="proveedor-gasto"
+          label="Proveedor *"
           required
           value={formData.proveedor}
-          onChange={(e) => setFormData({...formData, proveedor: e.target.value})}
-          className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+          onChange={(val) => setFormData({...formData, proveedor: val})}
+          searchEndpoint="/api/operaciones/proveedores/buscar"
           placeholder="Nombre del proveedor"
         />
       </div>

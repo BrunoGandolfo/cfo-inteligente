@@ -1,8 +1,35 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.models import Operacion, TipoOperacion, Moneda, Localidad, DistribucionDetalle, Socio
+from app.models.cliente import Cliente
+from app.models.proveedor import Proveedor
 from app.schemas.operacion import IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
 from decimal import Decimal
 from typing import Optional
+
+def _buscar_o_crear_cliente(db: Session, nombre: str, telefono: str = None):
+    """Busca cliente por nombre exacto (case-insensitive). Si no existe, lo crea. Retorna el ID."""
+    cliente = db.query(Cliente).filter(
+        func.lower(Cliente.nombre) == nombre.strip().lower()
+    ).first()
+    if not cliente:
+        cliente = Cliente(nombre=nombre.strip(), telefono=telefono, activo=True)
+        db.add(cliente)
+        db.flush()
+    return cliente.id
+
+
+def _buscar_o_crear_proveedor(db: Session, nombre: str, telefono: str = None):
+    """Busca proveedor por nombre exacto (case-insensitive). Si no existe, lo crea. Retorna el ID."""
+    proveedor = db.query(Proveedor).filter(
+        func.lower(Proveedor.nombre) == nombre.strip().lower()
+    ).first()
+    if not proveedor:
+        proveedor = Proveedor(nombre=nombre.strip(), telefono=telefono, activo=True)
+        db.add(proveedor)
+        db.flush()
+    return proveedor.id
+
 
 def calcular_montos(monto_original: Decimal, moneda_original: str, tipo_cambio: Decimal):
     if moneda_original == "UYU":
@@ -56,7 +83,7 @@ def _crear_operacion_base(
     return operacion
 
 def crear_ingreso(db: Session, data: IngresoCreate):
-    return _crear_operacion_base(
+    operacion = _crear_operacion_base(
         db=db,
         tipo_operacion=TipoOperacion.INGRESO,
         fecha=data.fecha,
@@ -68,9 +95,14 @@ def crear_ingreso(db: Session, data: IngresoCreate):
         descripcion=data.descripcion,
         cliente=data.cliente
     )
+    if data.cliente:
+        operacion.cliente_id = _buscar_o_crear_cliente(db, data.cliente, getattr(data, 'cliente_telefono', None))
+        db.commit()
+        db.refresh(operacion)
+    return operacion
 
 def crear_gasto(db: Session, data: GastoCreate):
-    return _crear_operacion_base(
+    operacion = _crear_operacion_base(
         db=db,
         tipo_operacion=TipoOperacion.GASTO,
         fecha=data.fecha,
@@ -82,6 +114,11 @@ def crear_gasto(db: Session, data: GastoCreate):
         descripcion=data.descripcion,
         proveedor=data.proveedor
     )
+    if data.proveedor:
+        operacion.proveedor_id = _buscar_o_crear_proveedor(db, data.proveedor, getattr(data, 'proveedor_telefono', None))
+        db.commit()
+        db.refresh(operacion)
+    return operacion
 
 def crear_retiro(db: Session, data: RetiroCreate):
     """
