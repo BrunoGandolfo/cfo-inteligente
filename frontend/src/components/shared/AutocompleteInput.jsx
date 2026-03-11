@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import axiosClient from '../../services/api/axiosClient';
 
-function AutocompleteInput({ value, onChange, searchEndpoint, placeholder, label, id, required }) {
+function AutocompleteInput({ value, onChange, searchEndpoint, placeholder, label, id, required, style }) {
   const [suggestions, setSuggestions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -93,6 +93,7 @@ function AutocompleteInput({ value, onChange, searchEndpoint, placeholder, label
         onFocus={() => { if (suggestions.length > 0) setIsOpen(true); }}
         autoComplete="off"
         placeholder={placeholder}
+        style={style}
         className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
       />
       {isOpen && suggestions.length > 0 && (

@@ -80,7 +80,7 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
         monto_original: parseFloat(formData.monto_original),
         moneda_original: formData.moneda_original,
         tipo_cambio: parseFloat(formData.tipo_cambio) || 40.50,
-        descripcion: formData.descripcion || null
+        descripcion: formData.descripcion
       };
 
       if (editMode) {
@@ -170,6 +170,7 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
           onChange={(val) => setFormData({...formData, cliente: val})}
           searchEndpoint="/api/operaciones/clientes/buscar"
           placeholder="Nombre del cliente"
+          style={{textTransform: 'uppercase'}}
         />
       </div>
 
@@ -213,13 +214,15 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-text-secondary">Descripción</label>
+        <label className="block text-xs font-medium text-text-secondary">Descripción *</label>
         <textarea
+          required
           value={formData.descripcion}
           onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
           className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           rows="1"
-          placeholder="Opcional"
+          placeholder="Descripción del ingreso"
+          style={{textTransform: 'uppercase'}}
         />
       </div>
     </ModalBase>

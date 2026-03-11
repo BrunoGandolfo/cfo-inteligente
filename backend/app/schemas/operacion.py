@@ -29,7 +29,7 @@ class IngresoCreate(OperacionBase):
     area_id: UUID  # Obligatorio para INGRESO
     cliente: Optional[str] = None
     cliente_telefono: Optional[str] = None
-    descripcion: Optional[str] = None
+    descripcion: str
     
     @field_validator('monto_original')
     @classmethod
@@ -55,7 +55,7 @@ class GastoCreate(OperacionBase):
     area_id: UUID  # Obligatorio para GASTO
     proveedor: Optional[str] = None
     proveedor_telefono: Optional[str] = None
-    descripcion: Optional[str] = None
+    descripcion: str
     
     @field_validator('monto_original')
     @classmethod
@@ -78,7 +78,7 @@ class GastoCreate(OperacionBase):
 class RetiroCreate(OperacionBase):
     monto_uyu: Optional[Decimal] = None
     monto_usd: Optional[Decimal] = None
-    descripcion: Optional[str] = None
+    descripcion: str
     
     @model_validator(mode='after')
     def al_menos_un_monto(self):
@@ -96,6 +96,7 @@ class SocioDistribucion(BaseModel):
     monto_usd: Optional[Decimal] = None
 
 class DistribucionCreate(OperacionBase):
+    descripcion: str
     agustina_uyu: Optional[Decimal] = None
     agustina_usd: Optional[Decimal] = None
     viviana_uyu: Optional[Decimal] = None

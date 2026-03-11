@@ -138,7 +138,8 @@ class TestPermisosRetiro:
             "monto_uyu": 5000,
             "tipo_cambio": 40.0,
             "socio_id": str(uuid4()),
-            "localidad": "MONTEVIDEO"
+            "localidad": "MONTEVIDEO",
+            "descripcion": "RETIRO TEST"
         })
         assert response.status_code == 403
         assert "socios" in response.json()["detail"].lower()
@@ -154,7 +155,8 @@ class TestPermisosRetiro:
                 "monto_uyu": 5000,
                 "tipo_cambio": 40.0,
                 "socio_id": str(uuid4()),
-                "localidad": "MONTEVIDEO"
+                "localidad": "MONTEVIDEO",
+                "descripcion": "RETIRO TEST"
             })
             # No debe ser 403
             assert response.status_code != 403
@@ -169,7 +171,8 @@ class TestPermisosDistribucion:
             "fecha": "2025-12-19",
             "monto_total": 100000,
             "tipo_cambio": 40.0,
-            "localidad": "MONTEVIDEO"
+            "localidad": "MONTEVIDEO",
+            "descripcion": "DISTRIBUCIÓN TEST"
         })
         assert response.status_code == 403
         assert "socios" in response.json()["detail"].lower()
@@ -183,7 +186,8 @@ class TestPermisosDistribucion:
                 "fecha": "2025-12-19",
                 "monto_total": 100000,
                 "tipo_cambio": 40.0,
-                "localidad": "MONTEVIDEO"
+                "localidad": "MONTEVIDEO",
+                "descripcion": "DISTRIBUCIÓN TEST"
             })
             # No debe ser 403
             assert response.status_code != 403

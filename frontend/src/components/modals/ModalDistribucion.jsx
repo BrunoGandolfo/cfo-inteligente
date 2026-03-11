@@ -69,6 +69,7 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading, editMode })
         fecha: formData.fecha,
         localidad: formData.localidad,
         tipo_cambio: parseFloat(formData.tipo_cambio) || 40.50,
+        descripcion: formData.descripcion,
         agustina_uyu: parseFloat(formData.agustina_uyu) || null,
         agustina_usd: parseFloat(formData.agustina_usd) || null,
         viviana_uyu: parseFloat(formData.viviana_uyu) || null,
@@ -191,13 +192,15 @@ function ModalDistribucion({ isOpen, onClose, onSuccess, setLoading, editMode })
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-medium text-text-secondary">Descripción</label>
+        <label className="block text-xs font-medium text-text-secondary">Descripción *</label>
         <textarea
+          required
           value={formData.descripcion}
           onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
           className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           rows="2"
-          placeholder="Opcional"
+          placeholder="Descripción de la distribución"
+          style={{textTransform: 'uppercase'}}
         />
       </div>
     </ModalBase>

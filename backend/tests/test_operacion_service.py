@@ -138,7 +138,7 @@ class TestCrearOperacionBase:
         
         assert operacion.id is not None
         assert operacion.tipo_operacion == TipoOperacion.INGRESO
-        assert operacion.cliente == 'Cliente Test'
+        assert operacion.cliente == 'CLIENTE TEST'
         assert operacion.proveedor is None
         assert operacion.monto_original == Decimal('10000')
         assert operacion.moneda_original == Moneda.UYU
@@ -165,7 +165,7 @@ class TestCrearOperacionBase:
         assert operacion.id is not None
         assert operacion.tipo_operacion == TipoOperacion.GASTO
         assert operacion.cliente is None
-        assert operacion.proveedor == 'Proveedor Test'
+        assert operacion.proveedor == 'PROVEEDOR TEST'
         assert operacion.monto_original == Decimal('500')
         assert operacion.moneda_original == Moneda.USD
         assert operacion.monto_usd == Decimal('500')
@@ -215,7 +215,7 @@ class TestCrearIngreso:
         operacion = crear_ingreso(db_session, data)
         
         assert operacion.tipo_operacion == TipoOperacion.INGRESO
-        assert operacion.cliente == 'Cliente Test'
+        assert operacion.cliente == 'CLIENTE TEST'
         assert operacion.monto_uyu == Decimal('15000')
         assert operacion.monto_usd == Decimal('375')  # 15000/40
     
@@ -236,7 +236,7 @@ class TestCrearIngreso:
         operacion = crear_ingreso(db_session, data)
         
         assert operacion.tipo_operacion == TipoOperacion.INGRESO
-        assert operacion.cliente == 'Cliente USA'
+        assert operacion.cliente == 'CLIENTE USA'
         assert operacion.monto_usd == Decimal('2500')
         assert operacion.monto_uyu == Decimal('101250')  # 2500*40.50
 
@@ -265,7 +265,7 @@ class TestCrearGasto:
         operacion = crear_gasto(db_session, data)
         
         assert operacion.tipo_operacion == TipoOperacion.GASTO
-        assert operacion.proveedor == 'Proveedor Test'
+        assert operacion.proveedor == 'PROVEEDOR TEST'
         assert operacion.monto_uyu == Decimal('8000')
         assert operacion.monto_usd == Decimal('200')  # 8000/40
     
@@ -286,7 +286,7 @@ class TestCrearGasto:
         operacion = crear_gasto(db_session, data)
         
         assert operacion.tipo_operacion == TipoOperacion.GASTO
-        assert operacion.proveedor == 'AWS Inc'
+        assert operacion.proveedor == 'AWS INC'
         assert operacion.monto_usd == Decimal('350')
         assert operacion.monto_uyu == Decimal('14000')  # 350*40
 
@@ -395,6 +395,7 @@ class TestCrearDistribucion:
             fecha=date.today(),
             tipo_cambio=Decimal('40.00'),
             localidad='Montevideo',
+            descripcion='Distribución de utilidades',
             agustina_uyu=Decimal('5000'),
             agustina_usd=Decimal('125'),
             viviana_uyu=Decimal('5000'),
@@ -412,7 +413,7 @@ class TestCrearDistribucion:
         assert operacion.tipo_operacion == TipoOperacion.DISTRIBUCION
         assert operacion.monto_uyu == Decimal('25000')  # 5*5000
         assert operacion.monto_usd == Decimal('625')    # 5*125
-        assert operacion.descripcion == "Distribución de utilidades"
+        assert operacion.descripcion == "DISTRIBUCIÓN DE UTILIDADES"
         
         # Verificar que se crearon 5 detalles
         detalles = db_session.query(DistribucionDetalle)\
@@ -431,6 +432,7 @@ class TestCrearDistribucion:
             fecha=date.today(),
             tipo_cambio=Decimal('40.00'),
             localidad='Montevideo',
+            descripcion='Distribución parcial',
             agustina_uyu=Decimal('10000'),
             agustina_usd=None,
             viviana_uyu=Decimal('10000'),
@@ -464,6 +466,7 @@ class TestCrearDistribucion:
             fecha=date.today(),
             tipo_cambio=Decimal('40.00'),
             localidad='Montevideo',
+            descripcion='Distribución moneda',
             agustina_uyu=Decimal('8000'),
             agustina_usd=None,
             viviana_uyu=Decimal('8000'),
@@ -491,6 +494,7 @@ class TestCrearDistribucion:
             fecha=date.today(),
             tipo_cambio=Decimal('40.00'),
             localidad='Montevideo',
+            descripcion='Distribución sin área',
             bruno_uyu=Decimal('5000'),
             bruno_usd=None,
             agustina_uyu=None,
@@ -502,9 +506,9 @@ class TestCrearDistribucion:
             pancho_uyu=None,
             pancho_usd=None
         )
-        
+
         operacion = crear_distribucion(db_session, data)
-        
+
         # DISTRIBUCION es movimiento financiero, NO operación de área
         # area_id debe ser NULL para no contaminar análisis de rentabilidad
         assert operacion.area_id is None
@@ -519,6 +523,7 @@ class TestCrearDistribucion:
             fecha=date.today(),
             tipo_cambio=Decimal('40.00'),
             localidad='Montevideo',
+            descripcion='Distribución porcentaje',
             bruno_uyu=Decimal('5000'),
             bruno_usd=Decimal('125'),
             agustina_uyu=None,

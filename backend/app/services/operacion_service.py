@@ -13,7 +13,7 @@ def _buscar_o_crear_cliente(db: Session, nombre: str, telefono: str = None):
         func.lower(Cliente.nombre) == nombre.strip().lower()
     ).first()
     if not cliente:
-        cliente = Cliente(nombre=nombre.strip(), telefono=telefono, activo=True)
+        cliente = Cliente(nombre=nombre.strip().upper(), telefono=telefono, activo=True)
         db.add(cliente)
         db.flush()
     return cliente.id
@@ -25,7 +25,7 @@ def _buscar_o_crear_proveedor(db: Session, nombre: str, telefono: str = None):
         func.lower(Proveedor.nombre) == nombre.strip().lower()
     ).first()
     if not proveedor:
-        proveedor = Proveedor(nombre=nombre.strip(), telefono=telefono, activo=True)
+        proveedor = Proveedor(nombre=nombre.strip().upper(), telefono=telefono, activo=True)
         db.add(proveedor)
         db.flush()
     return proveedor.id
@@ -54,12 +54,20 @@ def _crear_operacion_base(
     Función base para crear operaciones de tipo ingreso/gasto.
     Elimina duplicación entre crear_ingreso y crear_gasto.
     """
+    # Convertir a MAYÚSCULA antes de guardar
+    if cliente:
+        cliente = cliente.strip().upper()
+    if proveedor:
+        proveedor = proveedor.strip().upper()
+    if descripcion:
+        descripcion = descripcion.strip().upper()
+
     monto_uyu, monto_usd = calcular_montos(monto_original, moneda_original, tipo_cambio)
-    
+
     # Para INGRESO/GASTO, los totales son iguales (ya están convertidos)
     total_pesificado = monto_uyu
     total_dolarizado = monto_usd
-    
+
     operacion = Operacion(
         tipo_operacion=tipo_operacion,
         fecha=fecha,
@@ -154,6 +162,9 @@ def crear_retiro(db: Session, data: RetiroCreate):
         total_pesificado = monto_uyu
         total_dolarizado = monto_usd
     
+    # Convertir descripción a MAYÚSCULA
+    descripcion = data.descripcion.strip().upper() if data.descripcion else data.descripcion
+
     operacion = Operacion(
         tipo_operacion=TipoOperacion.RETIRO,
         fecha=data.fecha,
@@ -166,7 +177,7 @@ def crear_retiro(db: Session, data: RetiroCreate):
         total_dolarizado=total_dolarizado,
         area_id=None,  # RETIRO no necesita área
         localidad=Localidad[data.localidad.upper().replace(" ", "_")],
-        descripcion=data.descripcion
+        descripcion=descripcion
     )
     
     db.add(operacion)
@@ -208,7 +219,10 @@ def crear_distribucion(db: Session, data: DistribucionCreate):
     # Para DISTRIBUCION, calcular totales sumando ambos componentes pesificados/dolarizados
     total_pesificado = total_uyu + (total_usd * data.tipo_cambio)
     total_dolarizado = total_usd + (total_uyu / data.tipo_cambio)
-    
+
+    # Convertir descripción a MAYÚSCULA
+    descripcion = data.descripcion.strip().upper() if data.descripcion else data.descripcion
+
     operacion = Operacion(
         tipo_operacion=TipoOperacion.DISTRIBUCION,
         fecha=data.fecha,
@@ -221,7 +235,7 @@ def crear_distribucion(db: Session, data: DistribucionCreate):
         total_dolarizado=total_dolarizado,
         area_id=None,  # DISTRIBUCION no necesita área
         localidad=Localidad[data.localidad.upper().replace(" ", "_")],
-        descripcion="Distribución de utilidades"
+        descripcion=descripcion
     )
     
     db.add(operacion)
