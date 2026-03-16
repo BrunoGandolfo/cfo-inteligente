@@ -18,7 +18,23 @@ from app.services import operacion_service
 from app.services.excel_export_service import generar_excel_operaciones
 import uuid
 
+# Colaboradores con acceso restringido a Operaciones (solo área Contable)
+EMAILS_OPERACIONES_CONTABLE = ["naraujo@grupoconexion.uy"]
+AREA_CONTABLE_ID = "14700c01-3b3d-49c6-8e2e-f3ebded1b1bb"
+
 router = APIRouter()
+
+
+def _es_usuario_solo_contable(email: str) -> bool:
+    """Verifica si el usuario tiene acceso restringido solo al área Contable."""
+    return email.lower() in [e.lower() for e in EMAILS_OPERACIONES_CONTABLE]
+
+
+def _validar_area_contable(email: str, area_id) -> None:
+    """Valida que el usuario restringido solo opere en área Contable."""
+    if _es_usuario_solo_contable(email) and str(area_id) != AREA_CONTABLE_ID:
+        raise HTTPException(status_code=403, detail="Solo puede operar en el área Contable")
+
 
 @router.get("/")
 def get_operaciones(
@@ -27,9 +43,15 @@ def get_operaciones(
     current_user: Usuario = Depends(get_current_user)
 ):
     """Listar operaciones con todos los campos necesarios"""
-    operaciones = db.query(Operacion)\
+    query = db.query(Operacion)\
         .options(joinedload(Operacion.area))\
-        .filter(Operacion.deleted_at.is_(None))\
+        .filter(Operacion.deleted_at.is_(None))
+
+    # Usuarios con acceso restringido solo ven operaciones del área Contable
+    if _es_usuario_solo_contable(current_user.email):
+        query = query.filter(Operacion.area_id == AREA_CONTABLE_ID)
+
+    operaciones = query\
         .order_by(desc(Operacion.fecha), desc(Operacion.created_at))\
         .limit(limit)\
         .all()
@@ -103,18 +125,24 @@ def anular_operacion(
     
     if not operacion:
         raise HTTPException(status_code=404, detail="Operación no encontrada")
-    
+
+    # Usuarios restringidos solo pueden anular operaciones de su área
+    if _es_usuario_solo_contable(current_user.email) and str(operacion.area_id) != AREA_CONTABLE_ID:
+        raise HTTPException(status_code=403, detail="Solo puede modificar operaciones del área Contable")
+
     operacion.deleted_at = datetime.now(timezone.utc)
     db.commit()
-    
+
     return {"message": "Operación anulada"}
 
 @router.post("/ingreso")
 def crear_ingreso(data: IngresoCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
+    _validar_area_contable(current_user.email, data.area_id)
     return operacion_service.crear_ingreso(db, data)
 
-@router.post("/gasto")  
+@router.post("/gasto")
 def crear_gasto(data: GastoCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
+    _validar_area_contable(current_user.email, data.area_id)
     return operacion_service.crear_gasto(db, data)
 
 @router.post("/retiro")
@@ -265,7 +293,15 @@ def actualizar_operacion(
     payload = data.model_dump(exclude_unset=True)
     # 1. Obtener operación (valida UUID y existencia)
     operacion = _obtener_operacion_o_404(db, operacion_id)
-    
+
+    # Usuarios restringidos solo pueden editar operaciones de su área
+    if _es_usuario_solo_contable(current_user.email):
+        if str(operacion.area_id) != AREA_CONTABLE_ID:
+            raise HTTPException(status_code=403, detail="Solo puede modificar operaciones del área Contable")
+        # Si intenta cambiar el area_id, validar que sea Contable
+        if 'area_id' in payload and payload['area_id'] and str(payload['area_id']) != AREA_CONTABLE_ID:
+            raise HTTPException(status_code=403, detail="Solo puede operar en el área Contable")
+
     # 2. Actualizar campos básicos
     _actualizar_campos_basicos(operacion, payload)
     

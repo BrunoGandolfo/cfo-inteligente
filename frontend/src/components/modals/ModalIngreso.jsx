@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import ModalBase from '../shared/ModalBase';
 import AutocompleteInput from '../shared/AutocompleteInput';
 
-function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
+function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode, areaForzada }) {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     cliente: '',
@@ -53,9 +53,12 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
         });
       } else {
         cargarTipoCambio();
+        if (areaForzada) {
+          setFormData(prev => ({ ...prev, area_id: areaForzada }));
+        }
       }
     }
-  }, [isOpen, editMode]);
+  }, [isOpen, editMode, areaForzada]);
 
   const cargarTipoCambio = async () => {
     try {
@@ -140,7 +143,8 @@ function ModalIngreso({ isOpen, onClose, onSuccess, setLoading, editMode }) {
             required
             value={formData.area_id}
             onChange={(e) => setFormData({...formData, area_id: e.target.value})}
-            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            disabled={!!areaForzada}
+            className="w-full px-1 py-1 border border-border rounded text-xs bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <option value="">Seleccione...</option>
             {areas.map(area => (

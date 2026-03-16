@@ -12,6 +12,12 @@ import ModalIngreso from '../components/modals/ModalIngreso';
 import ModalGasto from '../components/modals/ModalGasto';
 import { useIndicadores } from '../hooks/useIndicadores';
 
+// Colaboradores con acceso restringido a Operaciones (solo área Contable)
+const USUARIOS_ACCESO_OPERACIONES_CONTABLE = [
+  "naraujo@grupoconexion.uy",    // Nicolás — solo área Contable
+];
+const AREA_CONTABLE_ID = "14700c01-3b3d-49c6-8e2e-f3ebded1b1bb";
+
 function ColaboradorView() {
   const [operaciones, setOperaciones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +25,9 @@ function ColaboradorView() {
   const [showGasto, setShowGasto] = useState(false);
   const [fraseMotivacional, setFraseMotivacional] = useState('');
   const { indicadores, loading: loadingIndicadores } = useIndicadores();
+
+  const userEmail = localStorage.getItem('userEmail') || '';
+  const soloContable = USUARIOS_ACCESO_OPERACIONES_CONTABLE.includes(userEmail.toLowerCase());
 
   // Fetch frase motivacional personalizada
   useEffect(() => {
@@ -186,6 +195,7 @@ function ColaboradorView() {
             setShowIngreso(false);
             fetchOperaciones();
           }}
+          areaForzada={soloContable ? AREA_CONTABLE_ID : undefined}
         />
       ) : null}
       {showGasto ? (
@@ -196,6 +206,7 @@ function ColaboradorView() {
             setShowGasto(false);
             fetchOperaciones();
           }}
+          areaForzada={soloContable ? AREA_CONTABLE_ID : undefined}
         />
       ) : null}
     </div>

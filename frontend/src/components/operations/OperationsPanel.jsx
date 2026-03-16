@@ -12,11 +12,20 @@ import ModalGasto from '../modals/ModalGasto';
 import ModalRetiro from '../modals/ModalRetiro';
 import ModalDistribucion from '../modals/ModalDistribucion';
 
+// Colaboradores con acceso restringido a Operaciones (solo área Contable)
+const USUARIOS_ACCESO_OPERACIONES_CONTABLE = [
+  "naraujo@grupoconexion.uy",    // Nicolás — solo área Contable
+];
+const AREA_CONTABLE_ID = "14700c01-3b3d-49c6-8e2e-f3ebded1b1bb";
+
 export function OperationsPanel({ isOpen, onClose }) {
   const { refreshKey } = useMetrics();
   const [detailOp, setDetailOp] = useState(null);
   const [editOp, setEditOp] = useState(null);
-  
+
+  const userEmail = localStorage.getItem('userEmail') || '';
+  const soloContable = USUARIOS_ACCESO_OPERACIONES_CONTABLE.includes(userEmail.toLowerCase());
+
   const handleEdit = (op) => {
     setEditOp(op);
   };
@@ -79,31 +88,33 @@ export function OperationsPanel({ isOpen, onClose }) {
             
             {/* Modales de edición */}
             {editOp && editOp.tipo_operacion === 'ingreso' && (
-              <ModalIngreso 
+              <ModalIngreso
                 isOpen={true}
                 onClose={() => setEditOp(null)}
                 onSuccess={() => setEditOp(null)}
                 editMode={editOp}
+                areaForzada={soloContable ? AREA_CONTABLE_ID : undefined}
               />
             )}
             {editOp && editOp.tipo_operacion === 'gasto' && (
-              <ModalGasto 
+              <ModalGasto
+                isOpen={true}
+                onClose={() => setEditOp(null)}
+                onSuccess={() => setEditOp(null)}
+                editMode={editOp}
+                areaForzada={soloContable ? AREA_CONTABLE_ID : undefined}
+              />
+            )}
+            {!soloContable && editOp && editOp.tipo_operacion === 'retiro' && (
+              <ModalRetiro
                 isOpen={true}
                 onClose={() => setEditOp(null)}
                 onSuccess={() => setEditOp(null)}
                 editMode={editOp}
               />
             )}
-            {editOp && editOp.tipo_operacion === 'retiro' && (
-              <ModalRetiro 
-                isOpen={true}
-                onClose={() => setEditOp(null)}
-                onSuccess={() => setEditOp(null)}
-                editMode={editOp}
-              />
-            )}
-            {editOp && editOp.tipo_operacion === 'distribucion' && (
-              <ModalDistribucion 
+            {!soloContable && editOp && editOp.tipo_operacion === 'distribucion' && (
+              <ModalDistribucion
                 isOpen={true}
                 onClose={() => setEditOp(null)}
                 onSuccess={() => setEditOp(null)}

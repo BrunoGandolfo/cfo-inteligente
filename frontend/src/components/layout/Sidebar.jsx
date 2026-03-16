@@ -21,6 +21,10 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
   const USUARIOS_ACCESO_NOTARIAL = [
     "gferrari@grupoconexion.uy",   // Gerardo
   ];
+  // Colaboradores con acceso al módulo Operaciones (solo área Contable)
+  const USUARIOS_ACCESO_OPERACIONES_CONTABLE = [
+    "naraujo@grupoconexion.uy",    // Nicolás — solo área Contable
+  ];
   
   // Verificar si el usuario es socio
   const esSocio = localStorage.getItem('esSocio') === 'true';
@@ -28,6 +32,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
   const veExpedientesYCasos = USUARIOS_ACCESO_EXPEDIENTES_CASOS.includes(userEmail.toLowerCase());
   const veALa = esSocio || USUARIOS_ACCESO_ALA.includes(userEmail.toLowerCase());
   const veNotarial = esSocio || USUARIOS_ACCESO_NOTARIAL.includes(userEmail.toLowerCase());
+  const veOperacionesContable = USUARIOS_ACCESO_OPERACIONES_CONTABLE.includes(userEmail.toLowerCase());
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -67,7 +72,8 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
         const extraKeys = [
           ...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []), 
           ...(veALa ? ['ALA'] : []),
-          ...(veNotarial ? ['Notarial'] : [])
+          ...(veNotarial ? ['Notarial'] : []),
+          ...(veOperacionesContable ? ['Operaciones'] : [])
         ];
         const visibleKeys = [...baseKeys, ...extraKeys];
         return allItems.filter(item => visibleKeys.includes(item.key));
