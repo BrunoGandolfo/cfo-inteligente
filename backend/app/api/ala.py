@@ -6,7 +6,7 @@ Verificación contra listas: PEP (Uruguay), ONU, OFAC, UE, GAFI.
 """
 
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 import logging
 

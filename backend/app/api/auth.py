@@ -2,7 +2,7 @@ import secrets
 import string
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.rate_limiter import limiter
 from app.models import Usuario

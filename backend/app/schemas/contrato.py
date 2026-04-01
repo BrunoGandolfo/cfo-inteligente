@@ -9,7 +9,7 @@ Define los modelos de validación y respuesta para:
 
 from pydantic import BaseModel, field_validator
 from datetime import datetime
-from typing import Optional, List
+from typing import Any, Dict, Optional, List
 from uuid import UUID
 
 
@@ -73,7 +73,7 @@ class ContratoResponse(ContratoBase):
     fuente_original: str
     archivo_original: Optional[str] = None
     activo: bool
-    campos_editables: Optional[dict] = None  # JSON con campos extraídos (parseado automáticamente)
+    campos_editables: Optional[Dict[str, Any]] = None  # JSON con campos extraídos (parseado automáticamente)
     created_at: datetime
     updated_at: datetime
     
