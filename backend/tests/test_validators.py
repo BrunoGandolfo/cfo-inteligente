@@ -84,11 +84,10 @@ def test_validate_period_custom_valid():
 
 
 def test_validate_period_custom_sin_fechas():
-    """Test: validate_period custom sin fechas lanza error."""
-    period = PeriodConfig(tipo='custom')
-    
-    with pytest.raises(InvalidDateRangeError, match="requiere"):
-        validate_period(period)
+    """Test: PeriodConfig custom sin fechas lanza ValidationError en construcción."""
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError, match="obligatorios"):
+        PeriodConfig(tipo='custom')
 
 
 # ═══════════════════════════════════════════════════════════════

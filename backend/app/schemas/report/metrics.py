@@ -7,53 +7,60 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from pydantic import BaseModel, Field
+from decimal import Decimal
+
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Dict, Any
 from datetime import date
 
 
 class TotalsMetrics(BaseModel):
     """M1-M8: Totales absolutos en UYU y USD"""
-    
-    ingresos_uyu: float = Field(description="Total ingresos en UYU")
-    ingresos_usd: float = Field(description="Total ingresos en USD")
-    gastos_uyu: float = Field(description="Total gastos en UYU")
-    gastos_usd: float = Field(description="Total gastos en USD")
-    retiros_uyu: float = Field(description="Total retiros en UYU")
-    retiros_usd: float = Field(description="Total retiros en USD")
-    distribuciones_uyu: float = Field(description="Total distribuciones en UYU")
-    distribuciones_usd: float = Field(description="Total distribuciones en USD")
+    model_config = ConfigDict(json_encoders={Decimal: float})
+
+    ingresos_uyu: Decimal = Field(description="Total ingresos en UYU")
+    ingresos_usd: Decimal = Field(description="Total ingresos en USD")
+    gastos_uyu: Decimal = Field(description="Total gastos en UYU")
+    gastos_usd: Decimal = Field(description="Total gastos en USD")
+    retiros_uyu: Decimal = Field(description="Total retiros en UYU")
+    retiros_usd: Decimal = Field(description="Total retiros en USD")
+    distribuciones_uyu: Decimal = Field(description="Total distribuciones en UYU")
+    distribuciones_usd: Decimal = Field(description="Total distribuciones en USD")
 
 
 class ResultsMetrics(BaseModel):
     """M9-M10: Resultados operativo y neto"""
-    
-    resultado_operativo: float = Field(description="Ingresos - Gastos")
-    resultado_neto: float = Field(description="Ingresos - Gastos")
+    model_config = ConfigDict(json_encoders={Decimal: float})
+
+    resultado_operativo: Decimal = Field(description="Ingresos - Gastos")
+    resultado_neto: Decimal = Field(description="Ingresos - Gastos")
 
 
 class RatiosMetrics(BaseModel):
     """M11-M14: Rentabilidad en porcentaje"""
-    
-    margen_operativo: float = Field(description="(Resultado Operativo / Ingresos) × 100")
-    margen_neto: float = Field(description="(Resultado Neto / Ingresos) × 100")
-    rentabilidad_por_area: Dict[str, float] = Field(description="Dict {area: rentabilidad%}")
-    rentabilidad_por_localidad: Dict[str, float] = Field(description="Dict {localidad: rentabilidad%}")
+    model_config = ConfigDict(json_encoders={Decimal: float})
+
+    margen_operativo: Decimal = Field(description="(Resultado Operativo / Ingresos) × 100")
+    margen_neto: Decimal = Field(description="(Resultado Neto / Ingresos) × 100")
+    rentabilidad_por_area: Dict[str, Decimal] = Field(description="Dict {area: rentabilidad%}")
+    rentabilidad_por_localidad: Dict[str, Decimal] = Field(description="Dict {localidad: rentabilidad%}")
 
 
 class DistributionMetrics(BaseModel):
     """M15-M17: Distribución porcentual"""
-    
-    porcentaje_ingresos_por_area: Dict[str, float] = Field(description="% ingresos por área")
-    porcentaje_ingresos_por_localidad: Dict[str, float] = Field(description="% ingresos por localidad")
-    porcentaje_distribucion_por_socio: Dict[str, float] = Field(description="% distribución por socio")
+    model_config = ConfigDict(json_encoders={Decimal: float})
+
+    porcentaje_ingresos_por_area: Dict[str, Decimal] = Field(description="% ingresos por área")
+    porcentaje_ingresos_por_localidad: Dict[str, Decimal] = Field(description="% ingresos por localidad")
+    porcentaje_distribucion_por_socio: Dict[str, Decimal] = Field(description="% distribución por socio")
 
 
 class EfficiencyMetrics(BaseModel):
     """M18-M20: Métricas de eficiencia"""
-    
-    ticket_promedio_ingreso: float = Field(description="Promedio monto por ingreso")
-    ticket_promedio_gasto: float = Field(description="Promedio monto por gasto")
+    model_config = ConfigDict(json_encoders={Decimal: float})
+
+    ticket_promedio_ingreso: Decimal = Field(description="Promedio monto por ingreso")
+    ticket_promedio_gasto: Decimal = Field(description="Promedio monto por gasto")
     cantidad_operaciones: int = Field(description="Total operaciones del período")
     cantidad_ingresos: int = Field(description="Cantidad de ingresos")
     cantidad_gastos: int = Field(description="Cantidad de gastos")
@@ -62,18 +69,20 @@ class EfficiencyMetrics(BaseModel):
 class TrendsMetrics(BaseModel):
     """M21-M26: Comparaciones temporales y proyecciones"""
     
+    model_config = ConfigDict(json_encoders={Decimal: float})
+
     # Comparaciones (si hay período de comparación)
-    variacion_mom_ingresos: Optional[float] = Field(default=None, description="% variación MoM ingresos")
-    variacion_mom_gastos: Optional[float] = Field(default=None, description="% variación MoM gastos")
-    variacion_mom_rentabilidad: Optional[float] = Field(default=None, description="Puntos variación MoM rentabilidad")
-    
+    variacion_mom_ingresos: Optional[Decimal] = Field(default=None, description="% variación MoM ingresos")
+    variacion_mom_gastos: Optional[Decimal] = Field(default=None, description="% variación MoM gastos")
+    variacion_mom_rentabilidad: Optional[Decimal] = Field(default=None, description="Puntos variación MoM rentabilidad")
+
     # Promedio móvil
-    promedio_movil_3m: Optional[float] = Field(default=None, description="Promedio últimos 3 meses")
-    promedio_movil_6m: Optional[float] = Field(default=None, description="Promedio últimos 6 meses")
-    
+    promedio_movil_3m: Optional[Decimal] = Field(default=None, description="Promedio últimos 3 meses")
+    promedio_movil_6m: Optional[Decimal] = Field(default=None, description="Promedio últimos 6 meses")
+
     # Proyecciones
-    proyeccion_proximos_3m: Optional[float] = Field(default=None, description="Proyección 3 meses (regresión)")
-    proyeccion_fin_anio: Optional[float] = Field(default=None, description="Proyección fin año")
+    proyeccion_proximos_3m: Optional[Decimal] = Field(default=None, description="Proyección 3 meses (regresión)")
+    proyeccion_fin_anio: Optional[Decimal] = Field(default=None, description="Proyección fin año")
 
 
 class MetricsAggregate(BaseModel):

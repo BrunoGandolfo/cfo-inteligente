@@ -6,6 +6,10 @@ pre-formateado con números escritos.  Claude recibe texto → los copia sin
 recalcular ni inventar.
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 # ══════════════════════════════════════════════════════════════
 # RED DE SEGURIDAD BIMONETARIA
 # ══════════════════════════════════════════════════════════════
@@ -495,8 +499,8 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
                     if ing > 0:
                         rent = round((ing - gas) * 100.0 / ing, 1)
                         partes.append(f"Rentabilidad: {fmt_pct(rent)}")
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Error calculando rentabilidad fila: {e}")
 
         # Monto principal (distribuciones, retiros, etc.)
         for col in ["total_uyu", "monto_uyu", "total_pesificado", "monto"]:
@@ -532,8 +536,8 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
                         pct = round(v * 100.0 / total_general, 1)
                         partes.append(f"Participación: {fmt_pct(pct)}")
                         se_mostro_participacion = True
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Error calculando participación fila: {e}")
 
         # Ticket promedio
         for col in ["ticket_promedio", "ticket_promedio_uyu", "promedio"]:
@@ -552,8 +556,8 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
             if col in row and row[col] is not None:
                 try:
                     partes.append(f"Tipo de cambio: ${float(row[col]):.4f}")
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Error formateando tipo de cambio: {e}")
                 break
 
         # Cualquier otra columna numérica no cubierta
@@ -604,8 +608,8 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
                     if ing_total > 0:
                         rent_global = round((ing_total - gas_total) * 100.0 / ing_total, 1)
                         lineas.append(f"  RENTABILIDAD GLOBAL: {fmt_pct(rent_global)}")
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Error calculando rentabilidad global: {e}")
 
             # Si hay columnas de moneda y monto_original, calcular USD real
             if "moneda_original" in columnas and "monto_original" in columnas:
@@ -624,8 +628,8 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
                         lineas.append(f"  TOTAL USD (operaciones en dólares): {fmt_usd(total_usd_real)}")
                     if total_uyu_pesos > 0:
                         lineas.append(f"  TOTAL UYU (operaciones en pesos): {fmt_uyu(total_uyu_pesos)}")
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Error calculando totales USD/UYU reales: {e}")
 
         # Ticket promedio global
         monto_col_global = next((c for c in _COLS_MONTO_TICKET if c in columnas), None)
@@ -637,8 +641,8 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
                 if cantidad_total > 0:
                     ticket_global = round(monto_total / cantidad_total, 2)
                     lineas.append(f"  TICKET PROMEDIO GLOBAL: {fmt_uyu(ticket_global)}")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Error calculando ticket promedio global: {e}")
 
         # Composición por moneda (sobre base homogénea si existe)
         if composicion_moneda:
@@ -660,8 +664,8 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
                     advertencia = composicion_moneda.get("advertencia")
                     if advertencia:
                         lineas.append(f"  Nota composición: {advertencia}")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Error formateando composición por moneda: {e}")
 
         # Concentración acumulada (Top 3/5/10)
         if concentracion_acumulada:
@@ -678,8 +682,8 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
                     if concentracion_acumulada.get("sobre_total_mostrado"):
                         sufijo = " (sobre total mostrado)"
                     lineas.append(f"  CONCENTRACIÓN: {' | '.join(partes_concentracion)}{sufijo}")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Error formateando concentración acumulada: {e}")
 
         if es_subset_ranking and se_mostro_participacion:
             lineas.append("  Nota participación: porcentaje reportado sobre elementos mostrados (ranking/top), no sobre total global.")

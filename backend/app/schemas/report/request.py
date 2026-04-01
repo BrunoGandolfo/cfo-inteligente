@@ -7,7 +7,7 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import date
 from typing import Optional, Literal
 
@@ -90,6 +90,15 @@ class PeriodConfig(BaseModel):
         default=None,
         description="Requerido si tipo=custom, ignorado si predefinido"
     )
+
+    @model_validator(mode='after')
+    def validar_periodo_custom(self):
+        if self.tipo == 'custom':
+            if not self.fecha_inicio or not self.fecha_fin:
+                raise ValueError(
+                    'Para período personalizado (custom), fecha_inicio y fecha_fin son obligatorios'
+                )
+        return self
 
 
 class ReportRequest(BaseModel):

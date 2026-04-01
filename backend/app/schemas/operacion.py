@@ -115,7 +115,7 @@ class OperacionUpdate(BaseModel):
     monto_original: Optional[Decimal] = None
     moneda_original: Optional[str] = None
     tipo_cambio: Optional[Decimal] = None
-    area_id: Optional[str] = None
+    area_id: Optional[UUID] = None
     localidad: Optional[str] = None
     descripcion: Optional[str] = None
     cliente: Optional[str] = None
