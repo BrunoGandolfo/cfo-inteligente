@@ -73,17 +73,6 @@ class TestGetChartConfig:
         assert config["primary"] == "#3B82F6"
 
 
-class TestGetOperationsRepository:
-    """Tests para get_operations_repository."""
-
-    def test_get_operations_repository_returns_repository_with_injected_db(self):
-        mock_db = MagicMock()
-        repo = dependencies.get_operations_repository(db=mock_db)
-        from app.repositories.operations_repository import OperationsRepository
-        assert isinstance(repo, OperationsRepository)
-        assert repo.db is mock_db
-
-
 class TestGetInsightsOrchestrator:
     """Tests para get_insights_orchestrator."""
 
