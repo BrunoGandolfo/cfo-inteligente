@@ -1,3 +1,5 @@
+"""Middleware de cabeceras de seguridad HTTP para todas las respuestas."""
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response

@@ -1,3 +1,5 @@
+"""Configuración centralizada del sistema vía pydantic-settings y variables de entorno."""
+
 from pydantic_settings import BaseSettings
 from pydantic import Field, ConfigDict
 

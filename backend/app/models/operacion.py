@@ -1,3 +1,5 @@
+"""Modelo central de operaciones financieras bimoneda (UYU/USD)."""
+
 from sqlalchemy import Column, String, DateTime, Numeric, Date, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -24,6 +26,13 @@ class Localidad(enum.Enum):
     MERCEDES = "Mercedes"
 
 class Operacion(Base):
+    """Operación financiera (ingreso, gasto, retiro o distribución).
+
+    Almacena montos en ambas monedas con tipo de cambio del día.
+    total_pesificado y total_dolarizado son las columnas válidas para sumar multi-moneda.
+    Soft delete vía deleted_at.
+    """
+
     __tablename__ = "operaciones"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

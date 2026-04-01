@@ -1,3 +1,5 @@
+"""Modelo de áreas de negocio del estudio (Jurídica, Notarial, Contable, etc.)."""
+
 from sqlalchemy import Column, String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from app.core.database import Base
@@ -8,6 +10,8 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 class Area(Base):
+    """Área funcional del estudio. Cada operación y expediente se asocia a un área."""
+
     __tablename__ = "areas"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

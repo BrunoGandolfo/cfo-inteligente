@@ -1,3 +1,5 @@
+"""Modelo de socios del estudio con porcentaje de participación societaria."""
+
 from sqlalchemy import Column, String, Boolean, DateTime, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from app.core.database import Base
@@ -8,6 +10,8 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 class Socio(Base):
+    """Socio del estudio. Define participación porcentual para distribuciones."""
+
     __tablename__ = "socios"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

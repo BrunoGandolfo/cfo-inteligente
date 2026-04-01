@@ -1,14 +1,18 @@
+"""Modelos de conversaciones y mensajes del chat CFO."""
+
 from sqlalchemy import Column, String, DateTime, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from app.core.database import Base
 from datetime import datetime, timezone
 import uuid
 
 def utc_now():
     return datetime.now(timezone.utc)
-from app.core.database import Base
 
 class Conversacion(Base):
+    """Hilo de conversación de un usuario con el asistente CFO."""
+
     __tablename__ = "conversaciones"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -22,6 +26,8 @@ class Conversacion(Base):
     mensajes = relationship("Mensaje", back_populates="conversacion", cascade="all, delete-orphan", order_by="Mensaje.created_at")
 
 class Mensaje(Base):
+    """Mensaje individual dentro de una conversación (rol: user o assistant)."""
+
     __tablename__ = "mensajes"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

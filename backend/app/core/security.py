@@ -1,3 +1,5 @@
+"""Seguridad: hashing de contraseñas, generación/validación de tokens JWT, extracción de usuario."""
+
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
@@ -21,7 +23,7 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-def create_access_token(data: dict):
+def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
     to_encode.update({"exp": expire})

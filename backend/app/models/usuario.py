@@ -1,3 +1,5 @@
+"""Modelo de usuarios del sistema (socios y operadores)."""
+
 from sqlalchemy import Column, String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -9,6 +11,8 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 class Usuario(Base):
+    """Usuario autenticable. es_socio distingue socios (acceso completo) de operadores."""
+
     __tablename__ = "usuarios"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

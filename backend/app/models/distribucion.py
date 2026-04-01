@@ -1,3 +1,5 @@
+"""Modelo de detalle de distribuciones de utilidades a socios."""
+
 from sqlalchemy import Column, DateTime, Numeric, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -9,6 +11,8 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 class DistribucionDetalle(Base):
+    """Línea de distribución: monto asignado a un socio en una operación DISTRIBUCION."""
+
     __tablename__ = "distribuciones_detalle"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

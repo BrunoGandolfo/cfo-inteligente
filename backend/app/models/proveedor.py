@@ -1,3 +1,5 @@
+"""Modelo de proveedores del estudio, vinculados a operaciones de gasto."""
+
 from sqlalchemy import Column, String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from app.core.database import Base
@@ -8,6 +10,8 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 class Proveedor(Base):
+    """Proveedor del estudio. Nombre normalizado a mayúsculas, único."""
+
     __tablename__ = "proveedores"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
