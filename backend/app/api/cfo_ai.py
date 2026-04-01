@@ -4,6 +4,8 @@ Router API para gestión de conversaciones CFO AI.
 Los endpoints de chat (/ask-stream) están en cfo_streaming.py.
 Este módulo solo gestiona CRUD de conversaciones.
 """
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -50,7 +52,10 @@ def obtener_conversacion(
 ):
     """Obtiene una conversación completa con todos sus mensajes (solo del usuario)"""
     from app.models.conversacion import Conversacion
-    conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id).first()
+    conversacion = db.query(Conversacion).filter(
+        Conversacion.id == conversacion_id,
+        Conversacion.deleted_at == None  # noqa: E711
+    ).first()
 
     if not conversacion:
         raise HTTPException(404, "Conversación no encontrada")
@@ -67,9 +72,12 @@ def eliminar_conversacion(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    """Elimina una conversación del usuario (y sus mensajes por CASCADE)"""
+    """Marca una conversación como eliminada (soft delete vía deleted_at)."""
     from app.models.conversacion import Conversacion
-    conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id).first()
+    conversacion = db.query(Conversacion).filter(
+        Conversacion.id == conversacion_id,
+        Conversacion.deleted_at == None  # noqa: E711
+    ).first()
 
     if not conversacion:
         raise HTTPException(404, "Conversación no encontrada")
@@ -77,7 +85,7 @@ def eliminar_conversacion(
     if conversacion.usuario_id != current_user.id:
         raise HTTPException(403, "No tienes acceso a esta conversación")
 
-    db.delete(conversacion)
+    conversacion.deleted_at = datetime.now(timezone.utc)
     db.commit()
 
     return {"success": True, "message": "Conversación eliminada"}

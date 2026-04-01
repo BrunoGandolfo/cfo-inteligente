@@ -30,14 +30,16 @@ class ConversacionService:
         """Obtiene una conversación con validación de propiedad"""
         return db.query(Conversacion).filter(
             Conversacion.id == conversacion_id,
-            Conversacion.usuario_id == usuario_id
+            Conversacion.usuario_id == usuario_id,
+            Conversacion.deleted_at == None  # noqa: E711
         ).first()
     
     @staticmethod
     def listar_conversaciones(db: Session, usuario_id: UUID, limit: int = 50) -> List[Conversacion]:
         """Lista conversaciones del usuario ordenadas por última actualización"""
         return db.query(Conversacion).filter(
-            Conversacion.usuario_id == usuario_id
+            Conversacion.usuario_id == usuario_id,
+            Conversacion.deleted_at == None  # noqa: E711
         ).order_by(desc(Conversacion.updated_at)).limit(limit).all()
     
     @staticmethod
