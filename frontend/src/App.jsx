@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import axios from 'axios';
-import Login from './pages/Login';
 import Home from './pages/Home';
 import Layout from './components/layout/Layout';
 import { Toaster } from 'react-hot-toast';
@@ -142,7 +141,7 @@ function App() {
         </>
       ) : currentPage === 'login' ? (
         <>
-          <Login onLoginSuccess={handleLoginSuccess} />
+          <Home onLoginSuccess={handleLoginSuccess} />
           <Toaster position="top-right" />
         </>
       ) : !token ? (

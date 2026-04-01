@@ -40,6 +40,7 @@ Thumbs.db
 /data/
 /uploads/
 *.sql
+!alembic/**/*.sql
 backend/chroma_db/
 ANALISIS_FORENSE_PDF_COMPLETO.md
 backend/output/
@@ -68,3 +69,8 @@ backend/logs/
 *.log.*
 backend/poc_*
 backend/certificado_*
+
+# Archivos temporales del arquitecto
+cookies.txt
+INFORME_*.md
+informe_*.md
