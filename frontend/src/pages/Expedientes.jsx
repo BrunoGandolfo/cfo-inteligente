@@ -104,7 +104,6 @@ function Expedientes() {
   };
 
   const handleVerHistoria = async (id) => {
-    console.log('handleVerHistoria llamado con id:', id);
     setShowHistoriaModal(true); // Mostrar modal primero (con loading)
     await fetchHistoria(id);
     // No cerrar si falla, el usuario puede cerrar manualmente
@@ -124,7 +123,6 @@ function Expedientes() {
   };
 
   const handleRowClick = async (id) => {
-    console.log('handleRowClick - ID:', id, 'Type:', typeof id);
     await fetchExpediente(id);
     // TODO: Abrir modal de detalle
     toast.info('Detalle de expediente (próximamente)');

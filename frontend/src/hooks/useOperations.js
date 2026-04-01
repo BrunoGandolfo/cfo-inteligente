@@ -13,7 +13,6 @@ export function useOperations(refreshKey) {
     try {
       setLoading(true);
       const { data } = await axiosClient.get('/api/operaciones', { params: { limit: 50 } });
-      console.log('📊 Operaciones cargadas:', data?.length || 0, data);
       setOperaciones(data || []);
     } catch (error) {
       console.error('❌ Error cargando operaciones:', error);
@@ -60,5 +59,4 @@ export function useOperations(refreshKey) {
   return { operaciones: filtered, operacionesAll: operaciones, loading, anular, refetch: fetchOperaciones };
 }
 export default useOperations;
-
 

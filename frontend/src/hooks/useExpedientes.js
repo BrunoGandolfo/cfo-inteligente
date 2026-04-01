@@ -206,15 +206,12 @@ export function useExpedientes() {
    * Obtiene la historia inteligente del expediente
    */
   const fetchHistoria = useCallback(async (id) => {
-    console.log('fetchHistoria llamado con id:', id);
     try {
       setLoadingHistoria(true);
       setHistoriaActual(null); // Limpiar historia anterior
       setError(null);
       
-      console.log('Llamando a API historia...');
       const { data } = await axiosClient.get(`/api/expedientes/${id}/historia`);
-      console.log('Historia recibida:', data);
       
       setHistoriaActual(data);
       return data;
