@@ -7,25 +7,11 @@ from app.core.database import get_db
 from app.core.rate_limiter import limiter
 from app.models import Usuario
 from app.core.security import verify_password, create_access_token, hash_password, get_current_user
+from app.core.access_control import (
+    SOCIOS_AUTORIZADOS, DOMINIO_DEFAULT, DOMINIOS_EXCEPCION, DOMINIOS_PERMITIDOS,
+)
 
 router = APIRouter()
-
-# ═══════════════════════════════════════════════════════════════
-# CONFIGURACIÓN DE DOMINIOS Y SOCIOS
-# ═══════════════════════════════════════════════════════════════
-
-# Dominio por defecto y excepciones
-DOMINIO_DEFAULT = "grupoconexion.uy"
-DOMINIOS_EXCEPCION = {
-    "bgandolfo": "cgmasociados.com"
-}
-
-# Lista de prefijos de email autorizados como socios
-SOCIOS_AUTORIZADOS = ["aborio", "falgorta", "vcaresani", "gtaborda", "bgandolfo"]
-
-# Dominios permitidos para registro (evita registro abierto con cualquier dominio)
-# Solo estos dominios pueden registrar; el email se construye con construir_email(prefijo).
-DOMINIOS_PERMITIDOS = ["cgmasociados.com", "grupoconexion.uy"]
 
 
 def _generar_password_temporal(length: int = 12) -> str:

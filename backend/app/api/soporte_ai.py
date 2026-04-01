@@ -115,29 +115,9 @@ def construir_mensajes(request: SoporteRequest, nombre_pila: str) -> list:
 # Cargar documentación al iniciar (solo una vez)
 DOCUMENTACION = cargar_documentacion()
 
-# ═══════════════════════════════════════════════════════════════
-# CONFIGURACIÓN DE ACCESO A MÓDULOS
-# ═══════════════════════════════════════════════════════════════
-
-# Listas de usuarios con acceso especial (replicadas aquí para evitar dependencias circulares)
-USUARIOS_ACCESO_EXPEDIENTES = [
-    "bgandolfo@cgmasociados.com",
-    "gtaborda@grupoconexion.uy",
-    "falgorta@grupoconexion.uy",
-    "gferrari@grupoconexion.uy",
-]
-
-USUARIOS_ACCESO_CASOS = [
-    "bgandolfo@cgmasociados.com",
-    "gtaborda@grupoconexion.uy",
-    "falgorta@grupoconexion.uy",
-    "gferrari@grupoconexion.uy",
-]
-
-USUARIOS_ACCESO_ALA = [
-    "bgandolfo@cgmasociados.com",
-    "gferrari@grupoconexion.uy",
-]
+from app.core.access_control import (
+    USUARIOS_ACCESO_EXPEDIENTES, USUARIOS_ACCESO_CASOS, USUARIOS_ACCESO_ALA,
+)
 
 
 def _obtener_modulos_usuario(usuario: Usuario) -> str:

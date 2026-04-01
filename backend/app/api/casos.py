@@ -19,31 +19,11 @@ from app.models.caso import Caso
 from app.models.expediente import Expediente
 from app.services import expediente_service
 from app.schemas.caso import CasoCreate, CasoUpdate, CasoResponse, CasoList
+from app.core.access_control import USUARIOS_ACCESO_CASOS, USUARIOS_FILTRO_CASOS
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/casos", tags=["casos"])
-
-
-# ============================================================================
-# CONFIGURACIÓN DE ACCESO
-# ============================================================================
-
-# Usuarios con acceso al módulo de Casos (SOLO estos 4)
-USUARIOS_ACCESO_CASOS = [
-    "bgandolfo@cgmasociados.com",  # Bruno
-    "gtaborda@grupoconexion.uy",   # Gonzalo
-    "falgorta@grupoconexion.uy",   # Pancho
-    "gferrari@grupoconexion.uy",   # Gerardo
-]
-
-# Usuarios que solo ven casos donde ellos son el responsable
-# Bruno NO está en esta lista → ve todos
-USUARIOS_FILTRO_CASOS = [
-    "gtaborda@grupoconexion.uy",
-    "falgorta@grupoconexion.uy",
-    "gferrari@grupoconexion.uy",
-]
 
 
 # ============================================================================

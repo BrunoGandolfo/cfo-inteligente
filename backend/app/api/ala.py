@@ -31,14 +31,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-# =============================================================================
-# CONFIGURACIÓN DE ACCESO
-# =============================================================================
-
-# Colaboradores con acceso completo a ALA (igual que un socio)
-COLABORADORES_ACCESO_COMPLETO_ALA = [
-    "gferrari@grupoconexion.uy",   # Gerardo
-]
+from app.core.access_control import COLABORADORES_ACCESO_COMPLETO_ALA
 
 
 # =============================================================================

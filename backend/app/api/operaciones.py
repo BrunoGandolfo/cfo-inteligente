@@ -17,10 +17,7 @@ from app.schemas.operacion import (
 from app.services import operacion_service
 from app.services.excel_export_service import generar_excel_operaciones
 import uuid
-
-# Colaboradores con acceso restringido a Operaciones (solo área Contable)
-EMAILS_OPERACIONES_CONTABLE = ["naraujo@grupoconexion.uy"]
-AREA_CONTABLE_ID = "14700c01-3b3d-49c6-8e2e-f3ebded1b1bb"
+from app.core.access_control import EMAILS_OPERACIONES_CONTABLE, AREA_CONTABLE_ID
 
 router = APIRouter()
 

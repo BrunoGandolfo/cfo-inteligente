@@ -18,6 +18,9 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models import Usuario
 from app.models.expediente import Expediente, ExpedienteMovimiento
+from app.core.access_control import (
+    USUARIOS_ACCESO_EXPEDIENTES, COLABORADORES_ACCESO_EXPEDIENTES, USUARIOS_FILTRO_EXPEDIENTES,
+)
 from app.services import expediente_service
 from app.services import twilio_service
 
@@ -157,33 +160,6 @@ class HistoriaResponse(BaseModel):
     total_movimientos: int
     generado_en: datetime
 
-
-# ============================================================================
-# CONFIGURACIÓN DE ACCESO
-# ============================================================================
-
-# Usuarios con acceso al módulo de Expedientes (SOLO estos 4)
-USUARIOS_ACCESO_EXPEDIENTES = [
-    "bgandolfo@cgmasociados.com",  # Bruno
-    "gtaborda@grupoconexion.uy",   # Gonzalo
-    "falgorta@grupoconexion.uy",   # Pancho
-    "gferrari@grupoconexion.uy",   # Gerardo
-]
-
-# Colaboradores con acceso especial a expedientes (mantener para compatibilidad)
-COLABORADORES_ACCESO_EXPEDIENTES = [
-    "gferrari@grupoconexion.uy",   # Gerardo
-    "falgorta@grupoconexion.uy",   # Pancho
-    "gtaborda@grupoconexion.uy",   # Gonzalo
-]
-
-# Usuarios que solo ven expedientes donde ellos son el responsable
-# Bruno NO está en esta lista → ve todos
-USUARIOS_FILTRO_EXPEDIENTES = [
-    "gferrari@grupoconexion.uy",
-    "falgorta@grupoconexion.uy",
-    "gtaborda@grupoconexion.uy",
-]
 
 
 # ============================================================================

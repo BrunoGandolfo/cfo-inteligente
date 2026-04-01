@@ -32,14 +32,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/contratos", tags=["contratos"])
 
 
-# ============================================================================
-# CONFIGURACIÓN DE ACCESO
-# ============================================================================
-
-# Colaboradores con acceso completo a Contratos (igual que un socio)
-COLABORADORES_ACCESO_CONTRATOS = [
-    "gferrari@grupoconexion.uy",   # Gerardo
-]
+from app.core.access_control import COLABORADORES_ACCESO_CONTRATOS
 
 
 # ============================================================================
