@@ -6,28 +6,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 import toast from 'react-hot-toast';
+import { USUARIOS_ACCESO_EXPEDIENTES_CASOS, USUARIOS_ACCESO_ALA, USUARIOS_ACCESO_NOTARIAL, USUARIOS_ACCESO_OPERACIONES_CONTABLE } from '../../utils/accessControl';
 
 export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onALAToggle, onDashboardToggle }) {
-  // Solo estos 4 usuarios ven Expedientes y Casos (NO usar esSocio como criterio)
-  const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
-    "bgandolfo@cgmasociados.com",  // Bruno
-    "gtaborda@grupoconexion.uy",   // Gonzalo
-    "falgorta@grupoconexion.uy",   // Pancho
-    "gferrari@grupoconexion.uy",   // Gerardo
-  ];
-  // Colaboradores con acceso completo al módulo ALA (igual que un socio)
-  const USUARIOS_ACCESO_ALA = [
-    "gferrari@grupoconexion.uy",   // Gerardo
-  ];
-  // Colaboradores con acceso al módulo Notarial (Contratos)
-  const USUARIOS_ACCESO_NOTARIAL = [
-    "gferrari@grupoconexion.uy",   // Gerardo
-  ];
-  // Colaboradores con acceso al módulo Operaciones (solo área Contable)
-  const USUARIOS_ACCESO_OPERACIONES_CONTABLE = [
-    "naraujo@grupoconexion.uy",    // Nicolás — solo área Contable
-  ];
-  
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const userName = localStorage.getItem('userName') || 'Usuario';
   const userEmail = localStorage.getItem('userEmail') || '';

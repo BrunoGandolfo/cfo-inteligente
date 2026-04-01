@@ -9,6 +9,7 @@ import { useState, useRef, useEffect } from 'react';
 import { HelpCircle, Send, RefreshCw, ArrowLeft, Scale, ChevronDown, ChevronUp, Users, Clock, Bell, BookOpen, AlertCircle, CheckCircle2, Plus, FileText } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { useSoporte } from '../hooks/useSoporte';
+import { USUARIOS_ACCESO_EXPEDIENTES_CASOS, USUARIOS_ACCESO_ALA } from '../utils/accessControl';
 
 export default function Soporte({ onNavigate }) {
   const [input, setInput] = useState('');
@@ -18,22 +19,9 @@ export default function Soporte({ onNavigate }) {
 
   // Detectar si es socio
   const esSocio = localStorage.getItem('esSocio')?.toLowerCase() === 'true';
-  
-  // Verificar acceso a Expedientes y Casos (igual que en Sidebar.jsx)
-  const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
-    "bgandolfo@cgmasociados.com",
-    "gtaborda@grupoconexion.uy",
-    "falgorta@grupoconexion.uy",
-    "gferrari@grupoconexion.uy",
-  ];
+
   const userEmail = localStorage.getItem('userEmail') || '';
   const veExpedientesYCasos = USUARIOS_ACCESO_EXPEDIENTES_CASOS.includes(userEmail.toLowerCase());
-  
-  // Verificar acceso a ALA
-  const USUARIOS_ACCESO_ALA = [
-    "bgandolfo@cgmasociados.com",
-    "gferrari@grupoconexion.uy",
-  ];
   const veALa = esSocio || USUARIOS_ACCESO_ALA.includes(userEmail.toLowerCase());
   
   // Estado para sección de documentación de Expedientes

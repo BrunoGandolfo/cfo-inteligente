@@ -11,12 +11,7 @@ import ModalIngreso from '../modals/ModalIngreso';
 import ModalGasto from '../modals/ModalGasto';
 import ModalRetiro from '../modals/ModalRetiro';
 import ModalDistribucion from '../modals/ModalDistribucion';
-
-// Colaboradores con acceso restringido a Operaciones (solo área Contable)
-const USUARIOS_ACCESO_OPERACIONES_CONTABLE = [
-  "naraujo@grupoconexion.uy",    // Nicolás — solo área Contable
-];
-const AREA_CONTABLE_ID = "14700c01-3b3d-49c6-8e2e-f3ebded1b1bb";
+import { USUARIOS_ACCESO_OPERACIONES_CONTABLE, AREA_CONTABLE_ID } from '../../utils/accessControl';
 
 export function OperationsPanel({ isOpen, onClose }) {
   const { refreshKey } = useMetrics();
