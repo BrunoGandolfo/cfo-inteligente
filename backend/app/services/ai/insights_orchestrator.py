@@ -50,7 +50,7 @@ class InsightsOrchestrator:
         "Rentabilidad operativa excelente: ..."
     """
     
-    def __init__(self, claude_client: ClaudeClient):
+    def __init__(self, claude_client: ClaudeClient) -> None:
         """
         Constructor con Dependency Injection.
         

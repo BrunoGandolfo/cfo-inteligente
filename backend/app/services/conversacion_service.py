@@ -1,14 +1,18 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
+"""Servicios CRUD para conversaciones y mensajes del chat CFO."""
+
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
-from datetime import datetime, timezone
+
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
 from app.models.conversacion import Conversacion, Mensaje
 
 
 class ConversacionService:
-    
+    """Encapsula la persistencia y armado de contexto conversacional."""
+
     @staticmethod
     def crear_conversacion(db: Session, usuario_id: UUID, titulo: Optional[str] = None) -> Conversacion:
         """Crea una nueva conversación"""
@@ -91,4 +95,3 @@ class ConversacionService:
         if len(pregunta) > 50:
             titulo += "..."
         return titulo
-

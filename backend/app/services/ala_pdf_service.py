@@ -32,7 +32,7 @@ def _formato_fecha(dt: datetime | None) -> str:
     return dt.strftime("%d/%m/%Y %H:%M")
 
 
-def _formato_fecha_corta(d) -> str:
+def _formato_fecha_corta(d: object | None) -> str:
     """Formatea date a dd/mm/yyyy."""
     if d is None:
         return "-"

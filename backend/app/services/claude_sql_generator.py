@@ -16,12 +16,17 @@ logger = get_logger(__name__)
 class ClaudeSQLGenerator:
     """Generador de SQL con system/user split: reglas como system, pregunta como user."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Inicializa el orquestador y el prompt de sistema persistente."""
         self._orchestrator = AIOrchestrator()
         self._system_prompt = build_sql_system_prompt()
         logger.info("ClaudeSQLGenerator inicializado con AIOrchestrator (system/user split)")
 
-    def generar_sql(self, pregunta: str, contexto: list = None) -> str:
+    def generar_sql(
+        self,
+        pregunta: str,
+        contexto: list[dict[str, str]] | None = None
+    ) -> str:
         """
         Genera SQL usando Claude con system/user split.
 
@@ -62,7 +67,7 @@ class ClaudeSQLGenerator:
             logger.error(f"Error en SQL Generator: {e}", exc_info=True)
             return f"ERROR: {str(e)}"
 
-    def _build_user_prompt(self, pregunta: str, contexto: list) -> str:
+    def _build_user_prompt(self, pregunta: str, contexto: list[dict[str, str]]) -> str:
         """Construye el user message: solo fecha, contexto conversacional y pregunta."""
         partes = [f"Fecha actual: {date.today().isoformat()}"]
 

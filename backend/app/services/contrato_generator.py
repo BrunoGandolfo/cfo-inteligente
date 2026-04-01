@@ -2,11 +2,10 @@
 Servicio para generar contratos DOCX completados.
 Reemplaza placeholders en documentos DOCX con valores proporcionados.
 """
+import logging
 from docx import Document
 from io import BytesIO
-import json
-import re
-import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +13,17 @@ logger = logging.getLogger(__name__)
 class ContratoGenerator:
     """Genera contratos DOCX reemplazando placeholders con valores"""
     
-    def __init__(self):
+    def __init__(self) -> None:
+        """Inicializa el generador de contratos DOCX."""
         logger.info("ContratoGenerator inicializado")
     
-    def generar(self, contenido_docx: bytes, campos_editables: dict, valores: dict) -> bytes:
+    def generar(
+        self,
+        contenido_docx: bytes,
+        campos_editables: dict[str, Any],
+        valores: dict[str, Any]
+    ) -> bytes:
+        """Genera un DOCX reemplazando placeholders con los valores provistos."""
         try:
             doc = Document(BytesIO(contenido_docx))
             
@@ -55,7 +61,8 @@ class ContratoGenerator:
             logger.error(f"ContratoGenerator: Error generando documento: {e}", exc_info=True)
             raise
     
-    def _reemplazar_primera_ocurrencia(self, doc, placeholder: str, valor: str) -> bool:
+    def _reemplazar_primera_ocurrencia(self, doc: object, placeholder: str, valor: str) -> bool:
+        """Reemplaza la primera aparición del placeholder en párrafos o tablas."""
         for paragraph in doc.paragraphs:
             if placeholder in paragraph.text:
                 texto_nuevo = paragraph.text.replace(placeholder, valor, 1)

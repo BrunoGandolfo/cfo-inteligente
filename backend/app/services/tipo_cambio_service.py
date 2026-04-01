@@ -1,9 +1,20 @@
-import requests
+"""Servicio para obtener el tipo de cambio USD/UYU con cache y fallback."""
+
+import logging
 from datetime import datetime, timedelta
 from typing import Dict
-import logging
+
+import requests
 
 logger = logging.getLogger(__name__)
+
+CACHE_TTL = timedelta(hours=24)
+DOLARAPI_TIMEOUT_SECONDS = 5
+FALLBACK_TIPO_CAMBIO = {
+    "compra": 40.00,
+    "venta": 40.50,
+    "promedio": 40.25,
+}
 
 # Cache mejorado que guarda TODOS los valores
 _cache = {
@@ -21,7 +32,7 @@ def obtener_tipo_cambio_actual() -> Dict[str, float]:
     """
     # Verificar cache (válido por 24 horas)
     if _cache["promedio"] and _cache["timestamp"]:
-        if datetime.now() - _cache["timestamp"] < timedelta(hours=24):
+        if datetime.now() - _cache["timestamp"] < CACHE_TTL:
             logger.info(f"Usando cache: Promedio={_cache['promedio']:.2f} UYU ({_cache['fuente']})")
             return {
                 "compra": _cache["compra"],
@@ -35,13 +46,13 @@ def obtener_tipo_cambio_actual() -> Dict[str, float]:
     try:
         response = requests.get(
             "https://uy.dolarapi.com/v1/cotizaciones/usd",
-            timeout=5
+            timeout=DOLARAPI_TIMEOUT_SECONDS
         )
 
         if response.status_code == 200:
             data = response.json()
-            valor_compra = float(data.get("compra", 40.00))
-            valor_venta = float(data.get("venta", 40.50))
+            valor_compra = float(data.get("compra", FALLBACK_TIPO_CAMBIO["compra"]))
+            valor_venta = float(data.get("venta", FALLBACK_TIPO_CAMBIO["venta"]))
             valor_promedio = (valor_compra + valor_venta) / 2
 
             # Guardar TODOS los valores en cache
@@ -67,9 +78,7 @@ def obtener_tipo_cambio_actual() -> Dict[str, float]:
     logger.warning("Usando valores fallback")
     
     return {
-        "compra": 40.00,
-        "venta": 40.50,
-        "promedio": 40.25,
+        **FALLBACK_TIPO_CAMBIO,
         "fuente": "fallback",
         "actualizado": datetime.now().isoformat()
     }

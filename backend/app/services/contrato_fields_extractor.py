@@ -11,7 +11,7 @@ Fecha: Enero 2026
 import json
 import re
 from datetime import datetime
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, Any
 
 from app.core.logger import get_logger
 from app.services.ai.claude_client import ClaudeClient
@@ -50,7 +50,7 @@ class ContratoFieldsExtractor:
         "direccion"
     ]
     
-    def __init__(self, claude_client: Optional[ClaudeClient] = None):
+    def __init__(self, claude_client: Optional[ClaudeClient] = None) -> None:
         """
         Constructor.
         

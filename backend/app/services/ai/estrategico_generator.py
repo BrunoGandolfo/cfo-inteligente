@@ -8,13 +8,16 @@ Autor: Sistema CFO Inteligente
 Fecha: Octubre 2025
 """
 
-from typing import Dict, Any
+from typing import TYPE_CHECKING, Dict, Any
 
 from app.services.ai.base_insight_generator import BaseInsightGenerator
 from app.services.ai.prompt_builder import build_estrategico_prompt, build_system_prompt
 from app.services.ai.response_parser import parse_insights_response, validate_insights
 from app.services.ai.fallback_generator import generate_estrategico_fallback
 from app.core.logger import get_logger
+
+if TYPE_CHECKING:
+    from app.services.ai.ai_orchestrator import AIOrchestrator as ClaudeClient
 
 logger = get_logger(__name__)
 
@@ -49,7 +52,8 @@ class EstrategicoInsightGenerator(BaseInsightGenerator):
     temperature = 0.4  # Ligeramente más creativo
     max_tokens = 700   # 4 insights ~100 palabras cada uno
     
-    def __init__(self, claude_client):
+    def __init__(self, claude_client: 'ClaudeClient') -> None:
+        """Inicializa el generador estratégico con un cliente Claude reutilizable."""
         super().__init__(claude_client)
         self.logger = logger
     

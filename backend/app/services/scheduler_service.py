@@ -4,7 +4,6 @@ Usa APScheduler con zona horaria Uruguay.
 """
 
 import logging
-import os
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
@@ -22,7 +21,7 @@ TZ_URUGUAY = pytz.timezone("America/Montevideo")
 scheduler = AsyncIOScheduler(timezone=TZ_URUGUAY)
 
 
-def tarea_sincronizar_expedientes():
+def tarea_sincronizar_expedientes() -> None:
     """Tarea programada: sincroniza expedientes y envía notificaciones."""
     logger.info("🕗 Ejecutando tarea programada: sincronización de expedientes")
     
@@ -40,12 +39,12 @@ def tarea_sincronizar_expedientes():
             enviar_notificaciones_pendientes(db)
             
     except Exception as e:
-        logger.error(f"❌ Error en tarea programada: {e}")
+        logger.error(f"❌ Error en tarea programada: {e}", exc_info=True)
     finally:
         db.close()
 
 
-def enviar_notificaciones_pendientes(db: Session):
+def enviar_notificaciones_pendientes(db: Session) -> None:
     """Envía notificaciones de movimientos pendientes a todos los socios."""
     from app.services.expediente_service import obtener_movimientos_sin_notificar, marcar_movimientos_notificados
     from app.services import twilio_service
@@ -68,7 +67,7 @@ def enviar_notificaciones_pendientes(db: Session):
         logger.error(f"❌ Falló el envío a todos los socios")
 
 
-def iniciar_scheduler():
+def iniciar_scheduler() -> None:
     """Inicia el scheduler con las tareas programadas."""
     # Tarea: sincronizar expedientes a las 7:30 AM Uruguay
     scheduler.add_job(
@@ -83,7 +82,7 @@ def iniciar_scheduler():
     logger.info("📅 Scheduler iniciado - Próxima ejecución: 7:30 AM (Uruguay)")
 
 
-def detener_scheduler():
+def detener_scheduler() -> None:
     """Detiene el scheduler."""
     if scheduler.running:
         scheduler.shutdown()

@@ -56,7 +56,11 @@ class ComparativoInsightGenerator(BaseInsightGenerator):
     temperature = 0.3  # Conservador, basado en datos concretos
     max_tokens = 650   # 3 insights ~100-120 palabras
     
-    def __init__(self, claude_client: 'ClaudeClient', metricas_anterior: Dict[str, Any] = None):
+    def __init__(
+        self,
+        claude_client: 'ClaudeClient',
+        metricas_anterior: Dict[str, Any] | None = None
+    ) -> None:
         """
         Constructor extendido para incluir métricas anteriores.
         

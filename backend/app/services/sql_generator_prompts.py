@@ -1,3 +1,5 @@
+"""Prompt de sistema y compatibilidad para generación SQL con Claude."""
+
 # ============================================================================
 # CFO Inteligente — System Prompt para Generacion SQL
 # Modelo: Claude Sonnet 4.5 | Temperature: 0 | PostgreSQL 15
@@ -598,8 +600,6 @@ def build_anthropic_system_blocks(fecha_actual: str, pregunta_usuario: str) -> l
 #
 # Se mantienen para no romper esos modulos. El prompt principal es SQL_SYSTEM_PROMPT.
 # ============================================================================
-
-from datetime import datetime
 
 DDL_CONTEXT = """
 <ddl>

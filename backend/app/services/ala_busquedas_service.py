@@ -11,7 +11,7 @@ Decreto 379/018 - Art. 44 C.4
 
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import anthropic
 import requests
@@ -96,7 +96,8 @@ def buscar_wikipedia(nombre_completo: str, nacionalidad: str = "UY") -> Dict[str
                             "url": summary_data.get("content_urls", {}).get("desktop", {}).get("page", f"https://es.wikipedia.org/wiki/{titulo}"),
                             "idioma": "ES",
                         })
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"No se pudo obtener resumen de Wikipedia ES para '{titulo}': {e}")
                     # Si falla obtener resumen, agregar sin él
                     resultados_encontrados.append({
                         "titulo": titulo,

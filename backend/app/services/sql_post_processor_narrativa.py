@@ -64,7 +64,7 @@ def _es_col_temporal(col: str) -> bool:
     return str(col).lower() in _COLS_TEMPORALES
 
 
-def _to_float(val) -> float:
+def _to_float(val: object) -> float:
     """Convierte Decimal/int/str a float. Retorna 0.0 si falla."""
     try:
         return float(val or 0)
@@ -199,7 +199,7 @@ def _etiquetar_meses(datos: list[dict]) -> list[dict]:
     return datos
 
 
-def _es_numero(val) -> bool:
+def _es_numero(val: object) -> bool:
     """True si el valor puede convertirse a número."""
     try:
         float(val)
@@ -404,31 +404,31 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
     lineas = []
 
     # --- Helpers de formato (mismos que informe_orquestador.py) ---
-    def fmt_uyu(v):
+    def fmt_uyu(v: object):
         try:
             return f"${int(round(float(v))):,}".replace(",", ".")
-        except Exception:
+        except (TypeError, ValueError):
             return "$0"
 
-    def fmt_usd(v):
+    def fmt_usd(v: object):
         try:
             return f"US$ {int(round(float(v))):,}".replace(",", ".")
-        except Exception:
+        except (TypeError, ValueError):
             return "US$ 0"
 
-    def fmt_pct(v):
+    def fmt_pct(v: object):
         try:
             return f"{float(v):.1f}%".replace(".", ",")
-        except Exception:
+        except (TypeError, ValueError):
             return "0,0%"
 
-    def fmt_num(v):
+    def fmt_num(v: object):
         try:
             f = float(v)
             if f == int(f):
                 return f"{int(f):,}".replace(",", ".")
             return f"{f:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        except Exception:
+        except (TypeError, ValueError):
             return str(v)
 
     # --- Detectar columnas disponibles ---
@@ -446,7 +446,7 @@ def post_procesar_resultado_sql(datos: list, pregunta: str = "") -> str:
     if col_principal and len(datos) > 1:
         try:
             total_general = sum(float(row.get(col_principal, 0) or 0) for row in datos)
-        except Exception:
+        except (TypeError, ValueError):
             total_general = None
 
     # --- Formatear cada fila ---

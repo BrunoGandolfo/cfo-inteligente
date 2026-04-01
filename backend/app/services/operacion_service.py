@@ -1,13 +1,24 @@
-from sqlalchemy.orm import Session
+"""Servicios de creación de operaciones financieras y movimientos de caja."""
+
+from datetime import date
+from decimal import Decimal
+from typing import Optional
+from uuid import UUID
+
 from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from app.models import Operacion, TipoOperacion, Moneda, Localidad, DistribucionDetalle, Socio
 from app.models.cliente import Cliente
 from app.models.proveedor import Proveedor
 from app.schemas.operacion import IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
-from decimal import Decimal
-from typing import Optional
 
-def _buscar_o_crear_cliente(db: Session, nombre: str, telefono: str = None):
+
+def _buscar_o_crear_cliente(
+    db: Session,
+    nombre: str,
+    telefono: Optional[str] = None
+) -> UUID:
     """Busca cliente por nombre exacto (case-insensitive). Si no existe, lo crea. Retorna el ID."""
     cliente = db.query(Cliente).filter(
         func.lower(Cliente.nombre) == nombre.strip().lower()
@@ -19,7 +30,11 @@ def _buscar_o_crear_cliente(db: Session, nombre: str, telefono: str = None):
     return cliente.id
 
 
-def _buscar_o_crear_proveedor(db: Session, nombre: str, telefono: str = None):
+def _buscar_o_crear_proveedor(
+    db: Session,
+    nombre: str,
+    telefono: Optional[str] = None
+) -> UUID:
     """Busca proveedor por nombre exacto (case-insensitive). Si no existe, lo crea. Retorna el ID."""
     proveedor = db.query(Proveedor).filter(
         func.lower(Proveedor.nombre) == nombre.strip().lower()
@@ -31,25 +46,29 @@ def _buscar_o_crear_proveedor(db: Session, nombre: str, telefono: str = None):
     return proveedor.id
 
 
-def calcular_montos(monto_original: Decimal, moneda_original: str, tipo_cambio: Decimal):
+def calcular_montos(
+    monto_original: Decimal,
+    moneda_original: str,
+    tipo_cambio: Decimal
+) -> tuple[Decimal, Decimal]:
+    """Retorna los montos equivalentes en UYU y USD para una operación simple."""
     if moneda_original == "UYU":
         return monto_original, monto_original / tipo_cambio
-    else:  # USD
-        return monto_original * tipo_cambio, monto_original
+    return monto_original * tipo_cambio, monto_original
 
 def _crear_operacion_base(
     db: Session,
     tipo_operacion: TipoOperacion,
-    fecha,
+    fecha: date,
     monto_original: Decimal,
     moneda_original: str,
     tipo_cambio: Decimal,
-    area_id,
+    area_id: UUID,
     localidad: str,
     descripcion: str,
     cliente: Optional[str] = None,
     proveedor: Optional[str] = None
-):
+) -> Operacion:
     """
     Función base para crear operaciones de tipo ingreso/gasto.
     Elimina duplicación entre crear_ingreso y crear_gasto.
@@ -90,7 +109,8 @@ def _crear_operacion_base(
     db.refresh(operacion)
     return operacion
 
-def crear_ingreso(db: Session, data: IngresoCreate):
+def crear_ingreso(db: Session, data: IngresoCreate) -> Operacion:
+    """Crea una operación de ingreso y vincula el cliente si corresponde."""
     operacion = _crear_operacion_base(
         db=db,
         tipo_operacion=TipoOperacion.INGRESO,
@@ -109,7 +129,8 @@ def crear_ingreso(db: Session, data: IngresoCreate):
         db.refresh(operacion)
     return operacion
 
-def crear_gasto(db: Session, data: GastoCreate):
+def crear_gasto(db: Session, data: GastoCreate) -> Operacion:
+    """Crea una operación de gasto y vincula el proveedor si corresponde."""
     operacion = _crear_operacion_base(
         db=db,
         tipo_operacion=TipoOperacion.GASTO,
@@ -128,7 +149,7 @@ def crear_gasto(db: Session, data: GastoCreate):
         db.refresh(operacion)
     return operacion
 
-def crear_retiro(db: Session, data: RetiroCreate):
+def crear_retiro(db: Session, data: RetiroCreate) -> Operacion:
     """
     Crear retiro de efectivo (movimiento financiero).
     
@@ -185,7 +206,7 @@ def crear_retiro(db: Session, data: RetiroCreate):
     db.refresh(operacion)
     return operacion
 
-def crear_distribucion(db: Session, data: DistribucionCreate):
+def crear_distribucion(db: Session, data: DistribucionCreate) -> Operacion:
     """
     Crear distribución de utilidades a socios (movimiento financiero).
     

@@ -38,7 +38,7 @@ class BaseInsightGenerator(ABC):
     temperature: float = 0.3
     max_tokens: int = 600
     
-    def __init__(self, claude_client: 'ClaudeClient'):
+    def __init__(self, claude_client: 'ClaudeClient') -> None:
         """
         Args:
             claude_client: Cliente Claude inyectado (DI)

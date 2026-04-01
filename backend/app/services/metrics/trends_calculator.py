@@ -11,11 +11,14 @@ Fecha: Octubre 2025
 from typing import List, Dict, Any, Optional
 from decimal import Decimal
 from app.models import Operacion
+from app.core.logger import get_logger
 from app.services.metrics.base_calculator import BaseCalculator
 from app.utils.stats_calculator import (
     linear_regression_with_confidence,
     calculate_moving_average
 )
+
+logger = get_logger(__name__)
 
 
 class TrendsCalculator(BaseCalculator):
@@ -56,7 +59,7 @@ class TrendsCalculator(BaseCalculator):
         historico_mensual: Optional[List[Decimal]] = None,
         totals_yoy: Optional[Dict[str, Decimal]] = None,
         totals_qoq: Optional[Dict[str, Decimal]] = None
-    ):
+    ) -> None:
         """
         Constructor con Dependency Injection.
         
@@ -319,7 +322,8 @@ class TrendsCalculator(BaseCalculator):
                 'meses_historico': n
             }
             
-        except Exception:
+        except Exception as e:
+            logger.warning(f"No se pudo calcular la proyección de 3 meses: {e}")
             # Si regresión falla (datos insuficientes, etc), retornar None
             return None
 

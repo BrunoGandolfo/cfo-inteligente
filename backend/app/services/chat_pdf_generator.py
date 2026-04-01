@@ -18,20 +18,24 @@ class ChatPDFGenerator:
     """Generador de PDF usando Pandoc + WeasyPrint."""
     
     OUTPUT_DIR = Path(__file__).parent.parent.parent / "output" / "chat_exports"
+    DEFAULT_TITLE = "Reporte CFO AI"
+    PANDOC_TIMEOUT_SECONDS = 60
     
-    def __init__(self):
+    def __init__(self) -> None:
+        """Prepara el directorio de salida para exportaciones PDF."""
         self.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     
     def generar(
         self,
         contenido_markdown: str,
         titulo_override: Optional[str] = None,
-        **kwargs
+        **kwargs: object
     ) -> Dict[str, Any]:
         """Genera PDF desde markdown usando Pandoc."""
         start = datetime.now()
+        _ = kwargs
         
-        titulo = titulo_override or "Reporte CFO AI"
+        titulo = titulo_override or self.DEFAULT_TITLE
         fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
         
         # Markdown con metadata
@@ -57,7 +61,7 @@ date: "{fecha}"
                 ['pandoc', md_path, '-o', str(pdf_path), '--pdf-engine=weasyprint'],
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=self.PANDOC_TIMEOUT_SECONDS
             )
             
             Path(md_path).unlink(missing_ok=True)
