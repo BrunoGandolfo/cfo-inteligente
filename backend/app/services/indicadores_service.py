@@ -18,6 +18,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any
 
+from app.core.constants import FALLBACK_COTIZACION_USD
+
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════
@@ -51,8 +53,8 @@ VALORES_ACTUALES = {
 
 # Fallback para cotizaciones si falla DolarApi (solo USD)
 COTIZACIONES_FALLBACK = {
-    "usd_compra": 43.50,
-    "usd_venta": 44.50,
+    "usd_compra": FALLBACK_COTIZACION_USD["compra"],
+    "usd_venta": FALLBACK_COTIZACION_USD["venta"],
 }
 
 # ═══════════════════════════════════════════════════════════════

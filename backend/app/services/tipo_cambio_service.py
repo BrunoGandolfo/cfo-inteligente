@@ -6,15 +6,13 @@ from typing import Dict
 
 import requests
 
+from app.core.constants import FALLBACK_COTIZACION_USD
+
 logger = logging.getLogger(__name__)
 
 CACHE_TTL = timedelta(hours=24)
 DOLARAPI_TIMEOUT_SECONDS = 5
-FALLBACK_TIPO_CAMBIO = {
-    "compra": 40.00,
-    "venta": 40.50,
-    "promedio": 40.25,
-}
+FALLBACK_TIPO_CAMBIO = FALLBACK_COTIZACION_USD
 
 # Cache mejorado que guarda TODOS los valores
 _cache = {

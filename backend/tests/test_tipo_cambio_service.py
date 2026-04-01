@@ -18,6 +18,7 @@ import requests
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
 from app.services import tipo_cambio_service
+from app.core.constants import FALLBACK_COTIZACION_USD
 from app.services.tipo_cambio_service import obtener_tipo_cambio_actual
 
 
@@ -204,36 +205,36 @@ class TestFallback:
         
         resultado = obtener_tipo_cambio_actual()
         
-        # Debe retornar valores fallback
-        assert resultado['compra'] == 40.00
-        assert resultado['venta'] == 40.50
-        assert resultado['promedio'] == 40.25
+        # Debe retornar valores fallback centralizados
+        assert resultado['compra'] == FALLBACK_COTIZACION_USD["compra"]
+        assert resultado['venta'] == FALLBACK_COTIZACION_USD["venta"]
+        assert resultado['promedio'] == FALLBACK_COTIZACION_USD["promedio"]
         assert resultado['fuente'] == 'fallback'
-    
+
     @patch('requests.get')
     def test_fallback_si_api_connection_error(self, mock_get):
         """Si no hay conexión, usar fallback"""
         mock_get.side_effect = requests.exceptions.ConnectionError("No internet")
-        
+
         resultado = obtener_tipo_cambio_actual()
-        
-        assert resultado['compra'] == 40.00
-        assert resultado['venta'] == 40.50
-        assert resultado['promedio'] == 40.25
+
+        assert resultado['compra'] == FALLBACK_COTIZACION_USD["compra"]
+        assert resultado['venta'] == FALLBACK_COTIZACION_USD["venta"]
+        assert resultado['promedio'] == FALLBACK_COTIZACION_USD["promedio"]
         assert resultado['fuente'] == 'fallback'
-    
+
     @patch('requests.get')
     def test_fallback_si_api_500(self, mock_get):
         """Si API retorna 500, usar fallback"""
         mock_response = Mock()
         mock_response.status_code = 500
         mock_get.return_value = mock_response
-        
+
         resultado = obtener_tipo_cambio_actual()
-        
-        assert resultado['promedio'] == 40.25
+
+        assert resultado['promedio'] == FALLBACK_COTIZACION_USD["promedio"]
         assert resultado['fuente'] == 'fallback'
-    
+
     @patch('requests.get')
     def test_fallback_si_api_response_invalida(self, mock_get):
         """Si respuesta JSON inválida, usar fallback"""
@@ -241,10 +242,10 @@ class TestFallback:
         mock_response.status_code = 200
         mock_response.json.side_effect = ValueError("JSON inválido")
         mock_get.return_value = mock_response
-        
+
         resultado = obtener_tipo_cambio_actual()
-        
-        assert resultado['promedio'] == 40.25
+
+        assert resultado['promedio'] == FALLBACK_COTIZACION_USD["promedio"]
         assert resultado['fuente'] == 'fallback'
     
     @patch('requests.get')

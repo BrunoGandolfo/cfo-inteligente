@@ -44,3 +44,15 @@ SOCIOS = ['Agustina', 'Viviana', 'Gonzalo', 'Pancho', 'Bruno']
 
 # Año actual del sistema
 ANIO_ACTUAL = datetime.now().year
+
+# ══════════════════════════════════════════════════════════════
+# COTIZACIÓN USD — FALLBACK
+# ══════════════════════════════════════════════════════════════
+
+# Valores de emergencia cuando DolarApi no responde.
+# Fuente única para tipo_cambio_service e indicadores_service.
+FALLBACK_COTIZACION_USD = {
+    "compra": 43.50,
+    "venta": 44.50,
+    "promedio": 44.00,
+}

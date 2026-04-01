@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from typing import Optional, Dict, List, Tuple, Any
 
 from zeep import Client, Settings
+from zeep.transports import Transport
 from zeep.helpers import serialize_object
 from zeep.exceptions import Fault, TransportError
 from sqlalchemy.orm import Session
@@ -60,7 +61,8 @@ def _obtener_cliente_soap() -> Client:
             strict=False,
             xml_huge_tree=True
         )
-        _soap_client = Client(WSDL_URL, settings=settings)
+        transport = Transport(timeout=TIMEOUT_SEGUNDOS, operation_timeout=TIMEOUT_SEGUNDOS)
+        _soap_client = Client(WSDL_URL, settings=settings, transport=transport)
         logger.info("Cliente SOAP inicializado correctamente")
     
     return _soap_client
