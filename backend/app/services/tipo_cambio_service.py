@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime, timedelta
-from typing import Optional, Dict
+from typing import Dict
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,12 +73,3 @@ def obtener_tipo_cambio_actual() -> Dict[str, float]:
         "fuente": "fallback",
         "actualizado": datetime.now().isoformat()
     }
-
-# TODO: Implementar función para BCU SOAP cuando se requiera fuente oficial
-def obtener_tipo_cambio_bcu() -> Optional[float]:
-    """
-    Futura implementación con BCU SOAP
-    Código de referencia en comentarios
-    """
-    # Ver investigación: código 2225 para USD billete
-    # Endpoint: https://cotizaciones.bcu.gub.uy/wscotizaciones/servlet/awsbcucotizaciones

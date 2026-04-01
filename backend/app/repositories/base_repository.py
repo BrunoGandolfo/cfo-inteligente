@@ -22,8 +22,8 @@ class BaseRepository(ABC, Generic[T]):
     Contrato base para repositorios.
     
     Generic[T] permite tipar modelo específico:
-    - OperationsRepository(BaseRepository[Operacion])
-    - AreasRepository(BaseRepository[Area])
+    - BaseRepository[Operacion]
+    - BaseRepository[Area]
     
     Encapsula queries SQLAlchemy.
     """

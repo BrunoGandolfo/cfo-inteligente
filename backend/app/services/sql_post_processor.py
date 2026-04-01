@@ -1,6 +1,6 @@
 """
 Post-procesador inteligente de SQL
-Modifica SQL generado por Vanna según patrones detectados en la pregunta
+Modifica SQL generado por el LLM según patrones detectados en la pregunta
 Principio: Convention over configuration, DRY, KISS
 """
 
@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 
 class SQLPostProcessor:
     """
-    Procesa y mejora SQL generado por Vanna basándose en la pregunta del usuario
+    Procesa y mejora SQL generado por el LLM basándose en la pregunta del usuario
     """
     
     @staticmethod
@@ -31,7 +31,7 @@ class SQLPostProcessor:
     @staticmethod
     def extraer_sql_de_texto(texto: str) -> Optional[str]:
         """
-        Extrae SQL de texto mezclado (como cuando Vanna genera ```sql...```)
+        Extrae SQL de texto mezclado (por ejemplo, cuando el modelo genera ```sql...```)
         """
         if not texto:
             return None
@@ -261,4 +261,3 @@ class SQLPostProcessor:
             'modificado': len(cambios) > 0,
             'cambios': cambios
         }
-

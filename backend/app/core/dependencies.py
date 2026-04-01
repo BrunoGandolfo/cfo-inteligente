@@ -12,10 +12,9 @@ import os
 from typing import Dict, Any
 from functools import lru_cache
 
-from sqlalchemy.orm import Session
 from fastapi import Depends
 
-from app.core.database import SessionLocal, get_db
+from app.core.database import get_db
 from app.services.ai.claude_client import ClaudeClient
 from app.core.logger import get_logger
 
@@ -117,34 +116,6 @@ def get_chart_config(paleta: str = 'moderna_2024') -> Dict[str, Any]:
     }
     
     return paletas.get(paleta, paletas['moderna_2024'])
-
-
-# ═══════════════════════════════════════════════════════════════
-# OPERATIONS REPOSITORY
-# ═══════════════════════════════════════════════════════════════
-
-def get_operations_repository(
-    db: Session = Depends(get_db)
-):
-    """
-    Provee repositorio de operaciones.
-    
-    Inyecta db session automáticamente.
-    
-    Args:
-        db: Session inyectada por Depends(get_db)
-        
-    Returns:
-        OperationsRepository configurado
-        
-    Uso:
-        @app.get("/...")
-        def endpoint(repo = Depends(get_operations_repository)):
-            ops = repo.get_by_period(...)
-    """
-    from app.repositories.operations_repository import OperationsRepository
-    
-    return OperationsRepository(db)
 
 
 # ═══════════════════════════════════════════════════════════════

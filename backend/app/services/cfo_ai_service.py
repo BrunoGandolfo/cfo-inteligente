@@ -1,5 +1,5 @@
 """
-Servicio que conecta Vanna (pregunta->SQL) con la ejecución real
+Servicio que conecta la generación de SQL con la ejecución real
 """
 import re
 from sqlalchemy import text

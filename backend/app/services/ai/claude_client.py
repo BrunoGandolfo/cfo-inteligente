@@ -1,9 +1,7 @@
 """
-ClaudeClient - Wrapper para IA con fallback multi-proveedor
+ClaudeClient - Wrapper de compatibilidad sobre AIOrchestrator
 
-Usa AIOrchestrator internamente para fallback automático:
-Claude → OpenAI → Gemini
-
+Usa AIOrchestrator internamente para centralizar el acceso a Claude.
 Mantiene compatibilidad con código existente.
 
 Autor: Sistema CFO Inteligente
@@ -20,16 +18,16 @@ logger = get_logger(__name__)
 
 class ClaudeClient:
     """
-    Wrapper de IA con fallback multi-proveedor.
+    Wrapper de IA sobre Claude.
     
-    Usa AIOrchestrator internamente para fallback automático:
-    1. Claude (Anthropic)
-    2. OpenAI
-    3. Gemini (Google)
+    Usa AIOrchestrator internamente para centralizar:
+    1. Cliente Anthropic
+    2. Reintentos
+    3. Logging y compatibilidad hacia atrás
     
     Features:
-    - Fallback automático entre proveedores
-    - Timeout configurable por proveedor
+    - Reintentos automáticos vía AIOrchestrator
+    - Timeout configurable
     - Logging detallado
     - Compatibilidad hacia atrás (misma firma de métodos)
     
@@ -62,14 +60,14 @@ class ClaudeClient:
     ):
         """
         Constructor.
-        Inicializa AIOrchestrator para fallback multi-proveedor.
+        Inicializa AIOrchestrator para acceso a Claude.
         
         Args:
             api_key: API key de Anthropic (ignorado, usa config)
             model: Modelo preferido (para logging)
             
         Raises:
-            ValueError: Si ningún proveedor de IA está disponible
+            ValueError: Si Claude no está disponible
         """
         self.model = model
         
@@ -78,16 +76,16 @@ class ClaudeClient:
             try:
                 from app.services.ai.ai_orchestrator import AIOrchestrator
                 ClaudeClient._orchestrator = AIOrchestrator()
-                logger.info("ClaudeClient: AIOrchestrator inicializado con fallback multi-proveedor")
+                logger.info("ClaudeClient: AIOrchestrator inicializado para Claude")
             except Exception as e:
                 logger.warning(f"ClaudeClient: No se pudo inicializar AIOrchestrator: {e}")
                 ClaudeClient._orchestrator = None
         
-        # Verificar que hay al menos un proveedor disponible
+        # Verificar disponibilidad de Claude
         if ClaudeClient._orchestrator and not ClaudeClient._orchestrator.is_available():
             raise ValueError(
-                "Ningún proveedor de IA disponible. "
-                "Configura al menos una API key: ANTHROPIC_API_KEY, OPENAI_API_KEY o GOOGLE_AI_KEY"
+                "Claude no disponible. "
+                "Configura ANTHROPIC_API_KEY."
             )
         
         logger.info(f"ClaudeClient inicializado (modelo preferido: {self.model})")
@@ -101,9 +99,7 @@ class ClaudeClient:
         system_prompt: Optional[str] = None
     ) -> str:
         """
-        Genera respuesta usando fallback multi-proveedor.
-        
-        Intenta: Claude → OpenAI → Gemini
+        Genera respuesta usando Claude vía AIOrchestrator.
         
         Args:
             prompt: Prompt de usuario
@@ -116,16 +112,14 @@ class ClaudeClient:
             String con respuesta
             
         Raises:
-            Exception: Si todos los proveedores fallan
-            
-        Nota: Con fallback, es menos probable que falle completamente.
+            Exception: Si Claude falla
         """
         logger.info(
             f"ClaudeClient.complete(): "
             f"temp={temperature}, max_tokens={max_tokens}, timeout={timeout}s"
         )
         
-        # Usar AIOrchestrator con fallback automático
+        # Usar AIOrchestrator para centralizar acceso a Claude
         if ClaudeClient._orchestrator:
             response_text = ClaudeClient._orchestrator.complete(
                 prompt=prompt,
@@ -138,10 +132,9 @@ class ClaudeClient:
             if response_text:
                 return response_text
             else:
-                # Todos los proveedores fallaron
-                raise Exception("Todos los proveedores de IA fallaron (Claude, OpenAI, Gemini)")
+                raise Exception("Claude no pudo responder después de los reintentos configurados")
         else:
-            raise ValueError("AIOrchestrator no inicializado - sin proveedores de IA")
+            raise ValueError("AIOrchestrator no inicializado - Claude no disponible")
     
     def complete_with_retry(
         self,
@@ -153,7 +146,7 @@ class ClaudeClient:
         system_prompt: Optional[str] = None
     ) -> str:
         """
-        Genera respuesta con reintentos (fallback ya incluido en cada intento).
+        Genera respuesta con reintentos.
         
         Útil para manejar errores transitorios (red, rate limits temporales).
         
@@ -208,7 +201,7 @@ class ClaudeClient:
         Retorna información del modelo actual.
         
         Returns:
-            Dict con info del modelo y proveedores disponibles
+            Dict con info del modelo y estado del orchestrator
         """
         info = {
             "model": self.model,

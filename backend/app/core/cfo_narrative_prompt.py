@@ -13,8 +13,8 @@ ARQUITECTURA:
 PATRONES ENTERPRISE APLICADOS:
 1. XML tags como delimitadores (patrón Claude Code / same.new)
 2. Rol + output contract al inicio (patrón Claude Code / Codex CLI)
-3. Reglas declarativas numeradas con NUNCA/SIEMPRE (patrón OpenAI Codex)
-4. Ejemplos few-shot con rationale (patrón OpenAI / Claude)
+3. Reglas declarativas numeradas con NUNCA/SIEMPRE
+4. Ejemplos few-shot con rationale
 5. Estático primero, dinámico al final (optimización prompt caching Anthropic)
 6. Formato adaptativo según complejidad (patrón v0 / Manus)
 

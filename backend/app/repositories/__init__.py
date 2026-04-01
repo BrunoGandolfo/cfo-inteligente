@@ -4,7 +4,7 @@ Repositories - Data Access Layer
 Implementa Repository Pattern para abstraer acceso a datos.
 """
 
-from .operations_repository import OperationsRepository
+from .base_repository import BaseRepository
 
-__all__ = ['OperationsRepository']
+__all__ = ['BaseRepository']
 

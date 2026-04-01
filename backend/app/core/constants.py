@@ -61,12 +61,6 @@ CLAUDE_MAX_TOKENS_INFORME = 12000
 CLAUDE_TEMPERATURE = 0.0  # Determinístico
 CLAUDE_TIMEOUT_SECONDS = 600
 
-# Vanna + GPT-3.5
-GPT_MODEL = "gpt-3.5-turbo"
-GPT_MAX_TOKENS = 1000
-GPT_TEMPERATURE = 0.0
-GPT_SEED = 42
-
 # ══════════════════════════════════════════════════════════════
 # TIMEOUTS Y REINTENTOS
 # ══════════════════════════════════════════════════════════════
@@ -77,7 +71,6 @@ HTTP_READ_TIMEOUT = 600
 HTTP_WRITE_TIMEOUT = 600
 
 # Reintentos
-MAX_REINTENTOS_VANNA = 2
 MAX_REINTENTOS_SQL = 3
 
 # Timeout por query (segundos)
