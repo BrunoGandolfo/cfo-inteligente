@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 import Card from '../ui/Card';
 
-export function IndicadorCard({ titulo, valor, subtitulo, icono: Icon, colorBorde, colorIcono }) {
+export function IndicadorCard({ titulo, valor, subtitulo, icono: Icon, colorBorde = 'border-blue-500', colorIcono = 'text-blue-500' }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -48,11 +48,6 @@ IndicadorCard.propTypes = {
   icono: PropTypes.elementType,
   colorBorde: PropTypes.string,
   colorIcono: PropTypes.string,
-};
-
-IndicadorCard.defaultProps = {
-  colorBorde: 'border-blue-500',
-  colorIcono: 'text-blue-500',
 };
 
 export default IndicadorCard;

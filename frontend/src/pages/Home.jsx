@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Shield, BarChart3, FileText, Users, Lock, CheckCircle, Mail } from 'lucide-react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
+import axiosClient from '../services/api/axiosClient';
 
 export default function Home({ onLoginSuccess }) {
   const [activeTab, setActiveTab] = useState('login');
@@ -34,7 +34,7 @@ export default function Home({ onLoginSuccess }) {
     setLoading(true);
     
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      const response = await axiosClient.post('/api/auth/login', {
         email: formData.email,
         password: formData.password
       });
@@ -63,7 +63,7 @@ export default function Home({ onLoginSuccess }) {
     }
     
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+      await axiosClient.post('/api/auth/register', {
         prefijo_email: registerData.usuario,
         nombre: registerData.nombre,
         password: registerData.password
@@ -109,14 +109,11 @@ export default function Home({ onLoginSuccess }) {
     setChangePasswordLoading(true);
     
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL || 'https://cfo-inteligente-production.up.railway.app'}/api/auth/cambiar-password-publico`,
-        {
-          prefijo_email: changePasswordData.usuario,
-          password_actual: changePasswordData.passwordActual,
-          password_nueva: changePasswordData.passwordNueva
-        }
-      );
+      await axiosClient.post('/api/auth/cambiar-password-publico', {
+        prefijo_email: changePasswordData.usuario,
+        password_actual: changePasswordData.passwordActual,
+        password_nueva: changePasswordData.passwordNueva
+      });
       
       toast.success('Contraseña actualizada. Ya podés iniciar sesión.');
       setShowChangePassword(false);

@@ -19,7 +19,7 @@ const formatearPesos = (valor) => {
   }).format(valor);
 };
 
-export function CalculadoraIRPF({ valorUI }) {
+export function CalculadoraIRPF({ valorUI = 6.4243 }) {
   const [precioCompra, setPrecioCompra] = useState('');
   const [precioVenta, setPrecioVenta] = useState('');
   const [uiCompra, setUiCompra] = useState('');
@@ -155,10 +155,6 @@ export function CalculadoraIRPF({ valorUI }) {
 
 CalculadoraIRPF.propTypes = {
   valorUI: PropTypes.number,
-};
-
-CalculadoraIRPF.defaultProps = {
-  valorUI: 6.4243,
 };
 
 export default CalculadoraIRPF;

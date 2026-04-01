@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useStreamingChat } from '../../hooks/useStreamingChat';
+import axiosClient from '../../services/api/axiosClient';
 
 export function ChatPanel({ isOpen, onClose }) {
   const [exportando, setExportando] = useState(null);
@@ -38,27 +39,17 @@ export function ChatPanel({ isOpen, onClose }) {
     try {
       setExportando(mensajeId);
       
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/cfo/export-pdf`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ mensaje_id: mensajeId })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Error exportando PDF');
-      }
-      
+      const response = await axiosClient.post('/api/cfo/export-pdf',
+        { mensaje_id: mensajeId },
+        { responseType: 'blob' }
+      );
+
       // Descargar el PDF
-      const blob = await response.blob();
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const disposition = response.headers.get('Content-Disposition');
+      const disposition = response.headers?.['content-disposition'];
       a.download = disposition?.split('filename=')[1]?.replace(/"/g, '') || 'reporte_cfo.pdf';
       document.body.appendChild(a);
       a.click();

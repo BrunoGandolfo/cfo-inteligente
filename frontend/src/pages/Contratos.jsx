@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useContratos } from '../hooks/useContratos';
+import axiosClient from '../services/api/axiosClient';
 import { FileText, ChevronDown, FileCheck } from 'lucide-react';
 
 function Contratos() {
@@ -86,25 +87,14 @@ function Contratos() {
     }
     
     try {
-      const token = localStorage.getItem('token');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      
-      const response = await fetch(`${API_URL}/api/contratos/${contratoSeleccionadoId}/generar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ valores: valoresCampos })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Error al generar contrato' }));
-        throw new Error(errorData.detail || `Error ${response.status}`);
-      }
-      
+      const response = await axiosClient.post(
+        `/api/contratos/${contratoSeleccionadoId}/generar`,
+        { valores: valoresCampos },
+        { responseType: 'blob' }
+      );
+
       // Descargar el archivo
-      const blob = await response.blob();
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

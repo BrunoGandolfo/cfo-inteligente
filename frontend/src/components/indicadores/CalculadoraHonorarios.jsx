@@ -18,7 +18,7 @@ const formatearPesos = (valor) => {
   }).format(valor);
 };
 
-export function CalculadoraHonorarios({ valorUR }) {
+export function CalculadoraHonorarios({ valorUR = 1841.56 }) {
   const [monto, setMonto] = useState('');
   const [resultado, setResultado] = useState(null);
 
@@ -95,10 +95,6 @@ export function CalculadoraHonorarios({ valorUR }) {
 
 CalculadoraHonorarios.propTypes = {
   valorUR: PropTypes.number,
-};
-
-CalculadoraHonorarios.defaultProps = {
-  valorUR: 1841.56,
 };
 
 export default CalculadoraHonorarios;

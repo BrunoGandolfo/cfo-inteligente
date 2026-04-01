@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import axios from 'axios';
 import Home from './pages/Home';
+import axiosClient from './services/api/axiosClient';
 import Layout from './components/layout/Layout';
 import { Toaster } from 'react-hot-toast';
 import WelcomeModal from './components/modals/WelcomeModal';
@@ -32,9 +32,7 @@ function App() {
 
     try {
       // Verificar token con endpoint /me (accesible por todos los usuarios)
-      await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axiosClient.get('/api/auth/me');
       setIsValidating(false);
       
       // ELIMINADO: Ya no usamos localStorage para el modal
@@ -59,15 +57,9 @@ function App() {
     // Iniciar fetch de frase en paralelo (sin await, no bloquea)
     setWelcomeFraseLoading(true);
     
-    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/frases/motivacional`, {
-      headers: { 
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(res => res.json())
-    .then(data => {
-      setWelcomeFrase(data.frase);
+    axiosClient.get('/api/frases/motivacional')
+    .then(res => {
+      setWelcomeFrase(res.data.frase);
       setWelcomeFraseLoading(false);
     })
     .catch(() => {
