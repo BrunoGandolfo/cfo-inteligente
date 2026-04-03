@@ -9,13 +9,8 @@ Fuente inicial: estudionotarialmachado.com (133 modelos)
 
 from sqlalchemy import Column, String, DateTime, Boolean, Text, Index, LargeBinary, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSON
-from app.core.database import Base
+from app.core.database import Base, utc_now
 import uuid
-from datetime import datetime, timezone
-
-
-def utc_now():
-    return datetime.now(timezone.utc)
 
 
 class Contrato(Base):

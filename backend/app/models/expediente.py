@@ -10,15 +10,10 @@ Solo socios pueden gestionar expedientes.
 from sqlalchemy import Column, String, Boolean, DateTime, Date, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.core.database import Base, utc_now
 import uuid
 import hashlib
-from datetime import datetime, timezone
 from typing import Tuple
-
-
-def utc_now():
-    return datetime.now(timezone.utc)
 
 
 def parsear_iue(iue: str) -> Tuple[int, int, int]:

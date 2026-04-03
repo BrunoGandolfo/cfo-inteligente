@@ -8,12 +8,7 @@ from sqlalchemy import Column, String, DateTime, Date, Boolean, Text, ForeignKey
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
-from app.core.database import Base
-from datetime import datetime, timezone
-
-
-def utc_now():
-    return datetime.now(timezone.utc)
+from app.core.database import Base, utc_now
 
 
 class VerificacionALA(Base):

@@ -5,14 +5,9 @@ Modelos para gestión de casos legales.
 from sqlalchemy import Column, String, DateTime, Date, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.core.database import Base, utc_now
 import uuid
 import enum
-from datetime import datetime, timezone
-
-
-def utc_now():
-    return datetime.now(timezone.utc)
 
 
 class EstadoCaso(enum.Enum):

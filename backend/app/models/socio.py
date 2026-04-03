@@ -2,12 +2,8 @@
 
 from sqlalchemy import Column, String, Boolean, DateTime, Numeric
 from sqlalchemy.dialects.postgresql import UUID
-from app.core.database import Base
+from app.core.database import Base, utc_now
 import uuid
-from datetime import datetime, timezone
-
-def utc_now():
-    return datetime.now(timezone.utc)
 
 class Socio(Base):
     """Socio del estudio. Define participación porcentual para distribuciones."""

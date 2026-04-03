@@ -3,12 +3,8 @@
 from sqlalchemy import Column, String, DateTime, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.core.database import Base
-from datetime import datetime, timezone
+from app.core.database import Base, utc_now
 import uuid
-
-def utc_now():
-    return datetime.now(timezone.utc)
 
 class Conversacion(Base):
     """Hilo de conversación de un usuario con el asistente CFO."""

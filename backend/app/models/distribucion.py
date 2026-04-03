@@ -3,12 +3,8 @@
 from sqlalchemy import Column, DateTime, Numeric, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.core.database import Base, utc_now
 import uuid
-from datetime import datetime, timezone
-
-def utc_now():
-    return datetime.now(timezone.utc)
 
 class DistribucionDetalle(Base):
     """Línea de distribución: monto asignado a un socio en una operación DISTRIBUCION."""
