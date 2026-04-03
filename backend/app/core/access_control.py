@@ -41,6 +41,13 @@ USUARIOS_ACCESO_CASOS = [
     "falgorta@grupoconexion.uy",
     "gferrari@grupoconexion.uy",
 ]
+# --- Jurisprudencia ---
+USUARIOS_ACCESO_JURISPRUDENCIA = [
+    "bgandolfo@cgmasociados.com",
+    "gtaborda@grupoconexion.uy",
+    "falgorta@grupoconexion.uy",
+    "gferrari@grupoconexion.uy",
+]
 # Usuarios que solo ven casos donde ellos son el responsable
 # Bruno NO está en esta lista → ve todos
 USUARIOS_FILTRO_CASOS = [

@@ -11,6 +11,13 @@ export const USUARIOS_ACCESO_EXPEDIENTES_CASOS = [
   'gferrari@grupoconexion.uy',
 ];
 
+export const USUARIOS_ACCESO_JURISPRUDENCIA = [
+  'bgandolfo@cgmasociados.com',
+  'gtaborda@grupoconexion.uy',
+  'falgorta@grupoconexion.uy',
+  'gferrari@grupoconexion.uy',
+];
+
 export const USUARIOS_ACCESO_ALA = [
   'bgandolfo@cgmasociados.com',
   'gferrari@grupoconexion.uy',

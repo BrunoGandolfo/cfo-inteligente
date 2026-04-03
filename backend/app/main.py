@@ -92,6 +92,8 @@ from app.api.casos import router as casos_router
 app.include_router(casos_router)
 from app.api.contratos import router as contratos_router
 app.include_router(contratos_router)
+from app.api import jurisprudencia
+app.include_router(jurisprudencia.router, prefix="/api/jurisprudencia", tags=["jurisprudencia"])
 
 from app.api.ala import router as ala_router
 app.include_router(ala_router, prefix="/api/ala", tags=["ALA - Anti Lavado"])
