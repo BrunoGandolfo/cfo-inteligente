@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # API Key - Usar Field(alias=...) para soportar MAYÚSCULAS en .env
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
     capsolver_api_key: str = Field(default="", alias="CAPSOLVER_API_KEY")
+    twilio_account_sid: str = Field(default="", alias="TWILIO_ACCOUNT_SID")
+    twilio_auth_token: str = Field(default="", alias="TWILIO_AUTH_TOKEN")
+    twilio_whatsapp_from: str = Field(default="whatsapp:+14155238886", alias="TWILIO_WHATSAPP_FROM")
+    twilio_notify_numbers: str = Field(default="", alias="TWILIO_NOTIFY_NUMBERS")
     
     # SQL Engine: "haiku" (pipeline completo) | "claude" (bypass directo a Claude)
     sql_engine: str = Field(default="claude", alias="SQL_ENGINE")

@@ -7,14 +7,15 @@ from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 import json
 from typing import List, Dict, Any, Optional
-import os
+
+from app.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
 # Configuración Twilio (desde variables de entorno)
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_WHATSAPP_FROM = os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
+TWILIO_ACCOUNT_SID = Settings().twilio_account_sid
+TWILIO_AUTH_TOKEN = Settings().twilio_auth_token
+TWILIO_WHATSAPP_FROM = Settings().twilio_whatsapp_from
 
 # Cliente Twilio (lazy initialization)
 _twilio_client: Optional[Client] = None
@@ -211,7 +212,7 @@ def notificar_a_todos_los_socios(movimientos: List[Dict[str, Any]]) -> Dict[str,
     Returns:
         Dict con resumen: enviados_ok, enviados_error, detalles
     """
-    numeros_str = os.getenv("TWILIO_NOTIFY_NUMBERS", "")
+    numeros_str = Settings().twilio_notify_numbers
     
     if not numeros_str:
         logger.warning("⚠️ TWILIO_NOTIFY_NUMBERS no configurado")

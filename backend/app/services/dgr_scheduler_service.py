@@ -8,13 +8,13 @@ por WhatsApp cuando hay novedades en trámites activos.
 import asyncio
 import json
 import logging
-import os
 import time
 from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from app.core.config import Settings
 from app.core.database import SessionLocal
 from app.models.tramite_dgr import TramiteDgr
 from app.services import twilio_service
@@ -60,7 +60,7 @@ def _aplicar_datos_dgr(tramite: TramiteDgr, datos: dict) -> None:
 
 def _obtener_numeros_notificacion() -> list[str]:
     """Lee la lista de números de WhatsApp desde el entorno."""
-    numeros_str = os.getenv("TWILIO_NOTIFY_NUMBERS", "")
+    numeros_str = Settings().twilio_notify_numbers
     return [numero.strip() for numero in numeros_str.split(",") if numero.strip()]
 
 
@@ -86,7 +86,7 @@ async def _tarea_monitorear_tramites_dgr_async() -> None:
     notificaciones_enviadas = 0
 
     try:
-        capsolver_api_key = os.getenv("CAPSOLVER_API_KEY")
+        capsolver_api_key = Settings().capsolver_api_key
         if not capsolver_api_key:
             logger.warning("CAPSOLVER_API_KEY no configurada; las consultas DGR pueden fallar")
 
