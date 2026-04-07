@@ -72,11 +72,39 @@ export function useTramitesDgr() {
 
       return data;
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail || err.message || 'Error al cargar trámites DGR';
+      const detail = err.response?.data?.detail;
+      const errorMsg = typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : err.message || 'Error al cargar trámites DGR';
       setError(errorMsg);
       toast.error(errorMsg);
       console.error('Error cargando trámites DGR:', err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Carga trámites pendientes de revisión
+   */
+  const fetchPendientes = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data } = await axiosClient.get('/api/tramites-dgr/pendientes');
+      const lista = Array.isArray(data)
+        ? data
+        : data.pendientes || data.items || data.results || [];
+
+      setPendientes(lista);
+
+      return data;
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMsg = typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : err.message || 'Error al cargar pendientes DGR';
+      setError(errorMsg);
+      toast.error(errorMsg);
+      console.error('Error cargando pendientes DGR:', err);
       return null;
     } finally {
       setLoading(false);
@@ -101,8 +129,8 @@ export function useTramitesDgr() {
 
         return data;
       } catch (err) {
-        const errorMsg =
-          err.response?.data?.detail || err.message || 'Error al crear trámite DGR';
+        const detail = err.response?.data?.detail;
+        const errorMsg = typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : err.message || 'Error al crear trámite DGR';
         setError(errorMsg);
         toast.error(errorMsg);
         console.error('Error creando trámite DGR:', err);
@@ -132,8 +160,8 @@ export function useTramitesDgr() {
 
         return data;
       } catch (err) {
-        const errorMsg =
-          err.response?.data?.detail || err.message || 'Error al sincronizar trámite DGR';
+        const detail = err.response?.data?.detail;
+        const errorMsg = typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : err.message || 'Error al sincronizar trámite DGR';
         setError(errorMsg);
         toast.error(errorMsg);
         console.error('Error sincronizando trámite DGR:', err);
@@ -169,8 +197,8 @@ export function useTramitesDgr() {
 
         return data;
       } catch (err) {
-        const errorMsg =
-          err.response?.data?.detail || err.message || 'Error al eliminar trámite DGR';
+        const detail = err.response?.data?.detail;
+        const errorMsg = typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : err.message || 'Error al eliminar trámite DGR';
         setError(errorMsg);
         toast.error(errorMsg);
         console.error('Error eliminando trámite DGR:', err);
@@ -181,34 +209,6 @@ export function useTramitesDgr() {
     },
     [fetchTramites, fetchPendientes]
   );
-
-  /**
-   * Carga trámites pendientes de revisión
-   */
-  const fetchPendientes = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data } = await axiosClient.get('/api/tramites-dgr/pendientes');
-      const lista = Array.isArray(data)
-        ? data
-        : data.pendientes || data.items || data.results || [];
-
-      setPendientes(lista);
-
-      return data;
-    } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail || err.message || 'Error al cargar pendientes DGR';
-      setError(errorMsg);
-      toast.error(errorMsg);
-      console.error('Error cargando pendientes DGR:', err);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   /**
    * Marca pendientes como notificados
@@ -228,8 +228,8 @@ export function useTramitesDgr() {
 
       return data;
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail || err.message || 'Error al marcar notificados DGR';
+      const detail = err.response?.data?.detail;
+      const errorMsg = typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(e => e.msg).join(', ') : err.message || 'Error al marcar notificados DGR';
       setError(errorMsg);
       toast.error(errorMsg);
       console.error('Error marcando notificados DGR:', err);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle, BarChart3, Scale, Briefcase, Shield } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';

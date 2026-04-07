@@ -34,9 +34,9 @@ function createTramiteForm() {
   };
 }
 
-function normalizeText(value = '') {
-  return value
-    .toString()
+function normalizeText(value) {
+  if (value == null) return '';
+  return String(value)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
