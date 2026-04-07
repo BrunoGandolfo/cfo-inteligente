@@ -1,0 +1,182 @@
+[
+  {
+    "tag": "DIV",
+    "id": "formBusqueda:j_id20",
+    "className": "rich-panel ",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formBusqueda:j_id20_body",
+    "className": "rich-panel-body ",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:0:j_id62",
+    "className": "rich-panel",
+    "childCount": 2
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:0:j_id62_header",
+    "className": "rich-panel-header",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:0:j_id62_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:0:j_id64",
+    "className": "rich-panel",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:0:j_id64_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:1:j_id62",
+    "className": "rich-panel",
+    "childCount": 2
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:1:j_id62_header",
+    "className": "rich-panel-header",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:1:j_id62_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:1:j_id64",
+    "className": "rich-panel",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:1:j_id64_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:2:j_id62",
+    "className": "rich-panel",
+    "childCount": 2
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:2:j_id62_header",
+    "className": "rich-panel-header",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:2:j_id62_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:2:j_id64",
+    "className": "rich-panel",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:2:j_id64_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:3:j_id62",
+    "className": "rich-panel",
+    "childCount": 2
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:3:j_id62_header",
+    "className": "rich-panel-header",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:3:j_id62_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:3:j_id64",
+    "className": "rich-panel",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:3:j_id64_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:4:j_id62",
+    "className": "rich-panel",
+    "childCount": 2
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:4:j_id62_header",
+    "className": "rich-panel-header",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:4:j_id62_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:4:j_id64",
+    "className": "rich-panel",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:4:j_id64_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:5:j_id62",
+    "className": "rich-panel",
+    "childCount": 2
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:5:j_id62_header",
+    "className": "rich-panel-header",
+    "childCount": 1
+  },
+  {
+    "tag": "DIV",
+    "id": "formResultados:grid:5:j_id62_body",
+    "className": "rich-panel-body",
+    "childCount": 1
+  }
+]

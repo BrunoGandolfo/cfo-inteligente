@@ -1,0 +1,568 @@
+{
+  "base_url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/busquedaSimple.seam",
+  "site_request_limit": 15,
+  "selector_css_exacto": "[id=\"j_id10:j_id11\"]",
+  "request_log": [
+    {
+      "resource_type": "document",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/busquedaSimple.seam"
+    },
+    {
+      "resource_type": "script",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg.ajax4jsf.javascript.AjaxScript"
+    },
+    {
+      "resource_type": "script",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg/ajax4jsf/javascript/scripts/form.js"
+    },
+    {
+      "resource_type": "script",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg.ajax4jsf.javascript.PrototypeScript"
+    },
+    {
+      "resource_type": "xhr",
+      "method": "POST",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/busquedaSimple.seam;jsessionid=900C274A94603D7B07AB84B128DACF59"
+    },
+    {
+      "resource_type": "document",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/busquedaSelectiva.seam?cid=89498"
+    },
+    {
+      "resource_type": "script",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg.ajax4jsf.javascript.AjaxScript"
+    },
+    {
+      "resource_type": "script",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg/ajax4jsf/javascript/scripts/form.js"
+    },
+    {
+      "resource_type": "script",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg.ajax4jsf.javascript.PrototypeScript"
+    },
+    {
+      "resource_type": "script",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/form.js"
+    },
+    {
+      "resource_type": "document",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/images/spacer.gif"
+    },
+    {
+      "resource_type": "document",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/images/spacer.gif"
+    },
+    {
+      "resource_type": "document",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/images/spacer.gif"
+    },
+    {
+      "resource_type": "document",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/images/spacer.gif"
+    },
+    {
+      "resource_type": "document",
+      "method": "GET",
+      "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/images/spacer.gif"
+    }
+  ],
+  "otros_links_descubiertos": [
+    {
+      "text": "Manual de Usuario",
+      "href": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/manual_BJNPUBLICA.pdf;jsessionid=900C274A94603D7B07AB84B128DACF59",
+      "id": "lnkManualUsuario",
+      "onclick": ""
+    },
+    {
+      "text": "Búsqueda Selectiva",
+      "href": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/busquedaSimple.seam#",
+      "id": "j_id10:j_id11",
+      "onclick": "A4J.AJAX.Submit('j_id10',event,{'ignoreDupResponses':true,'similarityGroupingId':'j_id10:j_id11','parameters':{'j_id10:j_id11':'j_id10:j_id11'} ,'eventsQueue':'colaEventos','actionUrl':'/BJNPUBLICA/busquedaSimple.seam;jsessionid=900C274A94603D7B07AB84B128DACF59'} );return false;"
+    }
+  ],
+  "filtros": [
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id18",
+      "id": "formBusqueda:j_id18_input",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:j_id23:fechaDesdeCalInputDate",
+      "id": "formBusqueda:j_id20:j_id23:fechaDesdeCalInputDate",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:j_id23:fechaDesdeCalInputCurrentDate",
+      "id": "formBusqueda:j_id20:j_id23:fechaDesdeCalInputCurrentDate",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorProcedimiento:ayudanteProc",
+      "id": "formBusqueda:j_id20:decorProcedimiento:ayudanteProc",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "image",
+      "name": "formBusqueda:j_id20:decorProcedimiento:btnLimpiarProcedimiento",
+      "id": "formBusqueda:j_id20:decorProcedimiento:btnLimpiarProcedimiento",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:decorProcedimiento:suggestAyudante_selection",
+      "id": "formBusqueda:j_id20:decorProcedimiento:suggestAyudante_selection",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorMateria:cbxMateriacomboboxField",
+      "id": "formBusqueda:j_id20:decorMateria:cbxMateriacomboboxField",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorMateria:cbxMateria\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:decorMateria:cbxMateriacomboBoxButtonBG",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorMateria:cbxMateria\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:decorMateria:cbxMateriacomboboxButton",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorMateria:cbxMateria\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:decorMateria:cbxMateria",
+      "id": "formBusqueda:j_id20:decorMateria:cbxMateriacomboboxValue",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorMateria:cbxMateria\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorMateria:MateriaBox",
+      "id": "formBusqueda:j_id20:decorMateria:MateriaBox",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorMateria:cbxMateria\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "image",
+      "name": "formBusqueda:j_id20:decorMateria:j_id59",
+      "id": "formBusqueda:j_id20:decorMateria:j_id59",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorMateria:cbxMateria\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:decorMateria:suggestMateria_selection",
+      "id": "formBusqueda:j_id20:decorMateria:suggestMateria_selection",
+      "row_text": "Richfaces.onAvailable('formBusqueda:j_id20:decorMateria:MateriaBox', function() { new RichFaces.Suggestion('formBusqueda','formBusqueda:j_id20:decorMateria:MateriaBox','formBusqueda:j_id20:decorMateria:suggestMateria',{'ignoreDupResponses':true,'onselect':function(suggestion,event){A4J.AJAX.Submit('formBusqueda',event,{'ignoreDupResponses':true,'similarityGroupingId':'formBusqueda:j_id20:decorMateria:suggestMateria:j_id62','parameters':{'ajaxSingle':'formBusqueda:j_id20:decorMateria:suggestMateria','formBusqueda:j_id20:decorMateria:suggestMateria:j_id62':'formBusqueda:j_id20:decorMateria:suggestMateria:j_id62'} ,'eventsQueue':'colaEventos'} )},'implicitEventsQueue':'formBusqueda:j_id20:decorMateria:suggestMateria','similarityGroupingId':'formBusqueda:j_id20:decorMateria:suggestMateria','parameters':{'ajaxSingle':'formBusqueda:j_id20:decorMateria:suggestMateria','formBusqueda:j_id20:decorMateria:suggestMateria':'formBusqueda:j_id20:decorMateria:suggestMateria'} ,'eventsQueue':'colaEventos'} ); });"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorFirmante:cbxFirmantecomboboxField",
+      "id": "formBusqueda:j_id20:decorFirmante:cbxFirmantecomboboxField",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorFirmante:cbxFirmante\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:decorFirmante:cbxFirmantecomboBoxButtonBG",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorFirmante:cbxFirmante\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:decorFirmante:cbxFirmantecomboboxButton",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorFirmante:cbxFirmante\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:decorFirmante:cbxFirmante",
+      "id": "formBusqueda:j_id20:decorFirmante:cbxFirmantecomboboxValue",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorFirmante:cbxFirmante\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorFirmante:FirmanteBox",
+      "id": "formBusqueda:j_id20:decorFirmante:FirmanteBox",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorFirmante:cbxFirmante\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "image",
+      "name": "formBusqueda:j_id20:decorFirmante:j_id76",
+      "id": "formBusqueda:j_id20:decorFirmante:j_id76",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorFirmante:cbxFirmante\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:decorFirmante:suggestFirmante_selection",
+      "id": "formBusqueda:j_id20:decorFirmante:suggestFirmante_selection",
+      "row_text": "Richfaces.onAvailable('formBusqueda:j_id20:decorFirmante:FirmanteBox', function() { new RichFaces.Suggestion('formBusqueda','formBusqueda:j_id20:decorFirmante:FirmanteBox','formBusqueda:j_id20:decorFirmante:suggestFirmante',{'ignoreDupResponses':true,'onselect':function(suggestion,event){A4J.AJAX.Submit('formBusqueda',event,{'ignoreDupResponses':true,'similarityGroupingId':'formBusqueda:j_id20:decorFirmante:suggestFirmante:j_id81','parameters':{'formBusqueda:j_id20:decorFirmante:suggestFirmante:j_id81':'formBusqueda:j_id20:decorFirmante:suggestFirmante:j_id81','ajaxSingle':'formBusqueda:j_id20:decorFirmante:suggestFirmante'} ,'eventsQueue':'colaEventos'} )},'implicitEventsQueue':'formBusqueda:j_id20:decorFirmante:suggestFirmante','similarityGroupingId':'formBusqueda:j_id20:decorFirmante:suggestFirmante','parameters':{'ajaxSingle':'formBusqueda:j_id20:decorFirmante:suggestFirmante','formBusqueda:j_id20:decorFirmante:suggestFirmante':'formBusqueda:j_id20:decorFirmante:suggestFirmante'} ,'eventsQueue':'colaEventos'} ); });"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorDiscorde:j_id94comboboxField",
+      "id": "formBusqueda:j_id20:decorDiscorde:j_id94comboboxField",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorDiscorde:j_id94\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:decorDiscorde:j_id94comboBoxButtonBG",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorDiscorde:j_id94\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:decorDiscorde:j_id94comboboxButton",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorDiscorde:j_id94\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:decorDiscorde:j_id94",
+      "id": "formBusqueda:j_id20:decorDiscorde:j_id94comboboxValue",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorDiscorde:j_id94\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorDiscorde:DiscordeBox",
+      "id": "formBusqueda:j_id20:decorDiscorde:DiscordeBox",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorDiscorde:j_id94\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "image",
+      "name": "formBusqueda:j_id20:decorDiscorde:btnLimpiarDiscorde",
+      "id": "formBusqueda:j_id20:decorDiscorde:btnLimpiarDiscorde",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorDiscorde:j_id94\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:decorDiscorde:suggestDiscorde_selection",
+      "id": "formBusqueda:j_id20:decorDiscorde:suggestDiscorde_selection",
+      "row_text": "Richfaces.onAvailable('formBusqueda:j_id20:decorDiscorde:DiscordeBox', function() { new RichFaces.Suggestion('formBusqueda','formBusqueda:j_id20:decorDiscorde:DiscordeBox','formBusqueda:j_id20:decorDiscorde:suggestDiscorde',{'ignoreDupResponses':true,'onselect':function(suggestion,event){A4J.AJAX.Submit('formBusqueda',event,{'ignoreDupResponses':true,'similarityGroupingId':'formBusqueda:j_id20:decorDiscorde:suggestDiscorde:j_id100','parameters':{'ajaxSingle':'formBusqueda:j_id20:decorDiscorde:suggestDiscorde','formBusqueda:j_id20:decorDiscorde:suggestDiscorde:j_id100':'formBusqueda:j_id20:decorDiscorde:suggestDiscorde:j_id100'} ,'eventsQueue':'colaEventos'} )},'implicitEventsQueue':'formBusqueda:j_id20:decorDiscorde:suggestDiscorde','similarityGroupingId':'formBusqueda:j_id20:decorDiscorde:suggestDiscorde','parameters':{'ajaxSingle':'formBusqueda:j_id20:decorDiscorde:suggestDiscorde','formBusqueda:j_id20:decorDiscorde:suggestDiscorde':'formBusqueda:j_id20:decorDiscorde:suggestDiscorde'} ,'eventsQueue':'colaEventos'} ); });"
+    },
+    {
+      "tag": "input",
+      "type": "checkbox",
+      "name": "formBusqueda:j_id20:j_id105:todosLosTipos",
+      "id": "formBusqueda:j_id20:j_id105:todosLosTipos",
+      "row_text": "Todas"
+    },
+    {
+      "tag": "textarea",
+      "type": "",
+      "name": "formBusqueda:j_id20:j_id120:cajaQuery",
+      "id": "formBusqueda:j_id20:j_id120:cajaQuery",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "button",
+      "name": "formBusqueda:j_id20:decorSede:j_id144",
+      "id": "formBusqueda:j_id20:decorSede:j_id144",
+      "row_text": "Todas las sedes"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:j_id147:fechaHastaCalInputDate",
+      "id": "formBusqueda:j_id20:j_id147:fechaHastaCalInputDate",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:j_id147:fechaHastaCalInputCurrentDate",
+      "id": "formBusqueda:j_id20:j_id147:fechaHastaCalInputCurrentDate",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:j_id160:ayudanteResumen",
+      "id": "formBusqueda:j_id20:j_id160:ayudanteResumen",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorRedactor:cbxRedactorcomboboxField",
+      "id": "formBusqueda:j_id20:decorRedactor:cbxRedactorcomboboxField",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorRedactor:cbxRedactor\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:decorRedactor:cbxRedactorcomboBoxButtonBG",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorRedactor:cbxRedactor\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:decorRedactor:cbxRedactorcomboboxButton",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorRedactor:cbxRedactor\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:decorRedactor:cbxRedactor",
+      "id": "formBusqueda:j_id20:decorRedactor:cbxRedactorcomboboxValue",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorRedactor:cbxRedactor\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorRedactor:RedactorBox",
+      "id": "formBusqueda:j_id20:decorRedactor:RedactorBox",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorRedactor:cbxRedactor\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "image",
+      "name": "formBusqueda:j_id20:decorRedactor:btnLimpiarRedactor",
+      "id": "formBusqueda:j_id20:decorRedactor:btnLimpiarRedactor",
+      "row_text": "Strutnew Richfaces.ComboBox(\"formBusqueda:j_id20:decorRedactor:cbxRedactor\",{'listOptions':{'itemsText':['AND','OR','NOT'] ,'listWidth':'55px'} ,'value':'AND'} );"
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:decorRedactor:suggestRedactor_selection",
+      "id": "formBusqueda:j_id20:decorRedactor:suggestRedactor_selection",
+      "row_text": "Richfaces.onAvailable('formBusqueda:j_id20:decorRedactor:RedactorBox', function() { new RichFaces.Suggestion('formBusqueda','formBusqueda:j_id20:decorRedactor:RedactorBox','formBusqueda:j_id20:decorRedactor:suggestRedactor',{'ignoreDupResponses':true,'onselect':function(suggestion,event){A4J.AJAX.Submit('formBusqueda',event,{'ignoreDupResponses':true,'similarityGroupingId':'formBusqueda:j_id20:decorRedactor:suggestRedactor:j_id185','parameters':{'ajaxSingle':'formBusqueda:j_id20:decorRedactor:suggestRedactor','formBusqueda:j_id20:decorRedactor:suggestRedactor:j_id185':'formBusqueda:j_id20:decorRedactor:suggestRedactor:j_id185'} ,'eventsQueue':'colaEventos'} )},'implicitEventsQueue':'formBusqueda:j_id20:decorRedactor:suggestRedactor','similarityGroupingId':'formBusqueda:j_id20:decorRedactor:suggestRedactor','parameters':{'formBusqueda:j_id20:decorRedactor:suggestRedactor':'formBusqueda:j_id20:decorRedactor:suggestRedactor','ajaxSingle':'formBusqueda:j_id20:decorRedactor:suggestRedactor'} ,'eventsQueue':'colaEventos'} ); });"
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:decorNumero:ayudanteNumero",
+      "id": "formBusqueda:j_id20:decorNumero:ayudanteNumero",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "checkbox",
+      "name": "formBusqueda:j_id20:decorImportancia:todasLasImportancias",
+      "id": "formBusqueda:j_id20:decorImportancia:todasLasImportancias",
+      "row_text": "Todas"
+    },
+    {
+      "tag": "input",
+      "type": "checkbox",
+      "name": "formBusqueda:j_id20:j_id209:j_id218",
+      "id": "",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "formBusqueda:j_id20:j_id223:cantPagcomboboxField",
+      "id": "formBusqueda:j_id20:j_id223:cantPagcomboboxField",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:j_id223:cantPagcomboBoxButtonBG",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": "",
+      "id": "formBusqueda:j_id20:j_id223:cantPagcomboboxButton",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda:j_id20:j_id223:cantPag",
+      "id": "formBusqueda:j_id20:j_id223:cantPagcomboboxValue",
+      "row_text": ""
+    },
+    {
+      "tag": "select",
+      "type": "",
+      "name": "formBusqueda:j_id20:j_id240:j_id248",
+      "id": "",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "button",
+      "name": "formBusqueda:j_id20:Search",
+      "id": "formBusqueda:j_id20:Search",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "submit",
+      "name": "formBusqueda:j_id20:j_id259",
+      "id": "",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "formBusqueda",
+      "id": "",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "autoScroll",
+      "id": "",
+      "row_text": ""
+    },
+    {
+      "tag": "input",
+      "type": "hidden",
+      "name": "javax.faces.ViewState",
+      "id": "javax.faces.ViewState",
+      "row_text": ""
+    }
+  ],
+  "dropdowns": [
+    {
+      "name": "formBusqueda:j_id20:j_id240:j_id248",
+      "id": "",
+      "row_text": "",
+      "options": [
+        "Relevancia",
+        "Fecha descendente",
+        "Fecha ascendente"
+      ]
+    }
+  ],
+  "structured_filters": {
+    "sedes": [],
+    "materias": [],
+    "tipos_resolucion": [],
+    "anios": [],
+    "fechas": [
+      "formbusqueda:j_id20:j_id23:fechadesdecalinputdate formbusqueda:j_id20:j_id23:fechadesdecalinputdate",
+      "formbusqueda:j_id20:j_id23:fechadesdecalinputcurrentdate formbusqueda:j_id20:j_id23:fechadesdecalinputcurrentdate",
+      "formbusqueda:j_id20:j_id147:fechahastacalinputdate formbusqueda:j_id20:j_id147:fechahastacalinputdate",
+      "formbusqueda:j_id20:j_id147:fechahastacalinputcurrentdate formbusqueda:j_id20:j_id147:fechahastacalinputcurrentdate"
+    ],
+    "importancias": []
+  },
+  "filtro_tests": [
+    {
+      "year": 2024,
+      "fecha_desde": "01/01/2024",
+      "fecha_hasta": "31/12/2024",
+      "total_resultados": null,
+      "pagina_actual": null,
+      "paginas_totales": null,
+      "resultados_en_pagina": 0,
+      "screenshot_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_test_2024.png",
+      "html_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_test_2024.html"
+    },
+    {
+      "year": 2023,
+      "fecha_desde": "01/01/2023",
+      "fecha_hasta": "31/12/2023",
+      "total_resultados": null,
+      "pagina_actual": null,
+      "paginas_totales": null,
+      "resultados_en_pagina": 0,
+      "screenshot_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_test_2023.png",
+      "html_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_test_2023.html"
+    },
+    {
+      "year": 2020,
+      "fecha_desde": "01/01/2020",
+      "fecha_hasta": "31/12/2020",
+      "total_resultados": null,
+      "pagina_actual": null,
+      "paginas_totales": null,
+      "resultados_en_pagina": 0,
+      "screenshot_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_test_2020.png",
+      "html_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_test_2020.html"
+    }
+  ],
+  "artifacts": [
+    {
+      "screenshot_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_01_inicial.png",
+      "html_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_01_inicial.html"
+    },
+    {
+      "screenshot_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_02_despues_click.png",
+      "html_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/selectiva_02_despues_click.html"
+    }
+  ],
+  "estado_inicial": {
+    "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/busquedaSimple.seam",
+    "title": "BJN Pública",
+    "dom_hash": "c31812ff0f04d55e8c9ec69cf0e1d6c188e59783b2c6759c862ca771e309ac1d",
+    "controls_count": 6
+  },
+  "busqueda_selectiva_link": {
+    "text": "Búsqueda Selectiva",
+    "href": "#",
+    "id": "j_id10:j_id11",
+    "onclick": "A4J.AJAX.Submit('j_id10',event,{'ignoreDupResponses':true,'similarityGroupingId':'j_id10:j_id11','parameters':{'j_id10:j_id11':'j_id10:j_id11'} ,'eventsQueue':'colaEventos','actionUrl':'/BJNPUBLICA/busquedaSimple.seam;jsessionid=900C274A94603D7B07AB84B128DACF59'} );return false;"
+  },
+  "despues_click": {
+    "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/busquedaSelectiva.seam?cid=89498",
+    "title": "BJN Pública",
+    "dom_hash": "29c5ac96484002e46552ef34d9d2799bd37c469c0eecf47479fa95f9452ceec2",
+    "controls_count": 53,
+    "cambio_dom": true,
+    "redirect": true
+  },
+  "mas_opciones_presente": false,
+  "estado_expandido": {
+    "url": "http://bjn.poderjudicial.gub.uy/BJNPUBLICA/busquedaSelectiva.seam?cid=89498",
+    "title": "BJN Pública",
+    "dom_hash": "29c5ac96484002e46552ef34d9d2799bd37c469c0eecf47479fa95f9452ceec2",
+    "controls_count": 53
+  },
+  "busqueda_selectiva_form_html_path": "/home/brunogandolfo/cfo-inteligente/backend/scripts/bjn_screenshots/busqueda_selectiva_form.html",
+  "total_site_requests": 15
+}
