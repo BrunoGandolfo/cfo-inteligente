@@ -249,10 +249,15 @@ async def listar_tramites(
     """
     logger.info(f"Listando trámites DGR - Usuario ID: {current_user.id}")
 
-    base_query = db.query(TramiteDgr).filter(
-        TramiteDgr.responsable_id == current_user.id,
-        TramiteDgr.deleted_at.is_(None),
-    )
+    if current_user.es_socio:
+        base_query = db.query(TramiteDgr).filter(
+            TramiteDgr.deleted_at.is_(None),
+        )
+    else:
+        base_query = db.query(TramiteDgr).filter(
+            TramiteDgr.responsable_id == current_user.id,
+            TramiteDgr.deleted_at.is_(None),
+        )
 
     if activo is not None:
         base_query = base_query.filter(TramiteDgr.activo == activo)

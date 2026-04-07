@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useContratos } from '../hooks/useContratos';
+import ModalDetalleTramite from '../components/modals/ModalDetalleTramite';
 import {
   REGISTROS_DGR,
   OFICINAS_DGR,
@@ -149,6 +150,8 @@ function Contratos() {
   const [activeTab, setActiveTab] = useState('contratos');
   const [tramiteModalOpen, setTramiteModalOpen] = useState(false);
   const [tramiteForm, setTramiteForm] = useState(createTramiteForm);
+  const [tramiteDetalleOpen, setTramiteDetalleOpen] = useState(false);
+  const [tramiteSeleccionado, setTramiteSeleccionado] = useState(null);
 
   // Cargar todos los contratos al montar (en múltiples llamadas si hay más de 100)
   useEffect(() => {
@@ -257,6 +260,16 @@ function Contratos() {
   const abrirModalTramite = () => {
     setTramiteForm(createTramiteForm());
     setTramiteModalOpen(true);
+  };
+
+  const abrirDetalleTramite = (tramite) => {
+    setTramiteSeleccionado(tramite);
+    setTramiteDetalleOpen(true);
+  };
+
+  const cerrarDetalleTramite = () => {
+    setTramiteDetalleOpen(false);
+    setTramiteSeleccionado(null);
   };
 
   const cerrarModalTramite = () => {
@@ -511,7 +524,11 @@ function Contratos() {
               const EstadoIcon = estadoMeta.icon;
 
               return (
-                <div key={tramite.id} className="p-4 md:p-6">
+                <div
+                  key={tramite.id}
+                  className="p-4 md:p-6 cursor-pointer transition-colors hover:bg-surface-alt/50"
+                  onClick={() => abrirDetalleTramite(tramite)}
+                >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex-1 space-y-4">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -562,7 +579,20 @@ function Contratos() {
                     <div className="flex flex-wrap gap-2 lg:justify-end">
                       <button
                         type="button"
-                        onClick={() => sincronizarTramite(tramite.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          abrirDetalleTramite(tramite);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-text-primary hover:bg-surface-alt"
+                      >
+                        Ver detalle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          sincronizarTramite(tramite.id);
+                        }}
                         disabled={loadingTramitesDgr}
                         className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-alt text-text-primary disabled:opacity-60 disabled:cursor-not-allowed"
                       >
@@ -571,7 +601,10 @@ function Contratos() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => eliminarTramite(tramite.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          eliminarTramite(tramite.id);
+                        }}
                         disabled={loadingTramitesDgr}
                         className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-danger/10 hover:text-danger disabled:opacity-60 disabled:cursor-not-allowed"
                       >
@@ -760,6 +793,12 @@ function Contratos() {
       </div>
 
       {activeTab === 'contratos' ? renderContratosTab() : renderSeguimientoRegistral()}
+
+      <ModalDetalleTramite
+        isOpen={tramiteDetalleOpen}
+        onClose={cerrarDetalleTramite}
+        tramite={tramiteSeleccionado}
+      />
     </div>
   );
 }
