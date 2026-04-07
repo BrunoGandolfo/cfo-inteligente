@@ -33,6 +33,8 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
+from bs4 import BeautifulSoup
+
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BACKEND_DIR.parent
 
@@ -413,9 +415,12 @@ def pause_active_batches(reason: str) -> None:
         db.close()
 
 
-def requeue_paused_batches(db) -> int:
+def requeue_paused_batches(db, year_filter: Optional[int] = None) -> int:
     """Treats paused batches as pending on the next run."""
-    batches = db.query(ScrapingProgress).filter(ScrapingProgress.estado == "paused").all()
+    query = db.query(ScrapingProgress).filter(ScrapingProgress.estado == "paused")
+    if year_filter is not None:
+        query = query.filter(ScrapingProgress.fecha_inicio == date(year_filter, 1, 1))
+    batches = query.all()
     for batch in batches:
         batch.estado = "pending"
         batch.worker_id = None
@@ -444,17 +449,20 @@ def batch_needs_enrichment(db, batch: ScrapingProgress) -> bool:
     return expected > 0 and enriched_in_db < expected
 
 
-def prepare_batches_for_enrichment(db, logger: logging.LoggerAdapter) -> int:
+def prepare_batches_for_enrichment(
+    db,
+    logger: logging.LoggerAdapter,
+    year_filter: Optional[int] = None,
+) -> int:
     """Requeues completed batches that still need full-text enrichment."""
     requeued = 0
-    requeued += requeue_paused_batches(db)
+    requeued += requeue_paused_batches(db, year_filter=year_filter)
 
-    completed_batches = (
-        db.query(ScrapingProgress)
-        .filter(ScrapingProgress.estado == "completed")
-        .order_by(ScrapingProgress.fecha_inicio.asc())
-        .all()
-    )
+    query = db.query(ScrapingProgress).filter(ScrapingProgress.estado == "completed")
+    if year_filter is not None:
+        query = query.filter(ScrapingProgress.fecha_inicio == date(year_filter, 1, 1))
+
+    completed_batches = query.order_by(ScrapingProgress.fecha_inicio.asc()).all()
 
     for batch in completed_batches:
         if not batch_needs_enrichment(db, batch):
@@ -1021,18 +1029,31 @@ async def execute_search_async(
     started_at = time.perf_counter()
     await page.goto(BASE_URL, wait_until="domcontentloaded", timeout=DEFAULT_TIMEOUT_MS)
     await observe_latency_async(controller, time.perf_counter() - started_at, logger, db, worker_id, progress_id=batch.id)
+    emit_log(logger, db, worker_id, "info", "search_step", "Navegación a BJN completada", progress_id=batch.id)
     await controller.async_sleep()
 
     await page.wait_for_function("typeof A4J !== 'undefined'", timeout=DEFAULT_TIMEOUT_MS)
+    emit_log(logger, db, worker_id, "info", "search_step", "A4J framework cargado", progress_id=batch.id)
     await page.locator(SELECTORS["link_busqueda_selectiva"]).click()
+    emit_log(logger, db, worker_id, "info", "search_step", "Click en búsqueda selectiva", progress_id=batch.id)
     await controller.async_sleep()
 
     started_at = time.perf_counter()
     await page.wait_for_url("**/busquedaSelectiva.seam?cid=*", timeout=DEFAULT_TIMEOUT_MS)
     await observe_latency_async(controller, time.perf_counter() - started_at, logger, db, worker_id, progress_id=batch.id)
+    emit_log(
+        logger,
+        db,
+        worker_id,
+        "info",
+        "search_step",
+        "Página de búsqueda selectiva cargada",
+        progress_id=batch.id,
+    )
     await controller.async_sleep()
 
     await page.locator(SELECTORS["fecha_desde"]).wait_for(timeout=DEFAULT_TIMEOUT_MS)
+    emit_log(logger, db, worker_id, "info", "search_step", "Formulario de búsqueda visible", progress_id=batch.id)
     await page.evaluate(
         """
         ({ hiddenSelector, fieldSelector, value }) => {
@@ -1053,9 +1074,19 @@ async def execute_search_async(
             "value": str(RESULTS_PER_PAGE),
         },
     )
+    emit_log(
+        logger,
+        db,
+        worker_id,
+        "info",
+        "search_step",
+        "Resultados por página configurado a 200",
+        progress_id=batch.id,
+    )
     await controller.async_sleep()
 
     await page.locator(SELECTORS["ordenar_por"]).select_option(ORDER_VALUE)
+    emit_log(logger, db, worker_id, "info", "search_step", "Orden configurado por fecha descendente", progress_id=batch.id)
     await controller.async_sleep()
 
     fecha_desde = batch.fecha_inicio.strftime("%d/%m/%Y")
@@ -1078,10 +1109,28 @@ async def execute_search_async(
         }""",
         {"selector": SELECTORS["fecha_hasta_hidden"], "value": month_year_from_date(fecha_hasta)},
     )
+    emit_log(
+        logger,
+        db,
+        worker_id,
+        "info",
+        "search_step",
+        f"Fechas configuradas: {fecha_desde} - {fecha_hasta}",
+        progress_id=batch.id,
+    )
     await controller.async_sleep()
 
     started_at = time.perf_counter()
     await page.locator(SELECTORS["buscar"]).click()
+    emit_log(
+        logger,
+        db,
+        worker_id,
+        "info",
+        "search_step",
+        "Click en buscar ejecutado, esperando resultados...",
+        progress_id=batch.id,
+    )
     await page.wait_for_function(
         """
         () => {
@@ -1102,6 +1151,7 @@ async def execute_search_async(
         progress_id=batch.id,
         evento="search_response",
     )
+    emit_log(logger, db, worker_id, "info", "search_step", "Resultados recibidos", progress_id=batch.id)
     await controller.async_sleep()
     await assert_not_session_expired_async(page)
 
@@ -1177,6 +1227,7 @@ async def popup_first_text(page: AsyncPage, selector: str) -> str:
     return normalize_space(await locator.first.inner_text(timeout=5_000))
 
 
+# Legacy: used as fallback if HTTP interception fails
 async def extract_popup_payload(popup: AsyncPage) -> dict[str, Any]:
     """Extracts supported sentencia fields from the Hoja de Insumo popup."""
     numero = await popup_first_text(popup, "table#j_id3 tbody td:nth-child(1)")
@@ -1213,6 +1264,65 @@ async def extract_popup_payload(popup: AsyncPage) -> dict[str, Any]:
     }
 
 
+def extract_payload_from_html(html: str) -> dict[str, Any]:
+    """Extracts sentencia fields directly from raw Hoja de Insumo HTML."""
+    soup = BeautifulSoup(html, "html.parser")
+
+    def first_text(selector: str) -> str:
+        match = soup.select_one(selector)
+        if match is None:
+            return ""
+        return normalize_space(match.get_text(" ", strip=True))
+
+    def text_list(selector: str) -> list[str]:
+        matches = soup.select(selector)
+        if not matches:
+            return []
+        return unique_texts(normalize_space(match.get_text(" ", strip=True)) for match in matches)
+
+    numero = first_text("table#j_id3 tbody td:nth-child(1)")
+    sede = first_text("table#j_id3 tbody td:nth-child(2)")
+    importancia = first_text("table#j_id3 tbody td:nth-child(3)")
+    tipo = first_text("table#j_id3 tbody td:nth-child(4)")
+    fecha_text = first_text("table#j_id21 tbody td:nth-child(1)")
+    materias = text_list("table#j_id35 tbody td")
+    firmantes = text_list("table#gridFirmantes tbody td")
+    redactores = text_list("table#gridRedactores tbody td")
+    abstract_text = first_text("table#j_id77 tbody td:nth-child(1)")
+    abstract_descriptores = first_text("table#j_id77 tbody td:nth-child(2)")
+    descriptores = unique_texts([abstract_descriptores] + text_list("table#j_id89 tbody td"))
+    resumen_items = text_list("table#j_id107 tbody td")
+    texto = first_text("span#textoSentenciaBox")
+    if not texto:
+        texto = first_text("#panelTextoSent_body")
+
+    return {
+        "numero": numero,
+        "sede": sede,
+        "importancia": importancia,
+        "tipo": tipo,
+        "fecha": parse_bjn_date(fecha_text),
+        "materias": materias,
+        "firmantes": firmantes,
+        "redactores": redactores,
+        "abstract": abstract_text,
+        "descriptores": descriptores,
+        "resumen_items": resumen_items,
+        "texto_completo": texto,
+    }
+
+
+async def close_additional_pages(current_page: AsyncPage) -> None:
+    """Closes popup pages left behind by BJN while keeping the results page open."""
+    for extra_page in list(current_page.context.pages):
+        if extra_page is current_page or extra_page.is_closed():
+            continue
+        try:
+            await extra_page.close()
+        except Exception:
+            continue
+
+
 async def process_sentence_row(
     page: AsyncPage,
     db,
@@ -1223,7 +1333,7 @@ async def process_sentence_row(
     logger: logging.LoggerAdapter,
     worker_id: str,
 ) -> None:
-    """Opens a sentencia popup, extracts full data and persists it with retries."""
+    """Opens a sentencia popup, parses its HTML and persists the full payload with retries."""
     row_index = row["index"]
     selector = SELECTORS["popup_click_pattern"].format(index=row_index)
     last_exception: Optional[BaseException] = None
@@ -1232,6 +1342,16 @@ async def process_sentence_row(
         ensure_not_shutdown()
         popup: Optional[AsyncPage] = None
         try:
+            emit_log(
+                logger,
+                db,
+                worker_id,
+                "info",
+                "sentence_start",
+                f"Procesando sentencia fila {row_index} página {page_number}",
+                progress_id=batch.id,
+            )
+
             async with page.expect_popup(timeout=DEFAULT_TIMEOUT_MS) as popup_info:
                 await page.locator(selector).click()
             popup = await popup_info.value
@@ -1253,7 +1373,9 @@ async def process_sentence_row(
             )
             await controller.async_sleep()
 
-            payload = await extract_popup_payload(popup)
+            html = await popup.content()
+            payload = extract_payload_from_html(html)
+
             numero = payload["numero"] or row["numero"]
             sede = payload["sede"] or row["sede"]
             sentencia_fecha = payload["fecha"] or row["fecha"]
@@ -1277,20 +1399,24 @@ async def process_sentence_row(
             resolve_matching_failure(db, batch.id, page_number, row_index)
             if popup is not None:
                 await popup.close()
+            await close_additional_pages(page)
             await controller.async_sleep()
             return
         except GracefulShutdownRequested:
             if popup is not None:
                 await popup.close()
+            await close_additional_pages(page)
             raise
         except SessionExpiredError:
             if popup is not None:
                 await popup.close()
+            await close_additional_pages(page)
             raise
         except Exception as exc:
             last_exception = exc
             if popup is not None:
                 await popup.close()
+            await close_additional_pages(page)
             if attempt >= SENTENCE_MAX_ATTEMPTS:
                 break
             backoff = SENTENCE_RETRY_BACKOFFS[min(attempt - 1, len(SENTENCE_RETRY_BACKOFFS) - 1)]
@@ -1367,6 +1493,15 @@ async def process_enrichment_batch(
             total_results = overview["total_results"] or 0
             total_pages = overview["total_pages"] or 0
             resume_page = max((batch.pagina_actual or 0) + 1, 1)
+            emit_log(
+                logger,
+                db,
+                worker_id,
+                "info",
+                "search_completed",
+                f"Búsqueda completada: {total_results} resultados en {total_pages} páginas",
+                progress_id=batch.id,
+            )
 
             if total_results == 0:
                 ScrapingProgressService.update_progress(
@@ -1403,6 +1538,15 @@ async def process_enrichment_batch(
                 page_overview = parse_results_overview_from_text(body_text)
                 current_page = page_overview["current_page"] or resume_page
                 rows = await extract_result_rows_async(page)
+                emit_log(
+                    logger,
+                    db,
+                    worker_id,
+                    "info",
+                    "page_processing",
+                    f"Procesando página {current_page}/{total_pages}, {len(rows)} sentencias en esta página",
+                    progress_id=batch.id,
+                )
 
                 for row in rows:
                     await process_sentence_row(page, db, batch, current_page, row, controller, logger, worker_id)
@@ -1641,7 +1785,7 @@ async def enrichment_worker(worker_number: int, browser: Browser) -> None:
         ACTIVE_WORKER_IDS.discard(worker_id)
 
 
-async def run_enrichment_async(workers: int) -> None:
+async def run_enrichment_async(workers: int, year_filter: Optional[int] = None) -> None:
     """Entry point for the asynchronous enrichment phase."""
     global ASYNC_SHUTDOWN_EVENT
 
@@ -1649,7 +1793,9 @@ async def run_enrichment_async(workers: int) -> None:
     db = SessionLocal()
     try:
         ScrapingProgressService.initialize_partitions(db, INVENTORY_YEAR_START, INVENTORY_YEAR_END)
-        prepare_batches_for_enrichment(db, main_logger)
+        if year_filter is not None:
+            main_logger.info(f"Enriquecimiento limitado al año {year_filter}")
+        prepare_batches_for_enrichment(db, main_logger, year_filter=year_filter)
     finally:
         db.close()
 
@@ -1679,6 +1825,12 @@ def parse_args() -> argparse.Namespace:
         help="Cantidad de workers para enriquecimiento (default: 4)",
     )
     parser.add_argument(
+        "--year",
+        type=int,
+        default=None,
+        help="Limitar enriquecimiento a un año específico (ej: --year 1992)",
+    )
+    parser.add_argument(
         "--status",
         action="store_true",
         help="Muestra progreso actual sin ejecutar scraping",
@@ -1702,7 +1854,7 @@ def main() -> int:
         if args.fase == "inventario":
             run_inventory()
         elif args.fase == "enriquecimiento":
-            asyncio.run(run_enrichment_async(max(args.workers, 1)))
+            asyncio.run(run_enrichment_async(max(args.workers, 1), year_filter=args.year))
         return 0
     except GracefulShutdownRequested:
         pause_active_batches("Paused by signal")
