@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 import pytz
 
 from app.core.database import SessionLocal
+from app.services.dgr_scheduler_service import tarea_monitorear_tramites_dgr
 from app.services.expediente_service import sincronizar_todos_los_expedientes
 
 logger = logging.getLogger(__name__)
@@ -77,9 +78,19 @@ def iniciar_scheduler() -> None:
         name="Sincronización diaria de expedientes",
         replace_existing=True
     )
+
+    # Tarea: monitorear trámites DGR cada 4 horas
+    scheduler.add_job(
+        tarea_monitorear_tramites_dgr,
+        "interval",
+        hours=4,
+        id="monitorear_tramites_dgr",
+        name="Monitorear trámites DGR",
+        replace_existing=True,
+    )
     
     scheduler.start()
-    logger.info("📅 Scheduler iniciado - Próxima ejecución: 7:30 AM (Uruguay)")
+    logger.info("📅 Scheduler iniciado - Expedientes 7:30 AM, DGR cada 4 horas (Uruguay)")
 
 
 def detener_scheduler() -> None:
