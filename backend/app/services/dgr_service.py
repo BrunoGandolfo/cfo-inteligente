@@ -6,12 +6,12 @@ en https://www.dgr.gub.uy/Consulta_Tramites/servlet/dgr.gub.uy.consultatramite.c
 
 import json
 import logging
-import os
 import time
 from typing import Optional
 
 import httpx
 from playwright.async_api import async_playwright
+from app.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,8 @@ async def resolver_recaptcha(site_url: str, site_key: str) -> Optional[str]:
     Returns:
         Token gRecaptchaResponse o None si falla.
     """
-    api_key = os.getenv("CAPSOLVER_API_KEY")
+    settings = Settings()
+    api_key = settings.capsolver_api_key
     if not api_key:
         logger.error("CAPSOLVER_API_KEY no configurada")
         return None

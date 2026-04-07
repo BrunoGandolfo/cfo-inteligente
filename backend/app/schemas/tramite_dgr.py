@@ -51,7 +51,6 @@ class TramiteDgrCreate(BaseModel):
     anio: int
     numero_entrada: int
     bis: Optional[str] = ""
-    responsable_id: UUID
 
 
 class TramiteDgrUpdate(BaseModel):

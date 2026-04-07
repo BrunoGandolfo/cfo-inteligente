@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     
     # API Key - Usar Field(alias=...) para soportar MAYÚSCULAS en .env
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
+    capsolver_api_key: str = Field(default="", alias="CAPSOLVER_API_KEY")
     
     # SQL Engine: "haiku" (pipeline completo) | "claude" (bypass directo a Claude)
     sql_engine: str = Field(default="claude", alias="SQL_ENGINE")
