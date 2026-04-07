@@ -1,3 +1,4 @@
+from app.schemas.doctrina import DoctrinaBase, DoctrinaCreate, DoctrinaResponse
 from app.schemas.scraping_progress import (
     OverallScrapingProgress,
     ScrapingFailureCreate,
@@ -9,6 +10,9 @@ from app.schemas.scraping_progress import (
 )
 
 __all__ = [
+    "DoctrinaBase",
+    "DoctrinaCreate",
+    "DoctrinaResponse",
     "OverallScrapingProgress",
     "ScrapingFailureCreate",
     "ScrapingFailureRead",

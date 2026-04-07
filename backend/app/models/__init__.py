@@ -9,6 +9,7 @@ from app.models.conversacion import Conversacion, Mensaje
 from app.models.expediente import Expediente, ExpedienteMovimiento
 from app.models.caso import Caso, EstadoCaso, PrioridadCaso
 from app.models.contrato import Contrato
+from app.models.doctrina import Doctrina
 from app.models.sentencia import Sentencia
 from app.models.scraping_progress import ScrapingProgress, ScrapingFailure, ScrapingLog
 from app.models.verificacion_ala import VerificacionALA, ListaALAMetadata
@@ -32,6 +33,7 @@ __all__ = [
     "EstadoCaso",
     "PrioridadCaso",
     "Contrato",
+    "Doctrina",
     "Sentencia",
     "ScrapingProgress",
     "ScrapingFailure",
