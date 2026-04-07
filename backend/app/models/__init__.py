@@ -12,6 +12,7 @@ from app.models.contrato import Contrato
 from app.models.doctrina import Doctrina
 from app.models.sentencia import Sentencia
 from app.models.scraping_progress import ScrapingProgress, ScrapingFailure, ScrapingLog
+from app.models.tramite_dgr import TramiteDgr
 from app.models.verificacion_ala import VerificacionALA, ListaALAMetadata
 
 __all__ = [
@@ -38,6 +39,7 @@ __all__ = [
     "ScrapingProgress",
     "ScrapingFailure",
     "ScrapingLog",
+    "TramiteDgr",
     "VerificacionALA",
     "ListaALAMetadata",
 ]

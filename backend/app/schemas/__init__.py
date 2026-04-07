@@ -1,4 +1,9 @@
 from app.schemas.doctrina import DoctrinaBase, DoctrinaCreate, DoctrinaResponse
+from app.schemas.tramite_dgr import (
+    TramiteDgrCreate,
+    TramiteDgrResponse,
+    TramiteDgrUpdate,
+)
 from app.schemas.scraping_progress import (
     OverallScrapingProgress,
     ScrapingFailureCreate,
@@ -20,4 +25,7 @@ __all__ = [
     "ScrapingLogRead",
     "ScrapingProgressRead",
     "ScrapingProgressUpdate",
+    "TramiteDgrCreate",
+    "TramiteDgrResponse",
+    "TramiteDgrUpdate",
 ]
