@@ -686,7 +686,7 @@ function Contratos() {
                           eliminarTramite(tramite.id);
                         }}
                         disabled={loadingTramitesDgr}
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-danger/10 hover:text-danger disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-danger/30 bg-surface text-danger hover:bg-danger/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <Trash2 className="w-4 h-4" />
                         Eliminar

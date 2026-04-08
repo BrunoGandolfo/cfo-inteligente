@@ -19,6 +19,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models import Usuario
 from app.models.tramite_dgr import TramiteDgr
+from app.models.tramite_dgr_historial import TramiteDgrHistorial
 from app.schemas.tramite_dgr import (
     OFICINAS_DGR,
     REGISTROS_DGR,
@@ -372,6 +373,15 @@ async def eliminar_tramite(
     logger.info(f"Eliminando trámite DGR {tramite_id} - Usuario ID: {current_user.id}")
 
     tramite = _obtener_tramite(db, tramite_id, current_user)
+
+    historial = TramiteDgrHistorial(
+        tramite_dgr_id=tramite.id,
+        campo_modificado="eliminado",
+        valor_anterior="activo",
+        valor_nuevo="eliminado",
+        detectado_en=datetime.now(timezone.utc),
+    )
+    db.add(historial)
 
     # Soft delete
     tramite.deleted_at = datetime.now(timezone.utc)
