@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -24,16 +24,19 @@ from app.services.dgr_service import consultar_tramite_dgr
 logger = logging.getLogger(__name__)
 
 
-def _parse_fecha_ingreso(fecha_str: Optional[str]):
-    """Parsea fecha_ingreso devuelta por la DGR."""
-    if not fecha_str:
+def _parse_fecha_ingreso(valor):
+    """Parsea fecha_ingreso que puede ser date o string."""
+    if valor is None:
         return None
 
-    for fmt in ("%d/%m/%y", "%d/%m/%Y"):
-        try:
-            return datetime.strptime(fecha_str, fmt).date()
-        except (ValueError, TypeError):
-            continue
+    if isinstance(valor, date):
+        return valor
+
+    if isinstance(valor, str):
+        from app.services.dgr_service import parsear_fecha_dgr
+
+        return parsear_fecha_dgr(valor)
+
     return None
 
 
@@ -66,6 +69,8 @@ def _registrar_historial_cambio(
 
 def _aplicar_datos_dgr(tramite: TramiteDgr, datos: dict) -> None:
     """Aplica al modelo los datos nuevos devueltos por la consulta DGR."""
+    from app.services.dgr_service import calcular_fecha_vencimiento
+
     tramite.fecha_ingreso = _parse_fecha_ingreso(datos.get("fecha_ingreso"))
     tramite.escribano_emisor = datos.get("escribano_emisor")
     tramite.estado_actual = datos.get("estado_actual")
@@ -79,6 +84,9 @@ def _aplicar_datos_dgr(tramite: TramiteDgr, datos: dict) -> None:
 
     tramite.ultimo_chequeo = datetime.now(timezone.utc)
     tramite.updated_at = datetime.now(timezone.utc)
+    tramite.fecha_vencimiento = calcular_fecha_vencimiento(
+        tramite.fecha_ingreso, tramite.estado_actual
+    )
 
 
 def _obtener_numeros_notificacion() -> list[str]:

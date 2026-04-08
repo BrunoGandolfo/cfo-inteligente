@@ -11,6 +11,7 @@ import axiosClient from '../services/api/axiosClient';
 import {
   AlertTriangle,
   Building2,
+  Calendar,
   CheckCircle,
   ChevronDown,
   Clock,
@@ -19,6 +20,7 @@ import {
   Plus,
   RefreshCw,
   Trash2,
+  XCircle,
 } from 'lucide-react';
 
 const RELATIVE_TIME_FORMATTER = new Intl.RelativeTimeFormat('es', {
@@ -111,6 +113,58 @@ function getTramiteEstadoMeta(estadoActual, cambioDetectado) {
       : 'bg-surface-alt text-text-secondary border-border',
     icon: cambioDetectado ? AlertTriangle : Clock,
   };
+}
+
+function getVencimientoInfo(fechaVencimiento) {
+  if (!fechaVencimiento) return null;
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const venc = new Date(`${fechaVencimiento}T00:00:00`);
+  const diffMs = venc - hoy;
+  const diasRestantes = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diasRestantes < 0) {
+    return {
+      texto: `Venció hace ${Math.abs(diasRestantes)} días`,
+      color: 'text-danger',
+      bgColor: 'bg-danger/10',
+      icono: 'XCircle',
+      urgente: true,
+    };
+  } else if (diasRestantes === 0) {
+    return {
+      texto: 'Vence HOY',
+      color: 'text-danger',
+      bgColor: 'bg-danger/10',
+      icono: 'AlertTriangle',
+      urgente: true,
+    };
+  } else if (diasRestantes <= 7) {
+    return {
+      texto: `Vence en ${diasRestantes} día${diasRestantes === 1 ? '' : 's'}`,
+      color: 'text-danger',
+      bgColor: 'bg-danger/10',
+      icono: 'AlertTriangle',
+      urgente: true,
+    };
+  } else if (diasRestantes <= 30) {
+    return {
+      texto: `Vence en ${diasRestantes} días`,
+      color: 'text-warning',
+      bgColor: 'bg-warning/10',
+      icono: 'Clock',
+      urgente: false,
+    };
+  } else {
+    return {
+      texto: `Vence en ${diasRestantes} días`,
+      color: 'text-success',
+      bgColor: 'bg-success/10',
+      icono: 'CheckCircle',
+      urgente: false,
+    };
+  }
 }
 
 function getRegistroNombre(registro) {
@@ -211,6 +265,16 @@ function Contratos() {
   const tieneContratoSeleccionado = Boolean(contratoActual) && Boolean(contratoSeleccionadoId);
   const tieneCamposEditables = (contratoActual?.campos_editables?.campos?.length || 0) > 0;
   const tramitesPendientes = pendientes || [];
+  const tramitesOrdenados = [...tramites].sort((a, b) => {
+    if (a.cambio_detectado && !b.cambio_detectado) return -1;
+    if (!a.cambio_detectado && b.cambio_detectado) return 1;
+    if (a.fecha_vencimiento && b.fecha_vencimiento) {
+      return new Date(a.fecha_vencimiento) - new Date(b.fecha_vencimiento);
+    }
+    if (a.fecha_vencimiento && !b.fecha_vencimiento) return -1;
+    if (!a.fecha_vencimiento && b.fecha_vencimiento) return 1;
+    return 0;
+  });
   const cambiosSinRevisar = tramitesPendientes.filter((tramite) => tramite?.cambio_detectado).length;
 
   const handleSelectContrato = (e) => {
@@ -519,7 +583,7 @@ function Contratos() {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {tramites.map((tramite) => {
+            {tramitesOrdenados.map((tramite) => {
               const estadoMeta = getTramiteEstadoMeta(tramite.estado_actual, tramite.cambio_detectado);
               const EstadoIcon = estadoMeta.icon;
 
@@ -574,6 +638,22 @@ function Contratos() {
                           </p>
                         </div>
                       </div>
+
+                      {(() => {
+                        const vencInfo = getVencimientoInfo(tramite.fecha_vencimiento);
+                        if (!vencInfo) return null;
+                        return (
+                          <div className={`flex items-center gap-1.5 text-xs ${vencInfo.color}`}>
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span className="font-medium">{vencInfo.texto}</span>
+                            {vencInfo.urgente && (
+                              <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${vencInfo.bgColor} ${vencInfo.color}`}>
+                                URGENTE
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="flex flex-wrap gap-2 lg:justify-end">

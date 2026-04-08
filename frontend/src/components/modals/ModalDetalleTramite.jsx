@@ -57,6 +57,67 @@ function formatDate(value) {
   return date.toLocaleDateString('es-UY');
 }
 
+function getVencimientoDisplay(fechaVencimiento) {
+  if (!fechaVencimiento) return null;
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const venc = new Date(`${fechaVencimiento}T00:00:00`);
+
+  if (Number.isNaN(venc.getTime())) return null;
+
+  const diffMs = venc - hoy;
+  const diasRestantes = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diasRestantes < 0) {
+    return {
+      diasRestantes,
+      color: 'text-danger',
+      bgColor: 'bg-danger/10 border border-danger/20',
+      label: `VENCIDO hace ${Math.abs(diasRestantes)} días`,
+      fechaFormateada: venc.toLocaleDateString('es-UY'),
+    };
+  }
+
+  if (diasRestantes === 0) {
+    return {
+      diasRestantes,
+      color: 'text-danger',
+      bgColor: 'bg-danger/10 border border-danger/20',
+      label: 'VENCE HOY',
+      fechaFormateada: venc.toLocaleDateString('es-UY'),
+    };
+  }
+
+  if (diasRestantes <= 7) {
+    return {
+      diasRestantes,
+      color: 'text-danger',
+      bgColor: 'bg-danger/10 border border-danger/20',
+      label: `Vence en ${diasRestantes} día${diasRestantes === 1 ? '' : 's'}`,
+      fechaFormateada: venc.toLocaleDateString('es-UY'),
+    };
+  }
+
+  if (diasRestantes <= 30) {
+    return {
+      diasRestantes,
+      color: 'text-warning',
+      bgColor: 'bg-warning/10 border border-warning/20',
+      label: `Vence en ${diasRestantes} días`,
+      fechaFormateada: venc.toLocaleDateString('es-UY'),
+    };
+  }
+
+  return {
+    diasRestantes,
+    color: 'text-success',
+    bgColor: 'bg-success/10 border border-success/20',
+    label: `Vence en ${diasRestantes} días`,
+    fechaFormateada: venc.toLocaleDateString('es-UY'),
+  };
+}
+
 function getEstadoMeta(estado) {
   const normalized = normalizeText(estado);
 
@@ -126,6 +187,7 @@ export default function ModalDetalleTramite({ isOpen, onClose, tramite }) {
   const inscripciones = parseActos(tramite.actos);
   const registroLabel = tramite.registro_nombre || tramite.registro || 'Sin registro';
   const oficinaLabel = tramite.oficina_nombre || tramite.oficina || 'Sin oficina';
+  const vencInfo = getVencimientoDisplay(tramite.fecha_vencimiento);
 
   return (
     <div
@@ -192,7 +254,40 @@ export default function ModalDetalleTramite({ isOpen, onClose, tramite }) {
                 label="Último chequeo"
                 value={formatRelativeTime(tramite.ultimo_chequeo)}
               />
+              <DetailItem
+                icon={Calendar}
+                label="Vencimiento"
+                value={tramite.fecha_vencimiento
+                  ? new Date(`${tramite.fecha_vencimiento}T00:00:00`).toLocaleDateString('es-UY')
+                  : 'No aplica'}
+              />
             </div>
+
+            {vencInfo ? (
+              <div className={`rounded-xl px-4 py-4 ${vencInfo.bgColor}`}>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs text-text-secondary">Fecha de vencimiento</p>
+                    <p className={`text-sm font-semibold ${vencInfo.color}`}>
+                      {vencInfo.fechaFormateada}
+                    </p>
+                  </div>
+                  <div className={`rounded-full px-3 py-1.5 text-xs font-bold ${vencInfo.bgColor} ${vencInfo.color}`}>
+                    {vencInfo.label}
+                  </div>
+                </div>
+                {vencInfo.diasRestantes <= 7 && vencInfo.diasRestantes >= 0 ? (
+                  <p className="mt-2 text-xs font-medium text-danger">
+                    ⚠️ Este trámite requiere atención inmediata
+                  </p>
+                ) : null}
+                {vencInfo.diasRestantes < 0 ? (
+                  <p className="mt-2 text-xs font-medium text-danger">
+                    ❌ Este trámite ha caducado. Contacte al Registro.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </section>
 
           <section className="space-y-4">

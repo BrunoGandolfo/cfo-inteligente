@@ -71,13 +71,15 @@ def _obtener_tramite(db: Session, tramite_id: str, current_user: Usuario) -> Tra
 
 def _aplicar_datos_dgr(tramite: TramiteDgr, datos: dict) -> None:
     """Aplica datos obtenidos de la DGR al modelo del trámite."""
-    # fecha_ingreso viene como string "dd/mm/yy"
-    fecha_str = datos.get("fecha_ingreso")
-    if fecha_str:
-        try:
-            tramite.fecha_ingreso = datetime.strptime(fecha_str, "%d/%m/%y").date()
-        except (ValueError, TypeError):
-            pass
+    from app.services.dgr_service import parsear_fecha_dgr, calcular_fecha_vencimiento
+
+    # fecha_ingreso puede venir como date (del service) o como string (legacy)
+    fecha = datos.get("fecha_ingreso")
+    if fecha is not None:
+        if isinstance(fecha, str):
+            tramite.fecha_ingreso = parsear_fecha_dgr(fecha)
+        else:
+            tramite.fecha_ingreso = fecha
 
     tramite.escribano_emisor = datos.get("escribano_emisor")
     tramite.estado_actual = datos.get("estado_actual")
@@ -88,6 +90,9 @@ def _aplicar_datos_dgr(tramite: TramiteDgr, datos: dict) -> None:
         tramite.actos = json.dumps(inscripciones, ensure_ascii=False)
 
     tramite.ultimo_chequeo = datetime.now(timezone.utc)
+    tramite.fecha_vencimiento = calcular_fecha_vencimiento(
+        tramite.fecha_ingreso, tramite.estado_actual
+    )
 
 
 # ============================================================================

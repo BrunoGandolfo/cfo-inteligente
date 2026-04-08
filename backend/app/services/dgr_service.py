@@ -201,6 +201,43 @@ def parsear_fecha_dgr(fecha_str):
             return None
 
 
+def calcular_fecha_vencimiento(fecha_ingreso, estado_actual):
+    """Calcula fecha de vencimiento según Ley 16.871 de Uruguay.
+
+    - Sin calificar/Pendiente: fecha_ingreso + 30 días corridos (reserva de prioridad)
+    - Provisoria/Provisorio: fecha_ingreso + 150 días corridos (inscripción provisoria)
+    - Definitivo: None (no vence)
+    - Observado: fecha_ingreso + 150 días corridos (mismo plazo que provisoria)
+
+    Si el vencimiento cae en sábado o domingo, se acorta al viernes anterior.
+    """
+    if not fecha_ingreso or not estado_actual:
+        return None
+
+    estado = estado_actual.strip().lower()
+
+    if estado == "definitivo":
+        return None
+
+    if estado in ("sin calificar", "pendiente"):
+        dias = 30
+    elif estado in ("provisoria", "provisorio", "observado"):
+        dias = 150
+    else:
+        return None
+
+    from datetime import timedelta
+
+    vencimiento = fecha_ingreso + timedelta(days=dias)
+
+    if vencimiento.weekday() == 5:
+        vencimiento -= timedelta(days=1)
+    elif vencimiento.weekday() == 6:
+        vencimiento -= timedelta(days=2)
+
+    return vencimiento
+
+
 def _parsear_resultado(html: str) -> Optional[dict]:
     """Parsea el HTML de respuesta de la DGR.
 
