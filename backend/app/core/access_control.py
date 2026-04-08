@@ -59,6 +59,12 @@ USUARIOS_FILTRO_CASOS = [
 # --- Contratos ---
 COLABORADORES_ACCESO_CONTRATOS = ["gferrari@grupoconexion.uy"]
 
+# --- DGR ---
+COLABORADORES_ACCESO_DGR = [
+    "jmora@grupoconexion.uy",
+    "gferrari@grupoconexion.uy",
+]
+
 # --- ALA ---
 COLABORADORES_ACCESO_COMPLETO_ALA = ["gferrari@grupoconexion.uy"]
 USUARIOS_ACCESO_ALA = [

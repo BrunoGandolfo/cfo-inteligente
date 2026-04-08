@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.core.access_control import COLABORADORES_ACCESO_DGR
 from app.models import Usuario
 from app.models.tramite_dgr import TramiteDgr
 from app.models.tramite_dgr_historial import TramiteDgrHistorial
@@ -37,14 +38,18 @@ router = APIRouter()
 # HELPERS
 # ============================================================================
 
-def _verificar_socio(current_user: Usuario) -> None:
-    """Verifica que el usuario sea socio, o lanza 403."""
+def _verificar_acceso_dgr(current_user: Usuario) -> None:
+    """Verifica que el usuario sea socio o colaborador autorizado para DGR."""
     if current_user.es_socio:
         return
-    logger.warning(f"Usuario ID: {current_user.id} intentó acceso de socio a tramites-dgr sin permiso")
+
+    if current_user.email and current_user.email.lower() in [e.lower() for e in COLABORADORES_ACCESO_DGR]:
+        return
+
+    logger.warning(f"Usuario ID: {current_user.id} intentó acceso a tramites-dgr sin permiso")
     raise HTTPException(
         status_code=403,
-        detail="No tienes permiso para realizar esta acción. Solo socios.",
+        detail="No tienes permiso para realizar esta acción.",
     )
 
 
@@ -63,8 +68,13 @@ def _obtener_tramite(db: Session, tramite_id: str, current_user: Usuario) -> Tra
     if tramite is None:
         raise HTTPException(status_code=404, detail="Trámite no encontrado")
 
-    # Verificar que pertenece al usuario o que es socio
-    if tramite.responsable_id != current_user.id and not current_user.es_socio:
+    es_colaborador_dgr = bool(
+        current_user.email
+        and current_user.email.lower() in [e.lower() for e in COLABORADORES_ACCESO_DGR]
+    )
+
+    # Verificar que pertenece al usuario o que es socio / colaborador DGR
+    if tramite.responsable_id != current_user.id and not current_user.es_socio and not es_colaborador_dgr:
         raise HTTPException(status_code=403, detail="No tienes acceso a este trámite")
 
     return tramite
@@ -128,7 +138,7 @@ async def crear_tramite(
 
     Solo socios pueden crear trámites.
     """
-    _verificar_socio(current_user)
+    _verificar_acceso_dgr(current_user)
 
     logger.info(
         f"Creando trámite DGR {data.registro}-{data.oficina} {data.anio}/{data.numero_entrada} "
@@ -255,7 +265,12 @@ async def listar_tramites(
     """
     logger.info(f"Listando trámites DGR - Usuario ID: {current_user.id}")
 
-    if current_user.es_socio:
+    es_colaborador_dgr = bool(
+        current_user.email
+        and current_user.email.lower() in [e.lower() for e in COLABORADORES_ACCESO_DGR]
+    )
+
+    if current_user.es_socio or es_colaborador_dgr:
         base_query = db.query(TramiteDgr).filter(
             TramiteDgr.deleted_at.is_(None),
         )
@@ -368,7 +383,7 @@ async def eliminar_tramite(
 
     Solo socios pueden eliminar trámites.
     """
-    _verificar_socio(current_user)
+    _verificar_acceso_dgr(current_user)
 
     logger.info(f"Eliminando trámite DGR {tramite_id} - Usuario ID: {current_user.id}")
 

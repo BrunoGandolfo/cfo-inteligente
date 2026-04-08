@@ -25,6 +25,7 @@ export const USUARIOS_ACCESO_ALA = [
 
 export const USUARIOS_ACCESO_NOTARIAL = [
   'gferrari@grupoconexion.uy',
+  'jmora@grupoconexion.uy',
 ];
 
 export const USUARIOS_ACCESO_OPERACIONES_CONTABLE = [
