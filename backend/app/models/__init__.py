@@ -13,6 +13,7 @@ from app.models.doctrina import Doctrina
 from app.models.sentencia import Sentencia
 from app.models.scraping_progress import ScrapingProgress, ScrapingFailure, ScrapingLog
 from app.models.tramite_dgr import TramiteDgr
+from app.models.tramite_dgr_historial import TramiteDgrHistorial
 from app.models.verificacion_ala import VerificacionALA, ListaALAMetadata
 
 __all__ = [
@@ -40,6 +41,7 @@ __all__ = [
     "ScrapingFailure",
     "ScrapingLog",
     "TramiteDgr",
+    "TramiteDgrHistorial",
     "VerificacionALA",
     "ListaALAMetadata",
 ]

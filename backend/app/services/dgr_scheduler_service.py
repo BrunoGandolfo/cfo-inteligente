@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.core.database import SessionLocal
+from app.models.tramite_dgr_historial import TramiteDgrHistorial
 from app.models.tramite_dgr import TramiteDgr
 from app.services import twilio_service
 from app.services.dgr_service import consultar_tramite_dgr
@@ -39,6 +40,28 @@ def _parse_fecha_ingreso(fecha_str: Optional[str]):
 def _normalizar_texto(value: Optional[str]) -> str:
     """Normaliza strings para comparar cambios de estado y observaciones."""
     return " ".join(str(value or "").split())
+
+
+def _registrar_historial_cambio(
+    db: Session,
+    tramite: TramiteDgr,
+    campo_modificado: str,
+    valor_anterior: Optional[str],
+    valor_nuevo: Optional[str],
+) -> None:
+    """Registra un cambio puntual en el historial del trámite."""
+    if _normalizar_texto(valor_anterior) == _normalizar_texto(valor_nuevo):
+        return
+
+    db.add(
+        TramiteDgrHistorial(
+            tramite_dgr_id=tramite.id,
+            campo_modificado=campo_modificado,
+            valor_anterior=valor_anterior,
+            valor_nuevo=valor_nuevo,
+            detectado_en=datetime.now(timezone.utc),
+        )
+    )
 
 
 def _aplicar_datos_dgr(tramite: TramiteDgr, datos: dict) -> None:
@@ -126,13 +149,39 @@ async def _tarea_monitorear_tramites_dgr_async() -> None:
                 estado_nuevo = _normalizar_texto(resultado.get("estado_actual"))
                 observaciones_anteriores = _normalizar_texto(tramite.observaciones)
                 observaciones_nuevas = _normalizar_texto(resultado.get("observaciones"))
-
-                hay_cambio_estado = bool(estado_nuevo) and estado_nuevo != estado_anterior
-                hay_observaciones_nuevas = (
-                    bool(observaciones_nuevas) and observaciones_nuevas != observaciones_anteriores
+                actos_nuevos = (
+                    json.dumps(resultado.get("inscripciones"), ensure_ascii=False)
+                    if resultado.get("inscripciones")
+                    else None
                 )
+                actos_anteriores = tramite.actos
 
-                if hay_cambio_estado or hay_observaciones_nuevas:
+                hay_cambio_estado = estado_nuevo != estado_anterior
+                hay_observaciones_nuevas = observaciones_nuevas != observaciones_anteriores
+                hay_cambio_actos = _normalizar_texto(actos_nuevos) != _normalizar_texto(actos_anteriores)
+
+                if hay_cambio_estado or hay_observaciones_nuevas or hay_cambio_actos:
+                    _registrar_historial_cambio(
+                        db,
+                        tramite,
+                        "estado_actual",
+                        tramite.estado_actual,
+                        resultado.get("estado_actual"),
+                    )
+                    _registrar_historial_cambio(
+                        db,
+                        tramite,
+                        "observaciones",
+                        tramite.observaciones,
+                        resultado.get("observaciones"),
+                    )
+                    _registrar_historial_cambio(
+                        db,
+                        tramite,
+                        "actos",
+                        tramite.actos,
+                        actos_nuevos,
+                    )
                     tramite.estado_anterior = tramite.estado_actual
                     tramite.cambio_detectado = True
                     cambios_detectados += 1
