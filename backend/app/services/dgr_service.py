@@ -7,10 +7,11 @@ en https://www.dgr.gub.uy/Consulta_Tramites/servlet/dgr.gub.uy.consultatramite.c
 import json
 import logging
 import time
+from datetime import datetime
 from typing import Optional
 
 import httpx
-from playwright.async_api import async_playwright
+# playwright se importa lazy dentro de consultar_tramite_dgr()
 from app.core.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -121,6 +122,7 @@ async def consultar_tramite_dgr(
 
     browser = None
     try:
+        from playwright.async_api import async_playwright
         pw = await async_playwright().start()
         browser = await pw.chromium.launch(headless=True)
         context = await browser.new_context()
@@ -186,6 +188,19 @@ async def consultar_tramite_dgr(
             await browser.close()
 
 
+def parsear_fecha_dgr(fecha_str):
+    """Parsea fecha de la DGR en formato dd/mm/yy o dd/mm/yyyy a date."""
+    if not fecha_str or not fecha_str.strip():
+        return None
+    try:
+        return datetime.strptime(fecha_str.strip(), "%d/%m/%y").date()
+    except ValueError:
+        try:
+            return datetime.strptime(fecha_str.strip(), "%d/%m/%Y").date()
+        except ValueError:
+            return None
+
+
 def _parsear_resultado(html: str) -> Optional[dict]:
     """Parsea el HTML de respuesta de la DGR.
 
@@ -227,6 +242,9 @@ def _parsear_resultado(html: str) -> Optional[dict]:
             next_td = td.find_next_sibling("td")
             if next_td:
                 resultado[labels_map[text]] = next_td.get_text(strip=True) or None
+
+    # Convertir fecha_ingreso de string dd/mm/yy a date
+    resultado["fecha_ingreso"] = parsear_fecha_dgr(resultado["fecha_ingreso"])
 
     # --- Inscripciones (GridinscripcionesContainerTbl) ---
     # Columnas: [0]EstadoCod [1]reg [2]Escribano [3]Acto [4]Estado [5]Observaciones ...
