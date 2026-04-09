@@ -4,18 +4,12 @@ Modelo TramiteDgrHistorial — historial de cambios detectados en trámites DGR.
 Registra cada cambio relevante detectado por el scheduler para auditoría.
 """
 import uuid
-from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
-from app.core.database import Base
-
-
-def utc_now():
-    """Retorna datetime actual en UTC para defaults de auditoría."""
-    return datetime.now(timezone.utc)
+from app.core.database import Base, utc_now
 
 
 class TramiteDgrHistorial(Base):

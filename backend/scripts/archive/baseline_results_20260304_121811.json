@@ -1,0 +1,935 @@
+{
+  "metadata": {
+    "fecha": "2026-03-04T12:18:11.446272",
+    "total": 25,
+    "exitosas": 25,
+    "fallidas": 0,
+    "tasa_exito": "100.0%"
+  },
+  "resultados": [
+    {
+      "id": 1,
+      "grupo": "SIMPLE",
+      "pregunta": "¿Cuánto facturamos en 2025?",
+      "sql_generado": "SELECT SUM(total_pesificado) AS ingresos_uyu, SUM(total_dolarizado) AS ingresos_usd\nFROM operaciones\nWHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025",
+      "filas": 1,
+      "columnas": [
+        "ingresos_uyu",
+        "ingresos_usd"
+      ],
+      "muestra": [
+        {
+          "ingresos_uyu": "893075002.92",
+          "ingresos_usd": "22475081.70"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 2,
+      "grupo": "SIMPLE",
+      "pregunta": "¿Cuáles fueron los gastos de julio 2025?",
+      "sql_generado": "SELECT SUM(total_pesificado) AS gastos_uyu, SUM(total_dolarizado) AS gastos_usd\nFROM operaciones\nWHERE tipo_operacion = 'GASTO' AND deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025 AND EXTRACT(MONTH FROM fecha) = 7",
+      "filas": 1,
+      "columnas": [
+        "gastos_uyu",
+        "gastos_usd"
+      ],
+      "muestra": [
+        {
+          "gastos_uyu": "76415651.33",
+          "gastos_usd": "1922139.93"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 3,
+      "grupo": "SIMPLE",
+      "pregunta": "¿Cuánto se retiró en total en 2025?",
+      "sql_generado": "SELECT SUM(total_pesificado) AS retiros_uyu, SUM(total_dolarizado) AS retiros_usd\nFROM operaciones\nWHERE tipo_operacion = 'RETIRO' AND deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025",
+      "filas": 1,
+      "columnas": [
+        "retiros_uyu",
+        "retiros_usd"
+      ],
+      "muestra": [
+        {
+          "retiros_uyu": "7443005.67",
+          "retiros_usd": "231433.49"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 4,
+      "grupo": "SIMPLE",
+      "pregunta": "¿Cuál es la rentabilidad global de 2025?",
+      "sql_generado": "SELECT\n  SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) AS ingresos_uyu,\n  SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) AS gastos_uyu,\n  SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -\n  SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) AS resultado_neto_uyu,\n  CASE WHEN SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) = 0 THEN 0\n  ELSE ROUND(\n    ((SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -\n      SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END)) /\n     SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END)) * 100, 2\n  ) END AS rentabilidad_porcentaje\nFROM operaciones\nWHERE tipo_operacion IN ('INGRESO', 'GASTO') AND deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025",
+      "filas": 1,
+      "columnas": [
+        "ingresos_uyu",
+        "gastos_uyu",
+        "resultado_neto_uyu",
+        "rentabilidad_porcentaje"
+      ],
+      "muestra": [
+        {
+          "ingresos_uyu": "893075002.92",
+          "gastos_uyu": "288782063.19",
+          "resultado_neto_uyu": "604292939.73",
+          "rentabilidad_porcentaje": "67.66"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 5,
+      "grupo": "SIMPLE",
+      "pregunta": "¿Cuántas operaciones hay por tipo en 2025?",
+      "sql_generado": "SELECT tipo_operacion, COUNT(*) AS cantidad\nFROM operaciones\nWHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025\nGROUP BY tipo_operacion\nORDER BY cantidad DESC",
+      "filas": 4,
+      "columnas": [
+        "tipo_operacion",
+        "cantidad"
+      ],
+      "muestra": [
+        {
+          "tipo_operacion": "INGRESO",
+          "cantidad": 287
+        },
+        {
+          "tipo_operacion": "GASTO",
+          "cantidad": 282
+        },
+        {
+          "tipo_operacion": "RETIRO",
+          "cantidad": 88
+        },
+        {
+          "tipo_operacion": "DISTRIBUCION",
+          "cantidad": 75
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 6,
+      "grupo": "DIMENSION",
+      "pregunta": "¿Cuáles son los ingresos por área en 2025?",
+      "sql_generado": "SELECT a.nombre AS area, \n       SUM(o.total_pesificado) AS ingresos_uyu, \n       SUM(o.total_dolarizado) AS ingresos_usd\nFROM operaciones o\nINNER JOIN areas a ON o.area_id = a.id\nWHERE o.tipo_operacion = 'INGRESO' \n  AND o.deleted_at IS NULL \n  AND EXTRACT(YEAR FROM o.fecha) = 2025\nGROUP BY a.nombre\nORDER BY ingresos_uyu DESC",
+      "filas": 5,
+      "columnas": [
+        "area",
+        "ingresos_uyu",
+        "ingresos_usd"
+      ],
+      "muestra": [
+        {
+          "area": "Recuperación",
+          "ingresos_uyu": "271554936.40",
+          "ingresos_usd": "6829863.60"
+        },
+        {
+          "area": "Notarial",
+          "ingresos_uyu": "181860868.39",
+          "ingresos_usd": "4577174.91"
+        },
+        {
+          "area": "Jurídica",
+          "ingresos_uyu": "180031288.20",
+          "ingresos_usd": "4534620.68"
+        },
+        {
+          "area": "Contable",
+          "ingresos_uyu": "146543659.15",
+          "ingresos_usd": "3693455.41"
+        },
+        {
+          "area": "Administración",
+          "ingresos_uyu": "113084250.78",
+          "ingresos_usd": "2839967.10"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 7,
+      "grupo": "DIMENSION",
+      "pregunta": "¿Cuáles fueron los gastos por localidad en 2025?",
+      "sql_generado": "SELECT localidad,\n       SUM(total_pesificado) AS gastos_uyu,\n       SUM(total_dolarizado) AS gastos_usd,\n       COUNT(*) AS cantidad_operaciones\nFROM operaciones\nWHERE tipo_operacion = 'GASTO' AND deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025\nGROUP BY localidad\nORDER BY gastos_uyu DESC",
+      "filas": 2,
+      "columnas": [
+        "localidad",
+        "gastos_uyu",
+        "gastos_usd",
+        "cantidad_operaciones"
+      ],
+      "muestra": [
+        {
+          "localidad": "MERCEDES",
+          "gastos_uyu": "150276033.55",
+          "gastos_usd": "3782968.70",
+          "cantidad_operaciones": 156
+        },
+        {
+          "localidad": "MONTEVIDEO",
+          "gastos_uyu": "138506029.64",
+          "gastos_usd": "3474668.85",
+          "cantidad_operaciones": 126
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 8,
+      "grupo": "DIMENSION",
+      "pregunta": "¿Cuánto se distribuyó a cada socio en 2025?",
+      "sql_generado": "SELECT s.nombre AS socio, \n       SUM(dd.monto_uyu) AS pesos, \n       SUM(dd.monto_usd) AS dolares,\n       SUM(dd.total_pesificado) AS total_pesificado\nFROM distribuciones_detalle dd\nINNER JOIN operaciones o ON dd.operacion_id = o.id\nINNER JOIN socios s ON dd.socio_id = s.id\nWHERE o.tipo_operacion = 'DISTRIBUCION' AND o.deleted_at IS NULL AND EXTRACT(YEAR FROM o.fecha) = 2025\nGROUP BY s.nombre\nORDER BY s.nombre",
+      "filas": 5,
+      "columnas": [
+        "socio",
+        "pesos",
+        "dolares",
+        "total_pesificado"
+      ],
+      "muestra": [
+        {
+          "socio": "Agustina",
+          "pesos": "4597247.00",
+          "dolares": "115597.00",
+          "total_pesificado": "4597247.00"
+        },
+        {
+          "socio": "Bruno",
+          "pesos": "4517873.00",
+          "dolares": "113814.00",
+          "total_pesificado": "4517873.00"
+        },
+        {
+          "socio": "Gonzalo",
+          "pesos": "4539219.00",
+          "dolares": "114196.00",
+          "total_pesificado": "4539219.00"
+        },
+        {
+          "socio": "Pancho",
+          "pesos": "4667393.00",
+          "dolares": "117367.00",
+          "total_pesificado": "4667393.00"
+        },
+        {
+          "socio": "Viviana",
+          "pesos": "4653477.00",
+          "dolares": "117599.00",
+          "total_pesificado": "4653477.00"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 9,
+      "grupo": "DIMENSION",
+      "pregunta": "¿Cuánto facturó Mercedes en 2025?",
+      "sql_generado": "SELECT SUM(total_pesificado) AS ingresos_uyu, SUM(total_dolarizado) AS ingresos_usd\nFROM operaciones\nWHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL AND localidad = 'MERCEDES' AND EXTRACT(YEAR FROM fecha) = 2025",
+      "filas": 1,
+      "columnas": [
+        "ingresos_uyu",
+        "ingresos_usd"
+      ],
+      "muestra": [
+        {
+          "ingresos_uyu": "430798668.52",
+          "ingresos_usd": "10831819.80"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 10,
+      "grupo": "DIMENSION",
+      "pregunta": "¿Quiénes son los top 10 clientes de 2025?",
+      "sql_generado": "SELECT cliente, \n       SUM(total_pesificado) AS total_uyu, \n       SUM(total_dolarizado) AS total_usd,\n       COUNT(*) AS cantidad_operaciones\nFROM operaciones\nWHERE tipo_operacion = 'INGRESO' \n  AND deleted_at IS NULL \n  AND EXTRACT(YEAR FROM fecha) = 2025 \n  AND cliente IS NOT NULL\nGROUP BY cliente\nORDER BY total_uyu DESC\nLIMIT 10",
+      "filas": 10,
+      "columnas": [
+        "cliente",
+        "total_uyu",
+        "total_usd",
+        "cantidad_operaciones"
+      ],
+      "muestra": [
+        {
+          "cliente": "Grupo Empresarial XYZ",
+          "total_uyu": "71913991.16",
+          "total_usd": "1805594.45",
+          "cantidad_operaciones": 12
+        },
+        {
+          "cliente": "Inmobiliaria del Este",
+          "total_uyu": "62816797.59",
+          "total_usd": "1584232.68",
+          "cantidad_operaciones": 10
+        },
+        {
+          "cliente": "Supermercado El Dorado",
+          "total_uyu": "53980122.31",
+          "total_usd": "1361078.00",
+          "cantidad_operaciones": 7
+        },
+        {
+          "cliente": "Servicios Profesionales",
+          "total_uyu": "48928215.09",
+          "total_usd": "1233927.54",
+          "cantidad_operaciones": 14
+        },
+        {
+          "cliente": "Empresa ABC",
+          "total_uyu": "48224474.14",
+          "total_usd": "1214635.23",
+          "cantidad_operaciones": 8
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 11,
+      "grupo": "BIMONETARIA",
+      "pregunta": "¿Cuánto se retiró en Montevideo y Mercedes Q3 2025, discriminando pesos y dólares reales?",
+      "sql_generado": "SELECT \n    localidad,\n    SUM(CASE WHEN moneda_original = 'UYU' THEN monto_original ELSE 0 END) AS pesos_original,\n    SUM(CASE WHEN moneda_original = 'USD' THEN monto_original ELSE 0 END) AS dolares_original,\n    COUNT(*) AS cantidad_operaciones\nFROM operaciones\nWHERE tipo_operacion = 'RETIRO' \n    AND deleted_at IS NULL \n    AND EXTRACT(YEAR FROM fecha) = 2025 \n    AND EXTRACT(QUARTER FROM fecha) = 3\nGROUP BY localidad\nORDER BY localidad",
+      "filas": 2,
+      "columnas": [
+        "localidad",
+        "pesos_original",
+        "dolares_original",
+        "cantidad_operaciones"
+      ],
+      "muestra": [
+        {
+          "localidad": "MONTEVIDEO",
+          "pesos_original": "1419859.00",
+          "dolares_original": "5496.00",
+          "cantidad_operaciones": 21
+        },
+        {
+          "localidad": "MERCEDES",
+          "pesos_original": "2395834.00",
+          "dolares_original": "3476.00",
+          "cantidad_operaciones": 29
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 12,
+      "grupo": "BIMONETARIA",
+      "pregunta": "¿Cuánto se distribuyó a cada socio Q3 2025, mes a mes, discriminando pesos y dólares?",
+      "sql_generado": "SELECT \n  s.nombre AS socio,\n  EXTRACT(MONTH FROM o.fecha)::INTEGER AS mes,\n  TO_CHAR(MIN(o.fecha), 'TMMonth') AS nombre_mes,\n  SUM(dd.monto_uyu) AS pesos,\n  SUM(dd.monto_usd) AS dolares,\n  SUM(dd.total_pesificado) AS total_pesificado\nFROM distribuciones_detalle dd\nINNER JOIN operaciones o ON dd.operacion_id = o.id\nINNER JOIN socios s ON dd.socio_id = s.id\nWHERE o.tipo_operacion = 'DISTRIBUCION' \n  AND o.deleted_at IS NULL \n  AND EXTRACT(YEAR FROM o.fecha) = 2025 \n  AND EXTRACT(QUARTER FROM o.fecha) = 3\nGROUP BY s.nombre, EXTRACT(MONTH FROM o.fecha)\nORDER BY mes, s.nombre",
+      "filas": 15,
+      "columnas": [
+        "socio",
+        "mes",
+        "nombre_mes",
+        "pesos",
+        "dolares",
+        "total_pesificado"
+      ],
+      "muestra": [
+        {
+          "socio": "Agustina",
+          "mes": 7,
+          "nombre_mes": "July",
+          "pesos": "692376.00",
+          "dolares": "12097.00",
+          "total_pesificado": "692376.00"
+        },
+        {
+          "socio": "Bruno",
+          "mes": 7,
+          "nombre_mes": "July",
+          "pesos": "770208.00",
+          "dolares": "13568.00",
+          "total_pesificado": "770208.00"
+        },
+        {
+          "socio": "Gonzalo",
+          "mes": 7,
+          "nombre_mes": "July",
+          "pesos": "646144.00",
+          "dolares": "11501.00",
+          "total_pesificado": "646144.00"
+        },
+        {
+          "socio": "Pancho",
+          "mes": 7,
+          "nombre_mes": "July",
+          "pesos": "764844.00",
+          "dolares": "13243.00",
+          "total_pesificado": "764844.00"
+        },
+        {
+          "socio": "Viviana",
+          "mes": 7,
+          "nombre_mes": "July",
+          "pesos": "673307.00",
+          "dolares": "11758.00",
+          "total_pesificado": "673307.00"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 13,
+      "grupo": "BIMONETARIA",
+      "pregunta": "¿Cuánto se distribuyó en pesos a cada socio durante 2025?",
+      "sql_generado": "SELECT s.nombre AS socio, SUM(dd.total_pesificado) AS total_pesos\nFROM distribuciones_detalle dd\nINNER JOIN operaciones o ON dd.operacion_id = o.id\nINNER JOIN socios s ON dd.socio_id = s.id\nWHERE o.tipo_operacion = 'DISTRIBUCION' AND o.deleted_at IS NULL AND EXTRACT(YEAR FROM o.fecha) = 2025\nGROUP BY s.nombre\nORDER BY total_pesos DESC",
+      "filas": 5,
+      "columnas": [
+        "socio",
+        "total_pesos"
+      ],
+      "muestra": [
+        {
+          "socio": "Pancho",
+          "total_pesos": "4667393.00"
+        },
+        {
+          "socio": "Viviana",
+          "total_pesos": "4653477.00"
+        },
+        {
+          "socio": "Agustina",
+          "total_pesos": "4597247.00"
+        },
+        {
+          "socio": "Gonzalo",
+          "total_pesos": "4539219.00"
+        },
+        {
+          "socio": "Bruno",
+          "total_pesos": "4517873.00"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 14,
+      "grupo": "BIMONETARIA",
+      "pregunta": "¿Cuánto retiró cada localidad en dólares durante 2025?",
+      "sql_generado": "SELECT localidad,\n       SUM(total_dolarizado) AS total_dolares\nFROM operaciones\nWHERE tipo_operacion = 'RETIRO' AND deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025\nGROUP BY localidad\nORDER BY total_dolares DESC",
+      "filas": 2,
+      "columnas": [
+        "localidad",
+        "total_dolares"
+      ],
+      "muestra": [
+        {
+          "localidad": "MERCEDES",
+          "total_dolares": "161662.74"
+        },
+        {
+          "localidad": "MONTEVIDEO",
+          "total_dolares": "69770.75"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 15,
+      "grupo": "BIMONETARIA",
+      "pregunta": "¿Cuál fue la rentabilidad de cada área en 2025 y cuánto facturó cada una en dólares reales?",
+      "sql_generado": "SELECT \n  a.nombre AS area,\n  SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) AS ingresos_uyu,\n  SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_pesificado ELSE 0 END) AS gastos_uyu,\n  SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) - \n  SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_pesificado ELSE 0 END) AS resultado_neto_uyu,\n  CASE \n    WHEN SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) = 0 THEN 0\n    ELSE ROUND(\n      ((SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) - \n        SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_pesificado ELSE 0 END)) / \n       SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END)) * 100, 2\n    )\n  END AS rentabilidad_porcentaje,\n  SUM(CASE WHEN o.tipo_operacion = 'INGRESO' AND o.moneda_original = 'USD' THEN o.monto_original ELSE 0 END) AS usd_facturados_reales\nFROM operaciones o\nINNER JOIN areas a ON o.area_id = a.id\nWHERE o.tipo_operacion IN ('INGRESO', 'GASTO') \n  AND o.deleted_at IS NULL \n  AND EXTRACT(YEAR FROM o.fecha) = 2025\nGROUP BY a.nombre\nORDER BY rentabilidad_porcentaje DESC",
+      "filas": 6,
+      "columnas": [
+        "area",
+        "ingresos_uyu",
+        "gastos_uyu",
+        "resultado_neto_uyu",
+        "rentabilidad_porcentaje",
+        "usd_facturados_reales"
+      ],
+      "muestra": [
+        {
+          "area": "Administración",
+          "ingresos_uyu": "113084250.78",
+          "gastos_uyu": "0",
+          "resultado_neto_uyu": "113084250.78",
+          "rentabilidad_porcentaje": "100.00",
+          "usd_facturados_reales": "2633285.00"
+        },
+        {
+          "area": "Recuperación",
+          "ingresos_uyu": "271554936.40",
+          "gastos_uyu": "55360873.94",
+          "resultado_neto_uyu": "216194062.46",
+          "rentabilidad_porcentaje": "79.61",
+          "usd_facturados_reales": "6516580.00"
+        },
+        {
+          "area": "Notarial",
+          "ingresos_uyu": "181860868.39",
+          "gastos_uyu": "43767990.99",
+          "resultado_neto_uyu": "138092877.40",
+          "rentabilidad_porcentaje": "75.93",
+          "usd_facturados_reales": "4363731.00"
+        },
+        {
+          "area": "Contable",
+          "ingresos_uyu": "146543659.15",
+          "gastos_uyu": "58353200.15",
+          "resultado_neto_uyu": "88190459.00",
+          "rentabilidad_porcentaje": "60.18",
+          "usd_facturados_reales": "3506419.00"
+        },
+        {
+          "area": "Jurídica",
+          "ingresos_uyu": "180031288.20",
+          "gastos_uyu": "72630298.39",
+          "resultado_neto_uyu": "107400989.81",
+          "rentabilidad_porcentaje": "59.66",
+          "usd_facturados_reales": "4228187.00"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 16,
+      "grupo": "BIMONETARIA",
+      "pregunta": "Compará los gastos de Jurídica y Recuperación H1 vs H2 2025, en pesos y dólares reales",
+      "sql_generado": "SELECT \n  a.nombre AS area,\n  CASE \n    WHEN EXTRACT(MONTH FROM o.fecha) BETWEEN 1 AND 6 THEN 'H1'\n    ELSE 'H2'\n  END AS semestre,\n  SUM(CASE WHEN o.moneda_original = 'UYU' THEN o.monto_original ELSE 0 END) AS pesos_original,\n  SUM(CASE WHEN o.moneda_original = 'USD' THEN o.monto_original ELSE 0 END) AS dolares_original,\n  SUM(o.total_pesificado) AS total_pesificado,\n  SUM(o.total_dolarizado) AS total_dolarizado\nFROM operaciones o\nINNER JOIN areas a ON o.area_id = a.id\nWHERE o.tipo_operacion = 'GASTO' \n  AND o.deleted_at IS NULL \n  AND EXTRACT(YEAR FROM o.fecha) = 2025\n  AND a.nombre IN ('Jurídica', 'Recuperación')\nGROUP BY a.nombre, CASE WHEN EXTRACT(MONTH FROM o.fecha) BETWEEN 1 AND 6 THEN 'H1' ELSE 'H2' END\nORDER BY a.nombre, semestre",
+      "filas": 4,
+      "columnas": [
+        "area",
+        "semestre",
+        "pesos_original",
+        "dolares_original",
+        "total_pesificado",
+        "total_dolarizado"
+      ],
+      "muestra": [
+        {
+          "area": "Jurídica",
+          "semestre": "H1",
+          "pesos_original": "2236721.00",
+          "dolares_original": "1066688.00",
+          "total_pesificado": "44891550.62",
+          "total_dolarizado": "1122938.07"
+        },
+        {
+          "area": "Jurídica",
+          "semestre": "H2",
+          "pesos_original": "1805151.00",
+          "dolares_original": "652953.00",
+          "total_pesificado": "27738747.77",
+          "total_dolarizado": "698214.98"
+        },
+        {
+          "area": "Recuperación",
+          "semestre": "H1",
+          "pesos_original": "1260720.00",
+          "dolares_original": "383219.00",
+          "total_pesificado": "16516980.66",
+          "total_dolarizado": "414878.71"
+        },
+        {
+          "area": "Recuperación",
+          "semestre": "H2",
+          "pesos_original": "2006291.00",
+          "dolares_original": "928003.00",
+          "total_pesificado": "38843893.28",
+          "total_dolarizado": "978401.91"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 17,
+      "grupo": "COMPARATIVA",
+      "pregunta": "Compará ingresos Q2 vs Q3 2025",
+      "sql_generado": "SELECT \n  EXTRACT(QUARTER FROM fecha)::INTEGER AS trimestre,\n  SUM(total_pesificado) AS ingresos_uyu,\n  SUM(total_dolarizado) AS ingresos_usd\nFROM operaciones\nWHERE tipo_operacion = 'INGRESO' \n  AND deleted_at IS NULL \n  AND EXTRACT(YEAR FROM fecha) = 2025 \n  AND EXTRACT(QUARTER FROM fecha) IN (2, 3)\nGROUP BY EXTRACT(QUARTER FROM fecha)\nORDER BY trimestre",
+      "filas": 2,
+      "columnas": [
+        "trimestre",
+        "ingresos_uyu",
+        "ingresos_usd"
+      ],
+      "muestra": [
+        {
+          "trimestre": 2,
+          "ingresos_uyu": "528163888.66",
+          "ingresos_usd": "13296382.50"
+        },
+        {
+          "trimestre": 3,
+          "ingresos_uyu": "363882104.26",
+          "ingresos_usd": "9152751.43"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 18,
+      "grupo": "COMPARATIVA",
+      "pregunta": "¿Cómo evolucionaron los gastos mes a mes en 2025?",
+      "sql_generado": "SELECT \n    EXTRACT(MONTH FROM fecha)::INTEGER AS mes,\n    TO_CHAR(MIN(fecha), 'TMMonth') AS nombre_mes,\n    SUM(total_pesificado) AS gastos_uyu,\n    SUM(total_dolarizado) AS gastos_usd,\n    COUNT(*) AS cantidad_operaciones\nFROM operaciones\nWHERE tipo_operacion = 'GASTO' \n    AND deleted_at IS NULL \n    AND EXTRACT(YEAR FROM fecha) = 2025\nGROUP BY EXTRACT(MONTH FROM fecha)\nORDER BY mes",
+      "filas": 7,
+      "columnas": [
+        "mes",
+        "nombre_mes",
+        "gastos_uyu",
+        "gastos_usd",
+        "cantidad_operaciones"
+      ],
+      "muestra": [
+        {
+          "mes": 3,
+          "nombre_mes": "March",
+          "gastos_uyu": "8001039.28",
+          "gastos_usd": "201822.25",
+          "cantidad_operaciones": 4
+        },
+        {
+          "mes": 4,
+          "nombre_mes": "April",
+          "gastos_uyu": "32960770.21",
+          "gastos_usd": "822971.86",
+          "cantidad_operaciones": 38
+        },
+        {
+          "mes": 5,
+          "nombre_mes": "May",
+          "gastos_uyu": "64249451.81",
+          "gastos_usd": "1614949.86",
+          "cantidad_operaciones": 48
+        },
+        {
+          "mes": 6,
+          "nombre_mes": "June",
+          "gastos_uyu": "41437814.09",
+          "gastos_usd": "1043023.65",
+          "cantidad_operaciones": 42
+        },
+        {
+          "mes": 7,
+          "nombre_mes": "July",
+          "gastos_uyu": "76415651.33",
+          "gastos_usd": "1922139.93",
+          "cantidad_operaciones": 60
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 19,
+      "grupo": "COMPARATIVA",
+      "pregunta": "¿Cuál es la rentabilidad por área en 2025?",
+      "sql_generado": "SELECT \n  a.nombre AS area,\n  SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) AS ingresos_uyu,\n  SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_pesificado ELSE 0 END) AS gastos_uyu,\n  SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) - \n  SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_pesificado ELSE 0 END) AS resultado_neto_uyu,\n  CASE \n    WHEN SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) = 0 THEN 0\n    ELSE ROUND(\n      ((SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) - \n        SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_pesificado ELSE 0 END)) / \n       SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END)) * 100, 2\n    )\n  END AS rentabilidad_porcentaje\nFROM operaciones o\nINNER JOIN areas a ON o.area_id = a.id\nWHERE o.tipo_operacion IN ('INGRESO', 'GASTO') \n  AND o.deleted_at IS NULL \n  AND EXTRACT(YEAR FROM o.fecha) = 2025\nGROUP BY a.nombre\nORDER BY rentabilidad_porcentaje DESC",
+      "filas": 6,
+      "columnas": [
+        "area",
+        "ingresos_uyu",
+        "gastos_uyu",
+        "resultado_neto_uyu",
+        "rentabilidad_porcentaje"
+      ],
+      "muestra": [
+        {
+          "area": "Administración",
+          "ingresos_uyu": "113084250.78",
+          "gastos_uyu": "0",
+          "resultado_neto_uyu": "113084250.78",
+          "rentabilidad_porcentaje": "100.00"
+        },
+        {
+          "area": "Recuperación",
+          "ingresos_uyu": "271554936.40",
+          "gastos_uyu": "55360873.94",
+          "resultado_neto_uyu": "216194062.46",
+          "rentabilidad_porcentaje": "79.61"
+        },
+        {
+          "area": "Notarial",
+          "ingresos_uyu": "181860868.39",
+          "gastos_uyu": "43767990.99",
+          "resultado_neto_uyu": "138092877.40",
+          "rentabilidad_porcentaje": "75.93"
+        },
+        {
+          "area": "Contable",
+          "ingresos_uyu": "146543659.15",
+          "gastos_uyu": "58353200.15",
+          "resultado_neto_uyu": "88190459.00",
+          "rentabilidad_porcentaje": "60.18"
+        },
+        {
+          "area": "Jurídica",
+          "ingresos_uyu": "180031288.20",
+          "gastos_uyu": "72630298.39",
+          "resultado_neto_uyu": "107400989.81",
+          "rentabilidad_porcentaje": "59.66"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 20,
+      "grupo": "COMPARATIVA",
+      "pregunta": "¿Cuál es el capital de trabajo de 2025?",
+      "sql_generado": "SELECT\n  SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) AS ingresos,\n  SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) AS gastos,\n  SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END) AS retiros,\n  SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) AS distribuciones,\n  SUM(CASE WHEN tipo_operacion = 'INGRESO' THEN total_pesificado ELSE 0 END) -\n  SUM(CASE WHEN tipo_operacion = 'GASTO' THEN total_pesificado ELSE 0 END) -\n  SUM(CASE WHEN tipo_operacion = 'RETIRO' THEN total_pesificado ELSE 0 END) -\n  SUM(CASE WHEN tipo_operacion = 'DISTRIBUCION' THEN total_pesificado ELSE 0 END) AS capital_trabajo\nFROM operaciones\nWHERE deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025",
+      "filas": 1,
+      "columnas": [
+        "ingresos",
+        "gastos",
+        "retiros",
+        "distribuciones",
+        "capital_trabajo"
+      ],
+      "muestra": [
+        {
+          "ingresos": "893075002.92",
+          "gastos": "288782063.19",
+          "retiros": "7443005.67",
+          "distribuciones": "22975209.00",
+          "capital_trabajo": "573874725.06"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 21,
+      "grupo": "COMPLEJA",
+      "pregunta": "¿Qué porcentaje de ingresos es en USD vs UYU en 2025?",
+      "sql_generado": "SELECT \n    moneda_original,\n    SUM(total_pesificado) AS total_uyu,\n    ROUND(\n        SUM(total_pesificado) * 100.0 / \n        NULLIF(\n            (SELECT SUM(total_pesificado) \n             FROM operaciones \n             WHERE tipo_operacion = 'INGRESO' \n               AND deleted_at IS NULL \n               AND EXTRACT(YEAR FROM fecha) = 2025), \n            0\n        ), \n        2\n    ) AS porcentaje\nFROM operaciones\nWHERE tipo_operacion = 'INGRESO' \n  AND deleted_at IS NULL \n  AND EXTRACT(YEAR FROM fecha) = 2025\nGROUP BY moneda_original\nORDER BY porcentaje DESC",
+      "filas": 2,
+      "columnas": [
+        "moneda_original",
+        "total_uyu",
+        "porcentaje"
+      ],
+      "muestra": [
+        {
+          "moneda_original": "USD",
+          "total_uyu": "844221163.92",
+          "porcentaje": "94.53"
+        },
+        {
+          "moneda_original": "UYU",
+          "total_uyu": "48853839.00",
+          "porcentaje": "5.47"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 22,
+      "grupo": "COMPLEJA",
+      "pregunta": "¿Cuáles son los retiros por localidad en 2025 discriminando moneda?",
+      "sql_generado": "SELECT localidad,\n       SUM(CASE WHEN moneda_original = 'UYU' THEN monto_original ELSE 0 END) AS pesos_original,\n       SUM(CASE WHEN moneda_original = 'USD' THEN monto_original ELSE 0 END) AS dolares_original,\n       COUNT(*) AS cantidad_operaciones\nFROM operaciones\nWHERE tipo_operacion = 'RETIRO' AND deleted_at IS NULL AND EXTRACT(YEAR FROM fecha) = 2025\nGROUP BY localidad\nORDER BY localidad",
+      "filas": 2,
+      "columnas": [
+        "localidad",
+        "pesos_original",
+        "dolares_original",
+        "cantidad_operaciones"
+      ],
+      "muestra": [
+        {
+          "localidad": "MONTEVIDEO",
+          "pesos_original": "2635318.00",
+          "dolares_original": "5496.00",
+          "cantidad_operaciones": 36
+        },
+        {
+          "localidad": "MERCEDES",
+          "pesos_original": "3673853.00",
+          "dolares_original": "22838.00",
+          "cantidad_operaciones": 52
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 23,
+      "grupo": "COMPLEJA",
+      "pregunta": "¿Cuáles son los top 5 proveedores de 2025?",
+      "sql_generado": "SELECT proveedor, \n       SUM(total_pesificado) AS total_uyu, \n       SUM(total_dolarizado) AS total_usd,\n       COUNT(*) AS cantidad_operaciones\nFROM operaciones\nWHERE tipo_operacion = 'GASTO' \n  AND deleted_at IS NULL \n  AND EXTRACT(YEAR FROM fecha) = 2025 \n  AND proveedor IS NOT NULL\nGROUP BY proveedor\nORDER BY total_uyu DESC\nLIMIT 5",
+      "filas": 5,
+      "columnas": [
+        "proveedor",
+        "total_uyu",
+        "total_usd",
+        "cantidad_operaciones"
+      ],
+      "muestra": [
+        {
+          "proveedor": "Taxi Company",
+          "total_uyu": "20402629.18",
+          "total_usd": "511662.19",
+          "cantidad_operaciones": 14
+        },
+        {
+          "proveedor": "Contador Pérez",
+          "total_uyu": "19514390.89",
+          "total_usd": "487695.21",
+          "cantidad_operaciones": 13
+        },
+        {
+          "proveedor": "G4S",
+          "total_uyu": "16081055.82",
+          "total_usd": "403874.24",
+          "cantidad_operaciones": 12
+        },
+        {
+          "proveedor": "Hardware & Software SA",
+          "total_uyu": "15224652.32",
+          "total_usd": "380006.08",
+          "cantidad_operaciones": 7
+        },
+        {
+          "proveedor": "Seguridad Total",
+          "total_uyu": "14739280.28",
+          "total_usd": "373177.31",
+          "cantidad_operaciones": 8
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 24,
+      "grupo": "INFORME",
+      "pregunta": "Dame un resumen financiero del año 2025 por área",
+      "sql_generado": "SELECT \n  a.nombre AS area,\n  SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) AS ingresos_uyu,\n  SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_dolarizado ELSE 0 END) AS ingresos_usd,\n  SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_pesificado ELSE 0 END) AS gastos_uyu,\n  SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_dolarizado ELSE 0 END) AS gastos_usd,\n  SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) - \n  SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_pesificado ELSE 0 END) AS resultado_neto_uyu,\n  SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_dolarizado ELSE 0 END) - \n  SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_dolarizado ELSE 0 END) AS resultado_neto_usd,\n  CASE \n    WHEN SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) = 0 THEN 0\n    ELSE ROUND(\n      ((SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END) - \n        SUM(CASE WHEN o.tipo_operacion = 'GASTO' THEN o.total_pesificado ELSE 0 END)) / \n       SUM(CASE WHEN o.tipo_operacion = 'INGRESO' THEN o.total_pesificado ELSE 0 END)) * 100, 2\n    )\n  END AS rentabilidad_porcentaje\nFROM operaciones o\nINNER JOIN areas a ON o.area_id = a.id\nWHERE o.tipo_operacion IN ('INGRESO', 'GASTO') \n  AND o.deleted_at IS NULL \n  AND EXTRACT(YEAR FROM o.fecha) = 2025\nGROUP BY a.nombre\nORDER BY resultado_neto_uyu DESC",
+      "filas": 6,
+      "columnas": [
+        "area",
+        "ingresos_uyu",
+        "ingresos_usd",
+        "gastos_uyu",
+        "gastos_usd",
+        "resultado_neto_uyu",
+        "resultado_neto_usd",
+        "rentabilidad_porcentaje"
+      ],
+      "muestra": [
+        {
+          "area": "Recuperación",
+          "ingresos_uyu": "271554936.40",
+          "ingresos_usd": "6829863.60",
+          "gastos_uyu": "55360873.94",
+          "gastos_usd": "1393280.62",
+          "resultado_neto_uyu": "216194062.46",
+          "resultado_neto_usd": "5436582.98",
+          "rentabilidad_porcentaje": "79.61"
+        },
+        {
+          "area": "Notarial",
+          "ingresos_uyu": "181860868.39",
+          "ingresos_usd": "4577174.91",
+          "gastos_uyu": "43767990.99",
+          "gastos_usd": "1102483.21",
+          "resultado_neto_uyu": "138092877.40",
+          "resultado_neto_usd": "3474691.70",
+          "rentabilidad_porcentaje": "75.93"
+        },
+        {
+          "area": "Administración",
+          "ingresos_uyu": "113084250.78",
+          "ingresos_usd": "2839967.10",
+          "gastos_uyu": "0",
+          "gastos_usd": "0",
+          "resultado_neto_uyu": "113084250.78",
+          "resultado_neto_usd": "2839967.10",
+          "rentabilidad_porcentaje": "100.00"
+        },
+        {
+          "area": "Jurídica",
+          "ingresos_uyu": "180031288.20",
+          "ingresos_usd": "4534620.68",
+          "gastos_uyu": "72630298.39",
+          "gastos_usd": "1821153.05",
+          "resultado_neto_uyu": "107400989.81",
+          "resultado_neto_usd": "2713467.63",
+          "rentabilidad_porcentaje": "59.66"
+        },
+        {
+          "area": "Contable",
+          "ingresos_uyu": "146543659.15",
+          "ingresos_usd": "3693455.41",
+          "gastos_uyu": "58353200.15",
+          "gastos_usd": "1465642.47",
+          "resultado_neto_uyu": "88190459.00",
+          "resultado_neto_usd": "2227812.94",
+          "rentabilidad_porcentaje": "60.18"
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    },
+    {
+      "id": 25,
+      "grupo": "INFORME",
+      "pregunta": "¿Cuánto se facturó en los últimos 3 meses?",
+      "sql_generado": "SELECT SUM(total_pesificado) AS ingresos_uyu, SUM(total_dolarizado) AS ingresos_usd\nFROM operaciones\nWHERE tipo_operacion = 'INGRESO' AND deleted_at IS NULL AND fecha >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '3 months'",
+      "filas": 1,
+      "columnas": [
+        "ingresos_uyu",
+        "ingresos_usd"
+      ],
+      "muestra": [
+        {
+          "ingresos_uyu": null,
+          "ingresos_usd": null
+        }
+      ],
+      "error": null,
+      "exito": true,
+      "metodo": "claude_direct"
+    }
+  ]
+}
