@@ -269,9 +269,9 @@ Recuerda:
             if isinstance(parsed, dict):
                 logger.debug("ContratoFieldsExtractor: JSON parseado directamente")
                 return parsed
-        except json.JSONDecodeError:
-            pass
-        
+        except json.JSONDecodeError as e:
+            logger.warning(f"ContratoFieldsExtractor: Parse directo fallido: {e}")
+
         # INTENTO 2: Buscar JSON dentro de bloques de código markdown (```json ... ```)
         # Extraer TODO el contenido entre ```json y ```, luego buscar JSON dentro
         code_block_match = re.search(r'```(?:json)?\s*\n?([\s\S]*?)\n?```', response_text)
@@ -320,9 +320,9 @@ Recuerda:
                 if isinstance(parsed, dict):
                     logger.debug("ContratoFieldsExtractor: JSON extraído del texto (primer { hasta último })")
                     return parsed
-        except (json.JSONDecodeError, ValueError):
-            pass
-        
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning(f"ContratoFieldsExtractor: Parse por delimitadores fallido: {e}")
+
         # INTENTO 4: Buscar múltiples bloques JSON y elegir el más grande/válido
         # Patrón para JSON con hasta 3 niveles de anidación
         json_pattern = r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}'
@@ -337,9 +337,10 @@ Recuerda:
                 if isinstance(parsed, dict):
                     logger.debug(f"ContratoFieldsExtractor: JSON encontrado con patrón regex ({len(match)} chars)")
                     return parsed
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                logger.warning(f"ContratoFieldsExtractor: Parse bloque JSON fallido: {e}")
                 continue
-        
+
         # INTENTO 5: Buscar variantes del nombre del campo ('fields' en vez de 'campos')
         # A veces Claude usa nombres en inglés
         for variant in ['fields', 'campos', 'field_list', 'editable_fields']:
@@ -359,7 +360,8 @@ Recuerda:
                                 parsed['campos'] = parsed.pop(variant)
                             logger.debug(f"ContratoFieldsExtractor: JSON parseado con campo '{variant}' normalizado")
                             return parsed
-                except (json.JSONDecodeError, ValueError):
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.warning(f"ContratoFieldsExtractor: Parse variante '{variant}' fallido: {e}")
                     continue
         
         logger.warning("ContratoFieldsExtractor: No se encontró JSON válido en la respuesta")
