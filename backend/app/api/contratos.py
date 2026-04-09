@@ -5,25 +5,26 @@ Módulo Notarial - Plantillas de contratos DOCX.
 Acceso público para lectura, solo socios para escritura.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import FileResponse, Response
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
+import json
+import logging
 from typing import Optional, List
 from uuid import UUID
-import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.core.access_control import COLABORADORES_ACCESO_CONTRATOS
 from app.models import Usuario
-from app.models.contrato import Contrato
 from app.schemas.contrato import (
     ContratoCreate,
     ContratoUpdate,
     ContratoResponse,
     ContratoListResponse,
-    ContratoBusquedaParams
 )
+from app.services import contratos_service
 from app.services.contrato_fields_extractor import ContratoFieldsExtractor
 from app.services.contrato_generator import ContratoGenerator
 
@@ -32,21 +33,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/contratos", tags=["contratos"])
 
 
-from app.core.access_control import COLABORADORES_ACCESO_CONTRATOS
-
-
 # ============================================================================
 # HELPERS
 # ============================================================================
 
 def _tiene_acceso_contratos(usuario: Usuario) -> bool:
-    """
-    Retorna True si el usuario tiene acceso completo al módulo Contratos.
-    
-    - Socios: siempre True
-    - Colaboradores en COLABORADORES_ACCESO_CONTRATOS: True
-    - Resto: False
-    """
+    """Retorna True si el usuario tiene acceso completo al módulo Contratos."""
     if usuario.es_socio:
         return True
     if usuario.email and usuario.email.strip().lower() in [e.lower() for e in COLABORADORES_ACCESO_CONTRATOS]:
@@ -54,36 +46,30 @@ def _tiene_acceso_contratos(usuario: Usuario) -> bool:
     return False
 
 
+def _verificar_acceso_escritura(usuario: Usuario) -> None:
+    """Lanza 403 si el usuario no tiene acceso de escritura."""
+    if not _tiene_acceso_contratos(usuario):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tiene permisos para esta acción",
+        )
+
+
 # ============================================================================
 # ENDPOINTS PÚBLICOS (lectura)
 # ============================================================================
-# IMPORTANTE: Las rutas estáticas deben ir ANTES de las dinámicas
-# para evitar que FastAPI interprete "buscar" o "categorias" como UUIDs
 
 @router.get("/categorias", response_model=List[str])
 def listar_categorias(
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Lista todas las categorías únicas disponibles.
-    
-    Acceso: Público (sin autenticación requerida).
-    """
+    """Lista todas las categorías únicas disponibles."""
     try:
-        categorias = db.query(Contrato.categoria).filter(
-            Contrato.deleted_at.is_(None),
-            Contrato.activo == True
-        ).distinct().all()
-        
-        return sorted([cat[0] for cat in categorias])
-    
+        return contratos_service.listar_categorias(db)
     except Exception as e:
         logger.error(f"Error listando categorías: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al listar categorías"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al listar categorías")
 
 
 @router.get("/buscar", response_model=List[ContratoResponse])
@@ -92,49 +78,15 @@ def buscar_contratos(
     categoria: Optional[str] = Query(None, description="Filtrar por categoría"),
     limit: int = Query(20, ge=1, le=100, description="Límite de resultados"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Búsqueda full-text en título y contenido de contratos.
-    
-    Usa ILIKE para búsqueda case-insensitive.
-    
-    Acceso: Público (sin autenticación requerida).
-    """
+    """Búsqueda full-text en título y contenido de contratos."""
     try:
-        # Construir query
-        query = db.query(Contrato).filter(
-            Contrato.deleted_at.is_(None),
-            Contrato.activo == True
-        )
-        
-        # Filtro por categoría
-        if categoria:
-            query = query.filter(Contrato.categoria == categoria)
-        
-        # Búsqueda en título y contenido
-        q_lower = f"%{q.lower()}%"
-        query = query.filter(
-            or_(
-                func.lower(Contrato.titulo).like(q_lower),
-                func.lower(Contrato.contenido_texto).like(q_lower)
-            )
-        )
-        
-        # Ordenar por relevancia (título primero)
-        contratos = query.order_by(
-            func.lower(Contrato.titulo).like(q_lower).desc(),
-            Contrato.titulo
-        ).limit(limit).all()
-        
+        contratos = contratos_service.buscar_contratos(db, q=q, categoria=categoria, limit=limit)
         return [ContratoResponse.model_validate(c) for c in contratos]
-    
     except Exception as e:
         logger.error(f"Error buscando contratos con '{q}': {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al buscar contratos"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al buscar contratos")
 
 
 @router.get("/", response_model=ContratoListResponse)
@@ -145,152 +97,67 @@ def listar_contratos(
     skip: int = Query(0, ge=0, description="Offset para paginación"),
     limit: int = Query(50, ge=1, le=100, description="Límite de resultados"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Lista contratos con filtros y paginación.
-    
-    Acceso: Público (sin autenticación requerida).
-    """
+    """Lista contratos con filtros y paginación."""
     try:
-        # Construir query base
-        query = db.query(Contrato).filter(Contrato.deleted_at.is_(None))
-        
-        # Filtro por activo
-        if activo is not None:
-            query = query.filter(Contrato.activo == activo)
-        
-        # Filtro por categoría
-        if categoria:
-            query = query.filter(Contrato.categoria == categoria)
-        
-        # Búsqueda en título y contenido
-        if q:
-            q_lower = f"%{q.lower()}%"
-            query = query.filter(
-                or_(
-                    func.lower(Contrato.titulo).like(q_lower),
-                    func.lower(Contrato.contenido_texto).like(q_lower)
-                )
-            )
-        
-        # Contar total
-        total = query.count()
-        
-        # Ordenar y paginar
-        contratos = query.order_by(Contrato.titulo).offset(skip).limit(limit).all()
-        
-        # Obtener lista de categorías únicas
-        categorias = db.query(Contrato.categoria).filter(
-            Contrato.deleted_at.is_(None),
-            Contrato.activo == True
-        ).distinct().all()
-        categorias_list = sorted([cat[0] for cat in categorias])
-        
-        # Convertir a response
-        contratos_response = [ContratoResponse.model_validate(c) for c in contratos]
-        
+        result = contratos_service.listar_contratos(
+            db, q=q, categoria=categoria, activo=activo, skip=skip, limit=limit,
+        )
+        contratos_response = [ContratoResponse.model_validate(c) for c in result["contratos"]]
         return ContratoListResponse(
             contratos=contratos_response,
-            total=total,
-            categorias=categorias_list
+            total=result["total"],
+            categorias=result["categorias"],
         )
-    
     except Exception as e:
         logger.error(f"Error listando contratos: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al listar contratos"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al listar contratos")
 
 
 @router.get("/{contrato_id}", response_model=ContratoResponse)
 def obtener_contrato(
     contrato_id: UUID,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Obtiene un contrato por ID (sin contenido_docx).
-    
-    Acceso: Público (sin autenticación requerida).
-    """
+    """Obtiene un contrato por ID."""
     try:
-        contrato = db.query(Contrato).filter(
-            Contrato.id == contrato_id,
-            Contrato.deleted_at.is_(None)
-        ).first()
-        
+        contrato = contratos_service.obtener_contrato(db, contrato_id)
         if not contrato:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Contrato no encontrado"
-            )
-        
+            raise HTTPException(status_code=404, detail="Contrato no encontrado")
         return ContratoResponse.model_validate(contrato)
-    
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error obteniendo contrato {contrato_id}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al obtener contrato"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al obtener contrato")
 
 
 @router.get("/{contrato_id}/descargar")
 def descargar_contrato(
     contrato_id: UUID,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Descarga el archivo DOCX del contrato.
-    
-    Acceso: Público (sin autenticación requerida).
-    
-    Returns:
-        FileResponse con el archivo DOCX
-    """
+    """Descarga el archivo DOCX del contrato."""
     try:
-        contrato = db.query(Contrato).filter(
-            Contrato.id == contrato_id,
-            Contrato.deleted_at.is_(None)
-        ).first()
-        
+        contrato = contratos_service.obtener_contrato(db, contrato_id)
         if not contrato:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Contrato no encontrado"
-            )
-        
+            raise HTTPException(status_code=404, detail="Contrato no encontrado")
         if not contrato.contenido_docx:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="El contrato no tiene archivo DOCX disponible"
-            )
-        
-        # Generar nombre de archivo seguro
-        nombre_archivo = contrato.nombre_archivo
-        
-        # Retornar archivo como respuesta binaria
+            raise HTTPException(status_code=404, detail="El contrato no tiene archivo DOCX disponible")
+
         return Response(
             content=contrato.contenido_docx,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            headers={
-                "Content-Disposition": f'attachment; filename="{nombre_archivo}"'
-            }
+            headers={"Content-Disposition": f'attachment; filename="{contrato.nombre_archivo}"'},
         )
-    
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error descargando contrato {contrato_id}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al descargar contrato"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al descargar contrato")
 
 
 # ============================================================================
@@ -301,23 +168,14 @@ def descargar_contrato(
 def crear_contrato(
     contrato: ContratoCreate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Crea un nuevo contrato.
-    
-    Acceso: Solo socios.
-    """
+    """Crea un nuevo contrato. Solo socios."""
     try:
-        # Verificar acceso
-        if not _tiene_acceso_contratos(current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tiene permisos para esta acción"
-            )
-        
-        # Crear contrato
-        nuevo_contrato = Contrato(
+        _verificar_acceso_escritura(current_user)
+
+        nuevo_contrato = contratos_service.crear_contrato(
+            db,
             titulo=contrato.titulo,
             categoria=contrato.categoria,
             subcategoria=contrato.subcategoria,
@@ -326,51 +184,28 @@ def crear_contrato(
             contenido_texto=contrato.contenido_texto,
             archivo_original=contrato.archivo_original,
             fuente_original=contrato.fuente_original,
-            activo=contrato.activo
+            activo=contrato.activo,
         )
-        
-        db.add(nuevo_contrato)
-        db.commit()
-        db.refresh(nuevo_contrato)
-        
+
         # Extraer campos automáticamente si hay contenido_texto
-        # (solo si no se proporcionaron campos_editables manualmente)
         if nuevo_contrato.contenido_texto and not nuevo_contrato.campos_editables:
             try:
-                logger.info(f"Extrayendo campos automáticamente para nuevo contrato {nuevo_contrato.id}")
                 extractor = ContratoFieldsExtractor()
                 campos_data = extractor.extract_fields(nuevo_contrato.contenido_texto)
-                
                 if campos_data:
-                    # Guardar directamente como dict (SQLAlchemy JSON lo maneja automáticamente)
                     nuevo_contrato.campos_editables = campos_data
                     db.commit()
                     db.refresh(nuevo_contrato)
-                    logger.info(
-                        f"Campos extraídos automáticamente para contrato {nuevo_contrato.id}: "
-                        f"{campos_data.get('total_campos', 0)} campos"
-                    )
-                else:
-                    logger.warning(f"No se pudieron extraer campos para contrato {nuevo_contrato.id}")
             except Exception as e:
-                # No fallar la creación si la extracción falla
-                logger.error(
-                    f"Error extrayendo campos automáticamente para contrato {nuevo_contrato.id}: {e}",
-                    exc_info=True
-                )
-                # Continuar sin campos_editables (se pueden extraer después manualmente)
-        
+                logger.error(f"Error extrayendo campos para contrato {nuevo_contrato.id}: {e}", exc_info=True)
+
         return ContratoResponse.model_validate(nuevo_contrato)
-    
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
         logger.error(f"Error creando contrato: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al crear contrato"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al crear contrato")
 
 
 @router.patch("/{contrato_id}", response_model=ContratoResponse)
@@ -378,190 +213,88 @@ def actualizar_contrato(
     contrato_id: UUID,
     contrato_update: ContratoUpdate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Actualiza un contrato existente.
-    
-    Acceso: Solo socios.
-    """
+    """Actualiza un contrato existente. Solo socios."""
     try:
-        # Verificar acceso
-        if not _tiene_acceso_contratos(current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tiene permisos para esta acción"
-            )
-        
-        # Buscar contrato
-        contrato = db.query(Contrato).filter(
-            Contrato.id == contrato_id,
-            Contrato.deleted_at.is_(None)
-        ).first()
-        
+        _verificar_acceso_escritura(current_user)
+
+        contrato = contratos_service.obtener_contrato(db, contrato_id)
         if not contrato:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Contrato no encontrado"
-            )
-        
-        # Actualizar campos proporcionados
+            raise HTTPException(status_code=404, detail="Contrato no encontrado")
+
         update_data = contrato_update.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(contrato, field, value)
-        
-        db.commit()
-        db.refresh(contrato)
-        
+        contrato = contratos_service.actualizar_contrato(db, contrato, update_data)
+
         return ContratoResponse.model_validate(contrato)
-    
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
         logger.error(f"Error actualizando contrato {contrato_id}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al actualizar contrato"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al actualizar contrato")
 
 
 @router.delete("/{contrato_id}", status_code=status.HTTP_200_OK)
 def eliminar_contrato(
     contrato_id: UUID,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Elimina un contrato (soft delete).
-    
-    Establece deleted_at en lugar de eliminar físicamente.
-    
-    Acceso: Solo socios.
-    """
+    """Elimina un contrato (soft delete). Solo socios."""
     try:
-        # Verificar acceso
-        if not _tiene_acceso_contratos(current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tiene permisos para esta acción"
-            )
-        
-        # Buscar contrato
-        contrato = db.query(Contrato).filter(
-            Contrato.id == contrato_id,
-            Contrato.deleted_at.is_(None)
-        ).first()
-        
+        _verificar_acceso_escritura(current_user)
+
+        contrato = contratos_service.obtener_contrato(db, contrato_id)
         if not contrato:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Contrato no encontrado"
-            )
-        
-        # Soft delete
-        from datetime import datetime, timezone
-        contrato.deleted_at = datetime.now(timezone.utc)
-        
-        db.commit()
-        
+            raise HTTPException(status_code=404, detail="Contrato no encontrado")
+
+        contratos_service.eliminar_contrato(db, contrato)
         return {"message": "Contrato eliminado"}
-    
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
         logger.error(f"Error eliminando contrato {contrato_id}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al eliminar contrato"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al eliminar contrato")
 
 
 @router.post("/{contrato_id}/extraer-campos", status_code=status.HTTP_200_OK)
 def extraer_campos_contrato(
     contrato_id: UUID,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Extrae campos editables de un contrato usando Claude.
-    
-    Analiza el contenido_texto y detecta placeholders (____________, [___], [...]).
-    Guarda el resultado en campos_editables.
-    
-    Acceso: Solo socios.
-    
-    Returns:
-        {
-            "contrato_id": str,
-            "campos_extraidos": int,
-            "campos": [...]
-        }
-    """
+    """Extrae campos editables de un contrato usando Claude. Solo socios."""
     try:
-        # Verificar acceso
-        if not _tiene_acceso_contratos(current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tiene permisos para esta acción"
-            )
-        
-        # Buscar contrato
-        contrato = db.query(Contrato).filter(
-            Contrato.id == contrato_id,
-            Contrato.deleted_at.is_(None)
-        ).first()
-        
+        _verificar_acceso_escritura(current_user)
+
+        contrato = contratos_service.obtener_contrato(db, contrato_id)
         if not contrato:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Contrato no encontrado"
-            )
-        
-        # Verificar que tiene contenido_texto
+            raise HTTPException(status_code=404, detail="Contrato no encontrado")
         if not contrato.contenido_texto:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El contrato no tiene contenido_texto disponible"
-            )
-        
-        # Extraer campos usando el servicio
+            raise HTTPException(status_code=400, detail="El contrato no tiene contenido_texto disponible")
+
         extractor = ContratoFieldsExtractor()
         campos_data = extractor.extract_fields(contrato.contenido_texto)
-        
         if not campos_data:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error al extraer campos del contrato. Verifique los logs para más detalles."
-            )
-        
-        # Guardar en campos_editables (SQLAlchemy JSON maneja la serialización)
+            raise HTTPException(status_code=500, detail="Error al extraer campos del contrato")
+
         contrato.campos_editables = campos_data
-        
         db.commit()
         db.refresh(contrato)
-        
-        logger.info(
-            f"Campos extraídos para contrato {contrato_id}: "
-            f"{campos_data.get('total_campos', 0)} campos"
-        )
-        
+
         return {
             "contrato_id": str(contrato_id),
-            "campos_extraidos": campos_data.get('total_campos', 0),
-            "campos": campos_data.get('campos', [])
+            "campos_extraidos": campos_data.get("total_campos", 0),
+            "campos": campos_data.get("campos", []),
         }
-    
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
         logger.error(f"Error extrayendo campos del contrato {contrato_id}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al extraer campos del contrato"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al extraer campos del contrato")
 
 
 @router.post("/{contrato_id}/generar")
@@ -569,104 +302,50 @@ def generar_contrato(
     contrato_id: UUID,
     datos: dict,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Genera un contrato DOCX con los valores proporcionados.
-    
-    Reemplaza los placeholders en el documento con los valores del formulario.
-    
-    Acceso: Solo socios.
-    
-    Args:
-        contrato_id: ID del contrato a generar
-        datos: Dict con estructura {"valores": {campo_id: valor}}
-    
-    Returns:
-        Response con el DOCX generado para descarga
-    """
-    import json
-    
+    """Genera un contrato DOCX con los valores proporcionados. Solo socios."""
     try:
-        # Verificar acceso
-        if not _tiene_acceso_contratos(current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tiene permisos para esta acción"
-            )
-        
-        # Obtener contrato
-        contrato = db.query(Contrato).filter(
-            Contrato.id == contrato_id,
-            Contrato.deleted_at.is_(None)
-        ).first()
-        
+        _verificar_acceso_escritura(current_user)
+
+        contrato = contratos_service.obtener_contrato(db, contrato_id)
         if not contrato:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Contrato no encontrado"
-            )
-        
+            raise HTTPException(status_code=404, detail="Contrato no encontrado")
         if not contrato.contenido_docx:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El contrato no tiene archivo DOCX disponible"
-            )
-        
+            raise HTTPException(status_code=400, detail="El contrato no tiene archivo DOCX disponible")
         if not contrato.campos_editables:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El contrato no tiene campos editables definidos"
-            )
-        
-        # Parsear campos_editables si viene como string
+            raise HTTPException(status_code=400, detail="El contrato no tiene campos editables definidos")
+
         campos = contrato.campos_editables
         if isinstance(campos, str):
             try:
                 campos = json.loads(campos)
             except json.JSONDecodeError:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Error al parsear campos editables del contrato"
-                )
-        
-        # Obtener valores del request
-        valores = datos.get('valores', {})
+                raise HTTPException(status_code=500, detail="Error al parsear campos editables")
+
+        valores = datos.get("valores", {})
         if not valores:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No se proporcionaron valores para completar el contrato"
-            )
-        
-        # Generar documento
+            raise HTTPException(status_code=400, detail="No se proporcionaron valores para completar el contrato")
+
         generator = ContratoGenerator()
         docx_generado = generator.generar(
             contenido_docx=contrato.contenido_docx,
             campos_editables=campos,
-            valores=valores
+            valores=valores,
         )
-        
-        # Generar nombre de archivo seguro
-        nombre_archivo = contrato.titulo.replace(" ", "_").replace("/", "-")
-        nombre_archivo = f"{nombre_archivo}_completado.docx"
-        
-        # Retornar como descarga
+
+        nombre_archivo = f"{contrato.titulo.replace(' ', '_').replace('/', '-')}_completado.docx"
+
         return Response(
             content=docx_generado,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            headers={
-                "Content-Disposition": f'attachment; filename="{nombre_archivo}"'
-            }
+            headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
         )
-    
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error generando contrato {contrato_id}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al generar contrato"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al generar contrato")
 
 
 @router.post("/extraer-campos-batch", status_code=status.HTTP_200_OK)
@@ -676,179 +355,93 @@ def extraer_campos_batch(
     max_intentos: int = Query(2, ge=1, le=5, description="Máximo intentos por contrato"),
     max_caracteres: int = Query(40000, ge=1000, description="Máximo caracteres de contenido"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_user),
 ):
-    """
-    Extrae campos editables de múltiples contratos (procesamiento batch inteligente).
-    
-    Características:
-    - Máximo 2 intentos por contrato (configurable)
-    - Skip automático de contratos muy largos (>40k caracteres)
-    - Registro de errores para análisis
-    - No reintenta contratos marcados como problemáticos
-    
-    Acceso: Solo socios.
-    
-    Args:
-        solo_sin_campos: Si True, solo procesa contratos con campos_editables=NULL
-        limite: Máximo de contratos a procesar por llamada (1-50)
-        max_intentos: Máximo intentos por contrato antes de marcarlo como fallido
-        max_caracteres: Máximo caracteres permitidos (contratos más largos se skipean)
-    
-    Returns:
-        {
-            "procesados": int,
-            "exitosos": int,
-            "errores": int,
-            "skipped_por_intentos": int,
-            "skipped_por_tamaño": int,
-            "detalles": [...]
-        }
-    """
+    """Extrae campos editables de múltiples contratos (procesamiento batch). Solo socios."""
     try:
-        # Verificar acceso
-        if not _tiene_acceso_contratos(current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tiene permisos para esta acción"
-            )
-        
-        # Construir query base con filtros inteligentes
-        query = db.query(Contrato).filter(
-            Contrato.deleted_at.is_(None),
-            Contrato.activo == True,
-            Contrato.contenido_texto.isnot(None),
-            Contrato.requiere_procesamiento_manual == False,  # Excluir problemáticos
-            Contrato.intentos_extraccion < max_intentos  # Solo los que no agotaron intentos
+        _verificar_acceso_escritura(current_user)
+
+        contratos = contratos_service.obtener_contratos_para_extraccion(
+            db, solo_sin_campos=solo_sin_campos, max_intentos=max_intentos, limite=limite,
         )
-        
-        # Filtrar por campos_editables si es necesario
-        if solo_sin_campos:
-            query = query.filter(Contrato.campos_editables.is_(None))
-        
-        # Limitar cantidad
-        contratos = query.limit(limite).all()
-        
+
         if not contratos:
             return {
-                "procesados": 0,
-                "exitosos": 0,
-                "errores": 0,
-                "skipped_por_intentos": 0,
-                "skipped_por_tamaño": 0,
-                "detalles": [],
-                "mensaje": "No hay contratos pendientes de procesar"
+                "procesados": 0, "exitosos": 0, "errores": 0,
+                "skipped_por_intentos": 0, "skipped_por_tamaño": 0,
+                "detalles": [], "mensaje": "No hay contratos pendientes de procesar",
             }
-        
-        # Procesar cada contrato
+
         extractor = ContratoFieldsExtractor()
         detalles = []
         exitosos = 0
         errores = 0
         skipped_tamaño = 0
-        
+
         for contrato in contratos:
             detalle = {
-                "contrato_id": str(contrato.id),
-                "titulo": contrato.titulo,
-                "exito": False,
-                "campos_extraidos": 0,
-                "error": None,
+                "contrato_id": str(contrato.id), "titulo": contrato.titulo,
+                "exito": False, "campos_extraidos": 0, "error": None,
                 "intento": contrato.intentos_extraccion + 1,
-                "caracteres": len(contrato.contenido_texto) if contrato.contenido_texto else 0
+                "caracteres": len(contrato.contenido_texto) if contrato.contenido_texto else 0,
             }
-            
-            # Skip si es muy largo
+
             if contrato.contenido_texto and len(contrato.contenido_texto) > max_caracteres:
                 contrato.requiere_procesamiento_manual = True
-                contrato.ultimo_error_extraccion = f"Contenido demasiado largo: {len(contrato.contenido_texto)} caracteres (máx: {max_caracteres})"
+                contrato.ultimo_error_extraccion = (
+                    f"Contenido demasiado largo: {len(contrato.contenido_texto)} caracteres (máx: {max_caracteres})"
+                )
                 db.commit()
-                
                 detalle["error"] = f"Skipped: contenido muy largo ({len(contrato.contenido_texto)} chars)"
                 detalle["skipped"] = True
                 skipped_tamaño += 1
                 detalles.append(detalle)
-                logger.info(f"Batch: Skip {contrato.titulo} - muy largo ({len(contrato.contenido_texto)} chars)")
                 continue
-            
+
             try:
-                # Incrementar contador de intentos ANTES de procesar
                 contrato.intentos_extraccion += 1
                 db.commit()
-                
-                # Extraer campos
+
                 campos_data = extractor.extract_fields(contrato.contenido_texto)
-                
                 if campos_data:
-                    # Guardar en campos_editables
                     contrato.campos_editables = campos_data
-                    contrato.ultimo_error_extraccion = None  # Limpiar error previo
+                    contrato.ultimo_error_extraccion = None
                     db.commit()
-                    
                     detalle["exito"] = True
-                    detalle["campos_extraidos"] = campos_data.get('total_campos', 0)
+                    detalle["campos_extraidos"] = campos_data.get("total_campos", 0)
                     exitosos += 1
-                    
-                    logger.info(
-                        f"Batch: ✅ {contrato.titulo}: {detalle['campos_extraidos']} campos "
-                        f"(intento {detalle['intento']})"
-                    )
                 else:
                     error_msg = "No se pudieron extraer campos (respuesta vacía)"
                     contrato.ultimo_error_extraccion = error_msg
-                    
-                    # Si agotó intentos, marcar como problemático
                     if contrato.intentos_extraccion >= max_intentos:
                         contrato.requiere_procesamiento_manual = True
-                        error_msg += f" - Marcado para procesamiento manual (agotó {max_intentos} intentos)"
-                    
                     db.commit()
-                    
                     detalle["error"] = error_msg
                     errores += 1
-                    logger.warning(f"Batch: ❌ {contrato.titulo} - {error_msg}")
-            
             except Exception as e:
                 db.rollback()
                 error_msg = str(e)[:500]
-                
-                # Actualizar error en el contrato
                 try:
                     contrato.ultimo_error_extraccion = error_msg
                     if contrato.intentos_extraccion >= max_intentos:
                         contrato.requiere_procesamiento_manual = True
                     db.commit()
-                except:
+                except Exception:
                     pass
-                
                 detalle["error"] = error_msg[:200]
                 errores += 1
-                logger.error(f"Batch: ❌ {contrato.titulo}: {e}")
-            
+
             detalles.append(detalle)
-        
-        # Contar cuántos quedaron excluidos por intentos agotados
-        skipped_intentos = db.query(Contrato).filter(
-            Contrato.deleted_at.is_(None),
-            Contrato.activo == True,
-            Contrato.campos_editables.is_(None),
-            Contrato.intentos_extraccion >= max_intentos
-        ).count()
-        
+
+        skipped_intentos = contratos_service.contar_contratos_agotados(db, max_intentos=max_intentos)
+
         return {
-            "procesados": len(contratos),
-            "exitosos": exitosos,
-            "errores": errores,
-            "skipped_por_intentos": skipped_intentos,
-            "skipped_por_tamaño": skipped_tamaño,
-            "detalles": detalles
+            "procesados": len(contratos), "exitosos": exitosos, "errores": errores,
+            "skipped_por_intentos": skipped_intentos, "skipped_por_tamaño": skipped_tamaño,
+            "detalles": detalles,
         }
-    
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error en extracción batch: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al procesar extracción batch"
-        )
+        raise HTTPException(status_code=500, detail="Error interno al procesar extracción batch")
