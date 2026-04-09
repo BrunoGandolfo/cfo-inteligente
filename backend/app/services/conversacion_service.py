@@ -16,14 +16,18 @@ class ConversacionService:
     @staticmethod
     def crear_conversacion(db: Session, usuario_id: UUID, titulo: Optional[str] = None) -> Conversacion:
         """Crea una nueva conversación"""
-        conversacion = Conversacion(
-            usuario_id=usuario_id,
-            titulo=titulo or "Nueva conversación"
-        )
-        db.add(conversacion)
-        db.commit()
-        db.refresh(conversacion)
-        return conversacion
+        try:
+            conversacion = Conversacion(
+                usuario_id=usuario_id,
+                titulo=titulo or "Nueva conversación"
+            )
+            db.add(conversacion)
+            db.commit()
+            db.refresh(conversacion)
+            return conversacion
+        except Exception:
+            db.rollback()
+            raise
     
     @staticmethod
     def obtener_conversacion(db: Session, conversacion_id: UUID, usuario_id: UUID) -> Optional[Conversacion]:
@@ -51,22 +55,26 @@ class ConversacionService:
         sql_generado: Optional[str] = None
     ) -> Mensaje:
         """Agrega un mensaje a la conversación"""
-        mensaje = Mensaje(
-            conversacion_id=conversacion_id,
-            rol=rol,
-            contenido=contenido,
-            sql_generado=sql_generado
-        )
-        db.add(mensaje)
-        
-        # Actualizar timestamp de conversación
-        conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id).first()
-        if conversacion:
-            conversacion.updated_at = datetime.now(timezone.utc)
-        
-        db.commit()
-        db.refresh(mensaje)
-        return mensaje
+        try:
+            mensaje = Mensaje(
+                conversacion_id=conversacion_id,
+                rol=rol,
+                contenido=contenido,
+                sql_generado=sql_generado
+            )
+            db.add(mensaje)
+            
+            # Actualizar timestamp de conversación
+            conversacion = db.query(Conversacion).filter(Conversacion.id == conversacion_id).first()
+            if conversacion:
+                conversacion.updated_at = datetime.now(timezone.utc)
+            
+            db.commit()
+            db.refresh(mensaje)
+            return mensaje
+        except Exception:
+            db.rollback()
+            raise
     
     @staticmethod
     def obtener_contexto(db: Session, conversacion_id: UUID, limite: int = 10) -> List[dict]:

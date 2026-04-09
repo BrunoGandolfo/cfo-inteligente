@@ -216,136 +216,140 @@ def sincronizar_expediente(
     Raises:
         ConnectionError: Si no se puede conectar al WS
     """
-    # Consultar Web Service
-    datos_ws = consultar_expediente_ws(iue)
-    
-    if datos_ws is None:
-        logger.info(f"Expediente {iue} no existe en el Poder Judicial")
-        return None, 0
-    
-    # Parsear IUE
-    sede, numero, anio = parsear_iue(iue)
-    
-    # Buscar expediente existente en BD
-    expediente = db.query(Expediente).filter(
-        Expediente.iue == iue,
-        Expediente.deleted_at.is_(None)
-    ).first()
-    
-    ahora = datetime.now(timezone.utc)
-    
-    if expediente is None:
-        # Limpiar carátula de HTML antes de guardar
-        caratula_limpia = _limpiar_html(datos_ws.get("caratula"))
-        # Crear nuevo expediente
-        logger.info(f"Creando expediente: {iue}")
-        expediente = Expediente(
-            iue=iue,
-            iue_sede=sede,
-            iue_numero=numero,
-            iue_anio=anio,
-            caratula=caratula_limpia,
-            origen=datos_ws.get("origen"),
-            abogado_actor=datos_ws.get("abogado_actor"),
-            abogado_demandado=datos_ws.get("abogado_demandante"),  # Nota: el WS usa "demandante"
-            cliente_id=cliente_id,
-            area_id=area_id,
-            responsable_id=responsable_id,
-            ultima_sincronizacion=ahora
-        )
-        db.add(expediente)
-        db.flush()  # Para obtener el ID
-    else:
-        # Actualizar datos básicos
-        logger.info(f"Actualizando expediente: {iue}")
-        caratula_limpia = _limpiar_html(datos_ws.get("caratula"))
-        expediente.caratula = caratula_limpia or expediente.caratula
-        expediente.origen = datos_ws.get("origen") or expediente.origen
-        expediente.abogado_actor = datos_ws.get("abogado_actor") or expediente.abogado_actor
-        expediente.abogado_demandado = datos_ws.get("abogado_demandante") or expediente.abogado_demandado
-        expediente.ultima_sincronizacion = ahora
+    try:
+        # Consultar Web Service
+        datos_ws = consultar_expediente_ws(iue)
         
-        # Actualizar relaciones solo si se proporcionan
-        if cliente_id:
-            expediente.cliente_id = cliente_id
-        if area_id:
-            expediente.area_id = area_id
-        if responsable_id:
-            expediente.responsable_id = responsable_id
-    
-    # Sincronizar movimientos
-    movimientos_ws = datos_ws.get("movimientos") or []
-    nuevos_movimientos = 0
-    fecha_ultimo = None
-    
-    for mov in movimientos_ws:
-        fecha_str = mov.get("fecha", "")
-        tipo = mov.get("tipo", "")
-        sede_mov = mov.get("sede", "")
+        if datos_ws is None:
+            logger.info(f"Expediente {iue} no existe en el Poder Judicial")
+            return None, 0
         
-        # Generar hash único para este movimiento
-        hash_mov = generar_hash_movimiento(
-            str(expediente.id),
-            fecha_str,
-            tipo,
-            sede_mov
-        )
+        # Parsear IUE
+        sede, numero, anio = parsear_iue(iue)
         
-        # Verificar si ya existe
-        existe = db.query(ExpedienteMovimiento).filter(
-            ExpedienteMovimiento.hash_movimiento == hash_mov
+        # Buscar expediente existente en BD
+        expediente = db.query(Expediente).filter(
+            Expediente.iue == iue,
+            Expediente.deleted_at.is_(None)
         ).first()
         
-        if existe:
-            continue
+        ahora = datetime.now(timezone.utc)
         
-        # Crear nuevo movimiento
-        fecha_mov = _parsear_fecha(fecha_str)
-        vencimiento_mov = _parsear_fecha(mov.get("vencimiento", ""))
+        if expediente is None:
+            # Limpiar carátula de HTML antes de guardar
+            caratula_limpia = _limpiar_html(datos_ws.get("caratula"))
+            # Crear nuevo expediente
+            logger.info(f"Creando expediente: {iue}")
+            expediente = Expediente(
+                iue=iue,
+                iue_sede=sede,
+                iue_numero=numero,
+                iue_anio=anio,
+                caratula=caratula_limpia,
+                origen=datos_ws.get("origen"),
+                abogado_actor=datos_ws.get("abogado_actor"),
+                abogado_demandado=datos_ws.get("abogado_demandante"),  # Nota: el WS usa "demandante"
+                cliente_id=cliente_id,
+                area_id=area_id,
+                responsable_id=responsable_id,
+                ultima_sincronizacion=ahora
+            )
+            db.add(expediente)
+            db.flush()  # Para obtener el ID
+        else:
+            # Actualizar datos básicos
+            logger.info(f"Actualizando expediente: {iue}")
+            caratula_limpia = _limpiar_html(datos_ws.get("caratula"))
+            expediente.caratula = caratula_limpia or expediente.caratula
+            expediente.origen = datos_ws.get("origen") or expediente.origen
+            expediente.abogado_actor = datos_ws.get("abogado_actor") or expediente.abogado_actor
+            expediente.abogado_demandado = datos_ws.get("abogado_demandante") or expediente.abogado_demandado
+            expediente.ultima_sincronizacion = ahora
+            
+            # Actualizar relaciones solo si se proporcionan
+            if cliente_id:
+                expediente.cliente_id = cliente_id
+            if area_id:
+                expediente.area_id = area_id
+            if responsable_id:
+                expediente.responsable_id = responsable_id
         
-        nuevo_mov = ExpedienteMovimiento(
-            expediente_id=expediente.id,
-            fecha=fecha_mov,
-            tipo=tipo,
-            decreto=mov.get("decreto"),
-            vencimiento=vencimiento_mov,
-            sede=sede_mov,
-            hash_movimiento=hash_mov,
-            notificado=False  # Nuevo = sin notificar
+        # Sincronizar movimientos
+        movimientos_ws = datos_ws.get("movimientos") or []
+        nuevos_movimientos = 0
+        fecha_ultimo = None
+        
+        for mov in movimientos_ws:
+            fecha_str = mov.get("fecha", "")
+            tipo = mov.get("tipo", "")
+            sede_mov = mov.get("sede", "")
+            
+            # Generar hash único para este movimiento
+            hash_mov = generar_hash_movimiento(
+                str(expediente.id),
+                fecha_str,
+                tipo,
+                sede_mov
+            )
+            
+            # Verificar si ya existe
+            existe = db.query(ExpedienteMovimiento).filter(
+                ExpedienteMovimiento.hash_movimiento == hash_mov
+            ).first()
+            
+            if existe:
+                continue
+            
+            # Crear nuevo movimiento
+            fecha_mov = _parsear_fecha(fecha_str)
+            vencimiento_mov = _parsear_fecha(mov.get("vencimiento", ""))
+            
+            nuevo_mov = ExpedienteMovimiento(
+                expediente_id=expediente.id,
+                fecha=fecha_mov,
+                tipo=tipo,
+                decreto=mov.get("decreto"),
+                vencimiento=vencimiento_mov,
+                sede=sede_mov,
+                hash_movimiento=hash_mov,
+                notificado=False  # Nuevo = sin notificar
+            )
+            
+            try:
+                with db.begin_nested():  # Savepoint para rollback parcial
+                    db.add(nuevo_mov)
+                    db.flush()  # Fuerza el INSERT inmediato para detectar duplicados
+                nuevos_movimientos += 1
+                
+                # Trackear fecha más reciente (solo para movimientos realmente insertados)
+                if fecha_mov and (fecha_ultimo is None or fecha_mov > fecha_ultimo):
+                    fecha_ultimo = fecha_mov
+            except IntegrityError:
+                # Savepoint hace rollback automático, solo continuar
+                continue
+        
+        # Actualizar estadísticas del expediente
+        total_movimientos = db.query(ExpedienteMovimiento).filter(
+            ExpedienteMovimiento.expediente_id == expediente.id
+        ).count() + nuevos_movimientos
+        
+        expediente.cantidad_movimientos = total_movimientos
+        
+        if fecha_ultimo:
+            expediente.ultimo_movimiento = fecha_ultimo
+        
+        db.commit()
+        
+        logger.info(
+            f"Sincronización completada: {iue} - "
+            f"{nuevos_movimientos} nuevos movimientos, "
+            f"{total_movimientos} total"
         )
         
-        try:
-            with db.begin_nested():  # Savepoint para rollback parcial
-                db.add(nuevo_mov)
-                db.flush()  # Fuerza el INSERT inmediato para detectar duplicados
-            nuevos_movimientos += 1
-            
-            # Trackear fecha más reciente (solo para movimientos realmente insertados)
-            if fecha_mov and (fecha_ultimo is None or fecha_mov > fecha_ultimo):
-                fecha_ultimo = fecha_mov
-        except IntegrityError:
-            # Savepoint hace rollback automático, solo continuar
-            continue
-    
-    # Actualizar estadísticas del expediente
-    total_movimientos = db.query(ExpedienteMovimiento).filter(
-        ExpedienteMovimiento.expediente_id == expediente.id
-    ).count() + nuevos_movimientos
-    
-    expediente.cantidad_movimientos = total_movimientos
-    
-    if fecha_ultimo:
-        expediente.ultimo_movimiento = fecha_ultimo
-    
-    db.commit()
-    
-    logger.info(
-        f"Sincronización completada: {iue} - "
-        f"{nuevos_movimientos} nuevos movimientos, "
-        f"{total_movimientos} total"
-    )
-    
-    return expediente, nuevos_movimientos
+        return expediente, nuevos_movimientos
+    except Exception:
+        db.rollback()
+        raise
 
 
 # ============================================================================
@@ -423,22 +427,26 @@ def marcar_movimientos_notificados(
     Returns:
         Cantidad de movimientos actualizados
     """
-    if not movimiento_ids:
-        return 0
-    
-    from uuid import UUID
-    
-    actualizados = db.query(ExpedienteMovimiento).filter(
-        ExpedienteMovimiento.id.in_([UUID(mid) for mid in movimiento_ids])
-    ).update(
-        {ExpedienteMovimiento.notificado: True},
-        synchronize_session=False
-    )
-    
-    db.commit()
-    logger.info(f"Movimientos marcados como notificados: {actualizados}")
-    
-    return actualizados
+    try:
+        if not movimiento_ids:
+            return 0
+        
+        from uuid import UUID
+        
+        actualizados = db.query(ExpedienteMovimiento).filter(
+            ExpedienteMovimiento.id.in_([UUID(mid) for mid in movimiento_ids])
+        ).update(
+            {ExpedienteMovimiento.notificado: True},
+            synchronize_session=False
+        )
+        
+        db.commit()
+        logger.info(f"Movimientos marcados como notificados: {actualizados}")
+        
+        return actualizados
+    except Exception:
+        db.rollback()
+        raise
 
 
 # ============================================================================

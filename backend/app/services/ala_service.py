@@ -283,218 +283,222 @@ def ejecutar_verificacion_completa(
     Returns:
         VerificacionALA creada en BD
     """
-    logger.info(f"Iniciando verificación ALA para: {datos.nombre_completo[:50]}...")
-
-    ahora = datetime.now(timezone.utc)
-    nombre_normalizado = normalizar_texto(datos.nombre_completo)
-    listas_fallidas: List[str] = []
-
-    # -------------------------------------------------------------------------
-    # 1. Descargar listas
-    # -------------------------------------------------------------------------
-    logger.info("Descargando listas ALA...")
-
-    # PEP
-    lista_pep = None
     try:
-        lista_pep = descargar_lista_pep()
-        if lista_pep:
-            _upsert_lista_metadata(db, "PEP", lista_pep)
-            logger.info(f"PEP: {lista_pep['total']} registros")
-        else:
-            _upsert_lista_metadata(db, "PEP", None, "Descarga retornó None")
+        logger.info(f"Iniciando verificación ALA para: {datos.nombre_completo[:50]}...")
+
+        ahora = datetime.now(timezone.utc)
+        nombre_normalizado = normalizar_texto(datos.nombre_completo)
+        listas_fallidas: List[str] = []
+
+        # -------------------------------------------------------------------------
+        # 1. Descargar listas
+        # -------------------------------------------------------------------------
+        logger.info("Descargando listas ALA...")
+
+        # PEP
+        lista_pep = None
+        try:
+            lista_pep = descargar_lista_pep()
+            if lista_pep:
+                _upsert_lista_metadata(db, "PEP", lista_pep)
+                logger.info(f"PEP: {lista_pep['total']} registros")
+            else:
+                _upsert_lista_metadata(db, "PEP", None, "Descarga retornó None")
+                listas_fallidas.append("PEP")
+        except Exception as e:
+            logger.warning(f"Error descargando PEP: {e}")
+            _upsert_lista_metadata(db, "PEP", None, str(e))
             listas_fallidas.append("PEP")
-    except Exception as e:
-        logger.warning(f"Error descargando PEP: {e}")
-        _upsert_lista_metadata(db, "PEP", None, str(e))
-        listas_fallidas.append("PEP")
 
-    # ONU
-    lista_onu = None
-    try:
-        lista_onu = descargar_lista_onu()
-        if lista_onu:
-            _upsert_lista_metadata(db, "ONU", lista_onu)
-            logger.info(f"ONU: {lista_onu['total']} individuos")
-        else:
-            _upsert_lista_metadata(db, "ONU", None, "Descarga retornó None")
+        # ONU
+        lista_onu = None
+        try:
+            lista_onu = descargar_lista_onu()
+            if lista_onu:
+                _upsert_lista_metadata(db, "ONU", lista_onu)
+                logger.info(f"ONU: {lista_onu['total']} individuos")
+            else:
+                _upsert_lista_metadata(db, "ONU", None, "Descarga retornó None")
+                listas_fallidas.append("ONU")
+        except Exception as e:
+            logger.warning(f"Error descargando ONU: {e}")
+            _upsert_lista_metadata(db, "ONU", None, str(e))
             listas_fallidas.append("ONU")
-    except Exception as e:
-        logger.warning(f"Error descargando ONU: {e}")
-        _upsert_lista_metadata(db, "ONU", None, str(e))
-        listas_fallidas.append("ONU")
 
-    # OFAC
-    lista_ofac = None
-    try:
-        lista_ofac = descargar_lista_ofac()
-        if lista_ofac:
-            _upsert_lista_metadata(db, "OFAC", lista_ofac)
-            logger.info(f"OFAC: {lista_ofac['total']} registros")
-        else:
-            _upsert_lista_metadata(db, "OFAC", None, "Descarga retornó None")
+        # OFAC
+        lista_ofac = None
+        try:
+            lista_ofac = descargar_lista_ofac()
+            if lista_ofac:
+                _upsert_lista_metadata(db, "OFAC", lista_ofac)
+                logger.info(f"OFAC: {lista_ofac['total']} registros")
+            else:
+                _upsert_lista_metadata(db, "OFAC", None, "Descarga retornó None")
+                listas_fallidas.append("OFAC")
+        except Exception as e:
+            logger.warning(f"Error descargando OFAC: {e}")
+            _upsert_lista_metadata(db, "OFAC", None, str(e))
             listas_fallidas.append("OFAC")
-    except Exception as e:
-        logger.warning(f"Error descargando OFAC: {e}")
-        _upsert_lista_metadata(db, "OFAC", None, str(e))
-        listas_fallidas.append("OFAC")
 
-    # UE
-    lista_ue = None
-    try:
-        lista_ue = descargar_lista_ue()
-        if lista_ue:
-            _upsert_lista_metadata(db, "UE", lista_ue)
-            logger.info(f"UE: {lista_ue['total']} registros")
-        else:
-            _upsert_lista_metadata(db, "UE", None, "Descarga retornó None")
+        # UE
+        lista_ue = None
+        try:
+            lista_ue = descargar_lista_ue()
+            if lista_ue:
+                _upsert_lista_metadata(db, "UE", lista_ue)
+                logger.info(f"UE: {lista_ue['total']} registros")
+            else:
+                _upsert_lista_metadata(db, "UE", None, "Descarga retornó None")
+                listas_fallidas.append("UE")
+        except Exception as e:
+            logger.warning(f"Error descargando UE: {e}")
+            _upsert_lista_metadata(db, "UE", None, str(e))
             listas_fallidas.append("UE")
-    except Exception as e:
-        logger.warning(f"Error descargando UE: {e}")
-        _upsert_lista_metadata(db, "UE", None, str(e))
-        listas_fallidas.append("UE")
 
-    # -------------------------------------------------------------------------
-    # 2. Ejecutar verificaciones
-    # -------------------------------------------------------------------------
-    logger.info("Ejecutando verificaciones contra listas...")
+        # -------------------------------------------------------------------------
+        # 2. Ejecutar verificaciones
+        # -------------------------------------------------------------------------
+        logger.info("Ejecutando verificaciones contra listas...")
 
-    # PEP
-    resultado_pep_raw = None
-    if lista_pep:
-        resultado_pep_raw = verificar_pep(
-            ci=datos.numero_documento,
-            nombre=nombre_normalizado,
-            lista_pep=lista_pep,
+        # PEP
+        resultado_pep_raw = None
+        if lista_pep:
+            resultado_pep_raw = verificar_pep(
+                ci=datos.numero_documento,
+                nombre=nombre_normalizado,
+                lista_pep=lista_pep,
+            )
+            logger.info(f"PEP: es_pep={resultado_pep_raw.get('es_pep')}")
+
+        # ONU
+        resultado_onu_raw = None
+        if lista_onu:
+            resultado_onu_raw = verificar_onu(nombre_normalizado, lista_onu)
+            logger.info(f"ONU: en_lista={resultado_onu_raw.get('en_lista')}")
+
+        # OFAC
+        resultado_ofac_raw = None
+        if lista_ofac:
+            resultado_ofac_raw = verificar_ofac(nombre_normalizado, lista_ofac)
+            logger.info(f"OFAC: en_lista={resultado_ofac_raw.get('en_lista')}")
+
+        # UE
+        resultado_ue_raw = None
+        if lista_ue:
+            resultado_ue_raw = verificar_ue(nombre_normalizado, lista_ue)
+            logger.info(f"UE: en_lista={resultado_ue_raw.get('en_lista')}")
+
+        # GAFI (no requiere descarga)
+        resultado_gafi_raw = verificar_pais_gafi(datos.nacionalidad)
+        logger.info(f"GAFI: nivel={resultado_gafi_raw.get('nivel')}")
+
+        # -------------------------------------------------------------------------
+        # 3. Clasificar riesgo
+        # -------------------------------------------------------------------------
+        clasificacion = _clasificar_riesgo(
+            resultado_pep=resultado_pep_raw or {},
+            resultado_onu=resultado_onu_raw or {},
+            resultado_ofac=resultado_ofac_raw or {},
+            resultado_ue=resultado_ue_raw or {},
+            resultado_gafi=resultado_gafi_raw,
+            listas_fallidas=listas_fallidas,
         )
-        logger.info(f"PEP: es_pep={resultado_pep_raw.get('es_pep')}")
 
-    # ONU
-    resultado_onu_raw = None
-    if lista_onu:
-        resultado_onu_raw = verificar_onu(nombre_normalizado, lista_onu)
-        logger.info(f"ONU: en_lista={resultado_onu_raw.get('en_lista')}")
+        logger.info(
+            f"Clasificación: riesgo={clasificacion['nivel_riesgo']}, "
+            f"diligencia={clasificacion['nivel_diligencia']}, "
+            f"puede_operar={clasificacion['puede_operar']}"
+        )
 
-    # OFAC
-    resultado_ofac_raw = None
-    if lista_ofac:
-        resultado_ofac_raw = verificar_ofac(nombre_normalizado, lista_ofac)
-        logger.info(f"OFAC: en_lista={resultado_ofac_raw.get('en_lista')}")
+        # -------------------------------------------------------------------------
+        # 4. Formatear resultados para JSONB
+        # -------------------------------------------------------------------------
+        resultado_pep = _formatear_resultado_lista(
+            "PEP",
+            resultado_pep_raw,
+            lista_pep.get("hash") if lista_pep else None,
+            checked=lista_pep is not None,
+        )
+        resultado_onu = _formatear_resultado_lista(
+            "ONU",
+            resultado_onu_raw,
+            lista_onu.get("hash") if lista_onu else None,
+            checked=lista_onu is not None,
+        )
+        resultado_ofac = _formatear_resultado_lista(
+            "OFAC",
+            resultado_ofac_raw,
+            lista_ofac.get("hash") if lista_ofac else None,
+            checked=lista_ofac is not None,
+        )
+        resultado_ue = _formatear_resultado_lista(
+            "UE",
+            resultado_ue_raw,
+            lista_ue.get("hash") if lista_ue else None,
+            checked=lista_ue is not None,
+        )
+        resultado_gafi = _formatear_resultado_lista(
+            "GAFI",
+            resultado_gafi_raw,
+            None,  # GAFI no tiene hash
+            checked=True,  # GAFI siempre está disponible (lista local)
+        )
 
-    # UE
-    resultado_ue_raw = None
-    if lista_ue:
-        resultado_ue_raw = verificar_ue(nombre_normalizado, lista_ue)
-        logger.info(f"UE: en_lista={resultado_ue_raw.get('en_lista')}")
+        # -------------------------------------------------------------------------
+        # 5. Generar hash de verificación
+        # -------------------------------------------------------------------------
+        resultados_para_hash = {
+            "pep": resultado_pep,
+            "onu": resultado_onu,
+            "ofac": resultado_ofac,
+            "ue": resultado_ue,
+            "gafi": resultado_gafi,
+            "clasificacion": clasificacion,
+        }
+        hash_verificacion = _generar_hash_verificacion(
+            datos.nombre_completo,
+            datos.numero_documento,
+            ahora,
+            resultados_para_hash,
+        )
 
-    # GAFI (no requiere descarga)
-    resultado_gafi_raw = verificar_pais_gafi(datos.nacionalidad)
-    logger.info(f"GAFI: nivel={resultado_gafi_raw.get('nivel')}")
+        # -------------------------------------------------------------------------
+        # 6. Crear registro en BD
+        # -------------------------------------------------------------------------
+        es_pep = resultado_pep_raw.get("es_pep", False) if resultado_pep_raw else False
 
-    # -------------------------------------------------------------------------
-    # 3. Clasificar riesgo
-    # -------------------------------------------------------------------------
-    clasificacion = _clasificar_riesgo(
-        resultado_pep=resultado_pep_raw or {},
-        resultado_onu=resultado_onu_raw or {},
-        resultado_ofac=resultado_ofac_raw or {},
-        resultado_ue=resultado_ue_raw or {},
-        resultado_gafi=resultado_gafi_raw,
-        listas_fallidas=listas_fallidas,
-    )
+        verificacion = VerificacionALA(
+            nombre_completo=datos.nombre_completo,
+            tipo_documento=datos.tipo_documento,
+            numero_documento=datos.numero_documento,
+            nacionalidad=datos.nacionalidad,
+            fecha_nacimiento=datos.fecha_nacimiento,
+            es_persona_juridica=datos.es_persona_juridica,
+            razon_social=datos.razon_social,
+            nivel_diligencia=clasificacion["nivel_diligencia"],
+            nivel_riesgo=clasificacion["nivel_riesgo"],
+            es_pep=es_pep,
+            resultado_onu=resultado_onu,
+            resultado_pep=resultado_pep,
+            resultado_ofac=resultado_ofac,
+            resultado_ue=resultado_ue,
+            resultado_gafi=resultado_gafi,
+            hash_verificacion=hash_verificacion,
+            expediente_id=datos.expediente_id,
+            contrato_id=datos.contrato_id,
+            usuario_id=usuario_id,
+        )
 
-    logger.info(
-        f"Clasificación: riesgo={clasificacion['nivel_riesgo']}, "
-        f"diligencia={clasificacion['nivel_diligencia']}, "
-        f"puede_operar={clasificacion['puede_operar']}"
-    )
+        db.add(verificacion)
+        db.commit()
+        db.refresh(verificacion)
 
-    # -------------------------------------------------------------------------
-    # 4. Formatear resultados para JSONB
-    # -------------------------------------------------------------------------
-    resultado_pep = _formatear_resultado_lista(
-        "PEP",
-        resultado_pep_raw,
-        lista_pep.get("hash") if lista_pep else None,
-        checked=lista_pep is not None,
-    )
-    resultado_onu = _formatear_resultado_lista(
-        "ONU",
-        resultado_onu_raw,
-        lista_onu.get("hash") if lista_onu else None,
-        checked=lista_onu is not None,
-    )
-    resultado_ofac = _formatear_resultado_lista(
-        "OFAC",
-        resultado_ofac_raw,
-        lista_ofac.get("hash") if lista_ofac else None,
-        checked=lista_ofac is not None,
-    )
-    resultado_ue = _formatear_resultado_lista(
-        "UE",
-        resultado_ue_raw,
-        lista_ue.get("hash") if lista_ue else None,
-        checked=lista_ue is not None,
-    )
-    resultado_gafi = _formatear_resultado_lista(
-        "GAFI",
-        resultado_gafi_raw,
-        None,  # GAFI no tiene hash
-        checked=True,  # GAFI siempre está disponible (lista local)
-    )
+        logger.info(f"Verificación ALA creada: id={verificacion.id}, riesgo={verificacion.nivel_riesgo}")
 
-    # -------------------------------------------------------------------------
-    # 5. Generar hash de verificación
-    # -------------------------------------------------------------------------
-    resultados_para_hash = {
-        "pep": resultado_pep,
-        "onu": resultado_onu,
-        "ofac": resultado_ofac,
-        "ue": resultado_ue,
-        "gafi": resultado_gafi,
-        "clasificacion": clasificacion,
-    }
-    hash_verificacion = _generar_hash_verificacion(
-        datos.nombre_completo,
-        datos.numero_documento,
-        ahora,
-        resultados_para_hash,
-    )
-
-    # -------------------------------------------------------------------------
-    # 6. Crear registro en BD
-    # -------------------------------------------------------------------------
-    es_pep = resultado_pep_raw.get("es_pep", False) if resultado_pep_raw else False
-
-    verificacion = VerificacionALA(
-        nombre_completo=datos.nombre_completo,
-        tipo_documento=datos.tipo_documento,
-        numero_documento=datos.numero_documento,
-        nacionalidad=datos.nacionalidad,
-        fecha_nacimiento=datos.fecha_nacimiento,
-        es_persona_juridica=datos.es_persona_juridica,
-        razon_social=datos.razon_social,
-        nivel_diligencia=clasificacion["nivel_diligencia"],
-        nivel_riesgo=clasificacion["nivel_riesgo"],
-        es_pep=es_pep,
-        resultado_onu=resultado_onu,
-        resultado_pep=resultado_pep,
-        resultado_ofac=resultado_ofac,
-        resultado_ue=resultado_ue,
-        resultado_gafi=resultado_gafi,
-        hash_verificacion=hash_verificacion,
-        expediente_id=datos.expediente_id,
-        contrato_id=datos.contrato_id,
-        usuario_id=usuario_id,
-    )
-
-    db.add(verificacion)
-    db.commit()
-    db.refresh(verificacion)
-
-    logger.info(f"Verificación ALA creada: id={verificacion.id}, riesgo={verificacion.nivel_riesgo}")
-
-    return verificacion
+        return verificacion
+    except Exception:
+        db.rollback()
+        raise
 
 
 def obtener_verificacion(
