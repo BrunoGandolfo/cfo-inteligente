@@ -8,6 +8,7 @@
 
 import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import { readSSEStream } from '../utils/sseHelper';
 
 // Helper para delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -57,44 +58,34 @@ export function useSoporte() {
         throw new Error(`Error ${response.status}`);
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ') && !line.includes('[DONE]')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.text) {
-                // Actualizar el último mensaje (el del asistente)
-                setMensajes(prev => {
-                  const updated = [...prev];
-                  const lastIndex = updated.length - 1;
-                  updated[lastIndex] = {
-                    ...updated[lastIndex],
-                    content: updated[lastIndex].content + data.text
-                  };
-                  return [...updated];
-                });
-                // Delay entre chunks para efecto más natural
-                await delay(20);
-              }
-              if (data.error) {
-                console.error('Error del servidor:', data.error);
-                toast.error('Error al procesar la consulta');
-              }
-            } catch (e) {
-              // Ignorar líneas que no son JSON válido
-            }
-          }
+      await readSSEStream(response.body, async ({ data }) => {
+        if (data === '[DONE]') {
+          return;
         }
-      }
+
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.text) {
+            setMensajes(prev => {
+              const updated = [...prev];
+              const lastIndex = updated.length - 1;
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: updated[lastIndex].content + parsed.text
+              };
+              return [...updated];
+            });
+            await delay(20);
+          }
+
+          if (parsed.error) {
+            console.error('Error del servidor:', parsed.error);
+            toast.error('Error al procesar la consulta');
+          }
+        } catch {
+          // Ignorar líneas que no son JSON válido
+        }
+      });
     } catch (error) {
       console.error('Error en soporte:', error);
       
