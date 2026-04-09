@@ -10,8 +10,6 @@ Fecha: Diciembre 2025
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import Optional
 from uuid import UUID
 from pathlib import Path
 
@@ -19,18 +17,12 @@ from app.core.database import get_db
 from app.core.logger import get_logger
 from app.core.security import get_current_user
 from app.models import Usuario, Mensaje
+from app.schemas.soporte import ExportPDFRequest
 from app.services.chat_pdf_generator import ChatPDFGenerator
 
 logger = get_logger(__name__)
 
 router = APIRouter()
-
-
-class ExportPDFRequest(BaseModel):
-    """Request body para exportar mensaje a PDF."""
-    mensaje_id: str
-    titulo: Optional[str] = None
-    incluir_graficos: bool = True
 
 
 def eliminar_archivo_temporal(path: str) -> None:
@@ -159,4 +151,3 @@ async def exportar_chat_a_pdf(
             status_code=500,
             detail=f"Error generando PDF: {str(e)}"
         )
-

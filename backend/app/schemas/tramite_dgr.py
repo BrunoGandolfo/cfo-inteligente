@@ -1,7 +1,7 @@
 """Schemas Pydantic para trámites registrales DGR."""
 
 from datetime import date, datetime
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -95,3 +95,18 @@ class TramiteDgrResponse(BaseModel):
     deleted_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TramiteListResponse(BaseModel):
+    """Respuesta paginada de trámites."""
+
+    total: int
+    limit: int
+    offset: int
+    tramites: List[TramiteDgrResponse]
+
+
+class MarcarNotificadosRequest(BaseModel):
+    """Body para marcar trámites como notificados."""
+
+    ids: List[UUID]

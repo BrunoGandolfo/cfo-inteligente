@@ -2,13 +2,24 @@ import secrets
 import string
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.rate_limiter import limiter
 from app.models import Usuario
 from app.core.security import verify_password, create_access_token, hash_password, get_current_user
 from app.core.access_control import (
     SOCIOS_AUTORIZADOS, DOMINIO_DEFAULT, DOMINIOS_EXCEPCION, DOMINIOS_PERMITIDOS,
+)
+from app.schemas.auth import (
+    CambiarPasswordPublicoRequest,
+    CambiarPasswordPublicoResponse,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
+    LoginRequest,
+    LoginResponse,
+    RegisterRequest,
+    RegisterResponse,
+    ResetPasswordResponse,
+    UsuarioResponse,
 )
 
 router = APIRouter()
@@ -25,55 +36,6 @@ def construir_email(prefijo: str) -> str:
     prefijo_lower = prefijo.lower().strip()
     dominio = DOMINIOS_EXCEPCION.get(prefijo_lower, DOMINIO_DEFAULT)
     return f"{prefijo_lower}@{dominio}"
-
-# ═══════════════════════════════════════════════════════════════
-# SCHEMAS
-# ═══════════════════════════════════════════════════════════════
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-class LoginResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    nombre: str
-    es_socio: bool
-
-class RegisterRequest(BaseModel):
-    prefijo_email: str  # Solo el prefijo, sin @
-    nombre: str
-    password: str
-
-class RegisterResponse(BaseModel):
-    message: str
-    email: str
-    es_socio: bool
-
-class ChangePasswordRequest(BaseModel):
-    current_password: str
-    new_password: str
-
-class ChangePasswordResponse(BaseModel):
-    message: str
-
-class UsuarioResponse(BaseModel):
-    id: str
-    email: str
-    nombre: str
-    es_socio: bool
-
-class ResetPasswordResponse(BaseModel):
-    message: str
-    temp_password: str
-
-class CambiarPasswordPublicoRequest(BaseModel):
-    prefijo_email: str
-    password_actual: str
-    password_nueva: str
-
-class CambiarPasswordPublicoResponse(BaseModel):
-    message: str
 
 # ═══════════════════════════════════════════════════════════════
 # ENDPOINTS

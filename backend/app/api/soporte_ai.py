@@ -10,8 +10,6 @@ Este módulo implementa un asistente de soporte que:
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from typing import Optional, List, Dict
 import anthropic
 import os
 import json
@@ -21,25 +19,9 @@ from pathlib import Path
 from app.core.security import get_current_user
 from app.core.constants import CLAUDE_MODEL
 from app.models.usuario import Usuario
+from app.schemas.soporte import SoporteRequest, SoporteResponse
 
 router = APIRouter(prefix="/api/soporte", tags=["Soporte AI"])
-
-
-# ═══════════════════════════════════════════════════════════════
-# SCHEMAS
-# ═══════════════════════════════════════════════════════════════
-
-class MensajeHistorial(BaseModel):
-    role: str
-    content: str
-
-class SoporteRequest(BaseModel):
-    mensaje: str
-    historial: Optional[List[Dict[str, str]]] = []
-    es_socio: Optional[bool] = True  # Default true por compatibilidad
-
-class SoporteResponse(BaseModel):
-    respuesta: str
 
 
 # ═══════════════════════════════════════════════════════════════

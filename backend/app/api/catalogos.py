@@ -6,35 +6,15 @@ Estos datos se cargan desde la BD en lugar de estar hardcodeados en el frontend.
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
-from pydantic import BaseModel
-from uuid import UUID
 
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.area import Area
 from app.models.socio import Socio
 from app.models.usuario import Usuario
+from app.schemas.catalogo import AreaResponse, SocioResponse
 
 router = APIRouter()
-
-
-class AreaResponse(BaseModel):
-    """Schema de respuesta para un área del estudio."""
-    id: UUID
-    nombre: str
-
-    class Config:
-        from_attributes = True
-
-
-class SocioResponse(BaseModel):
-    """Schema de respuesta para un socio del estudio."""
-    id: UUID
-    nombre: str
-    porcentaje_participacion: float
-
-    class Config:
-        from_attributes = True
 
 
 @router.get("/areas", response_model=List[AreaResponse])
@@ -55,4 +35,3 @@ def get_socios(
     """Retorna todos los socios activos ordenados por nombre"""
     socios = db.query(Socio).filter(Socio.activo == True).order_by(Socio.nombre).all()
     return socios
-
