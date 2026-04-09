@@ -19,7 +19,7 @@ from app.core.security import get_current_user
 from app.models import Usuario
 from app.models.expediente import Expediente, ExpedienteMovimiento
 from app.core.access_control import (
-    USUARIOS_ACCESO_EXPEDIENTES, COLABORADORES_ACCESO_EXPEDIENTES, USUARIOS_FILTRO_EXPEDIENTES,
+    USUARIOS_ACCESO_EXPEDIENTES, USUARIOS_FILTRO_EXPEDIENTES,
 )
 from app.services import expediente_service
 from app.services import twilio_service

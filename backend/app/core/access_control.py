@@ -21,11 +21,6 @@ USUARIOS_ACCESO_EXPEDIENTES = [
     "falgorta@grupoconexion.uy",
     "gferrari@grupoconexion.uy",
 ]
-COLABORADORES_ACCESO_EXPEDIENTES = [
-    "gferrari@grupoconexion.uy",
-    "falgorta@grupoconexion.uy",
-    "gtaborda@grupoconexion.uy",
-]
 # Usuarios que solo ven expedientes donde ellos son el responsable
 # Bruno NO está en esta lista → ve todos
 USUARIOS_FILTRO_EXPEDIENTES = [
