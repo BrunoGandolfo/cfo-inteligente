@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.core.access_control import COLABORADORES_ACCESO_DGR
 from app.models import Usuario
 from app.schemas.tramite_dgr import (
     MarcarNotificadosRequest,
@@ -156,7 +157,7 @@ async def listar_tramites(
     current_user: Usuario = Depends(get_current_user),
 ):
     """Lista trámites del usuario autenticado."""
-    responsable_id = None if current_user.es_socio else current_user.id
+    responsable_id = None if (current_user.es_socio or current_user.email in COLABORADORES_ACCESO_DGR) else current_user.id
 
     result = tramites_dgr_service.listar_tramites(
         db, responsable_id=responsable_id, activo=activo, limit=limit, offset=offset,
