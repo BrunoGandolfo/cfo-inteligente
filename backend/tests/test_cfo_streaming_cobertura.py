@@ -55,12 +55,18 @@ def mock_user(db_session):
     if usuario:
         return usuario
     else:
-        # Si no hay usuarios, crear un mock
-        user = Mock()
-        user.id = uuid4()
-        user.email = "test-streaming@conexion.uy"
-        user.es_socio = True
-        user.nombre = "Test User"
+        # Si no hay usuarios, crear uno real para respetar FK de conversaciones
+        user = Usuario(
+            id=uuid4(),
+            email="test-streaming@conexion.uy",
+            nombre="Test User",
+            password_hash="$2b$12$test_hash_placeholder",
+            es_socio=True,
+            activo=True,
+        )
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
         return user
 
 

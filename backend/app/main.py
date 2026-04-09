@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -13,10 +14,31 @@ from app.api.tipo_cambio import router as tipo_cambio_router
 
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Inicializa y apaga servicios de larga vida de la aplicación."""
+    if settings.environment == "production":
+        from app.services.scheduler_service import iniciar_scheduler
+
+        iniciar_scheduler()
+        logger.info("🚀 Scheduler activado (producción)")
+    else:
+        logger.info("⏸️ Scheduler desactivado (desarrollo)")
+
+    yield
+
+    if settings.environment == "production":
+        from app.services.scheduler_service import detener_scheduler
+
+        detener_scheduler()
+
+
 app = FastAPI(
     title="CFO Inteligente API",
     description="Sistema Financiero Conexión Consultora",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan,
 )
 
 # Exception handler global: evita exponer tracebacks en respuestas
@@ -100,26 +122,3 @@ app.include_router(ala_router, prefix="/api/ala", tags=["ALA - Anti Lavado"])
 
 from app.api.tramites_dgr import router as tramites_dgr_router
 app.include_router(tramites_dgr_router, prefix="/api/tramites-dgr", tags=["tramites-dgr"])
-
-
-# ============================================================================
-# EVENTOS STARTUP / SHUTDOWN
-# ============================================================================
-
-@app.on_event("startup")
-async def startup_event():
-    """Inicia servicios al arrancar la aplicación."""
-    if settings.environment == "production":
-        from app.services.scheduler_service import iniciar_scheduler
-        iniciar_scheduler()
-        logger.info("🚀 Scheduler activado (producción)")
-    else:
-        logger.info("⏸️ Scheduler desactivado (desarrollo)")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Detiene servicios al cerrar la aplicación."""
-    if settings.environment == "production":
-        from app.services.scheduler_service import detener_scheduler
-        detener_scheduler()
