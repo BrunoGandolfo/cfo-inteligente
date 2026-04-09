@@ -8,15 +8,15 @@ contra listas ya descargadas.
 import csv
 import hashlib
 import io
-import logging
 import re
 import unicodedata
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
 
 import requests
+from app.core.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # -----------------------------------------------------------------------------
 # Constantes

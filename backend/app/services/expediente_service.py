@@ -7,7 +7,6 @@ WSDL: http://expedientes.poderjudicial.gub.uy/wsConsultaIUE.php?wsdl
 Solo socios pueden gestionar expedientes.
 """
 
-import logging
 import json
 import time
 import re
@@ -21,6 +20,7 @@ from zeep.exceptions import Fault, TransportError
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
+from app.core.logger import get_logger
 from app.models.expediente import (
     Expediente, 
     ExpedienteMovimiento, 
@@ -28,7 +28,7 @@ from app.models.expediente import (
     generar_hash_movimiento
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # ============================================================================
 # CONFIGURACIÓN

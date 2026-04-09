@@ -7,14 +7,14 @@ Genera certificado profesional en formato A4 usando WeasyPrint.
 
 from datetime import datetime
 from typing import TYPE_CHECKING
-import logging
 
 from weasyprint import HTML
+from app.core.logger import get_logger
 
 if TYPE_CHECKING:
     from app.models.verificacion_ala import VerificacionALA
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Colores por nivel de riesgo
 COLORES_RIESGO = {

@@ -1,14 +1,14 @@
 """Servicio para obtener el tipo de cambio USD/UYU con cache y fallback."""
 
-import logging
 from datetime import datetime, timedelta
 from typing import Dict
 
 import requests
 
 from app.core.constants import FALLBACK_COTIZACION_USD
+from app.core.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 CACHE_TTL = timedelta(hours=24)
 DOLARAPI_TIMEOUT_SECONDS = 5

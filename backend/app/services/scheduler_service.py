@@ -3,17 +3,17 @@ Scheduler para tareas programadas.
 Usa APScheduler con zona horaria Uruguay.
 """
 
-import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
 import pytz
 
 from app.core.database import SessionLocal
+from app.core.logger import get_logger
 from app.services.dgr_scheduler_service import tarea_monitorear_tramites_dgr
 from app.services.expediente_service import sincronizar_todos_los_expedientes
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Zona horaria Uruguay
 TZ_URUGUAY = pytz.timezone("America/Montevideo")
@@ -76,7 +76,9 @@ def iniciar_scheduler() -> None:
         CronTrigger(hour=7, minute=30, timezone=TZ_URUGUAY),
         id="sync_expedientes_diario",
         name="Sincronización diaria de expedientes",
-        replace_existing=True
+        replace_existing=True,
+        max_instances=1,
+        misfire_grace_time=300,
     )
 
     # Tarea: monitorear trámites DGR cada 4 horas
@@ -87,6 +89,8 @@ def iniciar_scheduler() -> None:
         id="monitorear_tramites_dgr",
         name="Monitorear trámites DGR",
         replace_existing=True,
+        max_instances=1,
+        misfire_grace_time=300,
     )
     
     scheduler.start()
@@ -98,4 +102,3 @@ def detener_scheduler() -> None:
     if scheduler.running:
         scheduler.shutdown()
         logger.info("📅 Scheduler detenido")
-

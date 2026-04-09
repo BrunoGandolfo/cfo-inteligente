@@ -6,9 +6,9 @@ pre-formateado con números escritos.  Claude recibe texto → los copia sin
 recalcular ni inventar.
 """
 
-import logging
+from app.core.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # ══════════════════════════════════════════════════════════════
 # RED DE SEGURIDAD BIMONETARIA

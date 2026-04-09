@@ -2,15 +2,15 @@
 Servicio para envío de notificaciones via WhatsApp (Twilio).
 """
 
-import logging
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 import json
 from typing import List, Dict, Any, Optional
 
 from app.core.config import Settings
+from app.core.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Configuración Twilio (desde variables de entorno)
 TWILIO_ACCOUNT_SID = Settings().twilio_account_sid

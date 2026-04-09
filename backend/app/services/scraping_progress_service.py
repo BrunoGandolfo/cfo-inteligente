@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from datetime import date
 from typing import Optional
 
@@ -10,6 +9,7 @@ from sqlalchemy import case
 from sqlalchemy.orm import Session
 
 from app.core.database import utc_now
+from app.core.logger import get_logger
 from app.models.scraping_progress import ScrapingFailure, ScrapingLog, ScrapingProgress
 from app.schemas.scraping_progress import (
     OverallScrapingProgress,
@@ -18,7 +18,7 @@ from app.schemas.scraping_progress import (
     ScrapingProgressUpdate,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ScrapingProgressService:

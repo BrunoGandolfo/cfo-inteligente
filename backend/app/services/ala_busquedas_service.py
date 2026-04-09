@@ -9,7 +9,6 @@ Ejecuta búsquedas automáticas en:
 Decreto 379/018 - Art. 44 C.4
 """
 
-import logging
 import os
 from typing import Any, Dict, List
 
@@ -18,8 +17,9 @@ import requests
 
 from app.core.config import settings
 from app.core.constants import CLAUDE_MODEL
+from app.core.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # =============================================================================
 # Constantes

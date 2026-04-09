@@ -2,12 +2,13 @@
 Servicio para generar contratos DOCX completados.
 Reemplaza placeholders en documentos DOCX con valores proporcionados.
 """
-import logging
 from docx import Document
 from io import BytesIO
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from app.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ContratoGenerator:

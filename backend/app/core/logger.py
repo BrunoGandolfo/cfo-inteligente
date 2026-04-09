@@ -17,6 +17,7 @@ Uso:
     logger.error("Error crítico", exc_info=True)
 """
 
+import os
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
@@ -27,7 +28,7 @@ from pathlib import Path
 LOG_DIR = Path(__file__).parent.parent.parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -84,4 +85,3 @@ def get_logger(name: str) -> logging.Logger:
 
 # Logger por defecto para el core
 core_logger = get_logger('cfo_inteligente.core')
-

@@ -7,7 +7,6 @@ por WhatsApp cuando hay novedades en trámites activos.
 
 import asyncio
 import json
-import logging
 from datetime import date, datetime, timezone
 from typing import Optional
 
@@ -15,12 +14,13 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.core.database import SessionLocal
+from app.core.logger import get_logger
 from app.models.tramite_dgr_historial import TramiteDgrHistorial
 from app.models.tramite_dgr import TramiteDgr
 from app.services import twilio_service
 from app.services.dgr_service import consultar_tramite_dgr
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _parse_fecha_ingreso(valor):

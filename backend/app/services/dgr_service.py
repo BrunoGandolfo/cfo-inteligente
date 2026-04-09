@@ -5,7 +5,6 @@ en https://www.dgr.gub.uy/Consulta_Tramites/servlet/dgr.gub.uy.consultatramite.c
 """
 
 import json
-import logging
 import time
 from datetime import datetime
 from typing import Optional
@@ -13,8 +12,9 @@ from typing import Optional
 import httpx
 # playwright se importa lazy dentro de consultar_tramite_dgr()
 from app.core.config import Settings
+from app.core.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 DGR_URL = "https://www.dgr.gub.uy/Consulta_Tramites/servlet/dgr.gub.uy.consultatramite.cn"
 RECAPTCHA_SITEKEY = "6LepiTkUAAAAAKnwCbJbgI-XoaXHl_-WcJCzjXWD"

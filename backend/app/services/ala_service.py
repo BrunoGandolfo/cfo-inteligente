@@ -9,13 +9,13 @@ Decreto 379/018, Arts. 17-18, 44.
 
 import hashlib
 import json
-import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.core.logger import get_logger
 from app.models.verificacion_ala import ListaALAMetadata, VerificacionALA
 from app.schemas.verificacion_ala import VerificacionALACreate
 from app.services.ala_list_parser import (
@@ -31,7 +31,7 @@ from app.services.ala_list_parser import (
     verificar_ue,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # =============================================================================
 # Constantes

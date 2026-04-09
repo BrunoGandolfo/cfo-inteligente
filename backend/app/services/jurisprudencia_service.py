@@ -5,7 +5,6 @@ Búsqueda full-text en español, filtros por materia/sede/fecha,
 CRUD con soft delete y actualización de resúmenes IA.
 """
 
-import logging
 import uuid
 from datetime import datetime, timezone, date
 from typing import Optional, Dict, List, Any
@@ -14,9 +13,10 @@ from sqlalchemy import func, text, desc
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
+from app.core.logger import get_logger
 from app.models.sentencia import Sentencia
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def buscar_sentencias(

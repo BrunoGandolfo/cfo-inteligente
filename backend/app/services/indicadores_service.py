@@ -13,14 +13,13 @@ Cotizaciones con API en tiempo real:
 TODO: Integrar con API del INE cuando esté disponible.
 """
 
-import requests
-import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, Any
 
-from app.core.constants import FALLBACK_COTIZACION_USD
+from app.core.logger import get_logger
+from app.services.tipo_cambio_service import obtener_tipo_cambio_actual
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # ═══════════════════════════════════════════════════════════════
 # VALORES ACTUALES (actualizar manualmente)
@@ -50,31 +49,6 @@ VALORES_ACTUALES = {
         "nota": "Inflación anual acumulada (últimos 12 meses)",
     },
 }
-
-# Fallback para cotizaciones si falla DolarApi (solo USD)
-COTIZACIONES_FALLBACK = {
-    "usd_compra": FALLBACK_COTIZACION_USD["compra"],
-    "usd_venta": FALLBACK_COTIZACION_USD["venta"],
-}
-
-# ═══════════════════════════════════════════════════════════════
-# CACHE PARA COTIZACIONES (las únicas que se obtienen en tiempo real)
-# ═══════════════════════════════════════════════════════════════
-
-_cache_cotizaciones: Dict[str, Any] = {
-    "data": None,
-    "timestamp": None,
-}
-
-TTL_COTIZACIONES_HORAS = 1  # Refrescar cada hora
-
-
-def _cache_cotizaciones_valido() -> bool:
-    """Verifica si el cache de cotizaciones está vigente."""
-    if not _cache_cotizaciones["timestamp"]:
-        return False
-    return datetime.now() - _cache_cotizaciones["timestamp"] < timedelta(hours=TTL_COTIZACIONES_HORAS)
-
 
 # ═══════════════════════════════════════════════════════════════
 # INDICADORES FIJOS (UI, UR, IPC, BPC)
@@ -144,68 +118,23 @@ def obtener_inflacion() -> Dict[str, Any]:
 # COTIZACIONES DE MONEDAS
 # ═══════════════════════════════════════════════════════════════
 
-def _obtener_cotizacion_moneda(moneda: str) -> Dict[str, float]:
-    """
-    Obtiene cotización de una moneda desde DolarApi.
-    
-    Args:
-        moneda: Código de moneda (usd)
-        
-    Returns:
-        Dict con compra y venta
-    """
-    fallback_compra = COTIZACIONES_FALLBACK[f"{moneda}_compra"]
-    fallback_venta = COTIZACIONES_FALLBACK[f"{moneda}_venta"]
-    
-    try:
-        response = requests.get(
-            f"https://uy.dolarapi.com/v1/cotizaciones/{moneda}",
-            timeout=5
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                "compra": float(data.get("compra", fallback_compra)),
-                "venta": float(data.get("venta", fallback_venta)),
-            }
-    except Exception as e:
-        logger.warning(f"Error obteniendo cotización de {moneda}: {e}")
-    
-    return {
-        "compra": fallback_compra,
-        "venta": fallback_venta,
-    }
-
 
 def obtener_cotizaciones() -> Dict[str, Any]:
     """
     Obtiene la cotización de USD.
     
-    Fuente: DolarApi (https://uy.dolarapi.com)
-    Cache: 1 hora
+    Fuente: tipo_cambio_service -> DolarApi/fallback
+    Cache: delegada a tipo_cambio_service
     """
-    global _cache_cotizaciones
-    
-    # Verificar cache
-    if _cache_cotizaciones_valido() and _cache_cotizaciones["data"]:
-        logger.info("Cotizaciones desde cache")
-        return _cache_cotizaciones["data"]
-    
-    # Obtener cotización USD
-    cotizaciones = {
-        "usd": _obtener_cotizacion_moneda("usd"),
-        "timestamp": datetime.now().isoformat(),
+    datos_usd = obtener_tipo_cambio_actual()
+    logger.info("Cotizaciones obtenidas desde tipo_cambio_service")
+    return {
+        "usd": {
+            "compra": datos_usd["compra"],
+            "venta": datos_usd["venta"],
+        },
+        "timestamp": datos_usd["actualizado"],
     }
-    
-    # Guardar en cache
-    _cache_cotizaciones = {
-        "data": cotizaciones,
-        "timestamp": datetime.now(),
-    }
-    
-    logger.info("Cotizaciones obtenidas de DolarApi")
-    return cotizaciones
 
 
 # ═══════════════════════════════════════════════════════════════
