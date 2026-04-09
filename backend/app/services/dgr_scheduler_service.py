@@ -8,7 +8,6 @@ por WhatsApp cuando hay novedades en trámites activos.
 import asyncio
 import json
 import logging
-import time
 from datetime import date, datetime, timezone
 from typing import Optional
 
@@ -209,7 +208,7 @@ async def _tarea_monitorear_tramites_dgr_async() -> None:
                 )
             finally:
                 if index < len(tramites) - 1:
-                    time.sleep(15)
+                    await asyncio.sleep(15)
 
         pendientes = (
             db.query(TramiteDgr)
