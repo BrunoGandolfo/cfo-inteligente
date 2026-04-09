@@ -12,7 +12,13 @@ def utc_now():
     """Retorna datetime actual en UTC. Fuente única de verdad para timestamps del sistema."""
     return datetime.now(timezone.utc)
 
-engine = create_engine(settings.database_url)
+engine = create_engine(
+    settings.database_url,
+    pool_recycle=1800,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
