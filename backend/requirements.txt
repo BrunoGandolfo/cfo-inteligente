@@ -49,7 +49,6 @@ apscheduler>=3.10.0
 # WEB SCRAPING (para indicadores económicos)
 # ═══════════════════════════════════════════════════════════════
 beautifulsoup4>=4.12.0
-lxml>=5.0.0
 
 # ═══════════════════════════════════════════════════════════════
 # PDF GENERATION
