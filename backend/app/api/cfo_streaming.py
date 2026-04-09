@@ -15,7 +15,6 @@ from sqlalchemy.orm import Session
 from anthropic import Anthropic
 import json
 from typing import Generator, Any
-from uuid import UUID
 
 from app.core.database import get_db
 from app.core.logger import get_logger
@@ -35,9 +34,8 @@ from app.services.informe_orquestador import (
     _formatear_informe_para_narrativa,
     _formatear_comparativo_para_narrativa,
 )
-from pydantic import BaseModel
-from typing import Optional
 from app.models import Usuario
+from app.schemas.soporte import PreguntaCFOStream
 
 logger = get_logger(__name__)
 
@@ -49,12 +47,6 @@ if '\n' in api_key_limpia or len(api_key_limpia) > 108:
     api_key_limpia = api_key_limpia.split('\n')[0].strip()[:108]
 
 client = Anthropic(api_key=api_key_limpia)
-
-
-class PreguntaCFOStream(BaseModel):
-    pregunta: str
-    conversation_id: Optional[UUID] = None
-
 
 def sse_format(event: str, data: dict | str) -> str:
     """Formatear mensaje en formato Server-Sent Events"""
