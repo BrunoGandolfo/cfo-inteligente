@@ -9,22 +9,22 @@ export function OperationDetails({ open, onClose, op }) {
   return (
     <Modal open={open} onClose={onClose} title="Detalle de Operación">
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div><p className="text-sm text-text-secondary">Fecha</p><p className="font-medium">{formatDateTime(op.fecha)}</p></div>
-        <div><p className="text-sm text-text-secondary">Tipo</p><p className="font-medium">{(op.tipo || op.tipo_operacion || '').toUpperCase()}</p></div>
-        <div><p className="text-sm text-text-secondary">Área</p><p className="font-medium">{areaNombre}</p></div>
-        <div><p className="text-sm text-text-secondary">Localidad</p><p className="font-medium">{op.localidad || 'No especificada'}</p></div>
-        <div><p className="text-sm text-text-secondary">Cliente</p><p className="font-medium">{op.cliente || '-'}</p></div>
-        <div><p className="text-sm text-text-secondary">Proveedor</p><p className="font-medium">{op.proveedor || '-'}</p></div>
+        <div><p className="text-sm text-text-secondary">Fecha</p><p className="font-medium text-text-primary">{formatDateTime(op.fecha)}</p></div>
+        <div><p className="text-sm text-text-secondary">Tipo</p><p className="font-medium text-text-primary">{(op.tipo || op.tipo_operacion || '').toUpperCase()}</p></div>
+        <div><p className="text-sm text-text-secondary">Área</p><p className="font-medium text-text-primary">{areaNombre}</p></div>
+        <div><p className="text-sm text-text-secondary">Localidad</p><p className="font-medium text-text-primary">{op.localidad || 'No especificada'}</p></div>
+        <div><p className="text-sm text-text-secondary">Cliente</p><p className="font-medium text-text-primary">{op.cliente || '-'}</p></div>
+        <div><p className="text-sm text-text-secondary">Proveedor</p><p className="font-medium text-text-primary">{op.proveedor || '-'}</p></div>
       </div>
       <div className="bg-surface-alt rounded-lg p-4 mb-6">
-        <h5 className="font-semibold mb-3">Información financiera</h5>
+        <h5 className="font-semibold mb-3 text-text-primary">Información financiera</h5>
         <div className="grid grid-cols-2 gap-4">
-          <div><p className="text-sm text-text-secondary">Monto UYU</p><p className="font-medium">{op.monto_uyu?.toLocaleString('es-UY')}</p></div>
-          <div><p className="text-sm text-text-secondary">Monto USD</p><p className="font-medium">{op.monto_usd?.toLocaleString('es-UY')}</p></div>
-          <div><p className="text-sm text-text-secondary">Tipo de cambio</p><p className="font-medium">{tc ?? 'N/A'}</p></div>
+          <div><p className="text-sm text-text-secondary">Monto UYU</p><p className="font-medium text-text-primary">{op.monto_uyu?.toLocaleString('es-UY')}</p></div>
+          <div><p className="text-sm text-text-secondary">Monto USD</p><p className="font-medium text-text-primary">{op.monto_usd?.toLocaleString('es-UY')}</p></div>
+          <div><p className="text-sm text-text-secondary">Tipo de cambio</p><p className="font-medium text-text-primary">{tc ?? 'N/A'}</p></div>
           <div>
             <p className="text-sm text-text-secondary">Descripción</p>
-            <p className="font-medium">{op.descripcion || 'Sin descripción'}</p>
+            <p className="font-medium text-text-primary">{op.descripcion || 'Sin descripción'}</p>
           </div>
         </div>
       </div>
