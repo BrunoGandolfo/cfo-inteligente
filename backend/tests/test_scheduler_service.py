@@ -29,13 +29,24 @@ class TestIniciarScheduler:
             mock_scheduler.running = False
             from app.services.scheduler_service import iniciar_scheduler
             from app.services.scheduler_service import tarea_sincronizar_expedientes
+            from app.services.dgr_scheduler_service import tarea_monitorear_tramites_dgr
 
             iniciar_scheduler()
-            call_args = mock_scheduler.add_job.call_args
-            assert call_args[0][0] is tarea_sincronizar_expedientes
-            call_kw = call_args[1]
-            assert call_kw.get("id") == "sync_expedientes_diario"
-            assert call_kw.get("replace_existing") is True
+
+            calls = mock_scheduler.add_job.call_args_list
+            assert len(calls) == 2
+
+            # Job 1: sincronización de expedientes
+            exp_args = calls[0]
+            assert exp_args[0][0] is tarea_sincronizar_expedientes
+            assert exp_args[1].get("id") == "sync_expedientes_diario"
+            assert exp_args[1].get("replace_existing") is True
+
+            # Job 2: monitoreo DGR
+            dgr_args = calls[1]
+            assert dgr_args[0][0] is tarea_monitorear_tramites_dgr
+            assert dgr_args[1].get("id") == "monitorear_tramites_dgr"
+            assert dgr_args[1].get("replace_existing") is True
 
 
 class TestDetenerScheduler:
