@@ -73,81 +73,93 @@ def _crear_operacion_base(
     Función base para crear operaciones de tipo ingreso/gasto.
     Elimina duplicación entre crear_ingreso y crear_gasto.
     """
-    # Convertir a MAYÚSCULA antes de guardar
-    if cliente:
-        cliente = cliente.strip().upper()
-    if proveedor:
-        proveedor = proveedor.strip().upper()
-    if descripcion:
-        descripcion = descripcion.strip().upper()
+    try:
+        # Convertir a MAYÚSCULA antes de guardar
+        if cliente:
+            cliente = cliente.strip().upper()
+        if proveedor:
+            proveedor = proveedor.strip().upper()
+        if descripcion:
+            descripcion = descripcion.strip().upper()
 
-    monto_uyu, monto_usd = calcular_montos(monto_original, moneda_original, tipo_cambio)
+        monto_uyu, monto_usd = calcular_montos(monto_original, moneda_original, tipo_cambio)
 
-    # Para INGRESO/GASTO, los totales son iguales (ya están convertidos)
-    total_pesificado = monto_uyu
-    total_dolarizado = monto_usd
+        # Para INGRESO/GASTO, los totales son iguales (ya están convertidos)
+        total_pesificado = monto_uyu
+        total_dolarizado = monto_usd
 
-    operacion = Operacion(
-        tipo_operacion=tipo_operacion,
-        fecha=fecha,
-        monto_original=monto_original,
-        moneda_original=Moneda[moneda_original],
-        tipo_cambio=tipo_cambio,
-        monto_uyu=monto_uyu,
-        monto_usd=monto_usd,
-        total_pesificado=total_pesificado,
-        total_dolarizado=total_dolarizado,
-        area_id=area_id,
-        localidad=Localidad[localidad.upper().replace(" ", "_")],
-        descripcion=descripcion,
-        cliente=cliente,
-        proveedor=proveedor
-    )
-    
-    db.add(operacion)
-    db.commit()
-    db.refresh(operacion)
-    return operacion
+        operacion = Operacion(
+            tipo_operacion=tipo_operacion,
+            fecha=fecha,
+            monto_original=monto_original,
+            moneda_original=Moneda[moneda_original],
+            tipo_cambio=tipo_cambio,
+            monto_uyu=monto_uyu,
+            monto_usd=monto_usd,
+            total_pesificado=total_pesificado,
+            total_dolarizado=total_dolarizado,
+            area_id=area_id,
+            localidad=Localidad[localidad.upper().replace(" ", "_")],
+            descripcion=descripcion,
+            cliente=cliente,
+            proveedor=proveedor
+        )
+        
+        db.add(operacion)
+        db.commit()
+        db.refresh(operacion)
+        return operacion
+    except Exception:
+        db.rollback()
+        raise
 
 def crear_ingreso(db: Session, data: IngresoCreate) -> Operacion:
     """Crea una operación de ingreso y vincula el cliente si corresponde."""
-    operacion = _crear_operacion_base(
-        db=db,
-        tipo_operacion=TipoOperacion.INGRESO,
-        fecha=data.fecha,
-        monto_original=data.monto_original,
-        moneda_original=data.moneda_original,
-        tipo_cambio=data.tipo_cambio,
-        area_id=data.area_id,
-        localidad=data.localidad,
-        descripcion=data.descripcion,
-        cliente=data.cliente
-    )
-    if data.cliente:
-        operacion.cliente_id = _buscar_o_crear_cliente(db, data.cliente, getattr(data, 'cliente_telefono', None))
-        db.commit()
-        db.refresh(operacion)
-    return operacion
+    try:
+        operacion = _crear_operacion_base(
+            db=db,
+            tipo_operacion=TipoOperacion.INGRESO,
+            fecha=data.fecha,
+            monto_original=data.monto_original,
+            moneda_original=data.moneda_original,
+            tipo_cambio=data.tipo_cambio,
+            area_id=data.area_id,
+            localidad=data.localidad,
+            descripcion=data.descripcion,
+            cliente=data.cliente
+        )
+        if data.cliente:
+            operacion.cliente_id = _buscar_o_crear_cliente(db, data.cliente, getattr(data, 'cliente_telefono', None))
+            db.commit()
+            db.refresh(operacion)
+        return operacion
+    except Exception:
+        db.rollback()
+        raise
 
 def crear_gasto(db: Session, data: GastoCreate) -> Operacion:
     """Crea una operación de gasto y vincula el proveedor si corresponde."""
-    operacion = _crear_operacion_base(
-        db=db,
-        tipo_operacion=TipoOperacion.GASTO,
-        fecha=data.fecha,
-        monto_original=data.monto_original,
-        moneda_original=data.moneda_original,
-        tipo_cambio=data.tipo_cambio,
-        area_id=data.area_id,
-        localidad=data.localidad,
-        descripcion=data.descripcion,
-        proveedor=data.proveedor
-    )
-    if data.proveedor:
-        operacion.proveedor_id = _buscar_o_crear_proveedor(db, data.proveedor, getattr(data, 'proveedor_telefono', None))
-        db.commit()
-        db.refresh(operacion)
-    return operacion
+    try:
+        operacion = _crear_operacion_base(
+            db=db,
+            tipo_operacion=TipoOperacion.GASTO,
+            fecha=data.fecha,
+            monto_original=data.monto_original,
+            moneda_original=data.moneda_original,
+            tipo_cambio=data.tipo_cambio,
+            area_id=data.area_id,
+            localidad=data.localidad,
+            descripcion=data.descripcion,
+            proveedor=data.proveedor
+        )
+        if data.proveedor:
+            operacion.proveedor_id = _buscar_o_crear_proveedor(db, data.proveedor, getattr(data, 'proveedor_telefono', None))
+            db.commit()
+            db.refresh(operacion)
+        return operacion
+    except Exception:
+        db.rollback()
+        raise
 
 def crear_retiro(db: Session, data: RetiroCreate) -> Operacion:
     """
@@ -156,55 +168,59 @@ def crear_retiro(db: Session, data: RetiroCreate) -> Operacion:
     RETIRO no necesita área - es un movimiento de caja, no una operación operativa.
     Filosofía DHH: NULL = no aplica, no forzar "Gastos Generales".
     """
-    # Determinar montos
-    if data.monto_uyu and data.monto_usd:
-        monto_uyu = data.monto_uyu
-        monto_usd = data.monto_usd
-        monto_original = data.monto_uyu
-        moneda_original = Moneda.UYU
-    elif data.monto_uyu:
-        monto_uyu = data.monto_uyu
-        monto_usd = data.monto_uyu / data.tipo_cambio
-        monto_original = data.monto_uyu
-        moneda_original = Moneda.UYU
-    else:
-        monto_usd = data.monto_usd
-        monto_uyu = data.monto_usd * data.tipo_cambio
-        monto_original = data.monto_usd
-        moneda_original = Moneda.USD
-    
-    # Para RETIRO, calcular totales pesificados/dolarizados
-    if data.monto_uyu and data.monto_usd:
-        # Retiro mixto: ambos montos son independientes → sumar ambos componentes
-        total_pesificado = monto_uyu + (monto_usd * data.tipo_cambio)
-        total_dolarizado = monto_usd + (monto_uyu / data.tipo_cambio)
-    else:
-        # Un solo monto: el otro es derivado → usar directamente
-        total_pesificado = monto_uyu
-        total_dolarizado = monto_usd
-    
-    # Convertir descripción a MAYÚSCULA
-    descripcion = data.descripcion.strip().upper() if data.descripcion else data.descripcion
+    try:
+        # Determinar montos
+        if data.monto_uyu and data.monto_usd:
+            monto_uyu = data.monto_uyu
+            monto_usd = data.monto_usd
+            monto_original = data.monto_uyu
+            moneda_original = Moneda.UYU
+        elif data.monto_uyu:
+            monto_uyu = data.monto_uyu
+            monto_usd = data.monto_uyu / data.tipo_cambio
+            monto_original = data.monto_uyu
+            moneda_original = Moneda.UYU
+        else:
+            monto_usd = data.monto_usd
+            monto_uyu = data.monto_usd * data.tipo_cambio
+            monto_original = data.monto_usd
+            moneda_original = Moneda.USD
+        
+        # Para RETIRO, calcular totales pesificados/dolarizados
+        if data.monto_uyu and data.monto_usd:
+            # Retiro mixto: ambos montos son independientes → sumar ambos componentes
+            total_pesificado = monto_uyu + (monto_usd * data.tipo_cambio)
+            total_dolarizado = monto_usd + (monto_uyu / data.tipo_cambio)
+        else:
+            # Un solo monto: el otro es derivado → usar directamente
+            total_pesificado = monto_uyu
+            total_dolarizado = monto_usd
+        
+        # Convertir descripción a MAYÚSCULA
+        descripcion = data.descripcion.strip().upper() if data.descripcion else data.descripcion
 
-    operacion = Operacion(
-        tipo_operacion=TipoOperacion.RETIRO,
-        fecha=data.fecha,
-        monto_original=monto_original,
-        moneda_original=moneda_original,
-        tipo_cambio=data.tipo_cambio,
-        monto_uyu=monto_uyu,
-        monto_usd=monto_usd,
-        total_pesificado=total_pesificado,
-        total_dolarizado=total_dolarizado,
-        area_id=None,  # RETIRO no necesita área
-        localidad=Localidad[data.localidad.upper().replace(" ", "_")],
-        descripcion=descripcion
-    )
-    
-    db.add(operacion)
-    db.commit()
-    db.refresh(operacion)
-    return operacion
+        operacion = Operacion(
+            tipo_operacion=TipoOperacion.RETIRO,
+            fecha=data.fecha,
+            monto_original=monto_original,
+            moneda_original=moneda_original,
+            tipo_cambio=data.tipo_cambio,
+            monto_uyu=monto_uyu,
+            monto_usd=monto_usd,
+            total_pesificado=total_pesificado,
+            total_dolarizado=total_dolarizado,
+            area_id=None,  # RETIRO no necesita área
+            localidad=Localidad[data.localidad.upper().replace(" ", "_")],
+            descripcion=descripcion
+        )
+        
+        db.add(operacion)
+        db.commit()
+        db.refresh(operacion)
+        return operacion
+    except Exception:
+        db.rollback()
+        raise
 
 def crear_distribucion(db: Session, data: DistribucionCreate) -> Operacion:
     """
@@ -213,84 +229,88 @@ def crear_distribucion(db: Session, data: DistribucionCreate) -> Operacion:
     DISTRIBUCION no necesita área - es reparto de efectivo, no una operación operativa.
     Filosofía DHH: NULL = no aplica, no forzar "Gastos Generales".
     """
-    # Calcular totales sumando todos los montos de los 5 socios
-    total_uyu = (
-        (data.agustina_uyu or 0) +
-        (data.viviana_uyu or 0) +
-        (data.gonzalo_uyu or 0) +
-        (data.pancho_uyu or 0) +
-        (data.bruno_uyu or 0)
-    )
-    
-    total_usd = (
-        (data.agustina_usd or 0) +
-        (data.viviana_usd or 0) +
-        (data.gonzalo_usd or 0) +
-        (data.pancho_usd or 0) +
-        (data.bruno_usd or 0)
-    )
-    
-    if total_uyu > 0:
-        monto_original = total_uyu
-        moneda_original = Moneda.UYU
-    else:
-        monto_original = total_usd
-        moneda_original = Moneda.USD
-    
-    # Para DISTRIBUCION, calcular totales sumando ambos componentes pesificados/dolarizados
-    total_pesificado = total_uyu + (total_usd * data.tipo_cambio)
-    total_dolarizado = total_usd + (total_uyu / data.tipo_cambio)
+    try:
+        # Calcular totales sumando todos los montos de los 5 socios
+        total_uyu = (
+            (data.agustina_uyu or 0) +
+            (data.viviana_uyu or 0) +
+            (data.gonzalo_uyu or 0) +
+            (data.pancho_uyu or 0) +
+            (data.bruno_uyu or 0)
+        )
+        
+        total_usd = (
+            (data.agustina_usd or 0) +
+            (data.viviana_usd or 0) +
+            (data.gonzalo_usd or 0) +
+            (data.pancho_usd or 0) +
+            (data.bruno_usd or 0)
+        )
+        
+        if total_uyu > 0:
+            monto_original = total_uyu
+            moneda_original = Moneda.UYU
+        else:
+            monto_original = total_usd
+            moneda_original = Moneda.USD
+        
+        # Para DISTRIBUCION, calcular totales sumando ambos componentes pesificados/dolarizados
+        total_pesificado = total_uyu + (total_usd * data.tipo_cambio)
+        total_dolarizado = total_usd + (total_uyu / data.tipo_cambio)
 
-    # Convertir descripción a MAYÚSCULA
-    descripcion = data.descripcion.strip().upper() if data.descripcion else data.descripcion
+        # Convertir descripción a MAYÚSCULA
+        descripcion = data.descripcion.strip().upper() if data.descripcion else data.descripcion
 
-    operacion = Operacion(
-        tipo_operacion=TipoOperacion.DISTRIBUCION,
-        fecha=data.fecha,
-        monto_original=monto_original,
-        moneda_original=moneda_original,
-        tipo_cambio=data.tipo_cambio,
-        monto_uyu=total_uyu,
-        monto_usd=total_usd,
-        total_pesificado=total_pesificado,
-        total_dolarizado=total_dolarizado,
-        area_id=None,  # DISTRIBUCION no necesita área
-        localidad=Localidad[data.localidad.upper().replace(" ", "_")],
-        descripcion=descripcion
-    )
-    
-    db.add(operacion)
-    db.flush()
-    
-    # Crear detalle para cada socio
-    socios_montos = [
-        ("Agustina", data.agustina_uyu, data.agustina_usd),
-        ("Viviana", data.viviana_uyu, data.viviana_usd),
-        ("Gonzalo", data.gonzalo_uyu, data.gonzalo_usd),
-        ("Pancho", data.pancho_uyu, data.pancho_usd),
-        ("Bruno", data.bruno_uyu, data.bruno_usd)
-    ]
-    
-    for nombre, monto_uyu, monto_usd in socios_montos:
-        socio = db.query(Socio).filter(Socio.nombre == nombre).first()
-        if socio and (monto_uyu or monto_usd):
-            # Calcular totales pesificado/dolarizado para este detalle
-            detalle_monto_uyu = monto_uyu or 0
-            detalle_monto_usd = monto_usd or 0
-            detalle_total_pesificado = detalle_monto_uyu + (detalle_monto_usd * data.tipo_cambio)
-            detalle_total_dolarizado = detalle_monto_usd + (detalle_monto_uyu / data.tipo_cambio)
-            
-            detalle = DistribucionDetalle(
-                operacion_id=operacion.id,
-                socio_id=socio.id,
-                monto_uyu=detalle_monto_uyu,
-                monto_usd=detalle_monto_usd,
-                porcentaje=20.0,
-                total_pesificado=detalle_total_pesificado,
-                total_dolarizado=detalle_total_dolarizado
-            )
-            db.add(detalle)
-    
-    db.commit()
-    db.refresh(operacion)
-    return operacion
+        operacion = Operacion(
+            tipo_operacion=TipoOperacion.DISTRIBUCION,
+            fecha=data.fecha,
+            monto_original=monto_original,
+            moneda_original=moneda_original,
+            tipo_cambio=data.tipo_cambio,
+            monto_uyu=total_uyu,
+            monto_usd=total_usd,
+            total_pesificado=total_pesificado,
+            total_dolarizado=total_dolarizado,
+            area_id=None,  # DISTRIBUCION no necesita área
+            localidad=Localidad[data.localidad.upper().replace(" ", "_")],
+            descripcion=descripcion
+        )
+        
+        db.add(operacion)
+        db.flush()
+        
+        # Crear detalle para cada socio
+        socios_montos = [
+            ("Agustina", data.agustina_uyu, data.agustina_usd),
+            ("Viviana", data.viviana_uyu, data.viviana_usd),
+            ("Gonzalo", data.gonzalo_uyu, data.gonzalo_usd),
+            ("Pancho", data.pancho_uyu, data.pancho_usd),
+            ("Bruno", data.bruno_uyu, data.bruno_usd)
+        ]
+        
+        for nombre, monto_uyu, monto_usd in socios_montos:
+            socio = db.query(Socio).filter(Socio.nombre == nombre).first()
+            if socio and (monto_uyu or monto_usd):
+                # Calcular totales pesificado/dolarizado para este detalle
+                detalle_monto_uyu = monto_uyu or 0
+                detalle_monto_usd = monto_usd or 0
+                detalle_total_pesificado = detalle_monto_uyu + (detalle_monto_usd * data.tipo_cambio)
+                detalle_total_dolarizado = detalle_monto_usd + (detalle_monto_uyu / data.tipo_cambio)
+                
+                detalle = DistribucionDetalle(
+                    operacion_id=operacion.id,
+                    socio_id=socio.id,
+                    monto_uyu=detalle_monto_uyu,
+                    monto_usd=detalle_monto_usd,
+                    porcentaje=20.0,
+                    total_pesificado=detalle_total_pesificado,
+                    total_dolarizado=detalle_total_dolarizado
+                )
+                db.add(detalle)
+        
+        db.commit()
+        db.refresh(operacion)
+        return operacion
+    except Exception:
+        db.rollback()
+        raise
