@@ -56,3 +56,14 @@ class CambiarPasswordPublicoRequest(BaseModel):
 
 class CambiarPasswordPublicoResponse(BaseModel):
     message: str
+
+
+class VincularTelegramRequest(BaseModel):
+    email: str
+    chat_id: int
+
+
+class VincularTelegramResponse(BaseModel):
+    exito: bool
+    email: str
+    chat_id: int

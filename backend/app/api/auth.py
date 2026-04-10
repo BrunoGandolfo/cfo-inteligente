@@ -9,6 +9,7 @@ from app.core.security import verify_password, create_access_token, hash_passwor
 from app.core.access_control import (
     SOCIOS_AUTORIZADOS, DOMINIO_DEFAULT, DOMINIOS_EXCEPCION, DOMINIOS_PERMITIDOS,
 )
+import logging
 from app.schemas.auth import (
     CambiarPasswordPublicoRequest,
     CambiarPasswordPublicoResponse,
@@ -20,7 +21,12 @@ from app.schemas.auth import (
     RegisterResponse,
     ResetPasswordResponse,
     UsuarioResponse,
+    VincularTelegramRequest,
+    VincularTelegramResponse,
 )
+from app.models.telegram_usuario import TelegramUsuario
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -325,3 +331,50 @@ def reset_password(
         message=f"Contraseña de {usuario.nombre} reseteada exitosamente",
         temp_password=temp_password
     )
+
+
+# ═══════════════════════════════════════════════════════════════
+# TELEGRAM
+# ═══════════════════════════════════════════════════════════════
+
+@router.post("/telegram/vincular", response_model=VincularTelegramResponse)
+def vincular_telegram(
+    body: VincularTelegramRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Vincula un usuario del sistema con su chat_id de Telegram. Solo socios."""
+    if not current_user.es_socio:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo socios pueden vincular Telegram",
+        )
+
+    if body.chat_id <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="chat_id debe ser un número positivo",
+        )
+
+    usuario = db.query(Usuario).filter(Usuario.email == body.email).first()
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Usuario con email '{body.email}' no encontrado",
+        )
+
+    existente = db.query(TelegramUsuario).filter(
+        TelegramUsuario.usuario_id == usuario.id,
+    ).first()
+
+    if existente:
+        existente.chat_id = body.chat_id
+        existente.activo = True
+        logger.info(f"Telegram actualizado: {body.email} -> chat_id={body.chat_id}")
+    else:
+        db.add(TelegramUsuario(usuario_id=usuario.id, chat_id=body.chat_id))
+        logger.info(f"Telegram vinculado: {body.email} -> chat_id={body.chat_id}")
+
+    db.commit()
+
+    return VincularTelegramResponse(exito=True, email=body.email, chat_id=body.chat_id)
