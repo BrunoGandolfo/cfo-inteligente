@@ -3,7 +3,8 @@ Tests para scheduler_service.
 Mock de APScheduler; environment=development NO inicia, production SÍ.
 """
 import pytest
-from unittest.mock import patch, MagicMock
+from uuid import uuid4
+from unittest.mock import patch, MagicMock, AsyncMock
 
 
 class TestIniciarScheduler:
@@ -182,40 +183,63 @@ class TestTareaSincronizarExpedientes:
 
 
 class TestEnviarNotificacionesPendientes:
-    """Tests para enviar_notificaciones_pendientes (mocks, sin Twilio)."""
+    """Tests para enviar_notificaciones_pendientes (mocks, sin Telegram real)."""
 
-    def test_enviar_notificaciones_sin_movimientos_no_llama_twilio(self):
+    def test_enviar_notificaciones_sin_movimientos_no_llama_telegram(self):
         mock_db = MagicMock()
         with patch(
             "app.services.expediente_service.obtener_movimientos_sin_notificar",
             return_value=[],
         ):
             with patch(
-                "app.services.twilio_service",
-                MagicMock(),
-                create=True,
-            ) as mock_twilio:
+                "app.services.scheduler_service.enviar_mensaje_telegram",
+                new_callable=AsyncMock,
+            ) as mock_telegram:
                 from app.services.scheduler_service import enviar_notificaciones_pendientes
 
                 enviar_notificaciones_pendientes(mock_db)
-                mock_twilio.notificar_a_todos_los_socios.assert_not_called()
+                mock_telegram.assert_not_called()
 
     def test_enviar_notificaciones_con_movimientos_exitoso_marca_notificados(self):
         mock_db = MagicMock()
-        movimientos = [{"movimiento_id": "id1"}]
+        expediente_id = uuid4()
+        responsable_id = uuid4()
+        chat_id = 123456789
+        movimientos = [
+            {
+                "movimiento_id": "id1",
+                "expediente_id": str(expediente_id),
+                "iue": "2-12345/2024",
+                "caratula": "CASO DE PRUEBA",
+                "fecha": None,
+                "tipo": "NOTI",
+                "decreto": "123/2024",
+                "vencimiento": None,
+                "responsable_id": str(responsable_id),
+            }
+        ]
+        expediente = MagicMock(
+            id=expediente_id,
+            iue="2-12345/2024",
+            caratula="CASO DE PRUEBA",
+            responsable_id=responsable_id,
+        )
+        telegram_usuario = MagicMock(usuario_id=responsable_id, chat_id=chat_id)
+        query_expedientes = MagicMock()
+        query_expedientes.filter.return_value.all.return_value = [expediente]
+        query_telegram = MagicMock()
+        query_telegram.filter.return_value.all.return_value = [telegram_usuario]
+        mock_db.query.side_effect = [query_expedientes, query_telegram]
+
         with patch(
             "app.services.expediente_service.obtener_movimientos_sin_notificar",
             return_value=movimientos,
         ):
             with patch(
-                "app.services.twilio_service",
-                MagicMock(),
-                create=True,
-            ) as mock_twilio:
-                mock_twilio.notificar_a_todos_los_socios.return_value = {
-                    "enviados_ok": 1,
-                    "total_numeros": 1,
-                }
+                "app.services.scheduler_service.enviar_mensaje_telegram",
+                new_callable=AsyncMock,
+                return_value=True,
+            ) as mock_telegram:
                 with patch(
                     "app.services.expediente_service.marcar_movimientos_notificados",
                     MagicMock(),
@@ -223,24 +247,50 @@ class TestEnviarNotificacionesPendientes:
                     from app.services.scheduler_service import enviar_notificaciones_pendientes
 
                     enviar_notificaciones_pendientes(mock_db)
+                    mock_telegram.assert_called_once()
+                    assert mock_telegram.call_args[0][0] == chat_id
                     mock_marcar.assert_called_once_with(mock_db, ["id1"])
 
     def test_enviar_notificaciones_fallo_envio_no_marca_notificados(self):
         mock_db = MagicMock()
-        movimientos = [{"movimiento_id": "id1"}]
+        expediente_id = uuid4()
+        responsable_id = uuid4()
+        chat_id = 123456789
+        movimientos = [
+            {
+                "movimiento_id": "id1",
+                "expediente_id": str(expediente_id),
+                "iue": "2-54321/2024",
+                "caratula": "CASO FALLIDO",
+                "fecha": None,
+                "tipo": "OFAC",
+                "decreto": "456/2024",
+                "vencimiento": None,
+                "responsable_id": str(responsable_id),
+            }
+        ]
+        expediente = MagicMock(
+            id=expediente_id,
+            iue="2-54321/2024",
+            caratula="CASO FALLIDO",
+            responsable_id=responsable_id,
+        )
+        telegram_usuario = MagicMock(usuario_id=responsable_id, chat_id=chat_id)
+        query_expedientes = MagicMock()
+        query_expedientes.filter.return_value.all.return_value = [expediente]
+        query_telegram = MagicMock()
+        query_telegram.filter.return_value.all.return_value = [telegram_usuario]
+        mock_db.query.side_effect = [query_expedientes, query_telegram]
+
         with patch(
             "app.services.expediente_service.obtener_movimientos_sin_notificar",
             return_value=movimientos,
         ):
             with patch(
-                "app.services.twilio_service",
-                MagicMock(),
-                create=True,
-            ) as mock_twilio:
-                mock_twilio.notificar_a_todos_los_socios.return_value = {
-                    "enviados_ok": 0,
-                    "total_numeros": 1,
-                }
+                "app.services.scheduler_service.enviar_mensaje_telegram",
+                new_callable=AsyncMock,
+                return_value=False,
+            ) as mock_telegram:
                 with patch(
                     "app.services.expediente_service.marcar_movimientos_notificados",
                     MagicMock(),
@@ -248,4 +298,5 @@ class TestEnviarNotificacionesPendientes:
                     from app.services.scheduler_service import enviar_notificaciones_pendientes
 
                     enviar_notificaciones_pendientes(mock_db)
+                    mock_telegram.assert_called_once()
                     mock_marcar.assert_not_called()

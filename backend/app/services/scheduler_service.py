@@ -3,6 +3,11 @@ Scheduler para tareas programadas.
 Usa APScheduler con zona horaria Uruguay.
 """
 
+import asyncio
+from collections import defaultdict
+from html import escape
+from uuid import UUID
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
@@ -10,8 +15,11 @@ import pytz
 
 from app.core.database import SessionLocal
 from app.core.logger import get_logger
+from app.models.expediente import Expediente
+from app.models.telegram_usuario import TelegramUsuario
 from app.services.dgr_scheduler_service import tarea_monitorear_tramites_dgr
 from app.services.expediente_service import sincronizar_todos_los_expedientes
+from app.services.telegram_service import enviar_mensaje_telegram
 
 logger = get_logger(__name__)
 
@@ -20,6 +28,42 @@ TZ_URUGUAY = pytz.timezone("America/Montevideo")
 
 # Scheduler global
 scheduler = AsyncIOScheduler(timezone=TZ_URUGUAY)
+
+
+def _formatear_fecha(valor) -> str:
+    """Formatea fechas de movimientos para notificaciones Telegram."""
+    return valor.strftime("%d/%m/%Y") if valor else "Sin fecha"
+
+
+def _construir_mensaje_expediente(expediente: Expediente, movimientos: list[dict]) -> str:
+    """Construye el mensaje Telegram HTML para movimientos de un expediente."""
+    lineas = [
+        "<b>Nuevos movimientos en expediente</b>",
+        f"<b>IUE:</b> {escape(expediente.iue)}",
+        f"<b>Carátula:</b> {escape(expediente.caratula or 'Sin carátula')}",
+        "",
+        "<b>Movimientos detectados:</b>",
+    ]
+
+    movimientos_ordenados = sorted(
+        movimientos,
+        key=lambda movimiento: (
+            movimiento.get("fecha") is not None,
+            movimiento.get("fecha"),
+        ),
+        reverse=True,
+    )
+    for movimiento in movimientos_ordenados:
+        lineas.extend(
+            [
+                f"• <b>Fecha:</b> {_formatear_fecha(movimiento.get('fecha'))}",
+                f"  <b>Tipo:</b> {escape(movimiento.get('tipo') or 'Sin tipo')}",
+                f"  <b>Decreto:</b> {escape(movimiento.get('decreto') or 'Sin decreto')}",
+                f"  <b>Vencimiento:</b> {_formatear_fecha(movimiento.get('vencimiento'))}",
+            ]
+        )
+
+    return "\n".join(lineas)
 
 
 def tarea_sincronizar_expedientes() -> None:
@@ -46,26 +90,86 @@ def tarea_sincronizar_expedientes() -> None:
 
 
 def enviar_notificaciones_pendientes(db: Session) -> None:
-    """Envía notificaciones de movimientos pendientes a todos los socios."""
+    """Envía notificaciones Telegram de movimientos al responsable de cada expediente."""
     from app.services.expediente_service import obtener_movimientos_sin_notificar, marcar_movimientos_notificados
-    from app.services import twilio_service
-    
+
     movimientos = obtener_movimientos_sin_notificar(db)
-    
+
     if not movimientos:
         logger.info("📭 Sin movimientos pendientes de notificar")
         return
-    
-    # Enviar a todos los socios
-    resultado = twilio_service.notificar_a_todos_los_socios(movimientos)
-    
-    if resultado["enviados_ok"] > 0:
-        # Marcar como notificados si al menos un envío fue exitoso
-        ids = [m["movimiento_id"] for m in movimientos]
-        marcar_movimientos_notificados(db, ids)
-        logger.info(f"📱 Notificaciones: {resultado['enviados_ok']}/{resultado['total_numeros']} socios notificados")
+
+    movimientos_por_expediente: dict[str, list[dict]] = defaultdict(list)
+    for movimiento in movimientos:
+        movimientos_por_expediente[movimiento["expediente_id"]].append(movimiento)
+
+    expediente_ids = [UUID(expediente_id) for expediente_id in movimientos_por_expediente]
+    expedientes = (
+        db.query(Expediente)
+        .filter(Expediente.id.in_(expediente_ids))
+        .all()
+    )
+    expedientes_por_id = {str(expediente.id): expediente for expediente in expedientes}
+
+    responsable_ids = [
+        expediente.responsable_id
+        for expediente in expedientes
+        if expediente.responsable_id is not None
+    ]
+    telegrams = (
+        db.query(TelegramUsuario)
+        .filter(
+            TelegramUsuario.usuario_id.in_(responsable_ids),
+            TelegramUsuario.activo == True,
+        )
+        .all()
+        if responsable_ids
+        else []
+    )
+    telegram_por_usuario = {str(telegram.usuario_id): telegram for telegram in telegrams}
+
+    movimientos_notificados: list[str] = []
+    expedientes_notificados = 0
+
+    for expediente_id, movimientos_expediente in movimientos_por_expediente.items():
+        expediente = expedientes_por_id.get(expediente_id)
+        if not expediente:
+            logger.warning("Expediente %s no encontrado al enviar notificación Telegram", expediente_id)
+            continue
+
+        if not expediente.responsable_id:
+            logger.warning("Expediente %s no tiene responsable asignado", expediente.iue)
+            continue
+
+        telegram_usuario = telegram_por_usuario.get(str(expediente.responsable_id))
+        if not telegram_usuario:
+            logger.warning(
+                "Usuario %s no tiene Telegram vinculado",
+                expediente.responsable_id,
+            )
+            continue
+
+        mensaje = _construir_mensaje_expediente(expediente, movimientos_expediente)
+        enviado = asyncio.run(enviar_mensaje_telegram(telegram_usuario.chat_id, mensaje))
+
+        if not enviado:
+            logger.error("❌ Falló notificación Telegram para expediente %s", expediente.iue)
+            continue
+
+        movimientos_notificados.extend(
+            movimiento["movimiento_id"] for movimiento in movimientos_expediente
+        )
+        expedientes_notificados += 1
+
+    if movimientos_notificados:
+        actualizados = marcar_movimientos_notificados(db, movimientos_notificados)
+        logger.info(
+            "📱 Notificaciones Telegram: %s expedientes, %s movimientos marcados como notificados",
+            expedientes_notificados,
+            actualizados,
+        )
     else:
-        logger.error(f"❌ Falló el envío a todos los socios")
+        logger.error("❌ No se pudo enviar ninguna notificación de expedientes por Telegram")
 
 
 def iniciar_scheduler() -> None:

@@ -14,6 +14,7 @@ from app.models.sentencia import Sentencia
 from app.models.scraping_progress import ScrapingProgress, ScrapingFailure, ScrapingLog
 from app.models.tramite_dgr import TramiteDgr
 from app.models.tramite_dgr_historial import TramiteDgrHistorial
+from app.models.telegram_usuario import TelegramUsuario
 from app.models.verificacion_ala import VerificacionALA, ListaALAMetadata
 
 __all__ = [
@@ -42,6 +43,7 @@ __all__ = [
     "ScrapingLog",
     "TramiteDgr",
     "TramiteDgrHistorial",
+    "TelegramUsuario",
     "VerificacionALA",
     "ListaALAMetadata",
 ]

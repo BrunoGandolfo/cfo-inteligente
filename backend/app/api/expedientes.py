@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime, date, timezone
 from uuid import UUID
+import asyncio
+from html import escape
 import logging
 import json
 
@@ -17,6 +19,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models import Usuario
 from app.models.expediente import Expediente, ExpedienteMovimiento
+from app.models.telegram_usuario import TelegramUsuario
 from app.core.access_control import (
     USUARIOS_ACCESO_EXPEDIENTES, USUARIOS_FILTRO_EXPEDIENTES,
 )
@@ -34,7 +37,7 @@ from app.schemas.expediente import (
     SincronizacionResponse,
 )
 from app.services import expediente_service
-from app.services import twilio_service
+from app.services.telegram_service import enviar_mensaje_telegram
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +100,55 @@ def _expediente_to_response(exp: Expediente, incluir_movimientos: bool = False) 
         data["movimientos"] = None
     
     return data
+
+
+def _obtener_chat_id_usuario(db: Session, usuario_id: UUID) -> Optional[int]:
+    """Obtiene el chat_id activo de Telegram para un usuario interno."""
+    telegram_usuario = (
+        db.query(TelegramUsuario)
+        .filter(
+            TelegramUsuario.usuario_id == usuario_id,
+            TelegramUsuario.activo == True,
+        )
+        .first()
+    )
+    return telegram_usuario.chat_id if telegram_usuario else None
+
+
+def _formatear_fecha(valor: Optional[date]) -> str:
+    """Formatea fechas de expediente para mensajes Telegram."""
+    return valor.strftime("%d/%m/%Y") if valor else "Sin fecha"
+
+
+def _construir_mensaje_movimientos_telegram(movimientos: List[dict]) -> str:
+    """Construye un mensaje HTML de Telegram con movimientos pendientes."""
+    por_expediente: dict[str, dict] = {}
+    for movimiento in movimientos:
+        iue = movimiento["iue"]
+        if iue not in por_expediente:
+            por_expediente[iue] = {
+                "caratula": movimiento["caratula"],
+                "movimientos": [],
+            }
+        por_expediente[iue]["movimientos"].append(movimiento)
+
+    lineas = ["<b>CFO Inteligente - Movimientos pendientes</b>", ""]
+    for iue, data in por_expediente.items():
+        lineas.append(f"<b>{escape(iue)}</b>")
+        lineas.append(escape(data["caratula"] or "Sin carátula"))
+        for movimiento in data["movimientos"][:3]:
+            lineas.append(
+                "• "
+                f"<b>Fecha:</b> {_formatear_fecha(movimiento.get('fecha'))} | "
+                f"<b>Tipo:</b> {escape(movimiento.get('tipo') or 'Sin tipo')} | "
+                f"<b>Decreto:</b> {escape(movimiento.get('decreto') or 'Sin decreto')} | "
+                f"<b>Vencimiento:</b> {_formatear_fecha(movimiento.get('vencimiento'))}"
+            )
+        if len(data["movimientos"]) > 3:
+            lineas.append(f"... y {len(data['movimientos']) - 3} más")
+        lineas.append("")
+
+    return "\n".join(lineas).strip()
 
 
 # ============================================================================
@@ -279,7 +331,7 @@ def listar_movimientos_pendientes(
     """
     Lista movimientos pendientes de notificación.
     
-    Útil para el sistema de alertas Twilio.
+    Útil para el sistema de alertas Telegram.
     Solo socios pueden usar este endpoint.
     """
     _verificar_socio(current_user)
@@ -321,33 +373,48 @@ def marcar_movimientos_notificados(
 @router.post("/notificaciones/test", response_model=NotificacionResponse)
 def enviar_notificacion_test(
     data: NotificacionRequest,
+    db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
     """
-    Envía mensaje de prueba para verificar configuración de WhatsApp.
+    Envía mensaje de prueba para verificar configuración de Telegram.
     
     Solo socios pueden usar este endpoint.
     """
     _verificar_socio(current_user)
-    
-    logger.info(f"📱 Enviando WhatsApp de prueba a {data.numero} - Usuario ID: {current_user.id}")
-    
-    resultado = twilio_service.enviar_test(data.numero)
-    
-    if resultado["exito"]:
-        return {
-            "exito": True,
-            "mensaje": "Mensaje de prueba enviado correctamente",
-            "sid": resultado["sid"],
-            "detalles": None
-        }
-    else:
+
+    chat_id = _obtener_chat_id_usuario(db, current_user.id)
+    if not chat_id:
         return {
             "exito": False,
-            "mensaje": f"Error al enviar: {resultado['error']}",
+            "mensaje": "No tienes Telegram vinculado. Enviá /start al bot y volvé a intentar.",
             "sid": None,
-            "detalles": {"error": resultado["error"]}
+            "detalles": {"chat_id": None}
         }
+
+    logger.info(f"📱 Enviando Telegram de prueba a usuario {current_user.id}")
+
+    mensaje = (
+        "<b>CFO Inteligente</b>\n\n"
+        f"Hola {escape(current_user.nombre)}.\n"
+        "La conexión con Telegram quedó verificada correctamente."
+    )
+    enviado = asyncio.run(enviar_mensaje_telegram(chat_id, mensaje))
+
+    if enviado:
+        return {
+            "exito": True,
+            "mensaje": "Mensaje de prueba enviado correctamente por Telegram",
+            "sid": None,
+            "detalles": {"chat_id": chat_id}
+        }
+
+    return {
+        "exito": False,
+        "mensaje": "Error al enviar la notificación de prueba por Telegram",
+        "sid": None,
+        "detalles": {"chat_id": chat_id}
+    }
 
 
 @router.post("/notificaciones/enviar", response_model=NotificacionResponse)
@@ -357,18 +424,27 @@ def enviar_notificacion_movimientos(
     current_user: Usuario = Depends(get_current_user)
 ):
     """
-    Envía notificación de movimientos pendientes via WhatsApp.
+    Envía notificación de movimientos pendientes via Telegram.
     
     Obtiene todos los movimientos sin notificar, los envía y los marca como notificados.
     Solo socios pueden usar este endpoint.
     """
     _verificar_socio(current_user)
-    
-    logger.info(f"📱 Enviando notificación de movimientos a {data.numero} - Usuario ID: {current_user.id}")
-    
+
+    chat_id = _obtener_chat_id_usuario(db, current_user.id)
+    if not chat_id:
+        return {
+            "exito": False,
+            "mensaje": "No tienes Telegram vinculado. Enviá /start al bot y volvé a intentar.",
+            "sid": None,
+            "detalles": {"chat_id": None}
+        }
+
+    logger.info(f"📱 Enviando notificación de movimientos por Telegram a usuario {current_user.id}")
+
     # Obtener movimientos pendientes
     movimientos = expediente_service.obtener_movimientos_sin_notificar(db)
-    
+
     if not movimientos:
         return {
             "exito": True,
@@ -376,31 +452,35 @@ def enviar_notificacion_movimientos(
             "sid": None,
             "detalles": {"total_movimientos": 0}
         }
-    
-    # Enviar notificación
-    resultado = twilio_service.notificar_movimientos_expedientes(movimientos, data.numero)
-    
-    if resultado.get("exito"):
-        # Marcar como notificados
-        ids = [m["movimiento_id"] for m in movimientos]
-        expediente_service.marcar_movimientos_notificados(db, ids)
-        
+
+    mensaje = _construir_mensaje_movimientos_telegram(movimientos)
+    enviado = asyncio.run(enviar_mensaje_telegram(chat_id, mensaje))
+
+    if enviado:
+        ids = [movimiento["movimiento_id"] for movimiento in movimientos]
+        actualizados = expediente_service.marcar_movimientos_notificados(db, ids)
+        expedientes = {movimiento["expediente_id"] for movimiento in movimientos}
+
         return {
             "exito": True,
-            "mensaje": f"Notificación enviada: {resultado['total_movimientos']} movimientos de {resultado['total_expedientes']} expedientes",
-            "sid": resultado.get("sid"),
+            "mensaje": (
+                f"Notificación enviada por Telegram: {actualizados} movimientos "
+                f"de {len(expedientes)} expedientes"
+            ),
+            "sid": None,
             "detalles": {
-                "total_movimientos": resultado["total_movimientos"],
-                "total_expedientes": resultado["total_expedientes"]
+                "total_movimientos": actualizados,
+                "total_expedientes": len(expedientes),
+                "chat_id": chat_id,
             }
         }
-    else:
-        return {
-            "exito": False,
-            "mensaje": f"Error al enviar: {resultado.get('error', 'Error desconocido')}",
-            "sid": None,
-            "detalles": {"error": resultado.get("error")}
-        }
+
+    return {
+        "exito": False,
+        "mensaje": "Error al enviar la notificación por Telegram",
+        "sid": None,
+        "detalles": {"chat_id": chat_id}
+    }
 
 
 @router.get("/{expediente_id}/historia", response_model=HistoriaResponse)

@@ -62,6 +62,11 @@ COLABORADORES_ACCESO_DGR = [
     "jmora@grupoconexion.uy",
     "gferrari@grupoconexion.uy",
 ]
+USUARIOS_NOTIFICACION_DGR = [
+    "vcaresani@grupoconexion.uy",
+    "aborio@grupoconexion.uy",
+    "jmora@grupoconexion.uy",
+]
 
 # --- ALA ---
 COLABORADORES_ACCESO_COMPLETO_ALA = ["gferrari@grupoconexion.uy"]

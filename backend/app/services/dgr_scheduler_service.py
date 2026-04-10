@@ -2,23 +2,28 @@
 Scheduler de monitoreo para trámites DGR.
 
 Consulta periódicamente la DGR, detecta cambios y envía notificaciones
-por WhatsApp cuando hay novedades en trámites activos.
+por Telegram cuando hay novedades en trámites activos.
 """
 
 import asyncio
 import json
 from datetime import date, datetime, timezone
+from html import escape
 from typing import Optional
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.access_control import USUARIOS_NOTIFICACION_DGR
 from app.core.config import Settings
 from app.core.database import SessionLocal
 from app.core.logger import get_logger
+from app.models.telegram_usuario import TelegramUsuario
 from app.models.tramite_dgr_historial import TramiteDgrHistorial
 from app.models.tramite_dgr import TramiteDgr
-from app.services import twilio_service
+from app.models.usuario import Usuario
 from app.services.dgr_service import consultar_tramite_dgr
+from app.services.telegram_service import enviar_mensaje_telegram
 
 logger = get_logger(__name__)
 
@@ -88,23 +93,60 @@ def _aplicar_datos_dgr(tramite: TramiteDgr, datos: dict) -> None:
     )
 
 
-def _obtener_numeros_notificacion() -> list[str]:
-    """Lee la lista de números de WhatsApp desde el entorno."""
-    numeros_str = Settings().twilio_notify_numbers
-    return [numero.strip() for numero in numeros_str.split(",") if numero.strip()]
+def _obtener_destinatarios_notificacion(db: Session) -> list[tuple[str, int]]:
+    """Resuelve emails configurados del módulo DGR a chat IDs activos de Telegram."""
+    usuarios = (
+        db.query(Usuario)
+        .filter(func.lower(Usuario.email).in_([email.lower() for email in USUARIOS_NOTIFICACION_DGR]))
+        .all()
+    )
+    usuarios_por_email = {usuario.email.lower(): usuario for usuario in usuarios}
+
+    usuario_ids = [usuario.id for usuario in usuarios]
+    telegrams = (
+        db.query(TelegramUsuario)
+        .filter(
+            TelegramUsuario.usuario_id.in_(usuario_ids),
+            TelegramUsuario.activo == True,
+        )
+        .all()
+        if usuario_ids
+        else []
+    )
+    telegram_por_usuario = {str(telegram.usuario_id): telegram for telegram in telegrams}
+
+    destinatarios = []
+    for email in USUARIOS_NOTIFICACION_DGR:
+        usuario = usuarios_por_email.get(email.lower())
+        if not usuario:
+            logger.warning("Usuario DGR %s no existe en la base", email)
+            continue
+
+        telegram_usuario = telegram_por_usuario.get(str(usuario.id))
+        if not telegram_usuario:
+            logger.warning("Usuario %s no tiene Telegram vinculado", email)
+            continue
+
+        destinatarios.append((email, telegram_usuario.chat_id))
+
+    return destinatarios
 
 
 def _construir_mensaje(tramite: TramiteDgr) -> str:
-    """Arma el mensaje de WhatsApp para un trámite con cambios."""
+    """Arma el mensaje HTML de Telegram para un trámite con cambios."""
     lineas = [
-        "🔔 *Cambio en trámite DGR*",
-        f"📋 {tramite.registro_nombre or tramite.registro} - {tramite.oficina_nombre or tramite.oficina}",
-        f"📄 Documento: {tramite.anio}/{tramite.numero_entrada}",
-        f"📝 Escribano: {tramite.escribano_emisor or 'Sin dato'}",
-        f"⚠️ Estado: {tramite.estado_anterior or 'Sin dato'} → {tramite.estado_actual or 'Sin dato'}",
+        "<b>Cambio en trámite DGR</b>",
+        f"<b>Registro:</b> {escape(tramite.registro_nombre or tramite.registro)}",
+        f"<b>Oficina:</b> {escape(tramite.oficina_nombre or tramite.oficina)}",
+        f"<b>Documento:</b> {tramite.anio}/{tramite.numero_entrada}",
+        f"<b>Escribano:</b> {escape(tramite.escribano_emisor or 'Sin dato')}",
+        (
+            f"<b>Estado:</b> {escape(tramite.estado_anterior or 'Sin dato')} → "
+            f"{escape(tramite.estado_actual or 'Sin dato')}"
+        ),
     ]
     if tramite.observaciones:
-        lineas.append(f"❗ Observaciones: {tramite.observaciones}")
+        lineas.append(f"<b>Observaciones:</b> {escape(tramite.observaciones)}")
     return "\n".join(lineas)
 
 
@@ -220,28 +262,26 @@ async def _tarea_monitorear_tramites_dgr_async() -> None:
             .all()
         )
 
-        numeros = _obtener_numeros_notificacion()
-        if not numeros:
-            logger.warning("⚠️ TWILIO_NOTIFY_NUMBERS no configurado; no se enviarán notificaciones DGR")
+        destinatarios = _obtener_destinatarios_notificacion(db)
+        if not destinatarios:
+            logger.warning("⚠️ No hay destinatarios Telegram configurados para notificaciones DGR")
         else:
             for tramite in pendientes:
                 mensaje = _construir_mensaje(tramite)
                 enviados_ok = 0
 
-                for numero in numeros:
-                    resultado = twilio_service.enviar_whatsapp(numero, mensaje)
-                    if resultado.get("exito"):
+                for email, chat_id in destinatarios:
+                    if await enviar_mensaje_telegram(chat_id, mensaje):
                         enviados_ok += 1
                         notificaciones_enviadas += 1
                     else:
                         logger.error(
-                            "❌ Error notificando trámite DGR %s a %s: %s",
+                            "❌ Error notificando trámite DGR %s a %s por Telegram",
                             tramite.id,
-                            numero,
-                            resultado.get("error"),
+                            email,
                         )
 
-                if enviados_ok == len(numeros):
+                if enviados_ok == len(destinatarios):
                     tramite.cambio_detectado = False
                     tramite.updated_at = datetime.now(timezone.utc)
                     db.commit()

@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     twilio_auth_token: str = Field(default="", alias="TWILIO_AUTH_TOKEN")
     twilio_whatsapp_from: str = Field(default="whatsapp:+14155238886", alias="TWILIO_WHATSAPP_FROM")
     twilio_notify_numbers: str = Field(default="", alias="TWILIO_NOTIFY_NUMBERS")
+    telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
     
     # SQL Engine: "haiku" (pipeline completo) | "claude" (bypass directo a Claude)
     sql_engine: str = Field(default="claude", alias="SQL_ENGINE")
