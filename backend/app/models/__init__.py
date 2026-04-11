@@ -16,6 +16,7 @@ from app.models.tramite_dgr import TramiteDgr
 from app.models.tramite_dgr_historial import TramiteDgrHistorial
 from app.models.telegram_usuario import TelegramUsuario
 from app.models.verificacion_ala import VerificacionALA, ListaALAMetadata
+from app.models.consulta_contable import ConsultaContable
 
 __all__ = [
     "Area",
@@ -46,4 +47,5 @@ __all__ = [
     "TelegramUsuario",
     "VerificacionALA",
     "ListaALAMetadata",
+    "ConsultaContable",
 ]

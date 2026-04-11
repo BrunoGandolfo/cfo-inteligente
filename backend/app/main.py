@@ -120,5 +120,8 @@ app.include_router(jurisprudencia.router, prefix="/api/jurisprudencia", tags=["j
 from app.api.ala import router as ala_router
 app.include_router(ala_router, prefix="/api/ala", tags=["ALA - Anti Lavado"])
 
+from app.api.contable import router as contable_router
+app.include_router(contable_router, prefix="/api/contable", tags=["Contable"])
+
 from app.api.tramites_dgr import router as tramites_dgr_router
 app.include_router(tramites_dgr_router, prefix="/api/tramites-dgr", tags=["tramites-dgr"])

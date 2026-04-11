@@ -76,6 +76,13 @@ USUARIOS_ACCESO_ALA = [
 ]
 
 
+# --- CONTABLE ---
+USUARIOS_ACCESO_CONTABLE = [
+    "naraujo@grupoconexion.uy",
+    "bgandolfo@cgmasociados.com",
+]
+
+
 def tiene_acceso(email: str, lista: list[str]) -> bool:
     """Verifica si un email tiene acceso según una lista."""
     return email.lower() in [e.lower() for e in lista]
