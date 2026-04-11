@@ -37,6 +37,7 @@ URL_UE = (
     "https://webgate.ec.europa.eu/fsd/fsf/public/files/xmlFullSanctionsList_1_1/content"
     "?token=dG9rZW4tMjAxNw"
 )
+URL_UK = "https://ofsistorage.blob.core.windows.net/publishlive/2022format/ConList.csv"
 
 # Códigos ISO 3166-1 alpha-2. GAFI "Call for Action" = alto riesgo.
 GAFI_ALTO_RIESGO = {"IR", "KP", "MM"}  # Iran, Corea del Norte, Myanmar
@@ -272,6 +273,51 @@ def descargar_lista_ue() -> Optional[Dict[str, Any]]:
         return None
 
 
+def descargar_lista_uk() -> Optional[Dict[str, Any]]:
+    """
+    Descarga CSV HM Treasury UK (OFSI). Retorna {registros, hash, total} o None.
+    """
+    try:
+        # Timeout 120s porque el CSV UK es grande (~16MB)
+        resp = requests.get(URL_UK, timeout=120)
+        resp.raise_for_status()
+        content = resp.content
+        h = _sha256_content(content)
+        try:
+            text = content.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            text = content.decode("latin-1")
+
+        lineas = text.splitlines()
+        idx_header = 0
+        for i, linea in enumerate(lineas[:5]):
+            if "Name 6" in linea and "Group Type" in linea:
+                idx_header = i
+                break
+        reader = csv.DictReader(io.StringIO("\n".join(lineas[idx_header:])))
+        registros: List[str] = []
+        for row in reader:
+            if (row.get("Group Type") or "").strip() != "Individual":
+                continue
+            nombres = []
+            for key in ("Name 6", "Name 1", "Name 2", "Name 3", "Name 4", "Name 5"):
+                val = (row.get(key) or "").strip()
+                if val:
+                    nombres.append(val)
+            nombre_completo = " ".join(nombres)
+            if nombre_completo:
+                registros.append(nombre_completo)
+
+        logger.info("Lista UK descargada: %d registros, hash=%s", len(registros), h[:16])
+        return {"registros": registros, "hash": h, "total": len(registros)}
+    except requests.RequestException as e:
+        logger.warning("Error descargando lista UK: %s", e)
+        return None
+    except Exception as e:
+        logger.exception("Error procesando lista UK: %s", e)
+        return None
+
+
 # -----------------------------------------------------------------------------
 # 3. Verificación contra listas (listas ya descargadas)
 # -----------------------------------------------------------------------------
@@ -443,6 +489,36 @@ def verificar_ue(nombre: str, lista_ue: Optional[Dict[str, Any]]) -> Dict[str, A
     nombre_norm = normalizar_texto(nombre)
     mejor_sim = 0.0
     for nombres_lista in lista_ue["registros"]:
+        nombre_completo = " ".join(nombres_lista) if isinstance(nombres_lista, list) else str(nombres_lista)
+        sim = similitud_nombres(nombre_norm, nombre_completo)
+        if sim > mejor_sim:
+            mejor_sim = sim
+            out["mejor_match"] = nombre_completo[:200]
+        if sim >= UMBRAL_SIMILITUD:
+            out["en_lista"] = True
+            if nombre_completo not in out["nombres_encontrados"]:
+                out["nombres_encontrados"].append(nombre_completo)
+    out["similitud"] = mejor_sim
+    return out
+
+
+def verificar_uk(nombre: str, lista_uk: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Verifica contra lista UK (HM Treasury) ya descargada. Mismo formato que verificar_ofac.
+    """
+    out = {
+        "en_lista": False,
+        "similitud": 0.0,
+        "mejor_match": "",
+        "nombres_encontrados": [],
+        "error": None,
+    }
+    if not lista_uk or "registros" not in lista_uk:
+        out["error"] = "Lista UK no disponible"
+        return out
+    nombre_norm = normalizar_texto(nombre)
+    mejor_sim = 0.0
+    for nombres_lista in lista_uk["registros"]:
         nombre_completo = " ".join(nombres_lista) if isinstance(nombres_lista, list) else str(nombres_lista)
         sim = similitud_nombres(nombre_norm, nombre_completo)
         if sim > mejor_sim:

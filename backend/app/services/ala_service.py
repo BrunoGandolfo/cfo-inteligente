@@ -19,16 +19,19 @@ from app.core.logger import get_logger
 from app.models.verificacion_ala import ListaALAMetadata, VerificacionALA
 from app.schemas.verificacion_ala import VerificacionALACreate
 from app.services.ala_list_parser import (
+    URL_UK,
     descargar_lista_ofac,
     descargar_lista_onu,
     descargar_lista_pep,
     descargar_lista_ue,
+    descargar_lista_uk,
     normalizar_texto,
     verificar_ofac,
     verificar_onu,
     verificar_pais_gafi,
     verificar_pep,
     verificar_ue,
+    verificar_uk,
 )
 
 logger = get_logger(__name__)
@@ -37,13 +40,14 @@ logger = get_logger(__name__)
 # Constantes
 # =============================================================================
 
-LISTAS = ["PEP", "ONU", "OFAC", "UE"]
+LISTAS = ["PEP", "ONU", "OFAC", "UE", "UK"]
 
 URL_FUENTES = {
     "PEP": "https://catalogodatos.gub.uy/dataset/pep",
     "ONU": "https://scsanctions.un.org/resources/xml/en/consolidated.xml",
     "OFAC": "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.XML",
     "UE": "https://webgate.ec.europa.eu/fsd/fsf/public/files/xmlFullSanctionsList_1_1/content",
+    "UK": URL_UK,
 }
 
 
@@ -58,6 +62,7 @@ def _clasificar_riesgo(
     resultado_ue: Dict[str, Any],
     resultado_gafi: Dict[str, Any],
     listas_fallidas: List[str],
+    resultado_uk: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Clasifica nivel de riesgo, diligencia y capacidad de operar.
@@ -102,6 +107,7 @@ def _clasificar_riesgo(
     en_onu = resultado_onu.get("en_lista", False) if resultado_onu else False
     en_ofac = resultado_ofac.get("en_lista", False) if resultado_ofac else False
     en_ue = resultado_ue.get("en_lista", False) if resultado_ue else False
+    en_uk = resultado_uk.get("en_lista", False) if resultado_uk else False
     es_pep = resultado_pep.get("es_pep", False) if resultado_pep else False
     nivel_gafi = resultado_gafi.get("nivel", "NINGUNO") if resultado_gafi else "NINGUNO"
 
@@ -110,7 +116,7 @@ def _clasificar_riesgo(
     puede_operar = True
 
     # CRITICO: match en lista de sanciones
-    if en_onu or en_ofac or en_ue:
+    if en_onu or en_ofac or en_ue or en_uk:
         nivel_riesgo = "CRITICO"
         puede_operar = False
         if en_onu:
@@ -119,6 +125,8 @@ def _clasificar_riesgo(
             factores.append("Match en lista OFAC")
         if en_ue:
             factores.append("Match en lista UE")
+        if en_uk:
+            factores.append("Match en lista UK (HM Treasury)")
 
     # ALTO: PEP o GAFI alto (si no es CRITICO)
     elif es_pep or nivel_gafi == "ALTO":
@@ -238,7 +246,7 @@ def _formatear_resultado_lista(
     elif nombre_lista == "GAFI":
         hits = 1 if resultado_verificacion.get("nivel") in ("ALTO", "MEDIO") else 0
     else:
-        # ONU, OFAC, UE
+        # ONU, OFAC, UE, UK
         hits = 1 if resultado_verificacion.get("en_lista") else 0
         nombres_encontrados = resultado_verificacion.get("nombres_encontrados", [])
         if nombres_encontrados:
@@ -355,6 +363,21 @@ def ejecutar_verificacion_completa(
             _upsert_lista_metadata(db, "UE", None, str(e))
             listas_fallidas.append("UE")
 
+        # UK
+        lista_uk = None
+        try:
+            lista_uk = descargar_lista_uk()
+            if lista_uk:
+                _upsert_lista_metadata(db, "UK", lista_uk)
+                logger.info(f"UK: {lista_uk['total']} registros")
+            else:
+                _upsert_lista_metadata(db, "UK", None, "Descarga retornó None")
+                listas_fallidas.append("UK")
+        except Exception as e:
+            logger.warning(f"Error descargando UK: {e}")
+            _upsert_lista_metadata(db, "UK", None, str(e))
+            listas_fallidas.append("UK")
+
         # -------------------------------------------------------------------------
         # 2. Ejecutar verificaciones
         # -------------------------------------------------------------------------
@@ -388,6 +411,12 @@ def ejecutar_verificacion_completa(
             resultado_ue_raw = verificar_ue(nombre_normalizado, lista_ue)
             logger.info(f"UE: en_lista={resultado_ue_raw.get('en_lista')}")
 
+        # UK
+        resultado_uk_raw = None
+        if lista_uk:
+            resultado_uk_raw = verificar_uk(nombre_normalizado, lista_uk)
+            logger.info(f"UK: en_lista={resultado_uk_raw.get('en_lista')}")
+
         # GAFI (no requiere descarga)
         resultado_gafi_raw = verificar_pais_gafi(datos.nacionalidad)
         logger.info(f"GAFI: nivel={resultado_gafi_raw.get('nivel')}")
@@ -402,6 +431,7 @@ def ejecutar_verificacion_completa(
             resultado_ue=resultado_ue_raw or {},
             resultado_gafi=resultado_gafi_raw,
             listas_fallidas=listas_fallidas,
+            resultado_uk=resultado_uk_raw or {},
         )
 
         logger.info(
@@ -443,6 +473,12 @@ def ejecutar_verificacion_completa(
             None,  # GAFI no tiene hash
             checked=True,  # GAFI siempre está disponible (lista local)
         )
+        resultado_uk = _formatear_resultado_lista(
+            "UK",
+            resultado_uk_raw,
+            lista_uk.get("hash") if lista_uk else None,
+            checked=lista_uk is not None,
+        )
 
         # -------------------------------------------------------------------------
         # 5. Generar hash de verificación
@@ -452,6 +488,7 @@ def ejecutar_verificacion_completa(
             "onu": resultado_onu,
             "ofac": resultado_ofac,
             "ue": resultado_ue,
+            "uk": resultado_uk,
             "gafi": resultado_gafi,
             "clasificacion": clasificacion,
         }
@@ -482,6 +519,7 @@ def ejecutar_verificacion_completa(
             resultado_pep=resultado_pep,
             resultado_ofac=resultado_ofac,
             resultado_ue=resultado_ue,
+            resultado_uk=resultado_uk,
             resultado_gafi=resultado_gafi,
             hash_verificacion=hash_verificacion,
             expediente_id=datos.expediente_id,

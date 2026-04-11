@@ -632,6 +632,7 @@ class TestEndpointVerificar:
         mock_verificacion.resultado_pep = {"checked": True, "hits": 0, "timestamp": ts}
         mock_verificacion.resultado_ofac = {"checked": True, "hits": 0, "timestamp": ts}
         mock_verificacion.resultado_ue = {"checked": True, "hits": 0, "timestamp": ts}
+        mock_verificacion.resultado_uk = {"checked": True, "hits": 0, "timestamp": ts}
         mock_verificacion.resultado_gafi = {"checked": True, "hits": 0, "timestamp": ts}
         mock_verificacion.busqueda_google_realizada = False
         mock_verificacion.busqueda_google_observaciones = None

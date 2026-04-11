@@ -90,6 +90,7 @@ class VerificacionALAResponse(BaseModel):
     resultado_ofac: Optional[ResultadoListaSchema] = None
     resultado_ue: Optional[ResultadoListaSchema] = None
     resultado_gafi: Optional[ResultadoListaSchema] = None
+    resultado_uk: Optional[ResultadoListaSchema] = None
     busqueda_google_realizada: bool
     busqueda_google_observaciones: Optional[str] = None
     busqueda_news_realizada: bool

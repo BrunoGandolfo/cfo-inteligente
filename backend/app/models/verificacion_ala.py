@@ -4,7 +4,7 @@ Modelos para el módulo ALA (Anti-Lavado de Activos).
 Verificaciones de debida diligencia y metadata de listas consultadas.
 """
 
-from sqlalchemy import Column, String, DateTime, Date, Boolean, Text, ForeignKey, Index, Integer
+from sqlalchemy import Column, String, DateTime, Date, Boolean, Text, ForeignKey, Index, Integer, Numeric
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -32,6 +32,15 @@ class VerificacionALA(Base):
     es_persona_juridica = Column(Boolean, default=False)
     razon_social = Column(String(300), nullable=True)
 
+    # Campos nuevos para cumplimiento normativo (Decreto 379/018)
+    tipo_operacion_ala = Column(String(50), nullable=True)  # COMPRAVENTA_INMUEBLE, CONSTITUCION_SOCIEDAD, etc.
+    origen_fondos = Column(Text, nullable=True)
+    medio_pago = Column(String(50), nullable=True)  # EFECTIVO, TRANSFERENCIA, CHEQUE, MIXTO
+    monto_operacion = Column(Numeric(15, 2), nullable=True)
+    beneficiario_final_nombre = Column(String(300), nullable=True)
+    beneficiario_final_documento = Column(String(50), nullable=True)
+    observaciones_oficial = Column(Text, nullable=True)
+
     # Resultado de la verificación
     nivel_diligencia = Column(String(20), nullable=False)  # SIMPLIFICADA, NORMAL, INTENSIFICADA
     nivel_riesgo = Column(String(20), nullable=False)  # BAJO, MEDIO, ALTO, CRITICO
@@ -43,6 +52,7 @@ class VerificacionALA(Base):
     resultado_ofac = Column(JSONB, nullable=True)
     resultado_ue = Column(JSONB, nullable=True)
     resultado_gafi = Column(JSONB, nullable=True)
+    resultado_uk = Column(JSONB, nullable=True)
 
     # Búsquedas complementarias
     busqueda_google_realizada = Column(Boolean, default=False)

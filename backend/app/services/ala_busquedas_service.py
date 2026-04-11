@@ -10,7 +10,9 @@ Decreto 379/018 - Art. 44 C.4
 """
 
 import os
-from typing import Any, Dict, List
+import re
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 import anthropic
 import requests
@@ -423,5 +425,252 @@ def ejecutar_busquedas_art44(
     )
     
     logger.info(f"Búsquedas Art. 44 completadas: {resultado['todas_completadas']}")
-    
+
     return resultado
+
+
+# =============================================================================
+# 5. Consulta DGI — Certificado Único (Playwright sync)
+# =============================================================================
+
+DGI_CERTIFICADO_URL = (
+    "https://servicios.dgi.gub.uy/CVA_Solicitud_Web/servlet/inicio_consulta_comunes"
+)
+DGI_TIMEOUT_MS = 30_000
+
+
+def _dgi_find_rut_input(container):
+    """Busca heurísticamente el input de RUT/CI en un frame o página GeneXus."""
+    candidate_selectors = [
+        'input[id*="RUT" i]',
+        'input[name*="RUT" i]',
+        'input[id*="DOC" i]',
+        'input[name*="DOC" i]',
+        'input[id*="Numero" i]',
+        'input[placeholder*="RUT" i]',
+        'input[placeholder*="documento" i]',
+        'input[type="text"]',
+    ]
+    for sel in candidate_selectors:
+        try:
+            loc = container.locator(sel).first
+            if loc.count() > 0:
+                return loc
+        except Exception:
+            continue
+    return None
+
+
+def _dgi_find_submit(container):
+    """Busca el botón/enlace de envío del formulario."""
+    candidate_selectors = [
+        'input[type="submit"]',
+        'button[type="submit"]',
+        'button:has-text("Consultar")',
+        'input[value*="Consultar" i]',
+        'a:has-text("Consultar")',
+        'button:has-text("Aceptar")',
+        'input[value*="Aceptar" i]',
+    ]
+    for sel in candidate_selectors:
+        try:
+            loc = container.locator(sel).first
+            if loc.count() > 0:
+                return loc
+        except Exception:
+            continue
+    return None
+
+
+def _dgi_interpretar_resultado(texto: str) -> Optional[bool]:
+    """Devuelve True si vigente, False si no vigente, None si indeterminado."""
+    t = texto.lower()
+    if "no vigente" in t or "no está vigente" in t or "no se encuentra vigente" in t:
+        return False
+    if "vigente" in t or "al día" in t:
+        return True
+    if "no existe" in t or "no encontrado" in t or "inexistente" in t:
+        return False
+    return None
+
+
+def consultar_dgi_certificado(rut_ci: str) -> Dict[str, Any]:
+    """
+    Consulta el Certificado Único de DGI Uruguay para un RUT o CI.
+
+    Abre el formulario público GeneXus con Playwright (headless), completa
+    el campo de documento y extrae el resultado. No integra al flujo ALA
+    principal — solo expone la función para pruebas manuales.
+
+    Args:
+        rut_ci: RUT o CI a consultar (string)
+
+    Returns:
+        Dict con claves: consultado, vigente, resultado_texto, fecha_consulta, error
+    """
+    fecha_consulta = datetime.utcnow().isoformat()
+    resultado: Dict[str, Any] = {
+        "consultado": False,
+        "vigente": None,
+        "resultado_texto": "",
+        "fecha_consulta": fecha_consulta,
+        "error": None,
+    }
+
+    try:
+        from playwright.sync_api import sync_playwright  # type: ignore
+    except ImportError as e:
+        resultado["error"] = f"Playwright no instalado: {e}"
+        return resultado
+
+    rut_limpio = re.sub(r"\s+", "", str(rut_ci or "")).strip()
+    if not rut_limpio:
+        resultado["error"] = "RUT/CI vacío"
+        return resultado
+
+    logger.info(f"Consultando DGI Certificado Único para: {rut_limpio}")
+
+    browser = None
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True, args=["--no-sandbox"])
+            context = browser.new_context()
+            page = context.new_page()
+            page.set_default_timeout(DGI_TIMEOUT_MS)
+            page.set_default_navigation_timeout(DGI_TIMEOUT_MS)
+
+            page.goto(DGI_CERTIFICADO_URL, wait_until="domcontentloaded", timeout=DGI_TIMEOUT_MS)
+
+            try:
+                page.wait_for_load_state("networkidle", timeout=DGI_TIMEOUT_MS)
+            except Exception:
+                pass
+
+            # GeneXus suele cargar el form en el main frame; si no, recorrer iframes.
+            containers = [page.main_frame] + [f for f in page.frames if f != page.main_frame]
+
+            rut_input = None
+            submit_btn = None
+            chosen_container = None
+            for c in containers:
+                rut_input = _dgi_find_rut_input(c)
+                if rut_input is not None:
+                    submit_btn = _dgi_find_submit(c)
+                    chosen_container = c
+                    break
+
+            if rut_input is None:
+                resultado["error"] = "No se encontró campo RUT/CI en el formulario DGI"
+                return resultado
+
+            rut_input.fill(rut_limpio)
+
+            if submit_btn is not None:
+                try:
+                    submit_btn.click()
+                except Exception as e:
+                    logger.warning(f"Click submit falló, intentando Enter: {e}")
+                    rut_input.press("Enter")
+            else:
+                rut_input.press("Enter")
+
+            try:
+                page.wait_for_load_state("networkidle", timeout=DGI_TIMEOUT_MS)
+            except Exception:
+                pass
+
+            body_text = ""
+            try:
+                if chosen_container is not None:
+                    body_text = chosen_container.locator("body").inner_text(timeout=5_000)
+            except Exception:
+                try:
+                    body_text = page.locator("body").inner_text(timeout=5_000)
+                except Exception as e:
+                    logger.warning(f"No se pudo extraer texto del resultado: {e}")
+
+            body_text_norm = re.sub(r"\s+", " ", body_text or "").strip()
+            resultado["resultado_texto"] = body_text_norm[:2000]
+            resultado["vigente"] = _dgi_interpretar_resultado(body_text_norm)
+            resultado["consultado"] = True
+
+            logger.info(
+                f"DGI consulta OK rut={rut_limpio} vigente={resultado['vigente']}"
+            )
+
+    except Exception as e:
+        logger.error(f"Error consultando DGI Certificado Único: {e}")
+        resultado["error"] = str(e)
+        resultado["consultado"] = False
+    finally:
+        try:
+            if browser is not None:
+                browser.close()
+        except Exception:
+            pass
+
+    return resultado
+
+
+# =============================================================================
+# 6. Consulta DGR — Interdicciones (Registro Nacional de Actos Personales)
+# =============================================================================
+#
+# INVESTIGACIÓN PORTAL DGR (https://portal.dgr.gub.uy):
+# El portal DGR no expone una consulta pública gratuita al Registro Nacional
+# de Actos Personales (interdicciones). Los servicios disponibles en el portal
+# son todos autenticados o de pago:
+#
+#   - /servicios1/usuarios/consultas    → página estática informativa, sin form público
+#   - SWI/public/consulta_solicitud.jsf → sólo consulta ESTADO de una solicitud
+#                                         previamente ingresada (requiere
+#                                         nro de cliente + nro de solicitud)
+#   - SisUsuariosPub/...loginexterno    → requiere login de usuario DGR
+#   - ADE/...actuacionescribanos.login  → requiere login de escribano
+#   - "Solicitudes Remotas" (sol-con)   → trámite arancelado con usuario
+#
+# La consulta al Registro de Actos Personales (interdicciones, inhibiciones,
+# emancipaciones, etc.) en Uruguay se realiza presentando una "solicitud de
+# información registral" con costo de timbre/tasa, y la respuesta es un
+# certificado registral emitido por DGR — no una consulta web instantánea.
+#
+# Por ende, esta función NO automatiza la consulta: retorna error limpio
+# indicando que el servicio requiere autenticación/pago. Se mantiene la
+# firma pedida por el tooling ALA para integración futura si DGR habilita
+# un endpoint público o si se implementa el flujo autenticado.
+# =============================================================================
+
+
+def consultar_dgr_interdicciones(ci: str) -> Dict[str, Any]:
+    """
+    Consulta interdicciones en el Registro Nacional de Actos Personales (DGR).
+
+    ⚠️  NO automatizado: el portal DGR no expone consulta pública gratuita.
+    La consulta real requiere presentar una solicitud registral arancelada
+    con usuario autenticado ("Solicitudes Remotas"). Ver comentario arriba
+    para detalle de la investigación del portal.
+
+    Args:
+        ci: Cédula de identidad de la persona a consultar.
+
+    Returns:
+        Dict con: consultado, tiene_interdicciones, resultado_texto,
+        fecha_consulta, error
+    """
+    fecha_consulta = datetime.utcnow().isoformat()
+    ci_limpia = re.sub(r"\s+", "", str(ci or "")).strip()
+
+    logger.info(f"Consulta DGR Interdicciones solicitada para CI={ci_limpia}")
+
+    return {
+        "consultado": False,
+        "tiene_interdicciones": None,
+        "resultado_texto": (
+            "El Registro Nacional de Actos Personales (DGR) no ofrece consulta "
+            "pública web de interdicciones. La verificación se realiza mediante "
+            "solicitud registral arancelada presentada a través del portal "
+            "autenticado de DGR (Solicitudes Remotas / Sol-Con)."
+        ),
+        "fecha_consulta": fecha_consulta,
+        "error": "Consulta requiere autenticación/pago",
+    }
