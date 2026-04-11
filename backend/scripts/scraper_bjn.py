@@ -111,7 +111,7 @@ SELECTORS = {
     "grid_resultados": '[id="formResultados:dataTable"]',
     "filas_resultados": 'table[id="formResultados:dataTable"] tr.rich-table-row',
     "pagina_siguiente": '[id="formResultados:sigLink"]',
-    "popup_click_pattern": 'td[id="formResultados:dataTable:{index}:colFec"]',
+    "popup_click_pattern": 'table[id="formResultados:dataTable"] tr.rich-table-row >> nth={index} >> td >> nth=0',
 }
 
 BLOCKED_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".css", ".woff", ".woff2")
@@ -1336,6 +1336,26 @@ async def process_sentence_row(
     """Opens a sentencia popup, parses its HTML and persists the full payload with retries."""
     row_index = row["index"]
     selector = SELECTORS["popup_click_pattern"].format(index=row_index)
+
+    # Skip si la sentencia ya tiene texto completo
+    _skip_numero = normalize_space(row.get("numero", ""))
+    _skip_sede = normalize_space(row.get("sede", ""))
+    _skip_fecha = row.get("fecha")
+    if _skip_numero and _skip_fecha:
+        _already = (
+            db.query(Sentencia.id)
+            .filter(
+                Sentencia.numero == _skip_numero,
+                Sentencia.fecha == _skip_fecha,
+                Sentencia.deleted_at.is_(None),
+                Sentencia.texto_completo.isnot(None),
+                Sentencia.texto_completo != "",
+            )
+            .first()
+        )
+        if _already:
+            return
+
     last_exception: Optional[BaseException] = None
 
     for attempt in range(1, SENTENCE_MAX_ATTEMPTS + 1):
