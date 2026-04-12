@@ -48,4 +48,9 @@ __all__ = [
     "VerificacionALA",
     "ListaALAMetadata",
     "ConsultaContable",
+    "Norma",
+    "NormaArticulo",
+    "NormaRelacion",
 ]
+
+from app.models.norma import Norma, NormaArticulo, NormaRelacion
