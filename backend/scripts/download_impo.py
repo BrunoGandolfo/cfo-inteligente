@@ -29,6 +29,7 @@ import requests
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+from sqlalchemy import text
 from app.core.database import SessionLocal
 from app.models.norma import Norma, NormaArticulo, NormaRelacion
 from app.services.impo_relation_parser import parse_nota_relaciones
@@ -116,6 +117,19 @@ def estimar_anio_ley(numero: int) -> list[int]:
 def estimar_anio_decreto_ley(numero: int) -> list[int]:
     """Decretos-ley uruguayos: período 1973-1985."""
     return list(range(1973, 1986))
+
+
+def lookup_anio_desde_leyes(db, numero: int) -> int | None:
+    """
+    Busca el año de una ley en la tabla 'leyes' (cargada desde el Parlamento).
+    Returns:
+        El año si existe, None si no se encontró.
+    """
+    result = db.execute(
+        text("SELECT anio FROM leyes WHERE numero = :numero AND anio IS NOT NULL LIMIT 1"),
+        {"numero": numero}
+    ).fetchone()
+    return result[0] if result else None
 
 
 # ---------------------------------------------------------------------------
@@ -396,6 +410,13 @@ def fase1_leyes_y_decretos_ley(
     log.info("=== FASE 1: Leyes %d-%d (%d) + Decretos-Ley %d-%d (%d) ===",
              desde_ley, hasta_ley, total_leyes, desde_dl, hasta_dl, total_dl)
 
+    if not dry_run:
+        con_lookup = db.execute(
+            text("SELECT count(*) FROM leyes WHERE numero >= :desde AND numero <= :hasta AND anio IS NOT NULL"),
+            {"desde": desde_ley, "hasta": hasta_ley}
+        ).scalar()
+        log.info("Lookup disponible: %d/%d leyes con año conocido (1 request c/u)", con_lookup, total_leyes)
+
     # -- Leyes --
     for numero in range(desde_ley, hasta_ley + 1):
         descargadas += 1
@@ -414,7 +435,11 @@ def fase1_leyes_y_decretos_ley(
                              descargadas, total, descargadas / total * 100, numero)
                 continue
 
-        anios = estimar_anio_ley(numero)
+        anio_conocido = lookup_anio_desde_leyes(db, numero) if not dry_run else None
+        if anio_conocido:
+            anios = [anio_conocido]
+        else:
+            anios = estimar_anio_ley(numero)
         ok = descargar_con_busqueda_anio(db, "LEY", numero, anios, dry_run)
         if ok:
             encontradas += 1
