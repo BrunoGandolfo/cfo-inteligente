@@ -148,6 +148,7 @@ def generar_certificado_ala(verificacion: "VerificacionALA") -> bytes:
     listas_html += _resultado_lista_html("OFAC (SDN)", verificacion.resultado_ofac, 18598)
     listas_html += _resultado_lista_html("Unión Europea", verificacion.resultado_ue, 23471)
     listas_html += _resultado_lista_html("GAFI (País)", verificacion.resultado_gafi, None)
+    listas_html += _resultado_lista_html("UK Treasury", verificacion.resultado_uk, None)
     
     # Búsquedas Art. 44
     busquedas_html = ""
@@ -340,9 +341,44 @@ def generar_certificado_ala(verificacion: "VerificacionALA") -> bytes:
             </div>
         </div>
         
-        <!-- SECCIÓN 2: RESULTADO DE LA VERIFICACIÓN -->
+        <!-- SECCIÓN 2: DATOS DE LA OPERACIÓN -->
         <div class="section">
-            <div class="section-title">2. RESULTADO DE LA VERIFICACIÓN</div>
+            <div class="section-title">2. DATOS DE LA OPERACIÓN (Decreto 379/018)</div>
+            <div class="data-grid">
+                <div class="data-row">
+                    <div class="data-label">Tipo de operación:</div>
+                    <div class="data-value">{(verificacion.tipo_operacion_ala or "-").replace("_", " ").title()}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Medio de pago:</div>
+                    <div class="data-value">{verificacion.medio_pago or "-"}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Monto de la operación:</div>
+                    <div class="data-value">{f"$ {verificacion.monto_operacion:,.2f}" if verificacion.monto_operacion else "-"}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Origen de fondos:</div>
+                    <div class="data-value">{verificacion.origen_fondos or "-"}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Beneficiario final:</div>
+                    <div class="data-value">{verificacion.beneficiario_final_nombre or "-"}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Documento beneficiario:</div>
+                    <div class="data-value">{verificacion.beneficiario_final_documento or "-"}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Observaciones del oficial:</div>
+                    <div class="data-value">{verificacion.observaciones_oficial or "-"}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: RESULTADO DE LA VERIFICACIÓN -->
+        <div class="section">
+            <div class="section-title">3. RESULTADO DE LA VERIFICACIÓN</div>
             <div style="display: flex; gap: 12px; margin-bottom: 12px;">
                 <div style="flex: 1; padding: 12px; background: #F9FAFB; border-radius: 8px; border-left: 4px solid {color_riesgo};">
                     <div style="font-size: 10px; color: #6B7280; text-transform: uppercase;">Nivel de Riesgo</div>
@@ -363,9 +399,9 @@ def generar_certificado_ala(verificacion: "VerificacionALA") -> bytes:
             </div>
         </div>
         
-        <!-- SECCIÓN 3: DETALLE POR LISTA -->
+        <!-- SECCIÓN 4: DETALLE POR LISTA -->
         <div class="section">
-            <div class="section-title">3. DETALLE POR LISTA</div>
+            <div class="section-title">4. DETALLE POR LISTA</div>
             <table>
                 <thead>
                     <tr>
@@ -382,9 +418,9 @@ def generar_certificado_ala(verificacion: "VerificacionALA") -> bytes:
             </table>
         </div>
         
-        <!-- SECCIÓN 4: BÚSQUEDAS ART. 44 C.4 -->
+        <!-- SECCIÓN 5: BÚSQUEDAS ART. 44 C.4 -->
         <div class="section">
-            <div class="section-title">4. BÚSQUEDAS COMPLEMENTARIAS (Art. 44 C.4)</div>
+            <div class="section-title">5. BÚSQUEDAS COMPLEMENTARIAS (Art. 44 C.4)</div>
             {busquedas_html}
         </div>
         
