@@ -101,8 +101,8 @@ class NormaRelacion(Base):
         nullable=True,
     )
     tipo_relacion = Column(String(50), nullable=False)
-    articulo_origen = Column(String(50), nullable=True)
-    articulo_destino = Column(String(50), nullable=True)
+    articulo_origen = Column(String(100), nullable=True)
+    articulo_destino = Column(String(100), nullable=True)
     texto_original = Column(Text, nullable=True)
     norma_destino_ref = Column(String(200), nullable=True)
     created_at = Column(DateTime, default=func.now())

@@ -316,8 +316,8 @@ def persist_norma(db, data: dict, tipo_norma: str, numero: int, anio: int) -> No
             relacion = NormaRelacion(
                 norma_origen_id=norma.id,
                 tipo_relacion=rel["tipo_relacion"],
-                articulo_origen=rel.get("articulo_origen"),
-                articulo_destino=rel.get("articulo_destino"),
+                articulo_origen=(rel.get("articulo_origen") or "")[:100] or None,
+                articulo_destino=(rel.get("articulo_destino") or "")[:100] or None,
                 texto_original=rel["texto_original"],
                 norma_destino_ref=dest_ref,
                 norma_destino_id=destino_id,
