@@ -35,6 +35,14 @@ class VerificacionALACreate(BaseModel):
     razon_social: Optional[str] = None
     expediente_id: Optional[UUID] = None
     contrato_id: Optional[UUID] = None
+    # Campos cumplimiento normativo (Decreto 379/018)
+    tipo_operacion_ala: Optional[str] = None
+    origen_fondos: Optional[str] = None
+    medio_pago: Optional[str] = None
+    monto_operacion: Optional[float] = None
+    beneficiario_final_nombre: Optional[str] = None
+    beneficiario_final_documento: Optional[str] = None
+    observaciones_oficial: Optional[str] = None
 
     @field_validator("nombre_completo")
     @classmethod
@@ -59,6 +67,25 @@ class VerificacionALACreate(BaseModel):
     def nacionalidad_max(cls, v):
         if v is not None and len(v) > 3:
             raise ValueError("La nacionalidad no puede exceder 3 caracteres (código ISO)")
+        return v
+
+    @field_validator("tipo_operacion_ala")
+    @classmethod
+    def tipo_operacion_valido(cls, v):
+        tipos_validos = (
+            "COMPRAVENTA_INMUEBLE", "CONSTITUCION_SOCIEDAD", "CESION_CUOTAS",
+            "PODER", "TESTAMENTO", "DECLARATORIA_HEREDEROS", "OTRO"
+        )
+        if v is not None and v not in tipos_validos:
+            raise ValueError(f"tipo_operacion_ala debe ser uno de: {', '.join(tipos_validos)}")
+        return v
+
+    @field_validator("medio_pago")
+    @classmethod
+    def medio_pago_valido(cls, v):
+        medios_validos = ("EFECTIVO", "TRANSFERENCIA", "CHEQUE", "MIXTO")
+        if v is not None and v not in medios_validos:
+            raise ValueError(f"medio_pago debe ser uno de: {', '.join(medios_validos)}")
         return v
 
 
@@ -101,6 +128,13 @@ class VerificacionALAResponse(BaseModel):
     certificado_pdf_path: Optional[str] = None
     expediente_id: Optional[UUID] = None
     contrato_id: Optional[UUID] = None
+    tipo_operacion_ala: Optional[str] = None
+    origen_fondos: Optional[str] = None
+    medio_pago: Optional[str] = None
+    monto_operacion: Optional[float] = None
+    beneficiario_final_nombre: Optional[str] = None
+    beneficiario_final_documento: Optional[str] = None
+    observaciones_oficial: Optional[str] = None
     usuario_id: UUID
     created_at: datetime
     updated_at: Optional[datetime] = None

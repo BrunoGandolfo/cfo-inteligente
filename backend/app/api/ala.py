@@ -127,6 +127,18 @@ def crear_verificacion(
             datos=datos,
             usuario_id=current_user.id,
         )
+
+        verificacion.tipo_operacion_ala = datos.tipo_operacion_ala
+        verificacion.origen_fondos = datos.origen_fondos
+        verificacion.medio_pago = datos.medio_pago
+        verificacion.monto_operacion = datos.monto_operacion
+        verificacion.beneficiario_final_nombre = datos.beneficiario_final_nombre
+        verificacion.beneficiario_final_documento = datos.beneficiario_final_documento
+        verificacion.observaciones_oficial = datos.observaciones_oficial
+
+        db.add(verificacion)
+        db.commit()
+        db.refresh(verificacion)
         
         logger.info(
             f"✅ Verificación ALA completada - ID: {verificacion.id}, "

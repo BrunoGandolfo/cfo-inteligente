@@ -2,7 +2,7 @@
  * Página ALA (Anti-Lavado de Activos)
  * 
  * Verificación de debida diligencia contra listas:
- * PEP (Uruguay), ONU, OFAC, UE, GAFI
+ * PEP (Uruguay), ONU, OFAC, UE, GAFI, UK Treasury
  * 
  * Decreto 379/018 - Arts. 17-18, 44
  * 
@@ -84,6 +84,14 @@ function ALA() {
     fecha_nacimiento: '',
     es_persona_juridica: false,
     razon_social: '',
+    // Campos cumplimiento normativo (Decreto 379/018)
+    tipo_operacion_ala: '',
+    origen_fondos: '',
+    medio_pago: '',
+    monto_operacion: '',
+    beneficiario_final_nombre: '',
+    beneficiario_final_documento: '',
+    observaciones_oficial: '',
   });
 
   // Estado de búsquedas complementarias (Art. 44 C.4)
@@ -147,6 +155,13 @@ function ALA() {
       fecha_nacimiento: formData.fecha_nacimiento || null,
       es_persona_juridica: formData.es_persona_juridica,
       razon_social: formData.es_persona_juridica ? formData.razon_social.trim() : null,
+      tipo_operacion_ala: formData.tipo_operacion_ala || null,
+      origen_fondos: formData.origen_fondos.trim() || null,
+      medio_pago: formData.medio_pago || null,
+      monto_operacion: formData.monto_operacion ? parseFloat(formData.monto_operacion) : null,
+      beneficiario_final_nombre: formData.beneficiario_final_nombre.trim() || null,
+      beneficiario_final_documento: formData.beneficiario_final_documento.trim() || null,
+      observaciones_oficial: formData.observaciones_oficial.trim() || null,
     };
 
     await ejecutarVerificacion(datos);
@@ -218,6 +233,13 @@ function ALA() {
       fecha_nacimiento: '',
       es_persona_juridica: false,
       razon_social: '',
+      tipo_operacion_ala: '',
+      origen_fondos: '',
+      medio_pago: '',
+      monto_operacion: '',
+      beneficiario_final_nombre: '',
+      beneficiario_final_documento: '',
+      observaciones_oficial: '',
     });
     setBusquedasComplementarias({
       busqueda_google_realizada: false,
@@ -405,6 +427,154 @@ function ALA() {
             ) : null}
           </div>
 
+          {/* Datos de la operación (Decreto 379/018) */}
+          <div className="border-t border-border pt-4 mt-4">
+            <h3 className="text-sm font-semibold text-text-secondary mb-3">
+              Datos de la Operación (Decreto 379/018)
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Tipo de operación */}
+              <div>
+                <label className={FIELD_LABEL_CLASS}>
+                  Tipo de Operación
+                </label>
+                <div className="relative">
+                  <select
+                    name="tipo_operacion_ala"
+                    value={formData.tipo_operacion_ala}
+                    onChange={handleInputChange}
+                    className={`${FIELD_INPUT_CLASS} appearance-none`}
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="COMPRAVENTA_INMUEBLE">Compraventa de Inmueble</option>
+                    <option value="CONSTITUCION_SOCIEDAD">Constitución de Sociedad</option>
+                    <option value="CESION_CUOTAS">Cesión de Cuotas</option>
+                    <option value="PODER">Poder</option>
+                    <option value="TESTAMENTO">Testamento</option>
+                    <option value="DECLARATORIA_HEREDEROS">Declaratoria de Herederos</option>
+                    <option value="OTRO">Otro</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Medio de pago */}
+              <div>
+                <label className={FIELD_LABEL_CLASS}>
+                  Medio de Pago
+                </label>
+                <div className="relative">
+                  <select
+                    name="medio_pago"
+                    value={formData.medio_pago}
+                    onChange={handleInputChange}
+                    className={`${FIELD_INPUT_CLASS} appearance-none`}
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="EFECTIVO">Efectivo</option>
+                    <option value="TRANSFERENCIA">Transferencia</option>
+                    <option value="CHEQUE">Cheque</option>
+                    <option value="MIXTO">Mixto</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Monto de la operación */}
+              <div>
+                <label className={FIELD_LABEL_CLASS}>
+                  Monto de la Operación
+                </label>
+                <input
+                  type="number"
+                  name="monto_operacion"
+                  value={formData.monto_operacion}
+                  onChange={handleInputChange}
+                  placeholder="Monto en UYU"
+                  step="0.01"
+                  min="0"
+                  className={FIELD_INPUT_CLASS}
+                />
+              </div>
+
+              {/* Beneficiario final - Documento */}
+              <div>
+                <label className={FIELD_LABEL_CLASS}>
+                  Beneficiario Final - Documento
+                </label>
+                <input
+                  type="text"
+                  name="beneficiario_final_documento"
+                  value={formData.beneficiario_final_documento}
+                  onChange={handleInputChange}
+                  placeholder="CI / RUT del beneficiario final"
+                  className={FIELD_INPUT_CLASS}
+                />
+              </div>
+
+              {/* Alerta de efectivo > UI 270.000 (SENACLAFT) */}
+              {formData.medio_pago === 'EFECTIVO' && parseFloat(formData.monto_operacion) > 270000 && (
+                <div className="md:col-span-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                    <span className="font-semibold text-red-800 dark:text-red-300">
+                      Operación de Reporte Obligatorio (SENACLAFT)
+                    </span>
+                  </div>
+                  <p className="text-sm text-red-700 dark:text-red-400 mt-1">
+                    Operación en efectivo superior a UI 270.000. Requiere Reporte de Operación Sospechosa (ROS).
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Origen de fondos (ancho completo) */}
+            <div className="mt-4">
+              <label className={FIELD_LABEL_CLASS}>
+                Origen de Fondos
+              </label>
+              <textarea
+                name="origen_fondos"
+                value={formData.origen_fondos}
+                onChange={handleInputChange}
+                placeholder="Describir origen de los fondos"
+                rows={2}
+                className={FIELD_TEXTAREA_CLASS}
+              />
+            </div>
+
+            {/* Beneficiario final - Nombre (ancho completo) */}
+            <div className="mt-4">
+              <label className={FIELD_LABEL_CLASS}>
+                Beneficiario Final - Nombre
+              </label>
+              <input
+                type="text"
+                name="beneficiario_final_nombre"
+                value={formData.beneficiario_final_nombre}
+                onChange={handleInputChange}
+                placeholder="Nombre completo del beneficiario final"
+                className={FIELD_INPUT_CLASS}
+              />
+            </div>
+
+            {/* Observaciones del oficial (ancho completo) */}
+            <div className="mt-4">
+              <label className={FIELD_LABEL_CLASS}>
+                Observaciones del Oficial
+              </label>
+              <textarea
+                name="observaciones_oficial"
+                value={formData.observaciones_oficial}
+                onChange={handleInputChange}
+                placeholder="Observaciones del oficial de cumplimiento"
+                rows={3}
+                className={FIELD_TEXTAREA_CLASS}
+              />
+            </div>
+          </div>
+
           {/* Botón submit */}
           <div className="pt-4">
             <button
@@ -415,7 +585,7 @@ function ALA() {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Verificando contra 4 listas internacionales... (~30 seg)</span>
+                  <span>Verificando contra 6 listas internacionales... (~30 seg)</span>
                 </>
               ) : (
                 <>
@@ -506,6 +676,7 @@ function ALA() {
               {renderResultadoLista('OFAC', verificacionActual.resultado_ofac, 18598)}
               {renderResultadoLista('UE', verificacionActual.resultado_ue, 23471)}
               {renderResultadoLista('GAFI', verificacionActual.resultado_gafi)}
+              {renderResultadoLista('UK Treasury', verificacionActual.resultado_uk)}
             </div>
           </div>
 
