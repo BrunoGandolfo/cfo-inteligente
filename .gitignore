@@ -74,3 +74,7 @@ backend/certificado_*
 cookies.txt
 INFORME_*.md
 informe_*.md
+data/urcdp/
+corpus_urcdp_backup_*.sql
+urcdp_archivos_backup_*.tar.gz
+backup_completo_local_*.sql.gz
