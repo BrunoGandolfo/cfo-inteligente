@@ -32,6 +32,12 @@ export const USUARIOS_ACCESO_OPERACIONES_CONTABLE = [
   'naraujo@grupoconexion.uy',
 ];
 
+// Sincronizar con backend/app/core/access_control.py:80
+export const USUARIOS_ACCESO_CONTABLE = [
+  'naraujo@grupoconexion.uy',
+  'bgandolfo@cgmasociados.com',
+];
+
 export const AREA_CONTABLE_ID = '14700c01-3b3d-49c6-8e2e-f3ebded1b1bb';
 
 export const tieneAcceso = (email, lista) => {

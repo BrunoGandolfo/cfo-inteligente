@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { X, Home, FileText, Sparkles, Lock, Users, LogOut, HelpCircle, BarChart3, Scale, Briefcase, Shield } from 'lucide-react';
+import { X, Home, FileText, Sparkles, Lock, Users, LogOut, HelpCircle, BarChart3, Scale, Briefcase, Shield, Calculator } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
 import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
 import toast from 'react-hot-toast';
-import { USUARIOS_ACCESO_EXPEDIENTES_CASOS, USUARIOS_ACCESO_ALA, USUARIOS_ACCESO_NOTARIAL, USUARIOS_ACCESO_OPERACIONES_CONTABLE } from '../../utils/accessControl';
+import { USUARIOS_ACCESO_EXPEDIENTES_CASOS, USUARIOS_ACCESO_ALA, USUARIOS_ACCESO_NOTARIAL, USUARIOS_ACCESO_OPERACIONES_CONTABLE, USUARIOS_ACCESO_CONTABLE } from '../../utils/accessControl';
 
-export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onALAToggle, onDashboardToggle }) {
+export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoporteToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onALAToggle, onContableToggle, onDashboardToggle }) {
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const userName = localStorage.getItem('userName') || 'Usuario';
   const userEmail = localStorage.getItem('userEmail') || '';
@@ -16,6 +16,7 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
   const veALa = esSocio || USUARIOS_ACCESO_ALA.includes(userEmail.toLowerCase());
   const veNotarial = esSocio || USUARIOS_ACCESO_NOTARIAL.includes(userEmail.toLowerCase());
   const veOperacionesContable = USUARIOS_ACCESO_OPERACIONES_CONTABLE.includes(userEmail.toLowerCase());
+  const veContable = esSocio || USUARIOS_ACCESO_CONTABLE.includes(userEmail.toLowerCase());
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -26,6 +27,7 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
     { key: 'Expedientes', icon: Scale, label: 'Expedientes', action: () => { onExpedientesToggle?.(); onClose(); } },
     { key: 'Notarial', icon: FileText, label: 'Notarial', action: () => { onNotarialToggle?.(); onClose(); } },
     { key: 'ALA', icon: Shield, label: 'ALA', action: () => { onALAToggle?.(); onClose(); } },
+    { key: 'Contable', icon: Calculator, label: 'Contable', action: () => { onContableToggle?.(); onClose(); } },
     { key: 'Casos', icon: Briefcase, label: 'Casos', action: () => { onCasosToggle?.(); onClose(); } },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: () => { onOpsToggle?.(); onClose(); } },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: () => { onChatToggle?.(); onClose(); }, highlight: true },
@@ -46,16 +48,21 @@ export function MobileNav({ isOpen, onClose, onChatToggle, onOpsToggle, onSoport
         if (item.key === 'ALA') {
           return veALa;
         }
+        // Contable: si es socio o está en la lista
+        if (item.key === 'Contable') {
+          return veContable;
+        }
         // Resto: visible para socios
         return true;
       })
     : (() => {
         const baseKeys = ['Dashboard', 'Dudas', 'Indicadores'];
         const extraKeys = [
-          ...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []), 
+          ...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []),
           ...(veALa ? ['ALA'] : []),
           ...(veNotarial ? ['Notarial'] : []),
-          ...(veOperacionesContable ? ['Operaciones'] : [])
+          ...(veOperacionesContable ? ['Operaciones'] : []),
+          ...(veContable ? ['Contable'] : [])
         ];
         const visibleKeys = [...baseKeys, ...extraKeys];
         return allItems.filter(item => visibleKeys.includes(item.key));
@@ -194,6 +201,7 @@ MobileNav.propTypes = {
   onCasosToggle: PropTypes.func,
   onNotarialToggle: PropTypes.func,
   onALAToggle: PropTypes.func,
+  onContableToggle: PropTypes.func,
   onDashboardToggle: PropTypes.func,
 };
 

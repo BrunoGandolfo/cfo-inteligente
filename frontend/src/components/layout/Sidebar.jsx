@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle, BarChart3, Scale, Briefcase, Shield } from 'lucide-react';
+import { Home, FileText, Settings, Sparkles, Lock, Users, HelpCircle, BarChart3, Scale, Briefcase, Shield, Calculator } from 'lucide-react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AdminUsersModal from '../admin/AdminUsersModal';
-import { USUARIOS_ACCESO_EXPEDIENTES_CASOS, USUARIOS_ACCESO_ALA, USUARIOS_ACCESO_NOTARIAL, USUARIOS_ACCESO_OPERACIONES_CONTABLE } from '../../utils/accessControl';
+import { USUARIOS_ACCESO_EXPEDIENTES_CASOS, USUARIOS_ACCESO_ALA, USUARIOS_ACCESO_NOTARIAL, USUARIOS_ACCESO_OPERACIONES_CONTABLE, USUARIOS_ACCESO_CONTABLE } from '../../utils/accessControl';
 
-export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onALAToggle }) {
+export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSoporteToggle, onDashboardToggle, onIndicadoresToggle, onExpedientesToggle, onCasosToggle, onNotarialToggle, onALAToggle, onContableToggle }) {
   // Verificar si el usuario es socio
   const esSocio = localStorage.getItem('esSocio') === 'true';
   const userEmail = localStorage.getItem('userEmail') || '';
@@ -14,6 +14,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
   const veALa = esSocio || USUARIOS_ACCESO_ALA.includes(userEmail.toLowerCase());
   const veNotarial = esSocio || USUARIOS_ACCESO_NOTARIAL.includes(userEmail.toLowerCase());
   const veOperacionesContable = USUARIOS_ACCESO_OPERACIONES_CONTABLE.includes(userEmail.toLowerCase());
+  const veContable = esSocio || USUARIOS_ACCESO_CONTABLE.includes(userEmail.toLowerCase());
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -24,6 +25,7 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
     { key: 'Expedientes', icon: Scale, label: 'Expedientes', action: onExpedientesToggle },
     { key: 'Notarial', icon: FileText, label: 'Notarial', action: onNotarialToggle },
     { key: 'ALA', icon: Shield, label: 'ALA', action: onALAToggle },
+    { key: 'Contable', icon: Calculator, label: 'Contable', action: onContableToggle },
     { key: 'Casos', icon: Briefcase, label: 'Casos', action: onCasosToggle },
     { key: 'Operaciones', icon: FileText, label: 'Operaciones', action: onOpsToggle },
     { key: 'CFO AI', icon: Sparkles, label: 'CFO AI', action: onChatToggle, highlight: true },
@@ -45,16 +47,21 @@ export function Sidebar({ active = 'Dashboard', onChatToggle, onOpsToggle, onSop
         if (item.key === 'ALA') {
           return veALa;
         }
+        // Contable: si es socio o está en la lista
+        if (item.key === 'Contable') {
+          return veContable;
+        }
         // Resto: visible para socios
         return true;
       })
     : (() => {
         const baseKeys = ['Dashboard', 'Dudas', 'Indicadores'];
         const extraKeys = [
-          ...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []), 
+          ...(veExpedientesYCasos ? ['Expedientes', 'Casos'] : []),
           ...(veALa ? ['ALA'] : []),
           ...(veNotarial ? ['Notarial'] : []),
-          ...(veOperacionesContable ? ['Operaciones'] : [])
+          ...(veOperacionesContable ? ['Operaciones'] : []),
+          ...(veContable ? ['Contable'] : [])
         ];
         const visibleKeys = [...baseKeys, ...extraKeys];
         return allItems.filter(item => visibleKeys.includes(item.key));
@@ -150,5 +157,6 @@ Sidebar.propTypes = {
   onCasosToggle: PropTypes.func,
   onNotarialToggle: PropTypes.func,
   onALAToggle: PropTypes.func,
+  onContableToggle: PropTypes.func,
 };
 export default Sidebar;

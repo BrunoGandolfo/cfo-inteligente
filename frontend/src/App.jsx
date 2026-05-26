@@ -13,6 +13,7 @@ const Expedientes = lazy(() => import('./pages/Expedientes'));
 const Contratos = lazy(() => import('./pages/Contratos'));
 const Casos = lazy(() => import('./pages/Casos'));
 const ALA = lazy(() => import('./pages/ALA'));
+const Contable = lazy(() => import('./pages/Contable'));
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -100,6 +101,8 @@ function App() {
         return <Contratos />;
       case 'ala':
         return <ALA />;
+      case 'contable':
+        return <Contable />;
       case 'casos':
         return <Casos />;
       case 'soporte':
@@ -143,11 +146,12 @@ function App() {
         </>
       ) : (
         <>
-          <Layout 
-            onNavigate={setCurrentPage} 
+          <Layout
+            onNavigate={setCurrentPage}
             currentPage={currentPage}
             onNotarialToggle={() => setCurrentPage('notarial')}
             onALAToggle={() => setCurrentPage('ala')}
+            onContableToggle={() => setCurrentPage('contable')}
             onCasosToggle={() => setCurrentPage('casos')}
           >
             <Suspense fallback={fallback}>
