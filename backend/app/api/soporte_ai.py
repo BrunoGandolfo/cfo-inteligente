@@ -8,8 +8,9 @@ Este módulo implementa un asistente de soporte que:
 - Soporta streaming para respuestas en tiempo real
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from app.core.rate_limiter import limiter, user_id_or_ip_key
 import anthropic
 import os
 import json
@@ -218,7 +219,9 @@ DOCUMENTACIÓN DEL SISTEMA:
 # ═══════════════════════════════════════════════════════════════
 
 @router.post("/ask", response_model=SoporteResponse)
+@limiter.limit("20/minute", key_func=user_id_or_ip_key)
 async def soporte_ask(
+    http_request: Request,
     request: SoporteRequest,
     current_user: Usuario = Depends(get_current_user)
 ):
@@ -265,7 +268,9 @@ async def soporte_ask(
 
 
 @router.post("/ask/stream")
+@limiter.limit("20/minute", key_func=user_id_or_ip_key)
 async def soporte_ask_stream(
+    http_request: Request,
     request: SoporteRequest,
     current_user: Usuario = Depends(get_current_user)
 ):

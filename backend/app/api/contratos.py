@@ -10,11 +10,12 @@ import logging
 from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.rate_limiter import limiter, user_id_or_ip_key
 from app.core.security import get_current_user
 from app.core.access_control import COLABORADORES_ACCESO_CONTRATOS
 from app.models import Usuario
@@ -260,7 +261,9 @@ def eliminar_contrato(
 
 
 @router.post("/{contrato_id}/extraer-campos", status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute", key_func=user_id_or_ip_key)
 def extraer_campos_contrato(
+    request: Request,
     contrato_id: UUID,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
@@ -349,7 +352,9 @@ def generar_contrato(
 
 
 @router.post("/extraer-campos-batch", status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute", key_func=user_id_or_ip_key)
 def extraer_campos_batch(
+    request: Request,
     solo_sin_campos: bool = Query(True, description="Solo procesar contratos sin campos_editables"),
     limite: int = Query(10, ge=1, le=50, description="Máximo de contratos a procesar"),
     max_intentos: int = Query(2, ge=1, le=5, description="Máximo intentos por contrato"),

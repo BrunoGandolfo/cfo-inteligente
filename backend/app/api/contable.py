@@ -8,11 +8,12 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.access_control import USUARIOS_ACCESO_CONTABLE, tiene_acceso
 from app.core.database import get_db
+from app.core.rate_limiter import limiter, user_id_or_ip_key
 from app.core.security import get_current_user
 from app.models import Usuario
 from app.schemas.consulta_contable import (
@@ -151,7 +152,9 @@ def _servicios_disponibles() -> List[ServicioDGIResponse]:
 
 
 @router.post("/consultar", response_model=ConsultaContableSingleResponse)
+@limiter.limit("10/minute", key_func=user_id_or_ip_key)
 async def consultar_contable(
+    request: Request,
     payload: ConsultaContableRequest,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),

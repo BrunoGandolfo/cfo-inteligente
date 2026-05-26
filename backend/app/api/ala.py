@@ -10,11 +10,12 @@ from typing import List
 from uuid import UUID
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.rate_limiter import limiter, user_id_or_ip_key
 from app.core.security import get_current_user
 from app.models import Usuario
 from app.schemas.verificacion_ala import (
@@ -102,7 +103,9 @@ def _verificar_permiso_verificacion(
 # =============================================================================
 
 @router.post("/verificar", response_model=VerificacionALAResponse, status_code=201)
+@limiter.limit("10/minute", key_func=user_id_or_ip_key)
 def crear_verificacion(
+    request: Request,
     datos: VerificacionALACreate,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),

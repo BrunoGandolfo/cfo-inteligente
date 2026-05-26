@@ -9,8 +9,9 @@ Fecha: Noviembre 2025
 """
 
 from decimal import Decimal
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
+from app.core.rate_limiter import limiter, user_id_or_ip_key
 from sqlalchemy.orm import Session
 from anthropic import Anthropic
 import json
@@ -210,7 +211,9 @@ def _computar_resumen(datos: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 @router.post("/ask-stream")
+@limiter.limit("20/minute", key_func=user_id_or_ip_key)
 def preguntar_cfo_stream(
+    request: Request,
     data: PreguntaCFOStream,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
