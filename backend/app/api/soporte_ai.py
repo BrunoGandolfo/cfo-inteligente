@@ -99,6 +99,7 @@ DOCUMENTACION = cargar_documentacion()
 
 from app.core.access_control import (
     USUARIOS_ACCESO_EXPEDIENTES, USUARIOS_ACCESO_CASOS, USUARIOS_ACCESO_ALA,
+    USUARIOS_ACCESO_CONTABLE,
 )
 
 
@@ -144,7 +145,18 @@ def _obtener_modulos_usuario(usuario: Usuario) -> str:
     # ALA
     if es_socio or email in [e.lower() for e in USUARIOS_ACCESO_ALA]:
         modulos.append("- Usar el módulo ALA (Anti-Lavado de Activos)")
-    
+
+    # Contable DGI
+    if es_socio or email in [e.lower() for e in USUARIOS_ACCESO_CONTABLE]:
+        modulos.append(
+            "- Módulo Contable: puede consultar 10 servicios de DGI "
+            "(Certificado Único, Declaración IRPF, Afiliación Bancaria, "
+            "Borradores IASS, Exoneración Arrendamientos, Estado Trámite, "
+            "Expediente Administrativo, Devolución IVA Gasoil, "
+            "Constancia Primaria, Residencia Fiscal). "
+            "Cada consulta queda registrada en el historial."
+        )
+
     return "\n".join(modulos)
 
 # System prompt para el agente - REGLA DE FORMATO AL INICIO

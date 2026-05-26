@@ -9,24 +9,22 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.access_control import USUARIOS_ACCESO_CONTABLE, tiene_acceso
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models import Usuario
+from app.schemas.consulta_contable import (
+    ConsultaContableListResponse,
+    ConsultaContableRequest,
+    ConsultaContableResponse,
+    ConsultaContableSingleResponse,
+    EliminarConsultaResponse,
+    ServicioDGIResponse,
+)
 
 router = APIRouter()
-
-
-class ConsultaContableRequest(BaseModel):
-    servicio: str
-    rut: Optional[str] = None
-    ci: Optional[str] = None
-    datos_extra: Dict[str, Any] = Field(default_factory=dict)
-    cliente_nombre: Optional[str] = None
-    cliente_rut: Optional[str] = None
 
 
 def _es_usuario_autorizado(usuario: Usuario) -> bool:
@@ -86,8 +84,8 @@ def _cargar_servicio_contable():
     return contable_service
 
 
-def _servicios_disponibles() -> List[Dict[str, Any]]:
-    return [
+def _servicios_disponibles() -> List[ServicioDGIResponse]:
+    catalogo: List[Dict[str, Any]] = [
         {
             "id": "CERTIFICADO_UNICO",
             "nombre": "Certificado Unico DGI",
@@ -149,9 +147,10 @@ def _servicios_disponibles() -> List[Dict[str, Any]]:
             "campos": ["rut", "ci"],
         },
     ]
+    return [ServicioDGIResponse(**item) for item in catalogo]
 
 
-@router.post("/consultar")
+@router.post("/consultar", response_model=ConsultaContableSingleResponse)
 async def consultar_contable(
     payload: ConsultaContableRequest,
     db: Session = Depends(get_db),
@@ -174,7 +173,7 @@ async def consultar_contable(
     return {"consulta": _serializar_consulta(consulta)}
 
 
-@router.get("/consultas")
+@router.get("/consultas", response_model=ConsultaContableListResponse)
 def listar_consultas(
     servicio: Optional[str] = Query(None),
     rut: Optional[str] = Query(None),
@@ -190,26 +189,16 @@ def listar_consultas(
 
     usuario_id = None if getattr(current_user, "es_socio", False) else current_user.id
 
-    try:
-        resultado = contable_service.listar_consultas(
-            db=db,
-            usuario_id=usuario_id,
-            servicio=servicio,
-            rut=rut,
-            fecha_desde=fecha_desde,
-            fecha_hasta=fecha_hasta,
-            limit=limit,
-            offset=offset,
-        )
-    except TypeError:
-        resultado = contable_service.listar_consultas(
-            db=db,
-            usuario_id=usuario_id,
-            servicio=servicio,
-            rut=rut,
-            limit=limit,
-            offset=offset,
-        )
+    resultado = contable_service.listar_consultas(
+        db=db,
+        usuario_id=usuario_id,
+        servicio=servicio,
+        rut=rut,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        limit=limit,
+        offset=offset,
+    )
 
     consultas = resultado.get("consultas", []) if isinstance(resultado, dict) else []
     serializadas = [_serializar_consulta(consulta) for consulta in consultas]
@@ -221,7 +210,7 @@ def listar_consultas(
     }
 
 
-@router.get("/consultas/{consulta_id}")
+@router.get("/consultas/{consulta_id}", response_model=ConsultaContableSingleResponse)
 def obtener_consulta(
     consulta_id: UUID,
     db: Session = Depends(get_db),
@@ -238,7 +227,7 @@ def obtener_consulta(
     return {"consulta": _serializar_consulta(consulta)}
 
 
-@router.delete("/consultas/{consulta_id}")
+@router.delete("/consultas/{consulta_id}", response_model=EliminarConsultaResponse)
 def eliminar_consulta(
     consulta_id: UUID,
     db: Session = Depends(get_db),
@@ -253,10 +242,10 @@ def eliminar_consulta(
 
     _verificar_acceso_registro(consulta, current_user)
     contable_service.eliminar_consulta(db=db, consulta_id=consulta_id)
-    return {"ok": True}
+    return EliminarConsultaResponse(ok=True)
 
 
-@router.get("/servicios-disponibles")
+@router.get("/servicios-disponibles", response_model=List[ServicioDGIResponse])
 def servicios_disponibles(
     current_user: Usuario = Depends(get_current_user),
 ):
