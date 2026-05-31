@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440  # 24 horas
+    redis_url: str = ""
     
     # Environment
     environment: str = "development"
