@@ -75,3 +75,17 @@ zeep>=4.2.0
 python-docx==1.1.0
 openpyxl>=3.1.0
 playwright>=1.40.0
+
+# ═══════════════════════════════════════════════════════════════
+# MCP - Servidor local read-only de consultas financieras
+# ═══════════════════════════════════════════════════════════════
+# mcp trae sse-starlette, que exige starlette>=0.49.1. fastapi==0.115.0
+# exige starlette<0.39.0. Son incompatibles entre sí; se fija starlette
+# a la versión que espera fastapi (probado: la app y el servidor MCP
+# stdio funcionan igual, ya que el MCP local solo usa transporte stdio,
+# no las rutas HTTP/SSE de mcp que necesitarían el starlette más nuevo).
+# Si en el futuro se agrega transporte SSE/HTTP al MCP, resolver esta
+# tensión primero (aislar el MCP en su propio venv, o esperar a que
+# fastapi soporte starlette>=0.49).
+mcp>=2.0.0
+starlette>=0.37.2,<0.39.0
