@@ -29,7 +29,9 @@ from app.core.database import SessionLocal, get_db
 from app.core.security import get_current_user
 from app.main import app
 from app.models.area import Area
+from app.models.distribucion import DistribucionDetalle
 from app.models.operacion import Localidad, Moneda, Operacion, TipoOperacion
+from app.models.socio import Socio
 from app.services import consultas_financieras_service as svc
 
 
@@ -174,6 +176,179 @@ def test_metricas_dashboard_incluye_metricas_extendidas(datos_committeados):
     resultado = svc.metricas_dashboard(fecha_desde=FECHA_DESDE, fecha_hasta=FECHA_HASTA)
     assert "metricas_extendidas" in resultado
     assert "margen_operativo" in resultado["metricas_extendidas"] or "rentabilidad_por_area" in resultado["metricas_extendidas"] or len(resultado["metricas_extendidas"]) > 10
+
+
+# ══════════════════════════════════════════════════════════════
+# TESTS DE REGRESIÓN A1 (DetachedInstanceError) + A2 (Decimal+float)
+#
+# Antes del fix: cualquier período con una operación DISTRIBUCION reventaba
+# metricas_dashboard() con DetachedInstanceError (A1, distribución en UYU)
+# o TypeError Decimal+float (A2, distribución en USD con monto_uyu=0 — el
+# dato B1-corrupto real). Cuál de los dos se disparaba dependía de si
+# distribuciones_uyu terminaba en 0 (ver distribution_calculator.py:152-155:
+# early-return si total_distribuciones==0, lo que esquivaba el acceso lazy
+# de A1 y dejaba pasar la ejecución hasta el bug A2 en localidad_analyzer).
+# Estos fixtures reproducen ambos escenarios con datos sintéticos
+# committeados (mismo patrón que datos_committeados: el adaptador abre su
+# propia SessionLocal(), así que los datos deben existir con commit real).
+# ══════════════════════════════════════════════════════════════
+
+FECHA_DIST_UYU = date(2021, 3, 15)
+FECHA_DIST_USD = date(2021, 6, 20)
+
+
+@pytest.fixture
+def distribucion_uyu_committeada():
+    """Distribución en UYU con detalle por socio (escenario A1)."""
+    db = SessionLocal()
+    socio = Socio(
+        id=uuid.uuid4(),
+        nombre=f"SocioTestA1-{uuid.uuid4().hex[:8]}",
+        porcentaje_participacion=Decimal("100.00"),
+        activo=True,
+    )
+    db.add(socio)
+    db.flush()
+
+    op = Operacion(
+        id=uuid.uuid4(),
+        tipo_operacion=TipoOperacion.DISTRIBUCION,
+        fecha=FECHA_DIST_UYU,
+        monto_original=Decimal("100000.00"),
+        moneda_original=Moneda.UYU,
+        tipo_cambio=Decimal("40.00"),
+        monto_uyu=Decimal("100000.00"),
+        monto_usd=Decimal("2500.00"),
+        total_pesificado=Decimal("100000.00"),
+        total_dolarizado=Decimal("2500.00"),
+        area_id=None,
+        localidad=Localidad.MONTEVIDEO,
+        descripcion="Distribucion test A1 (UYU)",
+    )
+    db.add(op)
+    db.flush()
+
+    detalle = DistribucionDetalle(
+        id=uuid.uuid4(),
+        operacion_id=op.id,
+        socio_id=socio.id,
+        monto_uyu=Decimal("100000.00"),
+        monto_usd=Decimal("2500.00"),
+        porcentaje=Decimal("100.00"),
+        total_pesificado=Decimal("100000.00"),
+        total_dolarizado=Decimal("2500.00"),
+    )
+    db.add(detalle)
+    db.commit()
+
+    ids = {"operacion_id": op.id, "socio_id": socio.id, "socio_nombre": socio.nombre}
+    db.close()
+
+    yield ids
+
+    cleanup = SessionLocal()
+    cleanup.query(DistribucionDetalle).filter(DistribucionDetalle.operacion_id == ids["operacion_id"]).delete()
+    cleanup.query(Operacion).filter(Operacion.id == ids["operacion_id"]).delete()
+    cleanup.query(Socio).filter(Socio.id == ids["socio_id"]).delete()
+    cleanup.commit()
+    cleanup.close()
+
+
+@pytest.fixture
+def distribucion_usd_committeada():
+    """
+    Distribución en USD con monto_uyu=0 (escenario A2) — replica el dato
+    corrupto real que produce operacion_service.crear_distribucion (bug B1,
+    fuera del alcance de este fix): total_pesificado/total_dolarizado SÍ
+    están sanos (se calculan cruzado, no dependen de monto_uyu).
+    """
+    db = SessionLocal()
+    socio = Socio(
+        id=uuid.uuid4(),
+        nombre=f"SocioTestA2-{uuid.uuid4().hex[:8]}",
+        porcentaje_participacion=Decimal("100.00"),
+        activo=True,
+    )
+    db.add(socio)
+    db.flush()
+
+    op = Operacion(
+        id=uuid.uuid4(),
+        tipo_operacion=TipoOperacion.DISTRIBUCION,
+        fecha=FECHA_DIST_USD,
+        monto_original=Decimal("2000.00"),
+        moneda_original=Moneda.USD,
+        tipo_cambio=Decimal("40.00"),
+        monto_uyu=Decimal("0.00"),  # replica B1: crear_distribucion no convierte
+        monto_usd=Decimal("2000.00"),
+        total_pesificado=Decimal("80000.00"),  # sano: 0 + 2000*40
+        total_dolarizado=Decimal("2000.00"),  # sano: 2000 + 0/40
+        area_id=None,
+        localidad=Localidad.MONTEVIDEO,
+        descripcion="Distribucion test A2 (USD, monto_uyu=0)",
+    )
+    db.add(op)
+    db.flush()
+
+    detalle = DistribucionDetalle(
+        id=uuid.uuid4(),
+        operacion_id=op.id,
+        socio_id=socio.id,
+        monto_uyu=Decimal("0.00"),
+        monto_usd=Decimal("2000.00"),
+        porcentaje=Decimal("100.00"),
+        total_pesificado=Decimal("80000.00"),
+        total_dolarizado=Decimal("2000.00"),
+    )
+    db.add(detalle)
+    db.commit()
+
+    ids = {"operacion_id": op.id, "socio_id": socio.id, "socio_nombre": socio.nombre}
+    db.close()
+
+    yield ids
+
+    cleanup = SessionLocal()
+    cleanup.query(DistribucionDetalle).filter(DistribucionDetalle.operacion_id == ids["operacion_id"]).delete()
+    cleanup.query(Operacion).filter(Operacion.id == ids["operacion_id"]).delete()
+    cleanup.query(Socio).filter(Socio.id == ids["socio_id"]).delete()
+    cleanup.commit()
+    cleanup.close()
+
+
+def test_metricas_dashboard_con_distribucion_uyu_no_crashea(distribucion_uyu_committeada):
+    """Antes del fix: DetachedInstanceError (A1). Debe devolver datos, no traceback."""
+    resultado = svc.metricas_dashboard(fecha_desde=FECHA_DIST_UYU, fecha_hasta=FECHA_DIST_UYU)
+    ext = resultado["metricas_extendidas"]
+
+    assert isinstance(ext["distribuciones_uyu"], Decimal)
+    assert isinstance(ext["distribuciones_usd"], Decimal)
+    assert ext["distribuciones_uyu"] == Decimal("100000.00")
+    assert ext["distribuciones_usd"] == Decimal("2500.00")
+
+    socio_nombre = distribucion_uyu_committeada["socio_nombre"]
+    assert ext["porcentaje_distribucion_por_socio"].get(socio_nombre) == pytest.approx(100.0)
+    assert ext["distribuciones_por_localidad"].get("Montevideo") == pytest.approx(100000.0)
+
+
+def test_metricas_dashboard_con_distribucion_usd_no_crashea(distribucion_usd_committeada):
+    """Antes del fix: TypeError Decimal+float (A2). Debe devolver datos, no traceback."""
+    resultado = svc.metricas_dashboard(fecha_desde=FECHA_DIST_USD, fecha_hasta=FECHA_DIST_USD)
+    ext = resultado["metricas_extendidas"]
+
+    assert isinstance(ext["distribuciones_uyu"], Decimal)
+    assert isinstance(ext["distribuciones_usd"], Decimal)
+    # Replica el dato corrupto real (B1, no se corrige en este fix): monto_uyu=0.
+    assert ext["distribuciones_uyu"] == Decimal("0.00")
+    assert ext["distribuciones_usd"] == Decimal("2000.00")
+
+    # total_pesificado SÍ está sano (no depende de monto_uyu) -> se refleja bien acá.
+    assert ext["distribuciones_por_localidad"].get("Montevideo") == pytest.approx(80000.0)
+
+    # porcentaje_distribucion_por_socio hace early-return {} cuando distribuciones_uyu==0
+    # (comportamiento preexistente de distribution_calculator.py:152-155, no es parte
+    # de este fix — lo confirmamos para dejar constancia de que sigue así).
+    assert ext["porcentaje_distribucion_por_socio"] == {}
 
 
 # ══════════════════════════════════════════════════════════════

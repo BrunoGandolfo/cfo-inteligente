@@ -92,11 +92,11 @@ class LocalidadAnalyzer(BaseCalculator):
             Ejemplo: {'MONTEVIDEO': 4237598.0, 'MERCEDES': 9058919.0}
         """
         distribuciones_loc = defaultdict(lambda: Decimal('0'))
-        
+
         for op in self.operaciones:
             if op.tipo_operacion == TipoOperacion.DISTRIBUCION:
                 loc = op.localidad.value if op.localidad else 'Sin Localidad'
-                distribuciones_loc[loc] += float(op.total_pesificado or 0)
-        
+                distribuciones_loc[loc] += op.total_pesificado or Decimal('0')
+
         return {loc: float(monto) for loc, monto in distribuciones_loc.items()}
     

@@ -37,10 +37,11 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import desc
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.database import SessionLocal
 from app.models.area import Area
+from app.models.distribucion import DistribucionDetalle
 from app.models.operacion import Operacion, TipoOperacion
 from app.models.socio import Socio
 from app.services.metrics.metrics_aggregator import MetricsAggregator
@@ -52,7 +53,15 @@ def obtener_operaciones_periodo(
     localidad: Optional[str] = None,
 ) -> List[Operacion]:
     """
-    Réplica exacta del query base del dashboard (app/api/metricas.py:27-36).
+    Réplica exacta del query base del dashboard (app/api/metricas.py:27-36),
+    con una diferencia deliberada: además de precargar el área, precarga
+    también `distribuciones` (y su `socio` anidado) porque
+    `DistributionCalculator._calc_porcentaje_distribucion_por_socio`
+    (distribution_calculator.py:164-167) accede a `op.distribuciones` y a
+    `detalle.socio.nombre` dentro de `MetricsAggregator.aggregate_all()`,
+    que corre después de que esta función cierra la sesión. Sin esta carga
+    anticipada, ese acceso lazy sobre una sesión cerrada revienta con
+    `DetachedInstanceError` (bug A1 del informe de auditoría MCP).
 
     Filtra operaciones no eliminadas (deleted_at IS NULL) en el rango de
     fechas [fecha_desde, fecha_hasta], con área precargada (joinedload) y
@@ -60,7 +69,10 @@ def obtener_operaciones_periodo(
     """
     db = SessionLocal()
     try:
-        query = db.query(Operacion).options(joinedload(Operacion.area)).filter(
+        query = db.query(Operacion).options(
+            joinedload(Operacion.area),
+            selectinload(Operacion.distribuciones).joinedload(DistribucionDetalle.socio),
+        ).filter(
             Operacion.deleted_at.is_(None),
             Operacion.fecha >= fecha_desde,
             Operacion.fecha <= fecha_hasta,
