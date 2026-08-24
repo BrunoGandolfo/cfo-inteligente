@@ -1,0 +1,42 @@
+{
+  "manifest_version": "0.4",
+  "name": "cfo-financiero",
+  "display_name": "CFO Inteligente — Consultas Financieras",
+  "version": "1.0.0",
+  "description": "Consultas de solo lectura al módulo financiero de CFO Inteligente (Conexión Consultora): métricas del dashboard, listado de operaciones, catálogos y indicadores económicos de Uruguay.",
+  "long_description": "Este servidor MCP expone en modo solo-lectura los datos financieros de CFO Inteligente. No modifica la base de datos: envuelve consultas existentes (métricas del dashboard, operaciones, áreas, socios, UI/UR/BPC/inflación y cotización del dólar). El servidor real corre dentro de WSL (Ubuntu), no en Windows: este paquete lanza wsl.exe, que a su vez activa el venv del proyecto y ejecuta el servidor Python. Requiere que la distro WSL, el venv (backend/.venv) y el Postgres local (Docker, puerto 5433) ya estén configurados en la máquina — este paquete no los instala.",
+  "author": {
+    "name": "Bruno Gandolfo",
+    "email": "bgandolfo@cgmasociados.com"
+  },
+  "server": {
+    "type": "binary",
+    "entry_point": "server/README.txt",
+    "mcp_config": {
+      "command": "wsl.exe",
+      "args": [
+        "-d",
+        "Ubuntu",
+        "bash",
+        "-lc",
+        "cd /home/bruno/proyectos/cfo-inteligente/backend && .venv/bin/python -m mcp_server.cfo_financiero_mcp"
+      ]
+    }
+  },
+  "tools": [
+    { "name": "get_dashboard_metrics", "description": "Métricas del dashboard (ingresos, gastos, rentabilidad, área líder y 29+ métricas extendidas) para un rango de fechas." },
+    { "name": "list_operaciones", "description": "Lista operaciones financieras no anuladas, con filtros de localidad, área y rango de fechas." },
+    { "name": "get_areas_y_socios", "description": "Catálogos del sistema: áreas de negocio y socios activos." },
+    { "name": "get_indicadores_todos", "description": "Todos los indicadores económicos de Uruguay: UI, UR, BPC, inflación y cotización de USD." },
+    { "name": "get_ui", "description": "Valor actual de la Unidad Indexada (UI)." },
+    { "name": "get_ur", "description": "Valor actual de la Unidad Reajustable (UR)." },
+    { "name": "get_bpc", "description": "Valor actual de la Base de Prestaciones y Contribuciones (BPC)." },
+    { "name": "get_inflacion", "description": "Inflación anual acumulada de Uruguay." },
+    { "name": "get_cotizacion_usd", "description": "Cotización actual del dólar (USD/UYU), vía DolarApi con fallback." }
+  ],
+  "keywords": ["finanzas", "cfo", "uruguay", "read-only", "wsl"],
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["win32"]
+  }
+}
