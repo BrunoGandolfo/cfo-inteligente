@@ -106,7 +106,10 @@ class AIOrchestrator:
                 kwargs = {
                     "model": self.CLAUDE_MODEL,
                     "max_tokens": max_tokens,
-                    "temperature": temperature,
+                    # anthropic>=1.0 elimino temperature de la firma de
+                    # messages.create(); la API la sigue aceptando para
+                    # Sonnet/Haiku 4.5, asi que se envia via extra_body.
+                    "extra_body": {"temperature": temperature},
                     "messages": [{"role": "user", "content": prompt}],
                     "timeout": timeout
                 }

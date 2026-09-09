@@ -320,7 +320,7 @@ def preguntar_cfo_stream(
                         with client.messages.stream(
                             model=CLAUDE_MODEL,
                             max_tokens=CLAUDE_MAX_TOKENS_INFORME,
-                            temperature=0.1,
+                            extra_body={"temperature": 0.1},
                             system=CFO_NARRATIVE_SYSTEM_PROMPT,
                             messages=[{"role": "user", "content": user_msg}]
                         ) as stream:
@@ -470,7 +470,7 @@ def preguntar_cfo_stream(
                 with client.messages.stream(
                     model=CLAUDE_MODEL,
                     max_tokens=CLAUDE_MAX_TOKENS,
-                    temperature=0.1,
+                    extra_body={"temperature": 0.1},
                     system=CFO_NARRATIVE_SYSTEM_PROMPT,
                     messages=[{"role": "user", "content": user_msg}]
                 ) as stream:

@@ -231,7 +231,9 @@ class TestAIOrchestatorComplete:
         
         # Assert
         call_kwargs = mock_client.messages.create.call_args.kwargs
-        assert call_kwargs['temperature'] == 0.7
+        # anthropic>=1.0: temperature viaja en extra_body, no como kwarg
+        assert call_kwargs['extra_body']['temperature'] == 0.7
+        assert 'temperature' not in call_kwargs
 
 
 # ══════════════════════════════════════════════════════════════

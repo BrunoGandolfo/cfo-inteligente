@@ -29,7 +29,10 @@ bcrypt==4.0.1
 # ═══════════════════════════════════════════════════════════════
 # AI - Claude (único provider activo)
 # ═══════════════════════════════════════════════════════════════
-anthropic>=0.39.0
+# Tope de major obligatorio: anthropic 1.0 elimino temperature/top_p/top_k
+# de la firma de messages.create(). Sin tope, un rebuild salta de major y
+# rompe produccion. Subir de major solo con migracion probada.
+anthropic>=1.0,<2
 
 # ═══════════════════════════════════════════════════════════════
 # STATISTICS & DATA SCIENCE

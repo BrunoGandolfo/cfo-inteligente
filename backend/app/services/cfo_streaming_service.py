@@ -222,7 +222,7 @@ def _stream_claude_response(
     with client.messages.stream(
         model=CLAUDE_MODEL,
         max_tokens=max_tokens,
-        temperature=0.1,
+        extra_body={"temperature": 0.1},
         system=system_prompt,
         messages=[{"role": "user", "content": user_message}],
     ) as stream:
