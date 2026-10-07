@@ -19,6 +19,7 @@ from app.models.expediente import Expediente
 from app.models.telegram_usuario import TelegramUsuario
 from app.services.dgr_scheduler_service import tarea_monitorear_tramites_dgr
 from app.services.expediente_service import sincronizar_todos_los_expedientes
+from app.services.resumen_actividad_notificacion import tarea_enviar_resumen_actividad
 from app.services.telegram_service import enviar_mensaje_telegram
 
 logger = get_logger(__name__)
@@ -197,8 +198,22 @@ def iniciar_scheduler() -> None:
         misfire_grace_time=300,
     )
     
+    # Tarea: resumen diario de actividad de registro por mail a las 20:00 Uruguay.
+    # misfire_grace_time amplio: si el servidor reinicia cerca de las 20:00
+    # (p. ej. un deploy), el mail sale igual al volver dentro de la hora.
+    scheduler.add_job(
+        tarea_enviar_resumen_actividad,
+        CronTrigger(hour=20, minute=0, timezone=TZ_URUGUAY),
+        id="resumen_actividad_diario",
+        name="Resumen diario de actividad de registro",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=3600,
+    )
+
     scheduler.start()
-    logger.info("📅 Scheduler iniciado - Expedientes 7:30 AM, DGR cada 4 horas (Uruguay)")
+    logger.info("📅 Scheduler iniciado - Expedientes 7:30 AM, DGR cada 4 horas, resumen actividad 20:00 (Uruguay)")
 
 
 def detener_scheduler() -> None:

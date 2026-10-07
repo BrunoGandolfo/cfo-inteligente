@@ -1,6 +1,7 @@
 from app.models.area import Area
 from app.models.socio import Socio
 from app.models.operacion import Operacion, TipoOperacion, Moneda, Localidad
+from app.models.operacion_actividad import OperacionActividad, AccionActividad
 from app.models.distribucion import DistribucionDetalle
 from app.models.usuario import Usuario
 from app.models.cliente import Cliente
@@ -25,6 +26,8 @@ __all__ = [
     "TipoOperacion",
     "Moneda",
     "Localidad",
+    "OperacionActividad",
+    "AccionActividad",
     "DistribucionDetalle",
     "Usuario",
     "Cliente",

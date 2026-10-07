@@ -10,11 +10,12 @@ from app.core.security import get_current_user
 from app.models.operacion import Operacion
 from app.models.cliente import Cliente
 from app.models.proveedor import Proveedor
-from app.models import Usuario
+from app.models import AccionActividad, Usuario
 from app.schemas.operacion import (
     IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate, OperacionUpdate
 )
 from app.services import operacion_service
+from app.services.actividad_service import registrar_actividad
 from app.services.excel_export_service import generar_excel_operaciones
 import uuid
 from app.core.access_control import EMAILS_OPERACIONES_CONTABLE, AREA_CONTABLE_ID
@@ -128,6 +129,7 @@ def anular_operacion(
         raise HTTPException(status_code=403, detail="Solo puede modificar operaciones del área Contable")
 
     operacion.deleted_at = datetime.now(timezone.utc)
+    registrar_actividad(db, operacion.id, current_user.id, AccionActividad.ANULAR)
     db.commit()
 
     return {"message": "Operación anulada"}
@@ -135,24 +137,24 @@ def anular_operacion(
 @router.post("/ingreso")
 def crear_ingreso(data: IngresoCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     _validar_area_contable(current_user.email, data.area_id)
-    return operacion_service.crear_ingreso(db, data)
+    return operacion_service.crear_ingreso(db, data, current_user.id)
 
 @router.post("/gasto")
 def crear_gasto(data: GastoCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     _validar_area_contable(current_user.email, data.area_id)
-    return operacion_service.crear_gasto(db, data)
+    return operacion_service.crear_gasto(db, data, current_user.id)
 
 @router.post("/retiro")
 def crear_retiro(data: RetiroCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     if not current_user.es_socio:
         raise HTTPException(status_code=403, detail="Solo socios pueden registrar retiros")
-    return operacion_service.crear_retiro(db, data)
+    return operacion_service.crear_retiro(db, data, current_user.id)
 
 @router.post("/distribucion")
 def crear_distribucion(data: DistribucionCreate, db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     if not current_user.es_socio:
         raise HTTPException(status_code=403, detail="Solo socios pueden registrar distribuciones")
-    return operacion_service.crear_distribucion(db, data)
+    return operacion_service.crear_distribucion(db, data, current_user.id)
 
 # ═══════════════════════════════════════════════════════════════
 # HELPERS PARA actualizar_operacion (refactorizado para reducir complejidad)
@@ -305,8 +307,10 @@ def actualizar_operacion(
     # 3. Actualizar montos (con recálculo si necesario)
     _actualizar_montos(operacion, payload)
     
-    # 4. Guardar cambios
+    # 4. Guardar cambios (y registrar quién editó, en la misma transacción)
     operacion.updated_at = datetime.now(timezone.utc)
+    if payload:
+        registrar_actividad(db, operacion.id, current_user.id, AccionActividad.EDITAR)
     db.commit()
     db.refresh(operacion)
     
