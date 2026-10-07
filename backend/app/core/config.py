@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
     capsolver_api_key: str = Field(default="", alias="CAPSOLVER_API_KEY")
     telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
+    resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
+
+    # Mail: remitente y destinatario del resumen diario de actividad.
+    # onboarding@resend.dev funciona sin verificar dominio, pero solo entrega
+    # al mail dueño de la cuenta de Resend.
+    email_remitente: str = Field(default="CFO Inteligente <onboarding@resend.dev>", alias="EMAIL_REMITENTE")
+    email_resumen_actividad: str = Field(default="bgandolfo@cgmasociados.com", alias="EMAIL_RESUMEN_ACTIVIDAD")
     
     # SQL Engine: "haiku" (pipeline completo) | "claude" (bypass directo a Claude)
     sql_engine: str = Field(default="claude", alias="SQL_ENGINE")
