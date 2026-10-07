@@ -120,10 +120,11 @@ class TestCrearOperacionBase:
     """Tests de la función base refactorizada (elimina duplicación)"""
     
     @pytest.mark.integration
-    def test_crear_operacion_base_ingreso(self, db_session, areas_test):
+    def test_crear_operacion_base_ingreso(self, usuario_test, db_session, areas_test):
         """Función base debe crear ingreso correctamente"""
         operacion = _crear_operacion_base(
             db=db_session,
+            usuario_id=usuario_test.id,
             tipo_operacion=TipoOperacion.INGRESO,
             fecha=date.today(),
             monto_original=Decimal('10000'),
@@ -146,10 +147,11 @@ class TestCrearOperacionBase:
         assert operacion.monto_usd == Decimal('250')  # 10000/40
     
     @pytest.mark.integration
-    def test_crear_operacion_base_gasto(self, db_session, areas_test):
+    def test_crear_operacion_base_gasto(self, usuario_test, db_session, areas_test):
         """Función base debe crear gasto correctamente"""
         operacion = _crear_operacion_base(
             db=db_session,
+            usuario_id=usuario_test.id,
             tipo_operacion=TipoOperacion.GASTO,
             fecha=date.today(),
             monto_original=Decimal('500'),
@@ -172,10 +174,11 @@ class TestCrearOperacionBase:
         assert operacion.monto_uyu == Decimal('20000')  # 500*40
     
     @pytest.mark.integration
-    def test_crear_operacion_base_localidad_normalizada(self, db_session, areas_test):
+    def test_crear_operacion_base_localidad_normalizada(self, usuario_test, db_session, areas_test):
         """Localidad debe normalizarse correctamente"""
         operacion = _crear_operacion_base(
             db=db_session,
+            usuario_id=usuario_test.id,
             tipo_operacion=TipoOperacion.INGRESO,
             fecha=date.today(),
             monto_original=Decimal('1000'),
@@ -199,7 +202,7 @@ class TestCrearIngreso:
     """Tests de crear_ingreso (usa función base)"""
     
     @pytest.mark.integration
-    def test_crear_ingreso_uyu(self, db_session, areas_test):
+    def test_crear_ingreso_uyu(self, usuario_test, db_session, areas_test):
         """Crear ingreso en pesos uruguayos"""
         data = IngresoCreate(
             cliente="Cliente Test",
@@ -212,7 +215,7 @@ class TestCrearIngreso:
             descripcion='Factura servicios jurídicos'
         )
         
-        operacion = crear_ingreso(db_session, data)
+        operacion = crear_ingreso(db_session, data, usuario_test.id)
         
         assert operacion.tipo_operacion == TipoOperacion.INGRESO
         assert operacion.cliente == 'CLIENTE TEST'
@@ -220,7 +223,7 @@ class TestCrearIngreso:
         assert operacion.monto_usd == Decimal('375')  # 15000/40
     
     @pytest.mark.integration
-    def test_crear_ingreso_usd(self, db_session, areas_test):
+    def test_crear_ingreso_usd(self, usuario_test, db_session, areas_test):
         """Crear ingreso en dólares"""
         data = IngresoCreate(
             cliente="Cliente USA",
@@ -233,7 +236,7 @@ class TestCrearIngreso:
             descripcion='Servicios internacionales'
         )
         
-        operacion = crear_ingreso(db_session, data)
+        operacion = crear_ingreso(db_session, data, usuario_test.id)
         
         assert operacion.tipo_operacion == TipoOperacion.INGRESO
         assert operacion.cliente == 'CLIENTE USA'
@@ -249,7 +252,7 @@ class TestCrearGasto:
     """Tests de crear_gasto (usa función base)"""
     
     @pytest.mark.integration
-    def test_crear_gasto_uyu(self, db_session, areas_test):
+    def test_crear_gasto_uyu(self, usuario_test, db_session, areas_test):
         """Crear gasto en pesos uruguayos"""
         data = GastoCreate(
             proveedor="Proveedor Test",
@@ -262,7 +265,7 @@ class TestCrearGasto:
             descripcion='Material de oficina'
         )
         
-        operacion = crear_gasto(db_session, data)
+        operacion = crear_gasto(db_session, data, usuario_test.id)
         
         assert operacion.tipo_operacion == TipoOperacion.GASTO
         assert operacion.proveedor == 'PROVEEDOR TEST'
@@ -270,7 +273,7 @@ class TestCrearGasto:
         assert operacion.monto_usd == Decimal('200')  # 8000/40
     
     @pytest.mark.integration
-    def test_crear_gasto_usd(self, db_session, areas_test):
+    def test_crear_gasto_usd(self, usuario_test, db_session, areas_test):
         """Crear gasto en dólares"""
         data = GastoCreate(
             proveedor="AWS Inc",
@@ -283,7 +286,7 @@ class TestCrearGasto:
             descripcion='Hosting mensual'
         )
         
-        operacion = crear_gasto(db_session, data)
+        operacion = crear_gasto(db_session, data, usuario_test.id)
         
         assert operacion.tipo_operacion == TipoOperacion.GASTO
         assert operacion.proveedor == 'AWS INC'
@@ -299,7 +302,7 @@ class TestCrearRetiro:
     """Tests de crear_retiro (maneja ambas monedas)"""
     
     @pytest.mark.integration
-    def test_crear_retiro_solo_uyu(self, db_session):
+    def test_crear_retiro_solo_uyu(self, usuario_test, db_session):
         """Retiro solo en UYU debe calcular USD"""
         data = RetiroCreate(
             monto_uyu=Decimal('10000'),
@@ -310,7 +313,7 @@ class TestCrearRetiro:
             descripcion='Retiro efectivo Bruno'
         )
         
-        operacion = crear_retiro(db_session, data)
+        operacion = crear_retiro(db_session, data, usuario_test.id)
         
         assert operacion.tipo_operacion == TipoOperacion.RETIRO
         assert operacion.monto_uyu == Decimal('10000')
@@ -319,7 +322,7 @@ class TestCrearRetiro:
         assert operacion.moneda_original == Moneda.UYU
     
     @pytest.mark.integration
-    def test_crear_retiro_solo_usd(self, db_session):
+    def test_crear_retiro_solo_usd(self, usuario_test, db_session):
         """Retiro solo en USD debe calcular UYU"""
         data = RetiroCreate(
             monto_uyu=None,
@@ -330,7 +333,7 @@ class TestCrearRetiro:
             descripcion='Retiro USD Agustina'
         )
         
-        operacion = crear_retiro(db_session, data)
+        operacion = crear_retiro(db_session, data, usuario_test.id)
         
         assert operacion.tipo_operacion == TipoOperacion.RETIRO
         assert operacion.monto_usd == Decimal('500')
@@ -339,7 +342,7 @@ class TestCrearRetiro:
         assert operacion.moneda_original == Moneda.USD
     
     @pytest.mark.integration
-    def test_crear_retiro_ambas_monedas(self, db_session):
+    def test_crear_retiro_ambas_monedas(self, usuario_test, db_session):
         """Retiro con ambos montos debe usar valores exactos"""
         data = RetiroCreate(
             monto_uyu=Decimal('12000'),
@@ -350,7 +353,7 @@ class TestCrearRetiro:
             descripcion='Retiro mixto'
         )
         
-        operacion = crear_retiro(db_session, data)
+        operacion = crear_retiro(db_session, data, usuario_test.id)
         
         assert operacion.tipo_operacion == TipoOperacion.RETIRO
         assert operacion.monto_uyu == Decimal('12000')
@@ -360,7 +363,7 @@ class TestCrearRetiro:
         assert operacion.moneda_original == Moneda.UYU
     
     @pytest.mark.integration
-    def test_crear_retiro_no_requiere_area(self, db_session):
+    def test_crear_retiro_no_requiere_area(self, usuario_test, db_session):
         """Retiro NO requiere área - solo localidad (lógica de negocio correcta)"""
         data = RetiroCreate(
             monto_uyu=Decimal('5000'),
@@ -371,7 +374,7 @@ class TestCrearRetiro:
             descripcion='Test'
         )
         
-        operacion = crear_retiro(db_session, data)
+        operacion = crear_retiro(db_session, data, usuario_test.id)
         
         # RETIRO es movimiento financiero, NO operación de área
         # area_id debe ser NULL para no contaminar análisis de rentabilidad
@@ -386,7 +389,7 @@ class TestCrearDistribucion:
     """Tests de crear_distribucion (5 socios)"""
     
     @pytest.mark.integration
-    def test_crear_distribucion_5_socios_completa(self, db_session, socios_test):
+    def test_crear_distribucion_5_socios_completa(self, usuario_test, db_session, socios_test):
         """Distribución con los 5 socios debe crear operación + 5 detalles"""
         if len(socios_test) < 5:
             pytest.skip("No hay 5 socios en BD de test")
@@ -408,7 +411,7 @@ class TestCrearDistribucion:
             bruno_usd=Decimal('125')
         )
         
-        operacion = crear_distribucion(db_session, data)
+        operacion = crear_distribucion(db_session, data, usuario_test.id)
         
         assert operacion.tipo_operacion == TipoOperacion.DISTRIBUCION
         assert operacion.monto_uyu == Decimal('25000')  # 5*5000
@@ -423,7 +426,7 @@ class TestCrearDistribucion:
         assert len(detalles) == 5
     
     @pytest.mark.integration
-    def test_crear_distribucion_parcial_3_socios(self, db_session, socios_test):
+    def test_crear_distribucion_parcial_3_socios(self, usuario_test, db_session, socios_test):
         """Distribución solo a 3 socios debe crear solo 3 detalles"""
         if len(socios_test) < 3:
             pytest.skip("No hay suficientes socios en BD de test")
@@ -445,7 +448,7 @@ class TestCrearDistribucion:
             pancho_usd=None
         )
         
-        operacion = crear_distribucion(db_session, data)
+        operacion = crear_distribucion(db_session, data, usuario_test.id)
         
         assert operacion.monto_uyu == Decimal('30000')  # 3*10000
         
@@ -457,7 +460,7 @@ class TestCrearDistribucion:
         assert len(detalles) == 3
     
     @pytest.mark.integration
-    def test_crear_distribucion_detecta_moneda_original(self, db_session, socios_test):
+    def test_crear_distribucion_detecta_moneda_original(self, usuario_test, db_session, socios_test):
         """Si total_uyu > 0, moneda_original debe ser UYU"""
         if len(socios_test) < 2:
             pytest.skip("No hay suficientes socios")
@@ -479,13 +482,13 @@ class TestCrearDistribucion:
             pancho_usd=None
         )
         
-        operacion = crear_distribucion(db_session, data)
+        operacion = crear_distribucion(db_session, data, usuario_test.id)
         
         assert operacion.monto_original == Decimal('16000')
         assert operacion.moneda_original == Moneda.UYU
     
     @pytest.mark.integration
-    def test_crear_distribucion_no_requiere_area(self, db_session, socios_test):
+    def test_crear_distribucion_no_requiere_area(self, usuario_test, db_session, socios_test):
         """Distribución NO requiere área - solo localidad (lógica de negocio correcta)"""
         if len(socios_test) < 1:
             pytest.skip("No hay socios")
@@ -507,14 +510,14 @@ class TestCrearDistribucion:
             pancho_usd=None
         )
 
-        operacion = crear_distribucion(db_session, data)
+        operacion = crear_distribucion(db_session, data, usuario_test.id)
 
         # DISTRIBUCION es movimiento financiero, NO operación de área
         # area_id debe ser NULL para no contaminar análisis de rentabilidad
         assert operacion.area_id is None
     
     @pytest.mark.integration
-    def test_crear_distribucion_porcentaje_20(self, db_session, socios_test):
+    def test_crear_distribucion_porcentaje_20(self, usuario_test, db_session, socios_test):
         """Cada detalle debe tener 20% (5 socios = 100%)"""
         if len(socios_test) < 1:
             pytest.skip("No hay socios")
@@ -536,7 +539,7 @@ class TestCrearDistribucion:
             pancho_usd=None
         )
         
-        operacion = crear_distribucion(db_session, data)
+        operacion = crear_distribucion(db_session, data, usuario_test.id)
         
         detalles = db_session.query(DistribucionDetalle)\
             .filter(DistribucionDetalle.operacion_id == operacion.id)\
@@ -576,7 +579,7 @@ class TestCasosEdge:
         assert monto_usd == Decimal('1000')
     
     @pytest.mark.integration
-    def test_crear_ingreso_sin_cliente(self, db_session, areas_test):
+    def test_crear_ingreso_sin_cliente(self, usuario_test, db_session, areas_test):
         """Ingreso sin cliente debe funcionar (cliente puede ser null)"""
         data = IngresoCreate(
             cliente=None,
@@ -589,7 +592,7 @@ class TestCasosEdge:
             descripcion='Ingreso sin cliente específico'
         )
         
-        operacion = crear_ingreso(db_session, data)
+        operacion = crear_ingreso(db_session, data, usuario_test.id)
         
         assert operacion.cliente is None
         assert operacion.tipo_operacion == TipoOperacion.INGRESO
@@ -668,11 +671,12 @@ class TestFiltrosPorLocalidadArea:
     """Tests de filtros por localidad y área"""
     
     @pytest.mark.integration
-    def test_crear_operaciones_diferentes_localidades(self, db_session, areas_test):
+    def test_crear_operaciones_diferentes_localidades(self, usuario_test, db_session, areas_test):
         """Crear operaciones en Montevideo y Mercedes"""
         # Montevideo
         op_mvd = _crear_operacion_base(
             db=db_session,
+            usuario_id=usuario_test.id,
             tipo_operacion=TipoOperacion.INGRESO,
             fecha=date.today(),
             monto_original=Decimal('10000'),
@@ -687,6 +691,7 @@ class TestFiltrosPorLocalidadArea:
         # Mercedes
         op_mer = _crear_operacion_base(
             db=db_session,
+            usuario_id=usuario_test.id,
             tipo_operacion=TipoOperacion.INGRESO,
             fecha=date.today(),
             monto_original=Decimal('8000'),
@@ -702,7 +707,7 @@ class TestFiltrosPorLocalidadArea:
         assert op_mer.localidad == Localidad.MERCEDES
     
     @pytest.mark.integration
-    def test_filtrar_operaciones_por_area(self, db_session):
+    def test_filtrar_operaciones_por_area(self, usuario_test, db_session):
         """Filtrar operaciones por área específica"""
         # Obtener dos áreas diferentes
         area1 = db_session.query(Area).filter(Area.nombre == "Jurídica").first()
@@ -714,6 +719,7 @@ class TestFiltrosPorLocalidadArea:
         # Crear operaciones en cada área
         _crear_operacion_base(
             db=db_session,
+            usuario_id=usuario_test.id,
             tipo_operacion=TipoOperacion.INGRESO,
             fecha=date.today(),
             monto_original=Decimal('5000'),
@@ -727,6 +733,7 @@ class TestFiltrosPorLocalidadArea:
         
         _crear_operacion_base(
             db=db_session,
+            usuario_id=usuario_test.id,
             tipo_operacion=TipoOperacion.INGRESO,
             fecha=date.today(),
             monto_original=Decimal('7000'),

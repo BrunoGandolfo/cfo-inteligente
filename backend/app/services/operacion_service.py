@@ -8,10 +8,11 @@ from uuid import UUID
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models import Operacion, TipoOperacion, Moneda, Localidad, DistribucionDetalle, Socio
+from app.models import AccionActividad, Operacion, TipoOperacion, Moneda, Localidad, DistribucionDetalle, Socio
 from app.models.cliente import Cliente
 from app.models.proveedor import Proveedor
 from app.schemas.operacion import IngresoCreate, GastoCreate, RetiroCreate, DistribucionCreate
+from app.services.actividad_service import registrar_actividad
 
 
 def _buscar_o_crear_cliente(
@@ -66,6 +67,7 @@ def _crear_operacion_base(
     area_id: UUID,
     localidad: str,
     descripcion: str,
+    usuario_id: UUID,
     cliente: Optional[str] = None,
     proveedor: Optional[str] = None
 ) -> Operacion:
@@ -106,6 +108,8 @@ def _crear_operacion_base(
         )
         
         db.add(operacion)
+        db.flush()
+        registrar_actividad(db, operacion.id, usuario_id, AccionActividad.CREAR)
         db.commit()
         db.refresh(operacion)
         return operacion
@@ -113,7 +117,7 @@ def _crear_operacion_base(
         db.rollback()
         raise
 
-def crear_ingreso(db: Session, data: IngresoCreate) -> Operacion:
+def crear_ingreso(db: Session, data: IngresoCreate, usuario_id: UUID) -> Operacion:
     """Crea una operación de ingreso y vincula el cliente si corresponde."""
     try:
         operacion = _crear_operacion_base(
@@ -126,6 +130,7 @@ def crear_ingreso(db: Session, data: IngresoCreate) -> Operacion:
             area_id=data.area_id,
             localidad=data.localidad,
             descripcion=data.descripcion,
+            usuario_id=usuario_id,
             cliente=data.cliente
         )
         if data.cliente:
@@ -137,7 +142,7 @@ def crear_ingreso(db: Session, data: IngresoCreate) -> Operacion:
         db.rollback()
         raise
 
-def crear_gasto(db: Session, data: GastoCreate) -> Operacion:
+def crear_gasto(db: Session, data: GastoCreate, usuario_id: UUID) -> Operacion:
     """Crea una operación de gasto y vincula el proveedor si corresponde."""
     try:
         operacion = _crear_operacion_base(
@@ -150,6 +155,7 @@ def crear_gasto(db: Session, data: GastoCreate) -> Operacion:
             area_id=data.area_id,
             localidad=data.localidad,
             descripcion=data.descripcion,
+            usuario_id=usuario_id,
             proveedor=data.proveedor
         )
         if data.proveedor:
@@ -161,7 +167,7 @@ def crear_gasto(db: Session, data: GastoCreate) -> Operacion:
         db.rollback()
         raise
 
-def crear_retiro(db: Session, data: RetiroCreate) -> Operacion:
+def crear_retiro(db: Session, data: RetiroCreate, usuario_id: UUID) -> Operacion:
     """
     Crear retiro de efectivo (movimiento financiero).
     
@@ -215,6 +221,8 @@ def crear_retiro(db: Session, data: RetiroCreate) -> Operacion:
         )
         
         db.add(operacion)
+        db.flush()
+        registrar_actividad(db, operacion.id, usuario_id, AccionActividad.CREAR)
         db.commit()
         db.refresh(operacion)
         return operacion
@@ -222,7 +230,7 @@ def crear_retiro(db: Session, data: RetiroCreate) -> Operacion:
         db.rollback()
         raise
 
-def crear_distribucion(db: Session, data: DistribucionCreate) -> Operacion:
+def crear_distribucion(db: Session, data: DistribucionCreate, usuario_id: UUID) -> Operacion:
     """
     Crear distribución de utilidades a socios (movimiento financiero).
     
@@ -278,6 +286,7 @@ def crear_distribucion(db: Session, data: DistribucionCreate) -> Operacion:
         
         db.add(operacion)
         db.flush()
+        registrar_actividad(db, operacion.id, usuario_id, AccionActividad.CREAR)
         
         # Crear detalle para cada socio
         socios_montos = [
