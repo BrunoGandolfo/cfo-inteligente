@@ -23,7 +23,7 @@ from app.services.resumen_actividad_service import (
     TZ_URUGUAY,
     obtener_actividad_por_usuario,
     obtener_alertas_localidad,
-    obtener_resumen_diario,
+    obtener_resumen,
 )
 
 DIA = date(2026, 10, 7)
@@ -94,29 +94,31 @@ class TestActividadPorUsuario:
         _registrar(db_session, op, ana, AccionActividad.EDITAR, _uy(DIA, 11))
         _registrar(db_session, op, juan, AccionActividad.ANULAR, _uy(DIA, 15))
 
-        resultado = obtener_actividad_por_usuario(db_session, DIA)
+        resultado = obtener_actividad_por_usuario(db_session, _uy(DIA, 0), _uy(DIA, 20))
 
         assert [(u.nombre, u.creadas, u.editadas, u.anuladas) for u in resultado] == [
             ("Ana", 3, 1, 0),
             ("Juan", 0, 0, 1),
         ]
 
-    def test_corta_el_dia_en_hora_de_uruguay(self, db_session, ana_y_juan):
-        """23:30 en Uruguay ya es el día siguiente en UTC, pero cuenta para hoy."""
+    def test_ventana_de_24_horas_hasta_el_envio(self, db_session, ana_y_juan):
+        """Lo cargado entre las 20:00 y las 24:00 entra en el mail del día siguiente."""
         ana, _ = ana_y_juan
         op = _crear_operacion(db_session)
-        _registrar(db_session, op, ana, AccionActividad.CREAR, _uy(DIA, 23, 30))
-        _registrar(db_session, op, ana, AccionActividad.CREAR, _uy(DIA + timedelta(days=1), 0, 10))
-        _registrar(db_session, op, ana, AccionActividad.CREAR, _uy(DIA, 0, 0))
+        ayer = DIA - timedelta(days=1)
+        _registrar(db_session, op, ana, AccionActividad.CREAR, _uy(ayer, 19, 59))  # mail de ayer
+        _registrar(db_session, op, ana, AccionActividad.CREAR, _uy(ayer, 20, 0))   # entra
+        _registrar(db_session, op, ana, AccionActividad.CREAR, _uy(ayer, 23, 30))  # entra
+        _registrar(db_session, op, ana, AccionActividad.EDITAR, _uy(DIA, 19, 59))  # entra
+        _registrar(db_session, op, ana, AccionActividad.CREAR, _uy(DIA, 20, 0))    # mail de mañana
 
-        hoy = obtener_actividad_por_usuario(db_session, DIA)
-        manana = obtener_actividad_por_usuario(db_session, DIA + timedelta(days=1))
+        resumen = obtener_resumen(db_session, hasta=_uy(DIA, 20))
 
-        assert hoy[0].creadas == 2
-        assert manana[0].creadas == 1
+        assert resumen.desde == _uy(ayer, 20)
+        assert [(u.creadas, u.editadas) for u in resumen.usuarios] == [(2, 1)]
 
-    def test_dia_sin_actividad(self, db_session):
-        resumen = obtener_resumen_diario(db_session, DIA)
+    def test_sin_actividad(self, db_session):
+        resumen = obtener_resumen(db_session, hasta=_uy(DIA, 20))
         assert resumen.usuarios == []
         assert resumen.sin_actividad is True
 

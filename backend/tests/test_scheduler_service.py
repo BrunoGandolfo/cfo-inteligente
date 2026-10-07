@@ -31,11 +31,12 @@ class TestIniciarScheduler:
             from app.services.scheduler_service import iniciar_scheduler
             from app.services.scheduler_service import tarea_sincronizar_expedientes
             from app.services.dgr_scheduler_service import tarea_monitorear_tramites_dgr
+            from app.services.resumen_actividad_notificacion import tarea_enviar_resumen_actividad
 
             iniciar_scheduler()
 
             calls = mock_scheduler.add_job.call_args_list
-            assert len(calls) == 2
+            assert len(calls) == 3
 
             # Job 1: sincronización de expedientes
             exp_args = calls[0]
@@ -48,6 +49,16 @@ class TestIniciarScheduler:
             assert dgr_args[0][0] is tarea_monitorear_tramites_dgr
             assert dgr_args[1].get("id") == "monitorear_tramites_dgr"
             assert dgr_args[1].get("replace_existing") is True
+
+            # Job 3: resumen diario de actividad a las 20:00
+            res_args = calls[2]
+            assert res_args[0][0] is tarea_enviar_resumen_actividad
+            assert res_args[1].get("id") == "resumen_actividad_diario"
+            assert res_args[1].get("replace_existing") is True
+            trigger = res_args[0][1]
+            assert str(trigger.fields[trigger.FIELD_NAMES.index("hour")]) == "20"
+            assert str(trigger.fields[trigger.FIELD_NAMES.index("minute")]) == "0"
+            assert str(trigger.timezone) == "America/Montevideo"
 
 
 class TestDetenerScheduler:
