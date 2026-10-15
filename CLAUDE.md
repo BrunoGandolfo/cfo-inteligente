@@ -2,11 +2,12 @@
 Sistema financiero y de gestión para Conexión Consultora, estudio jurídico-contable en Uruguay. Producción en Railway. Operaciones reales bimoneda (UYU/USD) con cotizaciones históricas.
 
 ## Stack
-- Backend: Python 3.11 + FastAPI 0.115 + SQLAlchemy 2.0 (SYNC, no async) + Pydantic + Alembic
+- Backend: Python 3.12 + FastAPI 0.115 + SQLAlchemy 2.0 (SYNC, no async) + Pydantic + Alembic
 - Frontend: React 19 + Vite 7 + TailwindCSS 3.4 + Recharts + Framer Motion (JavaScript puro, sin TypeScript)
-- Base de datos: PostgreSQL 15 (UUIDs como PK, soft delete con deleted_at)
+- Base de datos: PostgreSQL 17 (UUIDs como PK, soft delete con deleted_at)
 - IA: Anthropic API — claude-sonnet-4-5-20250929 para todo (SQL, narrativa, soporte, ALA, contratos)
-- Deploy: Railway. Backend: dazzling-courage. Frontend: sunny-serenity. Deploy automático en push a main
+- Deploy: Railway. Proyecto `dazzling-courage` (servicios `cfo-inteligente` = backend y `Postgres`). Proyecto `sunny-serenity` (frontend). Deploy automático en push a main
+- Mail: Resend (`RESEND_API_KEY`). Resumen diario de actividad de registro a las 20:00 Uruguay
 - Tipo de cambio: DolarApi (https://uy.dolarapi.com/v1/cotizaciones/usd), no BCU directo
 
 ## Estructura
@@ -36,12 +37,19 @@ frontend/src/
 - Soporte AI (chat con documentación contextual)
 - Dashboard y métricas (4 métricas principales + 3 gráficos Recharts)
 
+## Funcionalidades desactivadas
+Apagadas en producción con interruptores (`backend/app/core/funcionalidades.py`); se prenden con flag + credencial, sin tocar código. Detalle y cómo prenderlas: `docs/FUNCIONALIDADES_DESACTIVADAS.md`.
+- Consultas DGR (monitoreo automático y sincronización manual): sin CapSolver
+- Consultas DGI del módulo Contable: sin CapSolver (0 usos en producción)
+- Notificaciones y vinculación por Telegram: sin token del bot
+Toda consulta que abra un navegador (playwright) debe cerrarlo con `app.services.playwright_cierre.cerrar_playwright` en un `finally`. Un navegador mal cerrado tumbó el login el 15/10/2026.
+
 ## Comandos
 ```bash
-cd ~/cfo-inteligente/backend && source venv/bin/activate && uvicorn app.main:app --reload --port 8002  # Backend
-cd ~/cfo-inteligente/frontend && npm run dev          # Frontend (localhost:5174)
-cd ~/cfo-inteligente/backend && python -m pytest tests/ -q -k "not TestStreaming and not test_tasa_respuesta_exitosa" --tb=short  # Tests (695 verdes)
-cd ~/cfo-inteligente/frontend && npm run build         # Build frontend
+cd ~/proyectos/cfo-inteligente/backend && source .venv/bin/activate && uvicorn app.main:app --reload --port 8002  # Backend
+cd ~/proyectos/cfo-inteligente/frontend && npm run dev          # Frontend (localhost:5174)
+cd ~/proyectos/cfo-inteligente/backend && source .venv/bin/activate && python -m pytest tests/ -q -k "not TestStreaming and not test_tasa_respuesta_exitosa" --tb=short  # Tests (881 verdes)
+cd ~/proyectos/cfo-inteligente/frontend && npm run build         # Build frontend
 ```
 
 ## Restricciones CRÍTICAS
@@ -54,7 +62,7 @@ cd ~/cfo-inteligente/frontend && npm run build         # Build frontend
 - Nunca modificar migraciones Alembic ya existentes
 - Nunca leer ni loggear .env, API keys, tokens, passwords
 - Todo cambio se prueba local primero. El arquitecto humano decide cuándo commitear y pushear
-- 695 tests verdes antes de cualquier push a producción
+- Suite completa verde antes de cualquier push a producción (881 al 15/10/2026)
 
 ## Convenciones
 - Backend: snake_case funciones, UPPERCASE enums, imports absolutos (from app.core.database import get_db)

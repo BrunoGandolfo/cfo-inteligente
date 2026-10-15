@@ -33,6 +33,19 @@ from app.services import contable_service
 # =============================================================================
 
 
+@pytest.fixture(autouse=True)
+def dgi_habilitada():
+    """Estos tests prueban el módulo con las consultas DGI prendidas.
+
+    En producción están apagadas (sin CapSolver); el caso apagado se prueba
+    en TestConsultasDesactivadas.
+    """
+    from app.core.config import settings
+    with patch.object(settings, "dgi_consultas_habilitadas", True), \
+         patch.object(settings, "capsolver_api_key", "clave-test"):
+        yield
+
+
 @pytest.fixture
 def mock_usuario_socio():
     """Socio (es_socio=True). Acceso total sin importar la whitelist."""
@@ -940,3 +953,32 @@ class TestEndpointsStub:
         client, _, _ = client_colaborador_denegado
         response = client.post("/api/contable/consultas/exportar-excel")
         assert response.status_code == 403
+
+
+class TestConsultasDesactivadas:
+    """Con las consultas DGI apagadas el endpoint corta con 503 sin abrir nada."""
+
+    @patch("app.api.contable._cargar_servicio_contable")
+    def test_consultar_devuelve_503_y_no_ejecuta(self, mock_loader, client_socio):
+        client, _, _ = client_socio
+        from app.core.config import settings
+        with patch.object(settings, "dgi_consultas_habilitadas", False):
+            resp = client.post(
+                "/api/contable/consultar",
+                json={"servicio": "CERTIFICADO_UNICO", "rut": "211234560018"},
+            )
+        assert resp.status_code == 503
+        assert "CapSolver" in resp.json()["detail"]
+        mock_loader.assert_not_called()
+
+    @patch("app.api.contable._cargar_servicio_contable")
+    def test_flag_prendido_sin_clave_sigue_apagado(self, mock_loader, client_socio):
+        client, _, _ = client_socio
+        from app.core.config import settings
+        with patch.object(settings, "capsolver_api_key", ""):
+            resp = client.post(
+                "/api/contable/consultar",
+                json={"servicio": "CERTIFICADO_UNICO", "rut": "211234560018"},
+            )
+        assert resp.status_code == 503
+        mock_loader.assert_not_called()

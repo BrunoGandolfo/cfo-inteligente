@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.access_control import COLABORADORES_ACCESO_DGR
+from app.core.funcionalidades import dgr_habilitado, exigir_habilitada
 from app.models import Usuario
 from app.schemas.tramite_dgr import (
     MarcarNotificadosRequest,
@@ -99,17 +100,19 @@ async def crear_tramite(
         bis=data.bis or "",
     )
 
-    try:
-        datos = await consultar_tramite_dgr(
-            registro=data.registro,
-            oficina=data.oficina,
-            anio=data.anio,
-            numero=data.numero_entrada,
-            bis=data.bis or "",
-        )
-    except Exception as e:
-        logger.warning(f"No se pudo consultar DGR al crear trámite: {e}")
-        datos = None
+    # Con la DGR desactivada el trámite se registra igual, sin datos de la DGR.
+    datos = None
+    if dgr_habilitado():
+        try:
+            datos = await consultar_tramite_dgr(
+                registro=data.registro,
+                oficina=data.oficina,
+                anio=data.anio,
+                numero=data.numero_entrada,
+                bis=data.bis or "",
+            )
+        except Exception as e:
+            logger.warning(f"No se pudo consultar DGR al crear trámite: {e}")
 
     if datos:
         tramites_dgr_service.aplicar_datos_dgr(tramite, datos)
@@ -190,6 +193,7 @@ async def sincronizar_tramite(
     current_user: Usuario = Depends(get_current_user),
 ):
     """Re-sincroniza un trámite existente con la DGR."""
+    exigir_habilitada("dgr")
     tramite = _obtener_tramite_o_404(db, tramite_id)
     _verificar_acceso_tramite(tramite, current_user)
 

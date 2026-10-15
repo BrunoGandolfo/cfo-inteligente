@@ -9,6 +9,7 @@ import logging
 import httpx
 
 from app.core.config import settings
+from app.core.funcionalidades import telegram_habilitado
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +26,13 @@ async def enviar_mensaje_telegram(chat_id: int, texto: str) -> bool:
     Returns:
         True si el mensaje se envió correctamente, False si falló.
     """
-    token = settings.telegram_bot_token
-    if not token:
-        logger.error("TELEGRAM_BOT_TOKEN no configurado")
+    # Punto único de salida de Telegram: el interruptor se respeta acá para que
+    # ningún llamador (expedientes, DGR, endpoints) pueda esquivarlo.
+    if not telegram_habilitado():
+        logger.info("Telegram desactivado: mensaje a chat_id=%d no enviado", chat_id)
         return False
+
+    token = settings.telegram_bot_token
 
     url = f"{TELEGRAM_API}/bot{token}/sendMessage"
     payload = {

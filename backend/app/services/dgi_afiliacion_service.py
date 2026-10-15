@@ -20,6 +20,7 @@ from typing import Optional
 import httpx
 
 from app.core.logger import get_logger
+from app.services.playwright_cierre import cerrar_playwright
 from app.services.dgi_service import _async_sleep, resolver_captcha_imagen_dgi
 
 logger = get_logger(__name__)
@@ -73,6 +74,7 @@ async def consultar_afiliacion_bancaria(rut: str) -> dict:
         "error": None,
     }
 
+    pw = None
     browser = None
     try:
         from playwright.async_api import async_playwright
@@ -150,5 +152,4 @@ async def consultar_afiliacion_bancaria(rut: str) -> dict:
         out["error"] = str(e)
         return out
     finally:
-        if browser:
-            await browser.close()
+        await cerrar_playwright(browser, pw, "DGI afiliación bancaria")

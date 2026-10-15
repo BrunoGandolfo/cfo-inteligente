@@ -33,7 +33,8 @@ class TestIniciarScheduler:
             from app.services.dgr_scheduler_service import tarea_monitorear_tramites_dgr
             from app.services.resumen_actividad_notificacion import tarea_enviar_resumen_actividad
 
-            iniciar_scheduler()
+            with patch("app.services.scheduler_service.dgr_habilitado", return_value=True):
+                iniciar_scheduler()
 
             calls = mock_scheduler.add_job.call_args_list
             assert len(calls) == 3
@@ -59,6 +60,22 @@ class TestIniciarScheduler:
             assert str(trigger.fields[trigger.FIELD_NAMES.index("hour")]) == "20"
             assert str(trigger.fields[trigger.FIELD_NAMES.index("minute")]) == "0"
             assert str(trigger.timezone) == "America/Montevideo"
+
+
+    def test_con_dgr_desactivada_no_registra_su_tarea(self):
+        """Sin CapSolver la DGR no se agenda: cada corrida abría navegadores inútiles."""
+        with patch(
+            "app.services.scheduler_service.scheduler",
+            MagicMock(),
+        ) as mock_scheduler:
+            mock_scheduler.running = False
+            from app.services.scheduler_service import iniciar_scheduler
+
+            with patch("app.services.scheduler_service.dgr_habilitado", return_value=False):
+                iniciar_scheduler()
+
+            ids = [c[1].get("id") for c in mock_scheduler.add_job.call_args_list]
+            assert ids == ["sync_expedientes_diario", "resumen_actividad_diario"]
 
 
 class TestDetenerScheduler:
@@ -171,11 +188,42 @@ class TestTareaSincronizarExpedientes:
                 with patch(
                     "app.services.scheduler_service.enviar_notificaciones_pendientes",
                     MagicMock(),
-                ) as mock_enviar:
+                ) as mock_enviar, patch(
+                    "app.services.scheduler_service.telegram_habilitado",
+                    return_value=True,
+                ):
                     from app.services.scheduler_service import tarea_sincronizar_expedientes
 
                     tarea_sincronizar_expedientes()
                     mock_enviar.assert_called_once_with(mock_db)
+
+    def test_tarea_sincronizar_expedientes_sin_telegram_no_notifica(self):
+        """La sincronización sigue funcionando; solo se omite el aviso por Telegram."""
+        mock_db = MagicMock()
+        with patch(
+            "app.services.scheduler_service.SessionLocal",
+            return_value=mock_db,
+        ), patch(
+            "app.services.scheduler_service.sincronizar_todos_los_expedientes",
+            return_value={
+                "sincronizados_ok": 5,
+                "total_expedientes": 5,
+                "total_nuevos_movimientos": 2,
+            },
+        ) as mock_sync, patch(
+            "app.services.scheduler_service.enviar_notificaciones_pendientes",
+            MagicMock(),
+        ) as mock_enviar, patch(
+            "app.services.scheduler_service.telegram_habilitado",
+            return_value=False,
+        ):
+            from app.services.scheduler_service import tarea_sincronizar_expedientes
+
+            tarea_sincronizar_expedientes()
+
+        mock_sync.assert_called_once()
+        mock_enviar.assert_not_called()
+        mock_db.close.assert_called_once()
 
     def test_tarea_sincronizar_expedientes_cierra_db_aun_si_falla(self):
         mock_db = MagicMock()

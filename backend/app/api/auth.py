@@ -25,6 +25,7 @@ from app.schemas.auth import (
     VincularTelegramResponse,
 )
 from app.models.telegram_usuario import TelegramUsuario
+from app.core.funcionalidades import exigir_habilitada
 
 logger = logging.getLogger(__name__)
 
@@ -344,6 +345,7 @@ def vincular_telegram(
     current_user: Usuario = Depends(get_current_user),
 ):
     """Vincula un usuario del sistema con su chat_id de Telegram. Solo socios."""
+    exigir_habilitada("telegram")
     if not current_user.es_socio:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

@@ -14,6 +14,7 @@ import httpx
 
 from app.core.config import Settings
 from app.core.logger import get_logger
+from app.services.playwright_cierre import cerrar_playwright
 
 logger = get_logger(__name__)
 
@@ -282,10 +283,7 @@ async def consultar_declaracion_irpf(ci: str) -> dict:
         out["error"] = str(e)
         return out
     finally:
-        if browser:
-            await browser.close()
-        if pw:
-            await pw.stop()
+        await cerrar_playwright(browser, pw, "DGI consultas")
 
 
 def _buscar_frame_residencia(page):
@@ -385,7 +383,4 @@ async def consultar_certificado_residencia_fiscal(
         out["error"] = str(e)
         return out
     finally:
-        if browser:
-            await browser.close()
-        if pw:
-            await pw.stop()
+        await cerrar_playwright(browser, pw, "DGI consultas")

@@ -13,6 +13,7 @@ import httpx
 # playwright se importa lazy dentro de consultar_tramite_dgr()
 from app.core.config import Settings
 from app.core.logger import get_logger
+from app.services.playwright_cierre import cerrar_playwright
 
 logger = get_logger(__name__)
 
@@ -185,20 +186,7 @@ async def consultar_tramite_dgr(
         logger.exception("Error consultando DGR")
         return None
     finally:
-        # Cerrar SIEMPRE ambos, y que un fallo al cerrar el navegador no impida
-        # detener playwright: sin pw.stop() quedan vivos el driver de node y
-        # sus procesos, y con el tiempo el contenedor se queda sin threads
-        # (incidente 15/10/2026: login caído por "can't start new thread").
-        if browser:
-            try:
-                await browser.close()
-            except Exception:
-                logger.exception("Error cerrando navegador DGR")
-        if pw:
-            try:
-                await pw.stop()
-            except Exception:
-                logger.exception("Error deteniendo playwright DGR")
+        await cerrar_playwright(browser, pw, "DGR")
 
 
 def parsear_fecha_dgr(fecha_str):
