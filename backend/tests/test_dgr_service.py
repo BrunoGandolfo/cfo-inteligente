@@ -206,3 +206,67 @@ class TestResolverRecaptcha:
         from app.services.dgr_service import resolver_recaptcha
         result = await resolver_recaptcha("https://example.com", "sitekey")
         assert result is None
+
+
+# ============================================================================
+# LIBERACIÓN DE RECURSOS (incidente 15/10/2026: login caído por falta de threads)
+# ============================================================================
+
+def _playwright_simulado(page_goto_error=None, browser_close_error=None):
+    """Arma un async_playwright() falso y devuelve (fabrica, pw, browser)."""
+    page = MagicMock()
+    page.goto = AsyncMock(side_effect=page_goto_error)
+    context = MagicMock()
+    context.new_page = AsyncMock(return_value=page)
+    browser = MagicMock()
+    browser.new_context = AsyncMock(return_value=context)
+    browser.close = AsyncMock(side_effect=browser_close_error)
+    pw = MagicMock()
+    pw.chromium.launch = AsyncMock(return_value=browser)
+    pw.stop = AsyncMock()
+    fabrica = MagicMock()
+    fabrica.return_value.start = AsyncMock(return_value=pw)
+    return fabrica, pw, browser
+
+
+class TestConsultarTramiteLiberaRecursos:
+
+    @pytest.mark.asyncio
+    async def test_si_la_consulta_falla_cierra_navegador_y_detiene_playwright(self):
+        from app.services.dgr_service import consultar_tramite_dgr
+
+        fabrica, pw, browser = _playwright_simulado(page_goto_error=TimeoutError("timeout DGR"))
+        with patch("playwright.async_api.async_playwright", fabrica):
+            resultado = await consultar_tramite_dgr("X", "Y", 2026, 1)
+
+        assert resultado is None
+        browser.close.assert_awaited_once()
+        pw.stop.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_si_cerrar_el_navegador_falla_igual_detiene_playwright(self):
+        """Caso real del 12/10: Browser.close falló con 'handler is closed'."""
+        from app.services.dgr_service import consultar_tramite_dgr
+
+        fabrica, pw, browser = _playwright_simulado(
+            page_goto_error=TimeoutError("timeout DGR"),
+            browser_close_error=RuntimeError("the handler is closed"),
+        )
+        with patch("playwright.async_api.async_playwright", fabrica):
+            resultado = await consultar_tramite_dgr("X", "Y", 2026, 1)  # no debe lanzar
+
+        assert resultado is None
+        pw.stop.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_si_falla_el_lanzamiento_igual_detiene_playwright(self):
+        from app.services.dgr_service import consultar_tramite_dgr
+
+        fabrica, pw, browser = _playwright_simulado()
+        pw.chromium.launch = AsyncMock(side_effect=RuntimeError("no se pudo lanzar chromium"))
+        with patch("playwright.async_api.async_playwright", fabrica):
+            resultado = await consultar_tramite_dgr("X", "Y", 2026, 1)
+
+        assert resultado is None
+        browser.close.assert_not_awaited()
+        pw.stop.assert_awaited_once()
