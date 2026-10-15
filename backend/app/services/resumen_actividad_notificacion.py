@@ -9,7 +9,6 @@ Responsabilidades separadas:
 """
 
 import asyncio
-import logging
 from dataclasses import dataclass
 from datetime import datetime
 from html import escape
@@ -17,6 +16,7 @@ from html import escape
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.logger import get_logger
 from app.core.database import SessionLocal
 from app.services.email_service import enviar_email
 from app.services.resumen_actividad_service import (
@@ -27,7 +27,7 @@ from app.services.resumen_actividad_service import (
     obtener_resumen,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 _DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 

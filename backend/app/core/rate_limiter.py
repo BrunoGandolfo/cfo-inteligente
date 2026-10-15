@@ -39,7 +39,22 @@ def user_id_or_ip_key(request: Request) -> str:
     return f"ip:{get_remote_address(request)}"
 
 
-limiter = Limiter(
+class LimiterFailOpen(Limiter):
+    """Limiter que deja pasar el request si el chequeo de límites falla.
+
+    swallow_errors=True no alcanza: si el storage falla, slowapi no setea
+    request.state.view_rate_limit y sus endpoints sync lo leen igual al
+    inyectar headers → AttributeError → 500. Pasó en producción (15/10/2026):
+    el proceso se quedó sin threads y nadie pudo hacer login. Inicializarlo
+    en None antes del chequeo hace que un fallo interno deje pasar.
+    """
+
+    def _check_request_limit(self, request, endpoint_func, in_middleware=True):
+        request.state.view_rate_limit = None
+        super()._check_request_limit(request, endpoint_func, in_middleware)
+
+
+limiter = LimiterFailOpen(
     key_func=get_remote_address,
     storage_uri=settings.redis_url or "memory://",
     swallow_errors=True,

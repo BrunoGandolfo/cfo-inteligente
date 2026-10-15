@@ -4,13 +4,12 @@ Usa httpx directo contra la API de Resend (sin librerías de terceros), igual
 que telegram_service. Nunca loguea la API key ni el contenido del mail.
 """
 
-import logging
-
 import httpx
 
 from app.core.config import settings
+from app.core.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 RESEND_API_URL = "https://api.resend.com/emails"
 
