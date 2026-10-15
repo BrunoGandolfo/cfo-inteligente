@@ -81,8 +81,9 @@ def tarea_sincronizar_expedientes() -> None:
             f"expedientes, {resultado['total_nuevos_movimientos']} nuevos movimientos"
         )
         
-        # 2. Enviar notificaciones si hay nuevos movimientos (solo con Telegram habilitado)
-        if resultado['total_nuevos_movimientos'] > 0 and telegram_habilitado():
+        # 2. Enviar pendientes (nuevos y los que quedaron de cuando Telegram
+        # estuvo apagado). Sin pendientes, la función vuelve enseguida.
+        if telegram_habilitado():
             enviar_notificaciones_pendientes(db)
             
     except Exception as e:

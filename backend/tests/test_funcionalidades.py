@@ -192,3 +192,42 @@ def test_consultas_dgi_detienen_playwright_aunque_fallen(modulo, funcion, args):
         asyncio.run(getattr(mod, funcion)(*args))
 
     pw.stop.assert_awaited_once()
+
+
+class TestTelegramPuntoUnicoDeSalida:
+    """El interruptor se aplica en enviar_mensaje_telegram: ningún llamador lo esquiva."""
+
+    def test_apagado_con_token_no_llama_a_la_api(self, config):
+        from app.services import telegram_service
+
+        config(telegram_habilitado=False, telegram_bot_token="token-cargado")
+        with patch.object(telegram_service.httpx, "AsyncClient") as cliente:
+            enviado = asyncio.run(telegram_service.enviar_mensaje_telegram(123, "alerta DGR"))
+        assert enviado is False
+        cliente.assert_not_called()
+
+    def test_prendido_envia(self, config):
+        import httpx
+        from app.services import telegram_service
+
+        config(telegram_habilitado=True, telegram_bot_token="token-cargado")
+        real = httpx.AsyncClient
+        transporte = httpx.MockTransport(lambda req: httpx.Response(200, json={"ok": True}))
+        with patch.object(telegram_service.httpx, "AsyncClient",
+                          side_effect=lambda *a, **k: real(transport=transporte)):
+            enviado = asyncio.run(telegram_service.enviar_mensaje_telegram(123, "hola"))
+        assert enviado is True
+
+
+def test_con_telegram_prendido_se_envian_pendientes_aunque_no_haya_nuevos():
+    """Al prender Telegram, lo acumulado mientras estuvo apagado sale en la próxima corrida."""
+    mock_db = MagicMock()
+    with patch("app.services.scheduler_service.SessionLocal", return_value=mock_db), \
+         patch("app.services.scheduler_service.sincronizar_todos_los_expedientes",
+               return_value={"sincronizados_ok": 4, "total_expedientes": 4,
+                             "total_nuevos_movimientos": 0}), \
+         patch("app.services.scheduler_service.enviar_notificaciones_pendientes") as enviar, \
+         patch("app.services.scheduler_service.telegram_habilitado", return_value=True):
+        from app.services.scheduler_service import tarea_sincronizar_expedientes
+        tarea_sincronizar_expedientes()
+    enviar.assert_called_once_with(mock_db)
