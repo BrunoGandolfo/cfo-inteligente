@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
     resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
 
+    # Interruptores (ver app/core/funcionalidades.py y
+    # docs/FUNCIONALIDADES_DESACTIVADAS.md). Apagados por defecto: además del
+    # flag, cada uno exige su credencial para prenderse.
+    dgr_habilitado: bool = Field(default=False, alias="DGR_HABILITADO")
+    dgi_consultas_habilitadas: bool = Field(default=False, alias="DGI_CONSULTAS_HABILITADAS")
+    telegram_habilitado: bool = Field(default=False, alias="TELEGRAM_HABILITADO")
+
     # Mail: remitente y destinatario del resumen diario de actividad.
     # onboarding@resend.dev funciona sin verificar dominio, pero solo entrega
     # al mail dueño de la cuenta de Resend.

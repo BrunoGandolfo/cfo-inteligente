@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.access_control import USUARIOS_ACCESO_CONTABLE, tiene_acceso
 from app.core.database import get_db
 from app.core.rate_limiter import limiter, user_id_or_ip_key
+from app.core.funcionalidades import exigir_habilitada
 from app.core.security import get_current_user
 from app.models import Usuario
 from app.schemas.consulta_contable import (
@@ -160,6 +161,7 @@ async def consultar_contable(
     current_user: Usuario = Depends(get_current_user),
 ):
     _verificar_acceso_modulo(current_user)
+    exigir_habilitada("dgi")
     contable_service = _cargar_servicio_contable()
 
     consulta = await contable_service.ejecutar_y_registrar(

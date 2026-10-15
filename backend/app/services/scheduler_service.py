@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 import pytz
 
 from app.core.database import SessionLocal
+from app.core.funcionalidades import dgr_habilitado, resumen_estado, telegram_habilitado
 from app.core.logger import get_logger
 from app.models.expediente import Expediente
 from app.models.telegram_usuario import TelegramUsuario
@@ -80,8 +81,8 @@ def tarea_sincronizar_expedientes() -> None:
             f"expedientes, {resultado['total_nuevos_movimientos']} nuevos movimientos"
         )
         
-        # 2. Enviar notificaciones si hay nuevos movimientos
-        if resultado['total_nuevos_movimientos'] > 0:
+        # 2. Enviar notificaciones si hay nuevos movimientos (solo con Telegram habilitado)
+        if resultado['total_nuevos_movimientos'] > 0 and telegram_habilitado():
             enviar_notificaciones_pendientes(db)
             
     except Exception as e:
@@ -186,17 +187,19 @@ def iniciar_scheduler() -> None:
         misfire_grace_time=300,
     )
 
-    # Tarea: monitorear trámites DGR cada 4 horas
-    scheduler.add_job(
-        tarea_monitorear_tramites_dgr,
-        "interval",
-        hours=4,
-        id="monitorear_tramites_dgr",
-        name="Monitorear trámites DGR",
-        replace_existing=True,
-        max_instances=1,
-        misfire_grace_time=300,
-    )
+    # Tarea: monitorear trámites DGR cada 4 horas. Solo si está habilitada:
+    # sin CapSolver cada corrida abría navegadores que no podían consultar nada.
+    if dgr_habilitado():
+        scheduler.add_job(
+            tarea_monitorear_tramites_dgr,
+            "interval",
+            hours=4,
+            id="monitorear_tramites_dgr",
+            name="Monitorear trámites DGR",
+            replace_existing=True,
+            max_instances=1,
+            misfire_grace_time=300,
+        )
     
     # Tarea: resumen diario de actividad de registro por mail a las 20:00 Uruguay.
     # misfire_grace_time amplio: si el servidor reinicia cerca de las 20:00
@@ -213,7 +216,11 @@ def iniciar_scheduler() -> None:
     )
 
     scheduler.start()
-    logger.info("📅 Scheduler iniciado - Expedientes 7:30 AM, DGR cada 4 horas, resumen actividad 20:00 (Uruguay)")
+    tareas = ", ".join(job.name for job in scheduler.get_jobs())
+    logger.info(f"📅 Scheduler iniciado (Uruguay): {tareas}")
+    apagadas = [nombre for nombre, activa in resumen_estado().items() if not activa]
+    if apagadas:
+        logger.info(f"⏸️ Funcionalidades desactivadas: {', '.join(apagadas)} (ver docs/FUNCIONALIDADES_DESACTIVADAS.md)")
 
 
 def detener_scheduler() -> None:

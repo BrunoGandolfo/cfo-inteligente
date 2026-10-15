@@ -38,6 +38,7 @@ from app.schemas.expediente import (
 )
 from app.services import expediente_service
 from app.services.telegram_service import enviar_mensaje_telegram
+from app.core.funcionalidades import exigir_habilitada
 
 logger = logging.getLogger(__name__)
 
@@ -382,6 +383,7 @@ def enviar_notificacion_test(
     Solo socios pueden usar este endpoint.
     """
     _verificar_socio(current_user)
+    exigir_habilitada("telegram")
 
     chat_id = _obtener_chat_id_usuario(db, current_user.id)
     if not chat_id:
@@ -430,6 +432,7 @@ def enviar_notificacion_movimientos(
     Solo socios pueden usar este endpoint.
     """
     _verificar_socio(current_user)
+    exigir_habilitada("telegram")
 
     chat_id = _obtener_chat_id_usuario(db, current_user.id)
     if not chat_id:

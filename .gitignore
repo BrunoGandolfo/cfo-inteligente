@@ -78,3 +78,7 @@ data/urcdp/
 corpus_urcdp_backup_*.sql
 urcdp_archivos_backup_*.tar.gz
 backup_completo_local_*.sql.gz
+
+# Artefactos de tests (cambian en cada corrida)
+.coverage
+coverage_report.txt

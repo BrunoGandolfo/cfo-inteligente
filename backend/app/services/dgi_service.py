@@ -14,6 +14,7 @@ import httpx
 # playwright se importa lazy dentro de consultar_certificado_unico()
 from app.core.config import Settings
 from app.core.logger import get_logger
+from app.services.playwright_cierre import cerrar_playwright
 
 logger = get_logger(__name__)
 
@@ -136,6 +137,7 @@ async def consultar_certificado_unico(rut: str, ci: str) -> dict:
         "error": None,
     }
 
+    pw = None
     browser = None
     try:
         from playwright.async_api import async_playwright
@@ -215,5 +217,4 @@ async def consultar_certificado_unico(rut: str, ci: str) -> dict:
         out["error"] = str(e)
         return out
     finally:
-        if browser:
-            await browser.close()
+        await cerrar_playwright(browser, pw, "DGI certificado único")
